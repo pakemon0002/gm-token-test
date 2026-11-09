@@ -381,7 +381,7 @@ function App() {
         return React.createElement(React.Fragment, null,
             top('GM/CR · Биржа', true, 'bar-chart'),
             React.createElement("div", { className: "trade-meta" },
-                React.createElement("b", null, pre ? 'PREMARKET · предварительные заявки' : 'SPOT · игровой GM/CR'),
+                React.createElement("b", null, pre ? 'PREMARKET · предварительные заявки' : liveTicker?.trade_test_mode ? 'ТЕСТОВЫЙ SPOT · GM/CR' : 'SPOT · игровой GM/CR'),
                 React.createElement("span", null, pre ? `До открытия ${countdown}` : 'Торговля активна')),
             React.createElement("div", { className: "market-price-panel pearl-card" },
                 React.createElement("small", null, pre ? 'Предварительная цена (не сделка)' : 'Последняя подтверждённая цена'),
@@ -398,7 +398,7 @@ function App() {
                     React.createElement("span", null,
                         "\u0421\u0434\u0435\u043B\u043E\u043A: ",
                         React.createElement("b", null, liveTicker?.trades_24h || 0))),
-                React.createElement("small", null, pre ? 'Примерный объём на аукционе: ' + nf((liveTicker?.indicative?.volume_gm_cents || 0) / 100) + ' GM · не исполнен' : 'Цена и объём только по реально исполненным проверенным ордерам')),
+                React.createElement("small", null, pre ? 'Примерный объём на аукционе: ' + nf((liveTicker?.indicative?.volume_gm_cents || 0) / 100) + ' GM · не исполнен' : liveTicker?.trade_test_mode ? 'Тестовая торговля открыта. Цена и объём появятся после настоящих сделок.' : 'Цена и объём только по реально исполненным проверенным ордерам')),
             React.createElement("div", { className: "intervals" }, ['1m', '5m', '15m', '1h', '4h', '1d'].map(i => React.createElement("button", { className: period === i ? 'on' : '', key: i, onClick: () => setPeriod(i) }, i))),
             React.createElement(Candles, { theme: theme, candles: liveCandles, selected: selectedCandle, onSelect: setSelectedCandle }),
             React.createElement("p", { className: "disclaimer" }, pre ? 'Первые 24 часа — только предварительные Limit-заявки. Фактический объём равен нулю, пока сделки не исполняются.' : 'OHLCV получен из реальных сделок. Подозрительные сделки исключаются из доверенных свечей; это не биржа реальных денег.'),
@@ -931,7 +931,7 @@ function App() {
     }
     function More() { return React.createElement(React.Fragment, null,
         top('Все разделы', true, 'more'),
-        React.createElement("div", { className: "more-grid" }, [['lightning', 'Mining', 'mining'], ['coins', 'Holding Vault', 'vault'], ['swap', 'GM Shop', 'shop'], ['gift', 'GM Boxes', 'boxes'], ['candlesticks', 'Биржа GM/CR', 'trade'], ['gift', 'Daily Reward', 'reward'], ['tasks', 'Задания', 'tasks'], ['trophy', 'Рейтинг', 'leaderboard'], ['friends', 'Рефералы', 'referrals'], ['clock', 'История', 'history'], ['shield-check', 'Support', 'support'], ['settings', 'Settings', 'settings'], ['crown', 'Admin', 'admin']].map(([i, t, s]) => React.createElement("button", { className: "earn-item pearl-card", key: t, onClick: () => goto(s) },
+        React.createElement("div", { className: "more-grid" }, [['lightning', 'Mining', 'mining'], ['coins', 'Holding Vault', 'vault'], ['swap', 'GM Shop', 'shop'], ['gift', 'GM Boxes', 'boxes'], ['candlesticks', 'Биржа GM/CR', 'trade'], ['gift', 'Daily Reward', 'reward'], ['tasks', 'Задания', 'tasks'], ['trophy', 'Рейтинг', 'leaderboard'], ['friends', 'Рефералы', 'referrals'], ['clock', 'История', 'history'], ['shield-check', 'Support', 'support'], ['settings', 'Settings', 'settings'], ['crown', 'Admin', 'admin']].filter(([i, t, s]) => s !== 'admin' || ['owner', 'coowner'].includes(liveRole)).map(([i, t, s]) => React.createElement("button", { className: "earn-item pearl-card", key: t, onClick: () => goto(s) },
             icon(i, 37, true),
             React.createElement("span", null,
                 React.createElement("b", null, t)),
@@ -1017,7 +1017,7 @@ function App() {
             view = Support();
             break;
         case 'admin':
-            view = Admin();
+            view = ['owner', 'coowner'].includes(liveRole) ? Admin() : Home();
             break;
         case 'achievements':
             view = Achievements();

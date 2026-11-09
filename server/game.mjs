@@ -63,7 +63,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
   {id:'level_5',title:'Уровень 5',description:'Достичь уровня Mining 5',icon:'trophy',xp:50,gm:0,condition:{type:'mining_level',gte:5}},
   {id:'level_10',title:'Уровень 10',description:'Достичь уровня Mining 10',icon:'trophy',xp:100,gm:0,condition:{type:'mining_level',gte:10}}
  ];
-  const init=now();config('start_at',Math.floor(init/DAY)*DAY);config('mining_spent',0);config('holding_last_hour',Math.floor(init/HOUR)*HOUR);config('auction_end',init+Math.max(1,Number(process.env.AUCTION_DURATION_SECONDS||86400)));config('auction_done',0);config('order_seq',0);config('last_trade_price',0);
+  const init=now();config('start_at',Math.floor(init/DAY)*DAY);config('mining_spent',0);config('holding_last_hour',Math.floor(init/HOUR)*HOUR);config('auction_end',init+Math.max(1,Number(process.env.AUCTION_DURATION_SECONDS||86400)));config('auction_done',0);config('trade_test_mode',0);config('order_seq',0);config('last_trade_price',0);
  // These rules remain undecided; code paths are implemented, but disabled by default.
  config('holding_daily_bps',Math.min(50,Math.max(0,Number(process.env.HOLDING_DAILY_BPS??(testEconomy?10:0))))); // 50bp=0.5%/day max
  config('daily_gm_cents',Math.max(0,Number(process.env.DAILY_REWARD_GM??(testEconomy?10:0))*100));
@@ -76,6 +76,20 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
  config('achievements_json',process.env.GAME_ACHIEVEMENTS_JSON||(testEconomy?JSON.stringify(testAchievements):'[]'));
  for(const name of ['HOLDING_FEES','TRADE_GM_REWARDS','TRADE_CR_REWARDS'])stmt('INSERT OR IGNORE INTO pools(name,gm,cr) VALUES(?,0,0)').run(name);
  function setting(k,n){stmt('UPDATE game_settings SET v=? WHERE k=?').run(String(n),k)}
+ // Private testing only: deliberately advance the existing auction without
+ // granting GM, fabricating orders, trades, price history or POINTS.
+ // This is a one-way transition for this database. No effect without
+ // GM_TEST_OPEN_TRADING=1 in the server process environment.
+ if(process.env.GM_TEST_OPEN_TRADING==='1'){
+  if(v('trade_test_mode')!=='1'){
+   setting('trade_test_mode',1);
+   log('system','private_test_trading_enabled',{at:now(),note:'no synthetic price, balances or liquidity'});
+  }
+  if(v('auction_done')!=='1' && Number(v('auction_end'))>=now()){
+   setting('auction_end',now()-1);
+   log('system','private_test_premarket_shortened',{at:now()});
+  }
+ }
  function ensure(id){const t=now();stmt('INSERT OR IGNORE INTO mining_state(user_id,last_at) VALUES(?,?)').run(id,t);stmt('INSERT OR IGNORE INTO holding_state(user_id,last_checkpoint) VALUES(?,?)').run(id,t);stmt('INSERT OR IGNORE INTO points_account(user_id) VALUES(?)').run(id);stmt('INSERT OR IGNORE INTO holding_peak(user_id,peak_cents) SELECT user_id,vault FROM wallets WHERE user_id=?').run(id)}
  function once(id,actor,kind,callback){const existing=stmt('SELECT actor,kind,response FROM request_ids WHERE id=?').get(id);if(existing){if(existing.actor!==actor||existing.kind!==kind)throw Error('operationId already used for another operation');return JSON.parse(existing.response)}const response=callback();stmt('INSERT INTO request_ids(id,actor,kind,created_at,response) VALUES(?,?,?,?,?)').run(id,actor,kind,now(),JSON.stringify(response));return response}
  const wal=(id)=>stmt('SELECT * FROM wallets WHERE user_id=?').get(id);
@@ -255,7 +269,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
    if(!INTERVALS[interval])throw Error('invalid interval');
    return response(200,tx(()=>{doAuction();expireOrders();const since=now()-Math.min(365*DAY,Math.max(180*INTERVALS[interval],DAY));const trades=stmt('SELECT rowid AS seq,id,at,price,amount_cents,quote_cents,suspect FROM trades WHERE at>=? ORDER BY at ASC,rowid ASC LIMIT 100000').all(since);return {interval,price_unit:'CR cents/GM',candles:makeCandles(trades,interval,180),synthetic:false}}));
   }
-  if(p==='/api/market/ticker'&&verb==='GET')return response(200,tx(()=>{doAuction();expireOrders();const latest=stmt('SELECT rowid AS seq,price,amount_cents,quote_cents,at,suspect FROM trades ORDER BY at DESC,rowid DESC LIMIT 10000').all();const bids=stmt("SELECT limit_price FROM orders WHERE side='buy' AND status='open' ORDER BY limit_price DESC LIMIT 1").all();const asks=stmt("SELECT limit_price FROM orders WHERE side='sell' AND status='open' ORDER BY limit_price ASC LIMIT 1").all();return {...tradingSnapshot(latest,now(),bids,asks),auction_end_at:Number(v('auction_end')),auction_done:v('auction_done')==='1',premarket:v('auction_done')!=='1',indicative:v('auction_done')==='1'?null:indicativeAuction(stmt("SELECT user_id,side,limit_price,remaining_cents,auction,status FROM orders WHERE status='open' AND auction=1").all())}}));
+  if(p==='/api/market/ticker'&&verb==='GET')return response(200,tx(()=>{doAuction();expireOrders();const latest=stmt('SELECT rowid AS seq,price,amount_cents,quote_cents,at,suspect FROM trades ORDER BY at DESC,rowid DESC LIMIT 10000').all();const bids=stmt("SELECT limit_price FROM orders WHERE side='buy' AND status='open' ORDER BY limit_price DESC LIMIT 1").all();const asks=stmt("SELECT limit_price FROM orders WHERE side='sell' AND status='open' ORDER BY limit_price ASC LIMIT 1").all();return {...tradingSnapshot(latest,now(),bids,asks),auction_end_at:Number(v('auction_end')),auction_done:v('auction_done')==='1',premarket:v('auction_done')!=='1',trade_test_mode:v('trade_test_mode')==='1',indicative:v('auction_done')==='1'?null:indicativeAuction(stmt("SELECT user_id,side,limit_price,remaining_cents,auction,status FROM orders WHERE status='open' AND auction=1").all())}}));
     if(p==='/api/leaderboard'&&verb==='GET')return response(200,{users:process.env.LEADERBOARD_MODE==='wallet_plus_vault'?stmt('SELECT u.id,u.username,w.gm+w.vault AS score_cents FROM users u JOIN wallets w ON w.user_id=u.id ORDER BY score_cents DESC,u.id LIMIT 50').all():[],pending_rule:process.env.LEADERBOARD_MODE!=='wallet_plus_vault'});
   if(p==='/api/tasks'&&verb==='GET')return response(200,{tasks:catalogStatus(id,'tasks')});
   if(p==='/api/achievements'&&verb==='GET')return response(200,{achievements:catalogStatus(id,'achievements')});
