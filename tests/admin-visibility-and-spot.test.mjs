@@ -14,8 +14,8 @@ test('Admin navigation is shown only for verified Owner / Co-Owner and direct cl
 });
 test('spot test ribbon is based on server status and is not a fake market price',()=>{
  for(const s of [read('../miniapp/src/main.tsx'),read('../miniapp/public/main.js')]){
-  assert.ok(s.includes('ТЕСТОВЫЙ SPOT · GM/CR'));
-  assert.ok(s.includes('Цена и объём появятся после настоящих сделок.'));
+  assert.ok(s.includes('TEST SPOT'));
+  assert.ok(s.includes('Цена появится после первой исполненной сделки между разными игроками'));
  }
  const market=read('../server/game.mjs');
  assert.ok(market.includes("GM_TEST_OPEN_TRADING==='1'"));
