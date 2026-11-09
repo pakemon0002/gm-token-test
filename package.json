@@ -1,0 +1,12 @@
+{
+  "name": "gm-token-project",
+  "private": true,
+  "version": "1.0.0-preview",
+  "scripts": {
+    "start": "node --experimental-sqlite server/index.mjs",
+    "bot": "node server/bot.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "start:env": "node --env-file=.env --experimental-sqlite server/index.mjs",
+    "bot:env": "node --env-file=.env server/bot.mjs"
+  }
+}
