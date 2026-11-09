@@ -6,7 +6,7 @@ services:
     runtime: node
     plan: free
     region: frankfurt
-    buildCommand: env -u BOT_TOKEN -u BOT_WEBHOOK_SECRET -u PUBLIC_APP_URL -u OWNER_TELEGRAM_IDS -u OWNER_TOTP_SECRETS npm test
+    buildCommand: env -u BOT_TOKEN -u BOT_WEBHOOK_SECRET -u PUBLIC_APP_URL -u OWNER_TELEGRAM_IDS -u OWNER_TOTP_SECRETS -u GM_TEST_OPEN_TRADING -u GM_ADMIN_TEST_GRANTS npm test
     startCommand: npm start
     healthCheckPath: /api/health
     autoDeploy: false
