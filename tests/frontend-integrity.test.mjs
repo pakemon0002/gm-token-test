@@ -21,8 +21,9 @@ test('production UI uses authenticated server OHLCV/market ticker, with no synth
  for(const uri of ['/api/market/ticker','/api/market/ohlcv','/api/exchange/book']){
   assert.ok(source.includes(uri));assert.ok(prod.includes(uri));
  }
- assert.match(source,/candles\.slice\(-32\)/);
- assert.ok(source.includes('Сделок ещё не было'));
+ assert.ok(source.includes('.slice(-48)'),'chart shows only up to 48 real OHLCV candles');
+ assert.ok(prod.includes('.slice(-48)'),'compiled chart must match the source');
+ assert.ok(source.includes('Пока нет исполненных сделок'),'no-trades state must be honest');
  const page=readFileSync(html,'utf8');assert.ok(page.includes('Telegram Mini App'));assert.ok(!page.includes('офлайн демо'));
 });
 test('all 216 original icon PNG assets are in the project and bundled build',()=>{
