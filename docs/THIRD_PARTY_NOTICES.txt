@@ -1,0 +1,5 @@
+Offline React / ReactDOM runtime included for self-contained demo:
+React 16.0.0, copyright Facebook, Inc. and contributors, MIT License.
+Distributed in minified UMD format under its original MIT license header.
+For production replace this legacy runtime with a supported React release.
+All 216 GM TOKEN Premium Icons and brand PNG files came from user-supplied archive GM_TOKEN_Premium_Icons_ONLY.zip; do not change their names or replace them with third-party icons.
