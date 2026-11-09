@@ -1,0 +1,33 @@
+
+# GM TOKEN v5 — existing Render server
+services:
+  - type: web
+    name: gm-token-test
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: env -u BOT_TOKEN -u BOT_WEBHOOK_SECRET -u PUBLIC_APP_URL -u OWNER_TELEGRAM_IDS -u OWNER_TOTP_SECRETS npm test
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: false
+    envVars:
+      - key: NODE_VERSION
+        value: 22.16.0
+      - key: NODE_ENV
+        value: production
+      - key: BOT_USERNAME
+        value: gm_token_test_bot
+      - key: BOT_POLLING
+        value: "0"
+      - key: DB_PATH
+        value: /tmp/gm-token-test.sqlite
+      - key: BOT_TOKEN
+        sync: false
+      - key: BOT_WEBHOOK_SECRET
+        sync: false
+      - key: PUBLIC_APP_URL
+        sync: false
+      - key: OWNER_TELEGRAM_IDS
+        sync: false
+      - key: OWNER_TOTP_SECRETS
+        sync: false
