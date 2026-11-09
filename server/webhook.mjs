@@ -20,6 +20,13 @@ export function makeTelegramWebhook({token, publicUrl, webhookSecret, botUsernam
     return answer.result;
   };
   const configure = async () => {
+    const bot = await api('getMe',{});
+    const actual=String(bot?.username||'').replace(/^@/,'').toLowerCase();
+    const expected=String(botUsername).replace(/^@/,'').toLowerCase();
+    if(!actual || actual!==expected) {
+      throw new Error('BOT_TOKEN belongs to @'+(actual||'unknown')+' but GM TOKEN expects @'+expected+'. Please check Render BOT_TOKEN without sharing it.');
+    }
+    logger.log('Telegram bot identity verified: @'+actual);
     await api('setWebhook',{url:new URL('/api/telegram/webhook',baseUrl).toString(),secret_token:webhookSecret,allowed_updates:['message'],drop_pending_updates:false});
     await api('setChatMenuButton',{menu_button:{type:'web_app',text:'Открыть GM TOKEN',web_app:{url:baseUrl}}});
     await api('setMyCommands',{commands:[{command:'start',description:'Открыть GM TOKEN'},{command:'help',description:'Помощь и правила'}]});

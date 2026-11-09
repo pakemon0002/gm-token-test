@@ -70,3 +70,18 @@
 .auth-privacy{display:flex;align-items:center;gap:9px;padding:0 2px}.auth-privacy img{flex:none;opacity:.8}.auth-gate .auth-privacy span{font-size:11px;line-height:1.5;color:var(--muted)}
 @media(max-width:500px){.application.auth-page{padding:18px 14px}.application.auth-page .auth-gate{padding:23px 19px;gap:18px;border-radius:25px}.auth-brand h1{font-size:25px}.auth-brand .brand-coin{width:70px;height:70px}}
 @media(prefers-reduced-motion:reduce){.auth-gate .auth-cta{transition:none}}
+
+/* Auth: theme-matched chrome buttons and original GM custom iconography. */
+.application.auth-page.theme-light .auth-cta{
+  color:#1c2332;background:linear-gradient(145deg,#fff,#ecedf5 48%,#cfd5e2);
+  border:1px solid #bbc3d4;box-shadow:inset 0 1px #fff,0 12px 26px #727b9838;
+}
+.application.auth-page.theme-dark .auth-cta{
+  color:#f4f4f9;background:linear-gradient(145deg,#383b47,#161820 52%,#2e303b);
+  border:1px solid #616577;box-shadow:inset 0 1px #ffffff25,0 12px 26px #0009;
+}
+.application.auth-page.theme-light .auth-cta-icon{background:linear-gradient(140deg,#fff,#dadfec);border:1px solid #c0c7d6}
+.application.auth-page.theme-dark .auth-cta-icon{background:linear-gradient(140deg,#4c4f60,#20232d);border:1px solid #767889}
+.application.auth-page .auth-theme-toggle button .gm-icon{flex:none;object-fit:contain;filter:drop-shadow(0 1px 2px #0002)}
+.application.auth-page .auth-cta:hover{filter:brightness(1.065)}
+.application.auth-page .auth-cta:focus-visible{outline:2px solid #939bb7;outline-offset:4px}
