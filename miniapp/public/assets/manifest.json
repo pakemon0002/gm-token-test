@@ -1,0 +1,386 @@
+{
+  "name": "GM TOKEN Premium Icon Pack",
+  "image_generation": "Custom metallic icons redrawn from two image references",
+  "count_icons": 54,
+  "format": "PNG RGBA",
+  "icons": [
+    {
+      "name": "home",
+      "dark": "/assets/icons/dark/transparent/home.png",
+      "light": "/assets/icons/light/transparent/home.png",
+      "dark_tile": "/assets/icons/dark/tiles/home.png",
+      "light_tile": "/assets/icons/light/tiles/home.png"
+    },
+    {
+      "name": "candlesticks",
+      "dark": "/assets/icons/dark/transparent/candlesticks.png",
+      "light": "/assets/icons/light/transparent/candlesticks.png",
+      "dark_tile": "/assets/icons/dark/tiles/candlesticks.png",
+      "light_tile": "/assets/icons/light/tiles/candlesticks.png"
+    },
+    {
+      "name": "coins",
+      "dark": "/assets/icons/dark/transparent/coins.png",
+      "light": "/assets/icons/light/transparent/coins.png",
+      "dark_tile": "/assets/icons/dark/tiles/coins.png",
+      "light_tile": "/assets/icons/light/tiles/coins.png"
+    },
+    {
+      "name": "friends",
+      "dark": "/assets/icons/dark/transparent/friends.png",
+      "light": "/assets/icons/light/transparent/friends.png",
+      "dark_tile": "/assets/icons/dark/tiles/friends.png",
+      "light_tile": "/assets/icons/light/tiles/friends.png"
+    },
+    {
+      "name": "gift",
+      "dark": "/assets/icons/dark/transparent/gift.png",
+      "light": "/assets/icons/light/transparent/gift.png",
+      "dark_tile": "/assets/icons/dark/tiles/gift.png",
+      "light_tile": "/assets/icons/light/tiles/gift.png"
+    },
+    {
+      "name": "tasks",
+      "dark": "/assets/icons/dark/transparent/tasks.png",
+      "light": "/assets/icons/light/transparent/tasks.png",
+      "dark_tile": "/assets/icons/dark/tiles/tasks.png",
+      "light_tile": "/assets/icons/light/tiles/tasks.png"
+    },
+    {
+      "name": "trophy",
+      "dark": "/assets/icons/dark/transparent/trophy.png",
+      "light": "/assets/icons/light/transparent/trophy.png",
+      "dark_tile": "/assets/icons/dark/tiles/trophy.png",
+      "light_tile": "/assets/icons/light/tiles/trophy.png"
+    },
+    {
+      "name": "diamond",
+      "dark": "/assets/icons/dark/transparent/diamond.png",
+      "light": "/assets/icons/light/transparent/diamond.png",
+      "dark_tile": "/assets/icons/dark/tiles/diamond.png",
+      "light_tile": "/assets/icons/light/tiles/diamond.png"
+    },
+    {
+      "name": "crown",
+      "dark": "/assets/icons/dark/transparent/crown.png",
+      "light": "/assets/icons/light/transparent/crown.png",
+      "dark_tile": "/assets/icons/dark/tiles/crown.png",
+      "light_tile": "/assets/icons/light/tiles/crown.png"
+    },
+    {
+      "name": "bar-chart",
+      "dark": "/assets/icons/dark/transparent/bar-chart.png",
+      "light": "/assets/icons/light/transparent/bar-chart.png",
+      "dark_tile": "/assets/icons/dark/tiles/bar-chart.png",
+      "light_tile": "/assets/icons/light/tiles/bar-chart.png"
+    },
+    {
+      "name": "trending-up",
+      "dark": "/assets/icons/dark/transparent/trending-up.png",
+      "light": "/assets/icons/light/transparent/trending-up.png",
+      "dark_tile": "/assets/icons/dark/tiles/trending-up.png",
+      "light_tile": "/assets/icons/light/tiles/trending-up.png"
+    },
+    {
+      "name": "wallet",
+      "dark": "/assets/icons/dark/transparent/wallet.png",
+      "light": "/assets/icons/light/transparent/wallet.png",
+      "dark_tile": "/assets/icons/dark/tiles/wallet.png",
+      "light_tile": "/assets/icons/light/tiles/wallet.png"
+    },
+    {
+      "name": "swap",
+      "dark": "/assets/icons/dark/transparent/swap.png",
+      "light": "/assets/icons/light/transparent/swap.png",
+      "dark_tile": "/assets/icons/dark/tiles/swap.png",
+      "light_tile": "/assets/icons/light/tiles/swap.png"
+    },
+    {
+      "name": "telegram",
+      "dark": "/assets/icons/dark/transparent/telegram.png",
+      "light": "/assets/icons/light/transparent/telegram.png",
+      "dark_tile": "/assets/icons/dark/tiles/telegram.png",
+      "light_tile": "/assets/icons/light/tiles/telegram.png"
+    },
+    {
+      "name": "x-social",
+      "dark": "/assets/icons/dark/transparent/x-social.png",
+      "light": "/assets/icons/light/transparent/x-social.png",
+      "dark_tile": "/assets/icons/dark/tiles/x-social.png",
+      "light_tile": "/assets/icons/light/tiles/x-social.png"
+    },
+    {
+      "name": "flame",
+      "dark": "/assets/icons/dark/transparent/flame.png",
+      "light": "/assets/icons/light/transparent/flame.png",
+      "dark_tile": "/assets/icons/dark/tiles/flame.png",
+      "light_tile": "/assets/icons/light/tiles/flame.png"
+    },
+    {
+      "name": "lightning",
+      "dark": "/assets/icons/dark/transparent/lightning.png",
+      "light": "/assets/icons/light/transparent/lightning.png",
+      "dark_tile": "/assets/icons/dark/tiles/lightning.png",
+      "light_tile": "/assets/icons/light/tiles/lightning.png"
+    },
+    {
+      "name": "star",
+      "dark": "/assets/icons/dark/transparent/star.png",
+      "light": "/assets/icons/light/transparent/star.png",
+      "dark_tile": "/assets/icons/dark/tiles/star.png",
+      "light_tile": "/assets/icons/light/tiles/star.png"
+    },
+    {
+      "name": "profile",
+      "dark": "/assets/icons/dark/transparent/profile.png",
+      "light": "/assets/icons/light/transparent/profile.png",
+      "dark_tile": "/assets/icons/dark/tiles/profile.png",
+      "light_tile": "/assets/icons/light/tiles/profile.png"
+    },
+    {
+      "name": "id-card",
+      "dark": "/assets/icons/dark/transparent/id-card.png",
+      "light": "/assets/icons/light/transparent/id-card.png",
+      "dark_tile": "/assets/icons/dark/tiles/id-card.png",
+      "light_tile": "/assets/icons/light/tiles/id-card.png"
+    },
+    {
+      "name": "notifications",
+      "dark": "/assets/icons/dark/transparent/notifications.png",
+      "light": "/assets/icons/light/transparent/notifications.png",
+      "dark_tile": "/assets/icons/dark/tiles/notifications.png",
+      "light_tile": "/assets/icons/light/tiles/notifications.png"
+    },
+    {
+      "name": "settings",
+      "dark": "/assets/icons/dark/transparent/settings.png",
+      "light": "/assets/icons/light/transparent/settings.png",
+      "dark_tile": "/assets/icons/dark/tiles/settings.png",
+      "light_tile": "/assets/icons/light/tiles/settings.png"
+    },
+    {
+      "name": "shield-check",
+      "dark": "/assets/icons/dark/transparent/shield-check.png",
+      "light": "/assets/icons/light/transparent/shield-check.png",
+      "dark_tile": "/assets/icons/dark/tiles/shield-check.png",
+      "light_tile": "/assets/icons/light/tiles/shield-check.png"
+    },
+    {
+      "name": "clock",
+      "dark": "/assets/icons/dark/transparent/clock.png",
+      "light": "/assets/icons/light/transparent/clock.png",
+      "dark_tile": "/assets/icons/dark/tiles/clock.png",
+      "light_tile": "/assets/icons/light/tiles/clock.png"
+    },
+    {
+      "name": "refresh",
+      "dark": "/assets/icons/dark/transparent/refresh.png",
+      "light": "/assets/icons/light/transparent/refresh.png",
+      "dark_tile": "/assets/icons/dark/tiles/refresh.png",
+      "light_tile": "/assets/icons/light/tiles/refresh.png"
+    },
+    {
+      "name": "qr-code",
+      "dark": "/assets/icons/dark/transparent/qr-code.png",
+      "light": "/assets/icons/light/transparent/qr-code.png",
+      "dark_tile": "/assets/icons/dark/tiles/qr-code.png",
+      "light_tile": "/assets/icons/light/tiles/qr-code.png"
+    },
+    {
+      "name": "scanner",
+      "dark": "/assets/icons/dark/transparent/scanner.png",
+      "light": "/assets/icons/light/transparent/scanner.png",
+      "dark_tile": "/assets/icons/dark/tiles/scanner.png",
+      "light_tile": "/assets/icons/light/tiles/scanner.png"
+    },
+    {
+      "name": "logout",
+      "dark": "/assets/icons/dark/transparent/logout.png",
+      "light": "/assets/icons/light/transparent/logout.png",
+      "dark_tile": "/assets/icons/dark/tiles/logout.png",
+      "light_tile": "/assets/icons/light/tiles/logout.png"
+    },
+    {
+      "name": "plus",
+      "dark": "/assets/icons/dark/transparent/plus.png",
+      "light": "/assets/icons/light/transparent/plus.png",
+      "dark_tile": "/assets/icons/dark/tiles/plus.png",
+      "light_tile": "/assets/icons/light/tiles/plus.png"
+    },
+    {
+      "name": "minus",
+      "dark": "/assets/icons/dark/transparent/minus.png",
+      "light": "/assets/icons/light/transparent/minus.png",
+      "dark_tile": "/assets/icons/dark/tiles/minus.png",
+      "light_tile": "/assets/icons/light/tiles/minus.png"
+    },
+    {
+      "name": "close",
+      "dark": "/assets/icons/dark/transparent/close.png",
+      "light": "/assets/icons/light/transparent/close.png",
+      "dark_tile": "/assets/icons/dark/tiles/close.png",
+      "light_tile": "/assets/icons/light/tiles/close.png"
+    },
+    {
+      "name": "check",
+      "dark": "/assets/icons/dark/transparent/check.png",
+      "light": "/assets/icons/light/transparent/check.png",
+      "dark_tile": "/assets/icons/dark/tiles/check.png",
+      "light_tile": "/assets/icons/light/tiles/check.png"
+    },
+    {
+      "name": "chevron-right",
+      "dark": "/assets/icons/dark/transparent/chevron-right.png",
+      "light": "/assets/icons/light/transparent/chevron-right.png",
+      "dark_tile": "/assets/icons/dark/tiles/chevron-right.png",
+      "light_tile": "/assets/icons/light/tiles/chevron-right.png"
+    },
+    {
+      "name": "chevron-left",
+      "dark": "/assets/icons/dark/transparent/chevron-left.png",
+      "light": "/assets/icons/light/transparent/chevron-left.png",
+      "dark_tile": "/assets/icons/dark/tiles/chevron-left.png",
+      "light_tile": "/assets/icons/light/tiles/chevron-left.png"
+    },
+    {
+      "name": "chevron-down",
+      "dark": "/assets/icons/dark/transparent/chevron-down.png",
+      "light": "/assets/icons/light/transparent/chevron-down.png",
+      "dark_tile": "/assets/icons/dark/tiles/chevron-down.png",
+      "light_tile": "/assets/icons/light/tiles/chevron-down.png"
+    },
+    {
+      "name": "chevron-up",
+      "dark": "/assets/icons/dark/transparent/chevron-up.png",
+      "light": "/assets/icons/light/transparent/chevron-up.png",
+      "dark_tile": "/assets/icons/dark/tiles/chevron-up.png",
+      "light_tile": "/assets/icons/light/tiles/chevron-up.png"
+    },
+    {
+      "name": "more",
+      "dark": "/assets/icons/dark/transparent/more.png",
+      "light": "/assets/icons/light/transparent/more.png",
+      "dark_tile": "/assets/icons/dark/tiles/more.png",
+      "light_tile": "/assets/icons/light/tiles/more.png"
+    },
+    {
+      "name": "sliders",
+      "dark": "/assets/icons/dark/transparent/sliders.png",
+      "light": "/assets/icons/light/transparent/sliders.png",
+      "dark_tile": "/assets/icons/dark/tiles/sliders.png",
+      "light_tile": "/assets/icons/light/tiles/sliders.png"
+    },
+    {
+      "name": "layers",
+      "dark": "/assets/icons/dark/transparent/layers.png",
+      "light": "/assets/icons/light/transparent/layers.png",
+      "dark_tile": "/assets/icons/dark/tiles/layers.png",
+      "light_tile": "/assets/icons/light/tiles/layers.png"
+    },
+    {
+      "name": "database",
+      "dark": "/assets/icons/dark/transparent/database.png",
+      "light": "/assets/icons/light/transparent/database.png",
+      "dark_tile": "/assets/icons/dark/tiles/database.png",
+      "light_tile": "/assets/icons/light/tiles/database.png"
+    },
+    {
+      "name": "bank-card",
+      "dark": "/assets/icons/dark/transparent/bank-card.png",
+      "light": "/assets/icons/light/transparent/bank-card.png",
+      "dark_tile": "/assets/icons/dark/tiles/bank-card.png",
+      "light_tile": "/assets/icons/light/tiles/bank-card.png"
+    },
+    {
+      "name": "link",
+      "dark": "/assets/icons/dark/transparent/link.png",
+      "light": "/assets/icons/light/transparent/link.png",
+      "dark_tile": "/assets/icons/dark/tiles/link.png",
+      "light_tile": "/assets/icons/light/tiles/link.png"
+    },
+    {
+      "name": "copy",
+      "dark": "/assets/icons/dark/transparent/copy.png",
+      "light": "/assets/icons/light/transparent/copy.png",
+      "dark_tile": "/assets/icons/dark/tiles/copy.png",
+      "light_tile": "/assets/icons/light/tiles/copy.png"
+    },
+    {
+      "name": "external-link",
+      "dark": "/assets/icons/dark/transparent/external-link.png",
+      "light": "/assets/icons/light/transparent/external-link.png",
+      "dark_tile": "/assets/icons/dark/tiles/external-link.png",
+      "light_tile": "/assets/icons/light/tiles/external-link.png"
+    },
+    {
+      "name": "info",
+      "dark": "/assets/icons/dark/transparent/info.png",
+      "light": "/assets/icons/light/transparent/info.png",
+      "dark_tile": "/assets/icons/dark/tiles/info.png",
+      "light_tile": "/assets/icons/light/tiles/info.png"
+    },
+    {
+      "name": "gm-coin-orbit",
+      "dark": "/assets/icons/dark/transparent/gm-coin-orbit.png",
+      "light": "/assets/icons/light/transparent/gm-coin-orbit.png",
+      "dark_tile": "/assets/icons/dark/tiles/gm-coin-orbit.png",
+      "light_tile": "/assets/icons/light/tiles/gm-coin-orbit.png"
+    },
+    {
+      "name": "gm-lettermark",
+      "dark": "/assets/icons/dark/transparent/gm-lettermark.png",
+      "light": "/assets/icons/light/transparent/gm-lettermark.png",
+      "dark_tile": "/assets/icons/dark/tiles/gm-lettermark.png",
+      "light_tile": "/assets/icons/light/tiles/gm-lettermark.png"
+    },
+    {
+      "name": "gm-app-icon",
+      "dark": "/assets/icons/dark/transparent/gm-app-icon.png",
+      "light": "/assets/icons/light/transparent/gm-app-icon.png",
+      "dark_tile": "/assets/icons/dark/tiles/gm-app-icon.png",
+      "light_tile": "/assets/icons/light/tiles/gm-app-icon.png"
+    },
+    {
+      "name": "bars-bold",
+      "dark": "/assets/icons/dark/transparent/bars-bold.png",
+      "light": "/assets/icons/light/transparent/bars-bold.png",
+      "dark_tile": "/assets/icons/dark/tiles/bars-bold.png",
+      "light_tile": "/assets/icons/light/tiles/bars-bold.png"
+    },
+    {
+      "name": "deposit",
+      "dark": "/assets/icons/dark/transparent/deposit.png",
+      "light": "/assets/icons/light/transparent/deposit.png",
+      "dark_tile": "/assets/icons/dark/tiles/deposit.png",
+      "light_tile": "/assets/icons/light/tiles/deposit.png"
+    },
+    {
+      "name": "withdraw",
+      "dark": "/assets/icons/dark/transparent/withdraw.png",
+      "light": "/assets/icons/light/transparent/withdraw.png",
+      "dark_tile": "/assets/icons/dark/tiles/withdraw.png",
+      "light_tile": "/assets/icons/light/tiles/withdraw.png"
+    },
+    {
+      "name": "add-friend",
+      "dark": "/assets/icons/dark/transparent/add-friend.png",
+      "light": "/assets/icons/light/transparent/add-friend.png",
+      "dark_tile": "/assets/icons/dark/tiles/add-friend.png",
+      "light_tile": "/assets/icons/light/tiles/add-friend.png"
+    },
+    {
+      "name": "verified-user",
+      "dark": "/assets/icons/dark/transparent/verified-user.png",
+      "light": "/assets/icons/light/transparent/verified-user.png",
+      "dark_tile": "/assets/icons/dark/tiles/verified-user.png",
+      "light_tile": "/assets/icons/light/tiles/verified-user.png"
+    },
+    {
+      "name": "community",
+      "dark": "/assets/icons/dark/transparent/community.png",
+      "light": "/assets/icons/light/transparent/community.png",
+      "dark_tile": "/assets/icons/dark/tiles/community.png",
+      "light_tile": "/assets/icons/light/tiles/community.png"
+    }
+  ]
+}
