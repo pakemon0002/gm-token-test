@@ -6,7 +6,7 @@ services:
     runtime: node
     plan: free
     region: frankfurt
-    buildCommand: env -u BOT_TOKEN -u BOT_WEBHOOK_SECRET -u PUBLIC_APP_URL -u OWNER_TELEGRAM_IDS -u OWNER_TOTP_SECRETS -u GM_TEST_OPEN_TRADING -u GM_ADMIN_TEST_GRANTS -u GM_TEST_STARTER_FUNDS npm test
+    buildCommand: env -u BOT_TOKEN -u BOT_WEBHOOK_SECRET -u PUBLIC_APP_URL -u OWNER_TELEGRAM_IDS -u OWNER_TOTP_SECRETS -u GM_TEST_OPEN_TRADING -u GM_ADMIN_TEST_GRANTS -u GM_TEST_STARTER_FUNDS -u GM_MINING_FAST_TRACK -u GM_ENABLE_REWARDS -u GM_TASKS_ENABLED -u DAILY_REWARD_GM -u BOX_REWARDS_GM_JSON npm test
     startCommand: npm start
     healthCheckPath: /api/health
     autoDeploy: false
@@ -25,6 +25,16 @@ services:
         value: "1"
       - key: GM_TEST_STARTER_FUNDS
         value: "1"
+      - key: GM_MINING_FAST_TRACK
+        value: "1"
+      - key: GM_ENABLE_REWARDS
+        value: "1"
+      - key: GM_TASKS_ENABLED
+        value: "1"
+      - key: DAILY_REWARD_GM
+        value: "10"
+      - key: BOX_REWARDS_GM_JSON
+        value: '{"bronze":15,"silver":45,"gold":105}'
       - key: DB_PATH
         value: /tmp/gm-token-test.sqlite
       - key: BOT_TOKEN

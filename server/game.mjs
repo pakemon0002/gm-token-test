@@ -5,9 +5,9 @@ import {toCents} from './lib.mjs';
 import {makeCandles,tradingSnapshot,indicativeAuction,INTERVALS} from './market-data.mjs';
 const DAY=86400, HOUR=3600, MICRO=1000000;
 const xpLevels=[0,100,250,450,750,1150,1700,2400,3300,4400];
-const bases=[10,14,19,25,32,40,50,62,75,90];
+const bases=process.env.GM_MINING_FAST_TRACK==='1'?[500,575,665,770,890,1025,1180,1350,1540,1750]:[10,14,19,25,32,40,50,62,75,90];
 const power=(l)=>l>=10?25:l>=8?20:l>=6?15:l>=4?10:l>=2?5:0;
-const capacity=(l)=>l>=9?24:l>=7?20:l>=5?16:l>=3?12:8;
+const capacity=(l)=>process.env.GM_MINING_FAST_TRACK==='1'?(l>=9?36:l>=5?30:24):(l>=9?24:l>=7?20:l>=5?16:l>=3?12:8);
 const eff=(l)=>l>=9?[50,4]:l>=7?[40,3]:l>=5?[30,2]:l>=3?[20,1]:[0,0];
 const boost=(c)=>{let x=0;for(const [gm,b] of [[50,5],[100,10],[250,15],[500,20],[1000,25],[2000,30],[5000,35],[10000,40],[25000,45],[50000,50]])if(c>=gm*100)x=b;return x};
 const day=(t)=>new Date(t*1000).toISOString().slice(0,10);
@@ -72,10 +72,24 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
  config('shop_min_trades',Number(process.env.SHOP_MIN_TRADES??(testEconomy?5:20)));
  config('shop_min_volume_gm',Number(process.env.SHOP_MIN_VOLUME_GM??(testEconomy?1000:10000)));
  config('trade_price_guard_bps',Math.min(3000,Math.max(500,Number(process.env.TRADE_PRICE_GUARD_BPS||1500))));
- config('tasks_json',process.env.GAME_TASKS_JSON||(testEconomy?JSON.stringify(testTasks):'[]'));
+ config('tasks_json',process.env.GAME_TASKS_JSON||((testEconomy||process.env.GM_TASKS_ENABLED==='1')?JSON.stringify(testTasks):'[]'));
  config('achievements_json',process.env.GAME_ACHIEVEMENTS_JSON||(testEconomy?JSON.stringify(testAchievements):'[]'));
  for(const name of ['HOLDING_FEES','TRADE_GM_REWARDS','TRADE_CR_REWARDS'])stmt('INSERT OR IGNORE INTO pools(name,gm,cr) VALUES(?,0,0)').run(name);
  function setting(k,n){stmt('UPDATE game_settings SET v=? WHERE k=?').run(String(n),k)}
+ // Explicitly enabled virtual test rewards, preserving prior owner-defined values.
+ if(process.env.GM_ENABLE_REWARDS==='1'){
+  const dailyValue=Number(process.env.DAILY_REWARD_GM||10);
+  if(Number(v('daily_gm_cents'))===0&&dailyValue>0&&dailyValue<=100)
+   setting('daily_gm_cents',Math.round(dailyValue*100));
+  const existing=JSON.parse(v('box_rewards_json')||'{}');
+  if(!Object.keys(existing).length){
+   const rewards=JSON.parse(process.env.BOX_REWARDS_GM_JSON||'{"bronze":15,"silver":45,"gold":105}');
+   if(['bronze','silver','gold'].every(k=>Number.isSafeInteger(rewards[k])&&rewards[k]>0&&rewards[k]<=500))
+    setting('box_rewards_json',JSON.stringify(rewards));
+  }
+ }
+ if(process.env.GM_TASKS_ENABLED==='1'&&v('tasks_json')==='[]')setting('tasks_json',JSON.stringify(testTasks));
+
  // Private testing only: deliberately advance the existing auction without
  // granting GM, fabricating orders, trades, price history or POINTS.
  // This is a one-way transition for this database. No effect without
@@ -275,7 +289,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
   if(p==='/api/achievements'&&verb==='GET')return response(200,{achievements:catalogStatus(id,'achievements')});
   if(p==='/api/tasks/claim'&&verb==='POST')return response(200,claimCatalog(id,'tasks',await read()));
   if(p==='/api/achievements/claim'&&verb==='POST')return response(200,claimCatalog(id,'achievements',await read()));
-  if(p==='/api/game/status'&&verb==='GET')return response(200,tx(()=>{ensure(id);settle();const m=stmt('SELECT * FROM mining_state WHERE user_id=?').get(id),h=stmt('SELECT * FROM holding_state WHERE user_id=?').get(id);return {user:stmt('SELECT level,xp,username FROM users WHERE id=?').get(id),wallet:wal(id),mining:{...m,rate_cents_day:rate(stmt('SELECT level FROM users WHERE id=?').get(id),wal(id))},holding:h,points:stmt('SELECT * FROM points_account WHERE user_id=?').get(id),daily:dailyProfile(id),auction:{end_at:Number(v('auction_end')),done:v('auction_done')==='1'},config:{test_economy:testEconomy,holding_enabled:Number(v('holding_daily_bps'))>0,daily_enabled:Number(v('daily_gm_cents'))>0,shop_enabled:v('shop_rate_mode')!=='disabled',boxes_enabled:Object.keys(JSON.parse(v('box_rewards_json'))).length===3}}}));
+  if(p==='/api/game/status'&&verb==='GET')return response(200,tx(()=>{ensure(id);settle();const m=stmt('SELECT * FROM mining_state WHERE user_id=?').get(id),h=stmt('SELECT * FROM holding_state WHERE user_id=?').get(id);return {user:stmt('SELECT level,xp,username FROM users WHERE id=?').get(id),wallet:wal(id),mining:{...m,rate_cents_day:rate(stmt('SELECT level FROM users WHERE id=?').get(id),wal(id))},holding:h,points:stmt('SELECT * FROM points_account WHERE user_id=?').get(id),daily:dailyProfile(id),auction:{end_at:Number(v('auction_end')),done:v('auction_done')==='1'},config:{test_economy:testEconomy,holding_enabled:Number(v('holding_daily_bps'))>0,daily_enabled:Number(v('daily_gm_cents'))>0,shop_enabled:v('shop_rate_mode')!=='disabled',boxes_enabled:Object.keys(JSON.parse(v('box_rewards_json'))).length===3,box_rewards:JSON.parse(v('box_rewards_json')),daily_reward_gm:Number(v('daily_gm_cents'))/100}}}));
   const body=verb==='POST'?await read():{};
   const op=()=>requestId(body.operationId);
   if(p==='/api/mining/claim'&&verb==='POST')return response(200,tx(()=>{ensure(id);settle();return once(op(),id,'mining_claim',()=>{const m=stmt('SELECT * FROM mining_state WHERE user_id=?').get(id),n=m.pending_cents;if(n<100)throw Error('minimum mining Claim is 1 GM');walletChange(id,'gm',n);const d=day(now()),xp=m.last_xp_day===d?0:20;if(xp)awardXp(id,xp);stmt('UPDATE mining_state SET pending_cents=0,reg_micro=0,overflow_micro=0,processed_cents=0,last_at=?,last_xp_day=? WHERE user_id=?').run(now(),d,id);log(id,'mining_claim',{user:id,gm_cents:n,xp});return {gm_cents:n,xp,wallet:wal(id)}})}));

@@ -1,55 +1,58 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-const source=()=>readFileSync(new URL('../miniapp/src/main.tsx',import.meta.url),'utf8');
-const publicJs=()=>readFileSync(new URL('../miniapp/public/main.js',import.meta.url),'utf8');
-const css=()=>readFileSync(new URL('../miniapp/public/styles.css',import.meta.url),'utf8');
-test('light and dark Home render the same shortcuts and a direct Mining entry',()=>{
- for(const src of [source(),publicJs()]){
-  assert.match(src,/home-quick-grid/);
-  assert.match(src,/home-mining-card/);
-  assert.match(src,/Mining · добыча GM/);
-  assert.match(src,/\['candlesticks','Trade','trade'\]/);
-  assert.match(src,/\['friends','Invite','referrals'\]/);
-  assert.match(src,/isLight\?lightHome:darkHome/);
+const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
+const source=()=>read('../miniapp/src/main.tsx');
+const compiled=()=>read('../miniapp/public/main.js');
+test('Premium Home is shared across Silver and Graphite and has real server balances/market data',()=>{
+ for(const code of [source(),compiled()]){
+  assert.ok(code.includes('gm-home-v8'));
+  assert.ok(code.includes('gm-home-wallet'));
+  assert.ok(code.includes('gm-home-shortcuts'));
+  assert.ok(code.includes('gm-home-offer'));
+  assert.ok(code.includes('liveTicker?.last_price'));
+  assert.ok(code.includes('liveCandles||[]'));
+  assert.ok(code.includes('liveState?.points?.points'));
+  assert.ok(code.includes('goto(\'mining\')'));
  }
 });
-test('POINTS on Home reference server balance and actual executed trades, never indicative orders',()=>{
- for(const src of [source(),publicJs()]){
-  assert.match(src,/liveState\?\.points\?\.points/);
-  assert.match(src,/10 POINTS за каждые 10 000 GM/);
-  assert.match(src,/POINTS не начисляются/);
-  assert.match(src,/Торгуй GM\/CR/);
-  assert.match(src,/goto\('boxes'\)/);
+test('Mining has single central GM coin and progress from server storage/capacity',()=>{
+ for(const code of [source(),compiled()]){
+  assert.ok(code.includes('gm-mining-coin-wrap'));
+  assert.ok(code.includes('gm-mining-coin-rim'));
+  assert.ok(code.includes('onClick:mineClick'));
+  assert.ok(code.includes('rate*hours/24'));
+  assert.ok(code.includes('wallet.storage'));
+  assert.ok(code.includes('miningClaim()'));
  }
 });
-test('Daily Reward uses real enabled/claimed state with 7 day visuals and links to Mining',()=>{
- for(const src of [source(),publicJs()]){
-  assert.match(src,/reward-v2/);
-  assert.match(src,/reward-main-action/);
-  assert.match(src,/disabled:!enabled\|\|claimed/);
-  assert.match(src,/\[1,2,3,4,5,6,7\]/);
-  assert.match(src,/goto\('mining'\)/);
-  assert.match(src,/размер ежедневной выдачи GM ещё не утверждён/);
+test('Boxes only reveal the server-approved reward after successful operation',()=>{
+ for(const code of [source(),compiled()]){
+  assert.ok(code.includes('gm-box-result'));
+  assert.ok(code.includes('gm-crate'));
+  assert.ok(code.includes('gm_cents!=null'));
+  assert.ok(code.includes("api('/api/boxes/open'"));
+  assert.ok(code.includes('setBoxReveal'));
+  assert.ok(code.includes('disabled:demo||!enabled||points<cost||boxBusy'));
  }
 });
-test('Holding deposit and withdraw have custom themed artwork, without changing server endpoints',()=>{
- for(const src of [source(),publicJs()]){
-  assert.match(src,/vault-deposit/);
-  assert.match(src,/vault-withdraw/);
-  assert.match(src,/icon\('deposit',24\)/);
-  assert.match(src,/icon\('withdraw',24\)/);
-  assert.match(src,/onClick:depositVault/);
-  assert.match(src,/onClick:withdrawVault/);
+test('Daily Reward and Holding retain server verified payouts and themed actions',()=>{
+ for(const code of [source(),compiled()]){
+  assert.ok(code.includes('gm-daily-v8'));
+  assert.ok(code.includes('daily_reward_gm'));
+  assert.ok(code.includes('disabled:demo||!enabled||claimed'));
+  assert.ok(code.includes('vault-deposit'));
+  assert.ok(code.includes('vault-withdraw'));
  }
 });
-test('blue mobile tap highlight removed while keyboard focus remains visible',()=>{
- const styles=css();
- assert.match(styles,/-webkit-tap-highlight-color:transparent/);
- assert.match(styles,/focus-visible/);
- assert.match(styles,/\.theme-light \.collect-claim/);
- assert.match(styles,/\.theme-dark \.home-quick-grid/);
- assert.match(styles,/\.theme-dark \.vault-deposit/);
- assert.match(styles,/font-family:'Exo 2'/);
- assert.match(styles,/prefers-reduced-motion:reduce/);
+test('Premium design has reduced-motion support, 5 tabs, consistent font and both themes',()=>{
+ const css=read('../miniapp/public/styles.css');
+ for(const term of ['GM TOKEN Premium v8','gm-home-v8','gm-mining-coin-wrap',
+ 'gm-box-open','.theme-dark .gm-premium-card','.theme-dark .gm-mining-coin-wrap',
+ "font-family:'Inter'",'repeat(5,minmax(0,1fr))','prefers-reduced-motion:reduce']){
+  assert.ok(css.includes(term),'missing '+term);
+ }
+ assert.ok(css.includes('-webkit-tap-highlight-color:transparent'));
+ assert.ok(css.includes('focus-visible'));
+ assert.ok(css.includes('.theme-dark .vault-deposit'));
 });
