@@ -229,6 +229,41 @@ const routes=async(req,res)=>{
   if(p==='/api/admin/pools'&&verb==='GET'){
    roleCheck({id},['owner','coowner']);return send(res,200,{pools:publicPools(),holdingBuckets:stmt('SELECT * FROM holding_buckets').all()});
   }
+  if(p==='/api/admin/test-grant'&&verb==='POST'){
+   roleCheck({id},['owner','coowner']);
+   if(process.env.GM_ADMIN_TEST_GRANTS!=='1')throw Error('test grants are disabled on this server');
+   const body=await readBody(req);
+   const currency=String(body.currency||''),amount=toCents(String(body.amount||''));
+   if(!['GM','CR'].includes(currency))throw Error('invalid test currency');
+   const maxPerGrant=currency==='GM'?10000*100:100000*100;
+   const maxDaily=currency==='GM'?50000*100:500000*100;
+   if(amount>maxPerGrant)throw Error('test grant exceeds per-operation limit');
+   const recipient=String(body.recipient||'');
+   const target=recipient==='self'?id:recipient==='other-owner'?ownerIds.find(x=>x!==id):recipient==='id'?String(body.userId||'').trim():null;
+   if(!target||!/^\d{5,20}$/.test(target))throw Error('invalid test recipient or co-owner is not configured');
+   const reason=String(body.reason||'').trim();
+   if(reason.length<15||reason.length>200)throw Error('test grant reason must be 15-200 characters');
+   const op=String(body.operationId||'');
+   if(!/^[A-Za-z0-9_.:-]{8,100}$/.test(op))throw Error('invalid operationId');
+   require2FA({id},body);
+   const pool=currency==='GM'?'TREASURY':'SHOP',col=currency==='GM'?'gm':'cr';
+   tx(()=>{
+    if(stmt('SELECT id FROM journal WHERE id=?').get(op))throw Error('duplicate operationId');
+    const targetUser=stmt('SELECT id FROM users WHERE id=?').get(target);
+    if(!targetUser||!stmt('SELECT user_id FROM wallets WHERE user_id=?').get(target))throw Error('recipient must open GM TOKEN once before receiving a test grant');
+    const earlier=stmt("SELECT info FROM journal WHERE kind='admin_test_grant' AND at>=?").all(Math.floor(now()/86400)*86400);
+    let total=0;
+    for(const entry of earlier){
+     try{const d=JSON.parse(entry.info);if(d.user===target && d.currency===currency)total+=Number(d.cents)||0}catch{}
+    }
+    if(total+amount>maxDaily)throw Error('recipient daily test grant limit reached');
+    if(!stmt(`UPDATE pools SET ${col}=${col}-? WHERE name=? AND ${col}>=?`).run(amount,pool,amount).changes)throw Error('test fund reserve insufficient');
+    stmt(`UPDATE wallets SET ${col}=${col}+? WHERE user_id=?`).run(amount,target);
+    stmt('INSERT INTO journal(id,at,actor,kind,info) VALUES(?,?,?,?,?)').run(op,now(),id,'admin_test_grant',JSON.stringify({user:target,pool,currency,cents:amount,reason,test:true}));
+   });
+   sendTelegram(target,`GM TOKEN: тестовое начисление +${(amount/100).toFixed(2)} ${currency}. Виртуальная валюта; причина: ${reason}`);
+   return send(res,200,{ok:true,userId:target,currency,amount_cents:amount,sourcePool:pool,operationId:op,test:true});
+  }
   if(p==='/api/admin/correction'&&verb==='POST'){
    roleCheck({id},['owner','coowner']);const body=await readBody(req);require2FA({id},body);
    const target=String(body.userId||''),pool=String(body.sourcePool||''),currency=String(body.currency||''),direction=body.direction==='debit'?'debit':'credit';

@@ -149,6 +149,13 @@ function App() {
     const [adminCorrectionCurrency, setAdminCorrectionCurrency] = React.useState('GM');
     const [adminCorrectionPool, setAdminCorrectionPool] = React.useState('MINING');
     const [adminTicket, setAdminTicket] = React.useState('');
+    const [testRecipient, setTestRecipient] = React.useState('self');
+    const [testUserId, setTestUserId] = React.useState('');
+    const [testCurrency, setTestCurrency] = React.useState('GM');
+    const [testAmount, setTestAmount] = React.useState('1000');
+    const [testReason, setTestReason] = React.useState('Начисление виртуальных GM/CR для проверки торговой системы');
+    const [testCode, setTestCode] = React.useState('');
+    const [testBusy, setTestBusy] = React.useState(false);
     const [backendStatus, setBackendStatus] = React.useState('Проверяем вход через Telegram…');
     const [modal, setModal] = React.useState('');
     const [modalText, setModalText] = React.useState('');
@@ -240,6 +247,12 @@ function App() {
     const adminChangeRole = () => adminRequest('/api/admin/moderators', { telegramId: adminId, code: adminCode, action: adminAction }).then(() => adminRequest('/api/admin/team').then(x => x && setAdminTeam(x.team || [])));
     const adminTransfer = () => adminRequest('/api/admin/transfer', { source: adminFrom, target: adminTo, amount: adminAmount, code: adminCode, reason: adminReason, operationId: cryptoId() }).then(() => adminRequest('/api/admin/pools').then(x => x && setAdminFunds(x.pools || [])));
     const adminCorrection = () => adminRequest('/api/admin/correction', { userId: adminId, sourcePool: adminCorrectionPool, currency: adminCorrectionCurrency, amount: adminAmount, direction: 'credit', ticket: adminTicket, code: adminCode, reason: adminReason, operationId: cryptoId() });
+    const testGrant = async () => { if (testBusy) return; setTestBusy(true);
+        try {
+            const out = await adminRequest('/api/admin/test-grant', { recipient: testRecipient, userId: testRecipient === 'id' ? testUserId : undefined, currency: testCurrency, amount: testAmount, reason: testReason, code: testCode, operationId: cryptoId() });
+            if (out?.ok) { setTestCode(''); flash('Начислено ' + testAmount + ' ' + testCurrency + ' игроку ' + out.userId); await refreshLive(); }
+        } finally { setTestBusy(false); }
+    };
     function cryptoId() { return (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : 'manual-' + Date.now() + '-' + Math.floor(Math.random() * 999999); }
     const todayClaim = async () => { const x = await gameAction('/api/daily/claim'); if (x)
         goto('reward'); };
@@ -802,6 +815,37 @@ function App() {
                     React.createElement("button", { className: "small-button", onClick: () => ticketAction(t.id, 'resolve') }, "\u0420\u0435\u0448\u0435\u043D\u043E")),
                 !demo && t.user_id === String(webapp?.initDataUnsafe?.user?.id || '') && ['resolved', 'closed'].includes(t.status) && React.createElement("button", { className: "small-button", onClick: () => ticketAction(t.id, 'reopen') }, "\u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u043E\u0432\u0442\u043E\u0440\u043D\u043E"))) : React.createElement("p", { className: "disclaimer" }, "\u041F\u043E\u043A\u0430 \u043D\u0435\u0442 \u043E\u0431\u0440\u0430\u0449\u0435\u043D\u0438\u0439. \u0412 \u0440\u0430\u0431\u043E\u0447\u0435\u0439 \u0432\u0435\u0440\u0441\u0438\u0438 \u043C\u043E\u0436\u043D\u043E \u043E\u0431\u043D\u043E\u0432\u0438\u0442\u044C \u043E\u0447\u0435\u0440\u0435\u0434\u044C \u043A\u043D\u043E\u043F\u043A\u043E\u0439 \u0432\u044B\u0448\u0435."));
     }
+
+ function AdminTestGrants(){
+  const e=React.createElement;
+  return e('section',{className:'test-grants form-surface pearl-card','aria-label':'Тестовые начисления GM и CR'},
+   e('div',{className:'test-grants-heading'},icon('coins',40,true),
+    e('div',null,e('strong',null,'Тестовые начисления'),e('small',null,'GM/CR для проверки Trading · только Owner / Co-Owner'))),
+   e('p',{className:'test-grants-note'},'Средства переводятся из Treasury (GM) или Shop Reserve (CR), а не создаются заново. Каждое начисление проверяется 2FA и записывается в журнал.'),
+   e('label',null,'Кому начислить'),
+   e('div',{className:'test-grants-options',role:'group','aria-label':'Получатель'},
+    [['self','Себе'],['other-owner','Совладельцу'],['id','Игроку']].map(([id,title])=>
+     e('button',{type:'button',className:testRecipient===id?'selected':'',key:id,onClick:()=>setTestRecipient(id),'aria-pressed':testRecipient===id},title))),
+   testRecipient==='id'?e('input',{value:testUserId,placeholder:'Telegram ID зарегистрированного игрока',inputMode:'numeric',onChange:event=>setTestUserId(event.target.value),'aria-label':'Telegram ID игрока'}):null,
+   e('label',null,'Игровая валюта'),
+   e('div',{className:'test-grants-options',role:'group','aria-label':'Валюта'},
+    ['GM','CR'].map(currency=>e('button',{key:currency,type:'button',className:testCurrency===currency?'selected':'',onClick:()=>{setTestCurrency(currency);setTestAmount(currency==='GM'?'1000':'10000')},'aria-pressed':testCurrency===currency},
+      icon(currency==='GM'?'gm-coin-orbit':'coins',23),currency))),
+   e('label',null,'Сумма '+testCurrency),
+   e('input',{value:testAmount,inputMode:'decimal',placeholder:'Например, 1000',onChange:event=>setTestAmount(event.target.value),'aria-label':'Сумма тестового начисления'}),
+   e('div',{className:'test-grants-presets'},
+    (testCurrency==='GM'?['1000','5000','10000']:['10000','50000','100000']).map(n=>
+     e('button',{key:n,type:'button',onClick:()=>setTestAmount(n)},n))),
+   e('small',{className:'test-grants-limit'},testCurrency==='GM'?'До 10 000 GM за операцию и 50 000 GM в UTC-день на игрока.':'До 100 000 CR за операцию и 500 000 CR в UTC-день на игрока.'),
+   e('label',null,'Зачем выдаём'),
+   e('textarea',{rows:2,value:testReason,onChange:event=>setTestReason(event.target.value),'aria-label':'Причина начисления'}),
+   e('label',null,'Код 2FA владельца'),
+   e('input',{value:testCode,inputMode:'numeric',type:'text',autoComplete:'one-time-code',maxLength:6,placeholder:'6 цифр из приложения 2FA',onChange:event=>setTestCode(event.target.value),'aria-label':'Код TOTP'}),
+   e(GButton,{theme,disabled:demo||testBusy||!testAmount||testCode.length!==6,onClick:testGrant,icon:'shield-check'},
+     testBusy?'Проверяем начисление...':'Выдать тестовые '+testCurrency),
+   e('p',{className:'test-grants-footer'},'Другой совладелец или игрок должен хотя бы один раз открыть GM TOKEN. При необходимости между начислениями дождись нового кода 2FA.')
+  );
+ }
     function Admin() {
         const isOwner = ['owner', 'coowner'].includes(liveRole);
         if (!demo && !isOwner)
@@ -822,6 +866,7 @@ function App() {
                 React.createElement("small", null, a),
                 React.createElement("b", null, b),
                 React.createElement("small", null, "\u0421\u0435\u0440\u0432\u0435\u0440\u043D\u044B\u0435 \u0434\u0430\u043D\u043D\u044B\u0435")))),
+            AdminTestGrants(),
             React.createElement("h3", { className: "section-title" }, "\u0423\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0438\u0435"),
             React.createElement("div", { className: "admin-actions pearl-card" },
                 React.createElement("button", { onClick: async () => { const x = await adminRequest('/api/admin/team'); if (x)

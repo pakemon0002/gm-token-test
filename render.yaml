@@ -19,6 +19,8 @@ services:
         value: gm_token_test_bot
       - key: BOT_POLLING
         value: "0"
+      - key: GM_ADMIN_TEST_GRANTS
+        value: "1"
       - key: DB_PATH
         value: /tmp/gm-token-test.sqlite
       - key: BOT_TOKEN

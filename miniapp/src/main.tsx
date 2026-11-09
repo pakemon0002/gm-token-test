@@ -114,6 +114,13 @@ function App(){
  const [adminCorrectionCurrency,setAdminCorrectionCurrency]=React.useState('GM');
  const [adminCorrectionPool,setAdminCorrectionPool]=React.useState('MINING');
  const [adminTicket,setAdminTicket]=React.useState('');
+ const [testRecipient,setTestRecipient]=React.useState('self');
+ const [testUserId,setTestUserId]=React.useState('');
+ const [testCurrency,setTestCurrency]=React.useState('GM');
+ const [testAmount,setTestAmount]=React.useState('1000');
+ const [testReason,setTestReason]=React.useState('Начисление виртуальных GM/CR для проверки торговой системы');
+ const [testCode,setTestCode]=React.useState('');
+ const [testBusy,setTestBusy]=React.useState(false);
  const [backendStatus,setBackendStatus]=React.useState('Проверяем вход через Telegram…');
  const [modal,setModal]=React.useState('');
  const [modalText,setModalText]=React.useState('');
@@ -144,6 +151,11 @@ function App(){
  const adminChangeRole=()=>adminRequest('/api/admin/moderators',{telegramId:adminId,code:adminCode,action:adminAction}).then(()=>adminRequest('/api/admin/team').then(x=>x&&setAdminTeam(x.team||[])));
  const adminTransfer=()=>adminRequest('/api/admin/transfer',{source:adminFrom,target:adminTo,amount:adminAmount,code:adminCode,reason:adminReason,operationId:cryptoId()}).then(()=>adminRequest('/api/admin/pools').then(x=>x&&setAdminFunds(x.pools||[])));
  const adminCorrection=()=>adminRequest('/api/admin/correction',{userId:adminId,sourcePool:adminCorrectionPool,currency:adminCorrectionCurrency,amount:adminAmount,direction:'credit',ticket:adminTicket,code:adminCode,reason:adminReason,operationId:cryptoId()});
+ const testGrant=async()=>{if(testBusy)return;setTestBusy(true);
+  try{const out=await adminRequest('/api/admin/test-grant',{recipient:testRecipient,userId:testRecipient==='id'?testUserId:undefined,currency:testCurrency,amount:testAmount,reason:testReason,code:testCode,operationId:cryptoId()});
+   if(out?.ok){setTestCode('');flash('Начислено '+testAmount+' '+testCurrency+' игроку '+out.userId);await refreshLive();}
+  }finally{setTestBusy(false)}
+ };
  function cryptoId(){return (window.crypto&&window.crypto.randomUUID)?window.crypto.randomUUID():'manual-'+Date.now()+'-'+Math.floor(Math.random()*999999)}
  const todayClaim=async()=>{const x=await gameAction('/api/daily/claim');if(x)goto('reward')};
  const miningClaim=async()=>{await gameAction('/api/mining/claim')};
@@ -328,11 +340,43 @@ function App(){
  {!demo&&t.user_id===String(webapp?.initDataUnsafe?.user?.id||'')&&['resolved','closed'].includes(t.status)&&<button className="small-button" onClick={()=>ticketAction(t.id,'reopen')}>Открыть повторно</button>}
  </div>):<p className="disclaimer">Пока нет обращений. В рабочей версии можно обновить очередь кнопкой выше.</p>}</>;
  }
+
+ function AdminTestGrants(){
+  const e=React.createElement;
+  return e('section',{className:'test-grants form-surface pearl-card','aria-label':'Тестовые начисления GM и CR'},
+   e('div',{className:'test-grants-heading'},icon('coins',40,true),
+    e('div',null,e('strong',null,'Тестовые начисления'),e('small',null,'GM/CR для проверки Trading · только Owner / Co-Owner'))),
+   e('p',{className:'test-grants-note'},'Средства переводятся из Treasury (GM) или Shop Reserve (CR), а не создаются заново. Каждое начисление проверяется 2FA и записывается в журнал.'),
+   e('label',null,'Кому начислить'),
+   e('div',{className:'test-grants-options',role:'group','aria-label':'Получатель'},
+    [['self','Себе'],['other-owner','Совладельцу'],['id','Игроку']].map(([id,title])=>
+     e('button',{type:'button',className:testRecipient===id?'selected':'',key:id,onClick:()=>setTestRecipient(id),'aria-pressed':testRecipient===id},title))),
+   testRecipient==='id'?e('input',{value:testUserId,placeholder:'Telegram ID зарегистрированного игрока',inputMode:'numeric',onChange:event=>setTestUserId(event.target.value),'aria-label':'Telegram ID игрока'}):null,
+   e('label',null,'Игровая валюта'),
+   e('div',{className:'test-grants-options',role:'group','aria-label':'Валюта'},
+    ['GM','CR'].map(currency=>e('button',{key:currency,type:'button',className:testCurrency===currency?'selected':'',onClick:()=>{setTestCurrency(currency);setTestAmount(currency==='GM'?'1000':'10000')},'aria-pressed':testCurrency===currency},
+      icon(currency==='GM'?'gm-coin-orbit':'coins',23),currency))),
+   e('label',null,'Сумма '+testCurrency),
+   e('input',{value:testAmount,inputMode:'decimal',placeholder:'Например, 1000',onChange:event=>setTestAmount(event.target.value),'aria-label':'Сумма тестового начисления'}),
+   e('div',{className:'test-grants-presets'},
+    (testCurrency==='GM'?['1000','5000','10000']:['10000','50000','100000']).map(n=>
+     e('button',{key:n,type:'button',onClick:()=>setTestAmount(n)},n))),
+   e('small',{className:'test-grants-limit'},testCurrency==='GM'?'До 10 000 GM за операцию и 50 000 GM в UTC-день на игрока.':'До 100 000 CR за операцию и 500 000 CR в UTC-день на игрока.'),
+   e('label',null,'Зачем выдаём'),
+   e('textarea',{rows:2,value:testReason,onChange:event=>setTestReason(event.target.value),'aria-label':'Причина начисления'}),
+   e('label',null,'Код 2FA владельца'),
+   e('input',{value:testCode,inputMode:'numeric',type:'text',autoComplete:'one-time-code',maxLength:6,placeholder:'6 цифр из приложения 2FA',onChange:event=>setTestCode(event.target.value),'aria-label':'Код TOTP'}),
+   e(GButton,{theme,disabled:demo||testBusy||!testAmount||testCode.length!==6,onClick:testGrant,icon:'shield-check'},
+     testBusy?'Проверяем начисление...':'Выдать тестовые '+testCurrency),
+   e('p',{className:'test-grants-footer'},'Другой совладелец или игрок должен хотя бы один раз открыть GM TOKEN. При необходимости между начислениями дождись нового кода 2FA.')
+  );
+ }
  function Admin(){
  const isOwner=['owner','coowner'].includes(liveRole);
  if(!demo&&!isOwner) return <>{top('Admin Panel',true,'shield-check')}<div className="empty-state">{icon('shield-check',70,true)}<h2>Доступ ограничен</h2><p>Только Owner и Co-Owner могут использовать административную панель. Роли проверяются сервером.</p></div></>;
  return <>{top('Admin Panel',true,'settings')}<div className="admin-banner pearl-card">{icon('crown',49,true)}<div><b>{liveRole.toUpperCase()}</b><small>Вход подтверждён Telegram; критические операции требуют TOTP</small></div></div>
  <div className="admin-numbers">{[['Users',adminStats?.users??'—'],['Orders',adminStats?.orders??'—'],['Trades (24h)',adminStats?.trades_24h??'—'],['Open tickets',adminStats?.open_tickets??'—']].map(([a,b])=><div className="pearl-card" key={a}><small>{a}</small><b>{b}</b><small>Серверные данные</small></div>)}</div>
+ {AdminTestGrants()}
  <h3 className="section-title">Управление</h3>
  <div className="admin-actions pearl-card"><button onClick={async()=>{const x=await adminRequest('/api/admin/team');if(x)setAdminTeam(x.team||[])}}>{icon('friends',21)} Обновить список ролей</button><button onClick={async()=>{const x=await adminRequest('/api/admin/pools');if(x)setAdminFunds(x.pools||[]);const st=await adminRequest('/api/admin/stats');if(st)setAdminStats(st)}}>{icon('database',21)} Остатки фондов</button></div>
  {adminTeam.length>0&&<div className="admin-records pearl-card">{adminTeam.map((x:any)=><div key={x.id}><span>{x.username||x.id}</span><b>{x.role}</b></div>)}</div>}
