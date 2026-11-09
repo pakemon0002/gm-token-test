@@ -1,11 +1,11 @@
-# Closed test via GitHub + Render; database stored on TEMPORARY disk.
+# GM TOKEN closed test. Test runner must not inherit live Telegram secrets.
 services:
   - type: web
     name: gm-token-test
     runtime: node
     plan: free
     region: frankfurt
-    buildCommand: mkdir -p app && tar -xzf gm-token-source.tar.gz -C app && cd app && npm test
+    buildCommand: mkdir -p app && tar -xzf gm-token-source.tar.gz -C app && cd app && env -u BOT_TOKEN -u BOT_WEBHOOK_SECRET -u PUBLIC_APP_URL -u OWNER_TELEGRAM_IDS -u OWNER_TOTP_SECRETS npm test
     startCommand: cd app && npm start
     healthCheckPath: /api/health
     autoDeploy: false
