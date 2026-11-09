@@ -1,0 +1,4 @@
+{
+ "compilerOptions": {"target":"ES2022","lib":["DOM","ES2022"],"jsx":"react","module":"none","outDir":"public","noEmitOnError":false,"strict":false,"skipLibCheck":true},
+ "files":["src/main.tsx"]
+}

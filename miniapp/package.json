@@ -1,0 +1,17 @@
+{
+  "name": "gm-token-miniapp",
+  "version": "1.0.0-preview",
+  "private": true,
+  "description": "GM TOKEN React + TypeScript + Vite source with self-contained offline React UMD preview",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "build:standalone": "tsc -p tsconfig.standalone.json && cp src/styles.css public/styles.css"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5",
+    "typescript": "^5.8.3"
+  }
+}
