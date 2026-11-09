@@ -1,0 +1,32 @@
+# Closed test via GitHub + Render; database stored on TEMPORARY disk.
+services:
+  - type: web
+    name: gm-token-test
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: mkdir -p app && tar -xzf gm-token-source.tar.gz -C app && cd app && npm test
+    startCommand: cd app && npm start
+    healthCheckPath: /api/health
+    autoDeploy: false
+    envVars:
+      - key: NODE_VERSION
+        value: 22.16.0
+      - key: NODE_ENV
+        value: production
+      - key: BOT_USERNAME
+        value: gm_token_test_bot
+      - key: DB_PATH
+        value: /tmp/gm-token-test.sqlite
+      - key: BOT_POLLING
+        value: "0"
+      - key: BOT_TOKEN
+        sync: false
+      - key: BOT_WEBHOOK_SECRET
+        sync: false
+      - key: PUBLIC_APP_URL
+        sync: false
+      - key: OWNER_TELEGRAM_IDS
+        sync: false
+      - key: OWNER_TOTP_SECRETS
+        sync: false
