@@ -34,55 +34,95 @@ function GButton({ children, onClick, light = false, disabled = false, icon, the
 function SparkLine({ theme, compact = false }) {
     return React.createElement("div", { className: "real-data-empty", role: "status" }, "\u0413\u0440\u0430\u0444\u0438\u043A \u0431\u0430\u043B\u0430\u043D\u0441\u0430 \u043F\u043E\u044F\u0432\u0438\u0442\u0441\u044F \u043F\u043E\u0441\u043B\u0435 \u043D\u0430\u043A\u043E\u043F\u043B\u0435\u043D\u0438\u044F \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0451\u043D\u043D\u043E\u0439 \u0438\u0441\u0442\u043E\u0440\u0438\u0438");
 }
-function Candles({ theme, candles = [], selected = null, onSelect = () => { } }) {
-    if (!candles.length)
-        return React.createElement("div", { className: "candles-empty" },
-            React.createElement(Icon, { theme: theme, name: "candlesticks", size: 42 }),
-            React.createElement("b", null, "\u0421\u0434\u0435\u043B\u043E\u043A \u0435\u0449\u0451 \u043D\u0435 \u0431\u044B\u043B\u043E"),
-            React.createElement("small", null, "\u0421\u0432\u0435\u0447\u0438 \u0438 \u043E\u0431\u044A\u0451\u043C \u043F\u043E\u044F\u0432\u044F\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u043F\u043E\u0441\u043B\u0435 \u0440\u0435\u0430\u043B\u044C\u043D\u044B\u0445 \u0438\u0441\u043F\u043E\u043B\u043D\u0435\u043D\u043D\u044B\u0445 \u043E\u0440\u0434\u0435\u0440\u043E\u0432 GM/CR. \u041D\u0438\u043A\u0430\u043A\u0438\u0445 \u043D\u0430\u0440\u0438\u0441\u043E\u0432\u0430\u043D\u043D\u044B\u0445 \u0446\u0435\u043D."));
-    const recent = candles.slice(-32);
-    const all = recent.flatMap((c) => [c.low, c.high]);
-    const min = Math.min(...all), max = Math.max(...all), span = Math.max(1, max - min);
-    const vol = Math.max(1, ...recent.map((x) => x.volume_gm_cents));
-    const xWidth = 320 / recent.length;
-    const current = recent.find((c) => c.time === selected) || recent[recent.length - 1];
-    const stamp = (sec) => new Date(sec * 1000).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-    const y = (price) => 16 + (max - price) / span * 165;
-    return React.createElement(React.Fragment, null,
-        React.createElement("div", { className: "candle-inspector", role: "status" },
-            React.createElement("b", null, stamp(current.time)),
-            React.createElement("span", null,
-                "O ",
-                nf(current.open / 100)),
-            React.createElement("span", null,
-                "H ",
-                nf(current.high / 100)),
-            React.createElement("span", null,
-                "L ",
-                nf(current.low / 100)),
-            React.createElement("span", null,
-                "C ",
-                nf(current.close / 100)),
-            React.createElement("small", null,
-                "\u041E\u0431\u044A\u0451\u043C: ",
-                nf(current.volume_gm_cents / 100),
-                " GM \u00B7 ",
-                current.trades,
-                " \u0441\u0434\u0435\u043B\u043E\u043A")),
-        React.createElement("svg", { className: "candles", role: "img", "aria-label": "\u0412\u044B\u0431\u0438\u0440\u0430\u0435\u043C\u044B\u0435 \u0441\u0432\u0435\u0447\u0438 OHLCV, \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u043D\u044B\u0435 \u0438\u0437 \u0438\u0441\u043F\u043E\u043B\u043D\u0435\u043D\u043D\u044B\u0445 \u0432\u0438\u0440\u0442\u0443\u0430\u043B\u044C\u043D\u044B\u0445 \u043E\u0440\u0434\u0435\u0440\u043E\u0432", viewBox: "0 0 360 265", preserveAspectRatio: "none" },
-            [0, 1, 2, 3, 4].map(i => React.createElement("g", { key: i },
-                React.createElement("line", { x1: "5", x2: "325", y1: 16 + i * 42, y2: 16 + i * 42, className: "chart-grid" }),
-                React.createElement("text", { x: "330", y: 18 + i * 42, className: "price-label" }, nf((max - span * i / 4) / 100, 2)))),
-            recent.map((c, i) => {
-                const x = 5 + i * xWidth + 2, w = Math.max(2, xWidth - 3), positive = c.close >= c.open, col = positive ? '#54B39C' : '#CF7F91';
-                return React.createElement("g", { key: c.time, onClick: () => onSelect(c.time), style: { cursor: 'pointer', opacity: selected !== null && selected !== c.time ? 0.72 : 1 } },
-                    React.createElement("title", null, stamp(c.time) + ' · O ' + nf(c.open / 100) + ' H ' + nf(c.high / 100) + ' L ' + nf(c.low / 100) + ' C ' + nf(c.close / 100) + ' · ' + nf(c.volume_gm_cents / 100) + ' GM'),
-                    React.createElement("line", { x1: x + w / 2, x2: x + w / 2, y1: y(c.high), y2: y(c.low), stroke: col, strokeWidth: "1.5" }),
-                    React.createElement("rect", { x: x, y: Math.min(y(c.open), y(c.close)), width: w, height: Math.max(2, Math.abs(y(c.open) - y(c.close))), fill: col }),
-                    React.createElement("rect", { x: x, y: 258 - (c.volume_gm_cents / vol) * 54, width: w, height: (c.volume_gm_cents / vol) * 54, fill: col, opacity: ".66" }));
-            }),
-            [0, Math.floor((recent.length - 1) / 2), recent.length - 1].filter((x, i, a) => a.indexOf(x) === i).map(i => React.createElement("text", { key: 'time-' + i, x: 5 + i * xWidth, y: "197", className: "time-label" }, new Date(recent[i].time * 1000).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })))));
+
+function Candles({theme,candles=[],selected=null,onSelect=()=>{},interval='1h'}){
+ const e=React.createElement;
+ const valid=(Array.isArray(candles)?candles:[]).filter(c=>
+  c&&Number.isFinite(c.time)&&Number.isFinite(c.open)&&Number.isFinite(c.high)&&
+  Number.isFinite(c.low)&&Number.isFinite(c.close)&&Number.isFinite(c.volume_gm_cents)&&
+  c.low<=Math.min(c.open,c.close)&&c.high>=Math.max(c.open,c.close)&&c.volume_gm_cents>=0
+ ).slice(-48);
+ if(!valid.length)return e('div',{className:'terminal-empty-chart',role:'status'},
+   e('div',{className:'terminal-empty-chart-mark'},e(Icon,{theme,name:'candlesticks',size:34})),
+   e('strong',null,'Пока нет исполненных сделок'),
+   e('span',null,'График появится после первой сделки GM/CR. Пустые интервалы не заполняются искусственными свечами.'));
+ const n=valid.length;
+ const rawLow=Math.min(...valid.map(c=>c.low)),rawHigh=Math.max(...valid.map(c=>c.high));
+ const middle=(rawHigh+rawLow)/2;
+ const spread=Math.max(6,Math.ceil(Math.max(rawHigh-rawLow, middle*.07)));
+ const boundLow=Math.max(0,Math.floor(middle-spread*.72));
+ const boundHigh=Math.max(rawHigh+1,Math.ceil(middle+spread*.72));
+ const top=20,bottom=160,volumeTop=191,volumeBottom=222;
+ const mapPrice=p=>top+(boundHigh-p)/(boundHigh-boundLow)*(bottom-top);
+ const startX=15,endX=283,width=endX-startX;
+ const step=width/n;
+ const centerAt=i=>startX+step*(i+.5);
+ const candleWidth=Math.min(13,Math.max(3,step*.58));
+ const volumeMax=Math.max(1,...valid.map(c=>c.volume_gm_cents));
+ const fmt=t=>new Date(t*1000).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+ const fmtTime=t=>interval==='1d'||interval==='4h'?new Date(t*1000).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'}):new Date(t*1000).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+ const picked=valid.find(c=>c.time===selected)||valid[n-1];
+ const up=theme==='dark'?'#73D9BA':'#278E78';
+ const down=theme==='dark'?'#FF98A3':'#C85A72';
+ const flat=theme==='dark'?'#B2BAD0':'#717F9B';
+ const brush=c=>c.close>c.open?up:c.close<c.open?down:flat;
+ const captionIndices=[0,Math.floor((n-1)/2),n-1].filter((x,i,a)=>a.indexOf(x)===i);
+ return e('div',{className:'terminal-candle-view'},
+  e('div',{className:'terminal-candle-stage'},
+   e('svg',{className:'terminal-candles',viewBox:'0 0 350 252',role:'img',
+    'aria-label':n+' подтверждённых свечей GM/CR; график построен только по реальным сделкам',
+    preserveAspectRatio:'xMidYMid meet'},
+    [0,1,2,3,4].map(i=>{
+     const price=boundHigh-(boundHigh-boundLow)*i/4;
+     const y=top+(bottom-top)*i/4;
+     return e('g',{key:'grid'+i},
+      e('line',{x1:startX,x2:endX,y1:y,y2:y,className:'terminal-chart-grid'}),
+      e('text',{x:292,y:y+3.5,className:'terminal-chart-price'},nf(price/100,2)));
+    }),
+    e('line',{x1:startX,x2:endX,y1:volumeTop-12,y2:volumeTop-12,className:'terminal-chart-separator'}),
+    e('text',{x:startX,y:volumeTop-2,className:'terminal-chart-vol-title'},'VOLUME · GM'),
+    valid.map((c,i)=>{
+     const x=centerAt(i),high=mapPrice(c.high),low=mapPrice(c.low),
+       y1=mapPrice(c.open),y2=mapPrice(c.close),bodyTop=Math.min(y1,y2),
+       bodyHeight=Math.max(2.5,Math.abs(y2-y1));
+     const col=brush(c);
+     const volumeHeight=Math.max(2,c.volume_gm_cents/volumeMax*26);
+     const active=c.time===picked.time;
+     return e('g',{key:c.time,className:active?'terminal-active-candle':'',
+       onClick:()=>onSelect(c.time),tabIndex:0,role:'button',
+       'aria-label':fmt(c.time)+'; Open '+nf(c.open/100)+'; High '+nf(c.high/100)+'; Low '+nf(c.low/100)+'; Close '+nf(c.close/100),
+       onKeyDown:ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();onSelect(c.time);}}},
+      e('title',null,fmt(c.time)+' · O '+nf(c.open/100)+' H '+nf(c.high/100)+' L '+nf(c.low/100)+' C '+nf(c.close/100)),
+      active?e('line',{x1:x,x2:x,y1:top-5,y2:volumeBottom+1,className:'terminal-chart-crosshair'}):null,
+      c.high>c.low?e('line',{x1:x,x2:x,y1:high,y2:low,stroke:col,strokeWidth:1.45,strokeLinecap:'round'}):null,
+      e('rect',{x:x-candleWidth/2,y:bodyTop-(y1===y2?1.25:0),width:candleWidth,height:bodyHeight,rx:1.3,fill:col}),
+      e('rect',{x:x-candleWidth/2,y:volumeBottom-volumeHeight,width:candleWidth,height:volumeHeight,rx:1.1,fill:col,opacity:.5}),
+      e('rect',{x:x-Math.max(11,step/2),y:top-7,width:Math.max(22,step),height:volumeBottom-top+13,
+       fill:'transparent','aria-hidden':true})
+     );
+    }),
+    captionIndices.map(i=>e('text',{key:'label'+i,x:centerAt(i),y:246,
+     textAnchor:i===0&&n>1?'start':i===n-1&&n>1?'end':'middle',
+     className:'terminal-chart-time'},fmtTime(valid[i].time)))
+   )),
+  e('div',{className:'terminal-candle-inspector',role:'status'},
+   e('div',{className:'terminal-inspector-heading'},
+    e('b',null,fmt(picked.time)),
+    e('span',null,n===1?'1 свеча по реальным сделкам':n+' свечей с реальными сделками')),
+   e('div',{className:'terminal-inspector-grid'},
+    [['O',picked.open],['H',picked.high],['L',picked.low],['C',picked.close]].map(([name,value])=>
+      e('span',{key:name},e('small',null,name),e('b',null,nf(value/100)))),
+    e('span',null,e('small',null,'VOL'),e('b',null,nf(picked.volume_gm_cents/100))),
+    e('span',null,e('small',null,'TRADES'),e('b',null,String(picked.trades||0))))
+  ),
+  e('div',{className:'terminal-candle-legend'},
+   e('span',null,e('i',{className:'terminal-legend-up'}),' Рост'),
+   e('span',null,e('i',{className:'terminal-legend-down'}),' Падение'),
+   e('span',null,e('i',{className:'terminal-legend-flat'}),' Без изменения'),
+   e('span',{className:'terminal-legend-note'},'Без искусственных свечей'))
+ );
 }
+
 function BarButton({ name, title, theme, selected = false, onClick }) { return React.createElement("button", { className: 'nav-entry ' + (selected ? 'active' : ''), onClick: onClick, "aria-label": title, "aria-current": selected ? 'page' : undefined },
     React.createElement(Icon, { theme: theme, name: name, size: 23 }),
     React.createElement("span", null, title)); }
@@ -107,6 +147,7 @@ function App() {
     const [toast, setToast] = React.useState('');
     const [period, setPeriod] = React.useState('1h');
     const [selectedCandle, setSelectedCandle] = React.useState(null);
+ const [tradeTab, setTradeTab] = React.useState('book');
     const [side, setSide] = React.useState('buy');
     const [amount, setAmount] = React.useState('');
     const [taskFilter, setTaskFilter] = React.useState('All');
@@ -392,73 +433,102 @@ function App() {
   return isLight?lightHome:darkHome;
  }
  
+ 
  function Trading(){
   const e=React.createElement;
   const pre=liveTicker?.premarket??!liveBook?.auction_done;
   const remain=Math.max(0,(liveTicker?.auction_end_at||liveBook?.auction_end_at||0)-clock);
   const countdown=[Math.floor(remain/3600),Math.floor(remain%3600/60),remain%60].map(x=>String(x).padStart(2,'0')).join(':');
-  const price=liveTicker?.last_price;
-  const book=liveBook||{bids:[],asks:[]};
-  const bids=book.bids||[],asks=book.asks||[];
-  const orders=liveOrders.filter(o=>o.status==='open');
+  const quote=pre?liveTicker?.indicative?.price:liveTicker?.last_price;
+  const bids=liveBook?.bids||[],asks=liveBook?.asks||[];
+  const activeOrders=liveOrders.filter(o=>o.status==='open');
   const isOwner=['owner','coowner'].includes(liveRole);
-  const openTrade=kind=>{setSide(kind);setOrderType('limit');setModal('tradeForm')};
+  const topDepth=Math.max(1,...[...bids,...asks].map(o=>o.gm_cents));
+  const openTrade=kind=>{setSide(kind);setOrderType('limit');setModal('tradeForm');};
+  const tradeName=pre?'PREMARKET':liveTicker?.trade_test_mode?'TEST SPOT':'SPOT';
+  const timeframe=['1m','5m','15m','1h','4h','1d'];
+  const tabNames=[['book','Стакан'],['recent','Сделки'],['orders','Мои ордера']];
+  const depthRows=(orders,kind)=>orders.length?
+   orders.slice(0,10).map(o=>e('div',{className:'terminal-depth-row '+kind,key:kind+o.limit_price},
+     e('div',{className:'terminal-depth-bar',style:{width:Math.max(3,Math.min(100,100*o.gm_cents/topDepth))+'%'}}),
+     e('span',null,nf(o.limit_price/100)),
+     e('b',null,nf(o.gm_cents/100,2))))
+   :e('p',{className:'terminal-table-empty'},'Пока нет заявок');
+  const bookPanel=e('div',{className:'terminal-depth'},
+   e('div',{className:'terminal-depth-head'},
+    e('span',null,'Цена',e('small',null,'CR / GM')),
+    e('span',null,'Объём',e('small',null,'GM'))),
+   e('div',{className:'terminal-depth-columns'},
+    e('div',{className:'terminal-depth-column'},
+     e('div',{className:'terminal-depth-label bid'},e('i'),e('b',null,'ПОКУПКА')),depthRows(bids,'bid')),
+    e('div',{className:'terminal-depth-column'},
+     e('div',{className:'terminal-depth-label ask'},e('i'),e('b',null,'ПРОДАЖА')),depthRows(asks,'ask'))),
+   e('div',{className:'terminal-depth-bottom'},e('span',null,'Bid ',e('b',null,liveTicker?.best_bid?nf(liveTicker.best_bid/100):'—')),
+     e('span',null,'Ask ',e('b',null,liveTicker?.best_ask?nf(liveTicker.best_ask/100):'—'))));
+  const tradesPanel=e('div',{className:'terminal-trade-history'},
+   recentTrades.length?recentTrades.map((t,i)=>e('div',{className:'terminal-history-row',key:String(t.at||i)+'-'+i},
+    e('span',null,new Date((t.at||0)*1000).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})),
+    e('b',null,nf(t.price/100)+' CR'),
+    e('span',null,nf(t.amount_cents/100)+' GM')))
+   :e('div',{className:'terminal-tab-empty'},icon('clock',30),e('b',null,'Сделок пока нет'),
+    e('small',null,'Здесь появятся исполненные, подтверждённые сервером сделки.')));
+  const ordersPanel=e('div',{className:'terminal-my-orders'},
+   activeOrders.length?activeOrders.slice(0,25).map(o=>e('div',{className:'trade-open-row terminal-own-row',key:o.id},
+    e('div',null,
+     e('b',{className:o.side==='buy'?'terminal-order-buy':'terminal-order-sell'},o.side==='buy'?'Покупка GM':'Продажа GM'),
+     e('small',null,nf(o.remaining_cents/100)+' GM · '+nf(o.limit_price/100)+' CR/GM')),
+    e('button',{type:'button',onClick:()=>cancelLiveOrder(o.id)},'Отменить')))
+   :e('div',{className:'terminal-tab-empty'},icon('layers',30),
+    e('b',null,'Активных ордеров нет'),e('small',null,'Выбери «Купить» или «Продать», чтобы создать Limit-заявку.')));
   return e(React.Fragment,null,
-   top('GM / CR · Trade',true,'candlesticks'),
-   e('section',{className:'trade-hub '+(isLight?'pearl-card':'metallic-card')},
-    e('div',{className:'trade-heading'},
-     e('div',{className:'trade-pair-icon'},icon('gm-coin-orbit',36)),
-     e('div',{className:'trade-pair-name'},e('strong',null,'GM / CR'),e('small',null,'Виртуальная игровая биржа')),
-     e('span',{className:'trade-status'},e('i',{className:'trade-status-dot'}),pre?'PREMARKET':liveTicker?.trade_test_mode?'TEST SPOT':'SPOT')),
-    e('div',{className:'trade-spot-info'},e('span',null,pre?'До открытия '+countdown:'Торговля доступна'),e('button',{type:'button',className:'trade-refresh',onClick:refreshLive},icon('refresh',16),' Обновить')),
-    e('div',{className:'trade-price-hero'},
-     e('span',null,pre?'Индикативная цена':'Последняя цена сделки'),
-     e('div',null,pre?(liveTicker?.indicative?.price?nf(liveTicker.indicative.price/100):'—'):(price?nf(price/100):'—'),e('small',null,'CR / GM')),
-     e('p',null,price&&!pre?'Цена по последней исполненной сделке':'Цена появится после первой исполненной сделки между разными игроками')),
-    e('div',{className:'trade-metric-row'},
-     e('span',null,'Объём 24 ч',e('b',null,nf((liveTicker?.volume_24h_gm_cents||0)/100)+' GM')),
-     e('span',null,'Сделок 24 ч',e('b',null,String(liveTicker?.trades_24h||0))),
-     e('span',null,'Стакан',e('b',null,(bids.length+asks.length)+' уровней')))),
-   e('section',{className:'trade-wallet '+(isLight?'pearl-card':'metallic-card')},
-    e('div',{className:'trade-wallet-title'},icon('wallet',22),e('b',null,'Доступно для торговли')),
-    e('div',{className:'trade-wallet-balances'},
-     e('span',null,e('small',null,'GM'),e('strong',null,nf(wallet.gm))),
-     e('span',null,e('small',null,'CR'),e('strong',null,nf(wallet.cr)))),
-    (isOwner||wallet.gm<10||wallet.cr<10)?e('div',{className:'trade-wallet-tip'},
-     e('span',null,wallet.gm<10||wallet.cr<10?'Для продажи нужны GM, для покупки — CR. Открытые заявки резервируют средства.':'Хочешь проверить больше ордеров? Пополни виртуальный баланс через Admin.'),
-     e('button',{type:'button',onClick:()=>goto(isOwner?'admin':'mining')},isOwner?'Тестовые начисления':'Добывать GM',icon('chevron-right',16))):null),
-   e('div',{className:'trade-cta-row'},
-    e('button',{type:'button',className:'trade-cta buy',onClick:()=>openTrade('buy')},icon('deposit',23),e('span',null,e('b',null,'Купить GM'),e('small',null,'Оплата в CR'))),
-    e('button',{type:'button',className:'trade-cta sell',onClick:()=>openTrade('sell')},icon('withdraw',23),e('span',null,e('b',null,'Продать GM'),e('small',null,'Получить CR')))),
-   e('section',{className:'trade-chart-section '+(isLight?'pearl-card':'metallic-card')},
-    e('div',{className:'trade-section-head'},e('div',null,icon('candlesticks',22),e('b',null,'График сделок')),e('span',null,'OHLCV · без выдуманных цен')),
-    e('div',{className:'intervals trade-intervals'},['1m','5m','15m','1h','4h','1d'].map(i=>e('button',{type:'button',key:i,className:period===i?'on':'',onClick:()=>setPeriod(i)},i))),
-    e(Candles,{theme,candles:liveCandles,selected:selectedCandle,onSelect:setSelectedCandle})),
-   e('section',{className:'trade-orderbook '+(isLight?'pearl-card':'metallic-card')},
-    e('div',{className:'trade-section-head'},e('div',null,icon('database',22),e('b',null,'Стакан заявок')),e('span',null,'CR за 1 GM')),
-    e('div',{className:'trade-book-grid'},
-     e('div',null,e('strong',{className:'trade-buy-heading'},'Покупки'),
-      bids.length?bids.slice(0,8).map((o,i)=>e('div',{className:'trade-book-level',key:'b'+o.limit_price},
-       e('b',null,nf(o.limit_price/100)),e('span',null,nf(o.gm_cents/100)+' GM'))):e('small',{className:'trade-book-empty'},'Нет ордеров')),
-     e('div',null,e('strong',{className:'trade-sell-heading'},'Продажи'),
-      asks.length?asks.slice(0,8).map((o,i)=>e('div',{className:'trade-book-level',key:'a'+o.limit_price},
-       e('b',null,nf(o.limit_price/100)),e('span',null,nf(o.gm_cents/100)+' GM'))):e('small',{className:'trade-book-empty'},'Нет ордеров'))),
-    e('p',{className:'trade-book-footer'},'Лучший bid: '+(liveTicker?.best_bid?nf(liveTicker.best_bid/100):'—')+' CR · ask: '+(liveTicker?.best_ask?nf(liveTicker.best_ask/100):'—')+' CR')),
-   e('section',{className:'trade-open-orders '+(isLight?'pearl-card':'metallic-card')},
-    e('div',{className:'trade-section-head'},e('div',null,icon('clock',22),e('b',null,'Мои заявки')),e('span',null,orders.length+' активных')),
-    orders.length?orders.slice(0,20).map(o=>e('div',{className:'trade-open-row',key:o.id},
-     e('div',null,e('b',null,o.side==='buy'?'Покупка':'Продажа'),e('small',null,nf(o.remaining_cents/100)+' GM · '+nf(o.limit_price/100)+' CR/GM')),
-     e('button',{type:'button',onClick:()=>cancelLiveOrder(o.id)},'Отменить'))):
-     e('p',{className:'trade-book-empty'},'Пока нет активных заявок. Создай ордер через кнопки выше.')),
-   !pre?e('section',{className:'trade-recent '+(isLight?'pearl-card':'metallic-card')},
-    e('div',{className:'trade-section-head'},e('div',null,icon('trending-up',22),e('b',null,'Последние сделки')),e('span',null,'Подтверждены сервером')),
-    recentTrades.length?recentTrades.map((t,i)=>e('div',{className:'trade-fill-row',key:i},
-     e('b',null,nf(t.price/100)+' CR'),e('span',null,nf(t.amount_cents/100)+' GM'))):
-     e('p',{className:'trade-book-empty'},'Сделок ещё не было. Для исполнения нужны встречные заявки от разных игроков.')):null,
-   e('p',{className:'trade-disclaimer'},'Виртуальные GM/CR — не реальные деньги. Ордера проверяются сервером; график и объём строятся только по исполненным сделкам.')
+   top('Trade',true,'more'),
+   e('section',{className:'terminal-shell'},
+    e('div',{className:'terminal-pair-top'},
+     e('div',{className:'terminal-pair-logo'},icon('gm-coin-orbit',39)),
+     e('div',{className:'terminal-pair-text'},e('b',null,'GM / CR'),e('small',null,'GM TOKEN · торговая пара')),
+     e('div',{className:'terminal-live-tag'},e('i',{className:'terminal-live-dot'}),tradeName)),
+    e('div',{className:'terminal-quote'},
+     e('div',{className:'terminal-quote-label'},e('span',null,pre?'Индикативная цена':'Последняя цена сделки'),
+      e('button',{type:'button',onClick:refreshLive,'aria-label':'Обновить котировки'},icon('refresh',17))),
+     e('div',{className:'terminal-quote-value'},quote?nf(quote/100):'—',e('small',null,'CR')),
+     e('p',null,quote?pre?'Ориентировочная цена не означает исполненную сделку.':'Подтверждено исполненной сделкой GM/CR.':'Цена появится после первой исполненной сделки между разными игроками')),
+    e('div',{className:'terminal-metrics'},
+     e('div',null,e('small',null,'ОБЪЁМ · 24 Ч'),e('b',null,nf((liveTicker?.volume_24h_gm_cents||0)/100)+' GM')),
+     e('div',null,e('small',null,'СДЕЛОК · 24 Ч'),e('b',null,String(liveTicker?.trades_24h||0))),
+     e('div',null,e('small',null,'РЕЖИМ'),e('b',null,pre?countdown:'Активен'))),
+    e('div',{className:'terminal-chart-toolbar'},
+     e('div',null,e('b',null,'ГРАФИК'),e('small',null,'Свечи OHLCV')),
+     e('div',{className:'terminal-chart-truth'},icon('shield-check',15),'Реальные сделки')),
+    e('div',{className:'terminal-periods','aria-label':'Интервал свечей'},
+     timeframe.map(t=>e('button',{type:'button',key:t,className:period===t?'active':'',
+       'aria-pressed':period===t,onClick:()=>{setSelectedCandle(null);setPeriod(t);}},t))),
+    e(Candles,{theme,candles:liveCandles,selected:selectedCandle,onSelect:setSelectedCandle,interval:period})
+   ),
+   e('section',{className:'terminal-controls'},
+    e('div',{className:'trade-wallet-balances terminal-wallet-line'},
+     e('div',null,e('small',null,'Доступно для торговли'),e('span',null,icon('wallet',17),' Твой баланс')),
+     e('div',{className:'terminal-wallet-amounts'},
+      e('span',null,e('b',null,nf(wallet.gm)),' GM'),
+      e('span',null,e('b',null,nf(wallet.cr)),' CR'))),
+    e('div',{className:'trade-cta-row terminal-buy-sell'},
+     e('button',{type:'button',className:'trade-cta buy',onClick:()=>openTrade('buy')},
+      icon('plus',19),e('span',null,e('b',null,'КУПИТЬ GM'),e('small',null,'За игровые CR'))),
+     e('button',{type:'button',className:'trade-cta sell',onClick:()=>openTrade('sell')},
+      icon('minus',19),e('span',null,e('b',null,'ПРОДАТЬ GM'),e('small',null,'Получить CR')))),
+    (isOwner||wallet.gm<10)?e('div',{className:'terminal-funding'},
+     e('span',null,'Доступно для торговли: GM и CR; открытые заявки резервируют средства.'),
+     e('button',{type:'button',onClick:()=>goto(isOwner?'admin':'mining')},
+      isOwner?'Пополнить тестовый баланс':'Mining',icon('chevron-right',16))):null),
+   e('section',{className:'terminal-data-panel'},
+    e('div',{className:'terminal-data-tabs',role:'tablist','aria-label':'Данные рынка'},
+     tabNames.map(([value,label])=>e('button',{type:'button',key:value,role:'tab',
+      className:tradeTab===value?'active':'','aria-selected':tradeTab===value,
+      onClick:()=>setTradeTab(value)},label))),
+    e('div',{className:'terminal-tab-content'},tradeTab==='book'?bookPanel:tradeTab==='recent'?tradesPanel:ordersPanel)),
+   e('p',{className:'terminal-fine-print'},'GM и CR — виртуальные игровые единицы. Свечи и объём рассчитываются только по исполненным сделкам. Комиссия 0,5% для каждой стороны при исполнении.')
   );
  }
- 
+
  function TradeOrderModal(){
   const e=React.createElement;
   const pre=!!liveTicker?.premarket;
