@@ -113,7 +113,7 @@ function App(){
  React.useEffect(()=>{try{store.setItem('gm_theme',theme)}catch{};webapp?.setBackgroundColor?.(theme==='dark'?'#030406':'#E8EAF4')},[theme]);
  React.useEffect(()=>{try{window.localStorage.removeItem('gm_demo_wallet')}catch{}},[]);
  React.useEffect(()=>{const timer=setInterval(()=>setClock(Math.floor(Date.now()/1000)),1000);return ()=>clearInterval(timer)},[]);
- React.useEffect(()=>{webapp?.ready?.();webapp?.expand?.();const init=webapp?.initData;if(!init){setBackendStatus('Открой Mini App через @gm_token_test_bot: вход в браузере без Telegram отключён');return;}fetch('/api/bootstrap',{headers:{'Authorization':`tma ${init}`}}).then(async r=>{if(!r.ok)throw Error('auth');const d=await r.json();setDemo(false);setLiveRole(d.user?.role||'player');setBackendStatus(`Telegram аккаунт: ${d.user?.id||'подтверждён'}`);if(d.wallet) setW((w:Wallet)=>({...w,gm:d.wallet.gm/100,cr:d.wallet.cr/100,vault:d.wallet.vault/100,level:d.user.level,xp:d.user.xp}));}).catch((e:any)=>{setDemo(true);setBackendStatus('Ошибка авторизации Telegram. Попробуй открыть бот заново. '+String(e.message||''))})},[]);
+ React.useEffect(()=>{webapp?.ready?.();webapp?.expand?.();const init=webapp?.initData;if(!init){setBackendStatus('Открой Mini App через @gm_token_test_bot: вход в браузере без Telegram отключён');return;}fetch('/api/bootstrap',{headers:{'Authorization':`tma ${init}`}}).then(async r=>{const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(String(d?.error||('HTTP '+r.status)));setDemo(false);setLiveRole(d.user?.role||'player');setBackendStatus(`Telegram аккаунт: ${d.user?.id||'подтверждён'}`);if(d.wallet) setW((w:Wallet)=>({...w,gm:d.wallet.gm/100,cr:d.wallet.cr/100,vault:d.wallet.vault/100,level:d.user.level,xp:d.user.xp}));}).catch((e:any)=>{setDemo(true);setBackendStatus('Ошибка авторизации Telegram. Попробуй открыть бот заново. '+String(e.message||''))})},[]);
  const api=async(path:string,payload?:any)=>{
    const init=webapp?.initData;if(!init){flash('Открой приложение внутри Telegram через @gm_token_test_bot');return null;}
    try{const r=await fetch(path,{method:payload?'POST':'GET',headers:{Authorization:'tma '+init,'Content-Type':'application/json'},body:payload?JSON.stringify(payload):undefined});const d=await r.json();if(!r.ok)throw Error(d.error||'Ошибка сервера');return d}
@@ -219,7 +219,24 @@ function App(){
  }
  function More(){return <>{top('Все разделы',true,'more')}<div className="more-grid">{[['lightning','Mining','mining'],['coins','Holding Vault','vault'],['swap','GM Shop','shop'],['gift','GM Boxes','boxes'],['candlesticks','Биржа GM/CR','trade'],['gift','Daily Reward','reward'],['tasks','Задания','tasks'],['trophy','Рейтинг','leaderboard'],['friends','Рефералы','referrals'],['clock','История','history'],['shield-check','Support','support'],['settings','Settings','settings'],['crown','Admin','admin']].map(([i,t,s])=><button className="earn-item pearl-card" key={t} onClick={()=>goto(s as Route)}>{icon(i,37,true)}<span><b>{t}</b></span>{icon('chevron-right',18)}</button>)}</div></>}
  function Streak(){return <>{top('Daily Streak',true,'flame')}<div className="referral-hero pearl-card">{icon('flame',90,true)}<h1>{wallet.streak} дней</h1><p>Серия ежедневных посещений. Повторное получение награды в один день запрещено.</p></div><GButton theme={theme} onClick={()=>goto('reward')}>Ежедневная награда</GButton></>}
- if(demo){return <div className={'application theme-'+theme} style={{minHeight:'100vh',display:'grid',placeItems:'center',padding:24}}><div className="auth-gate pearl-card"><Brand theme={theme} size={86}/><h1>GM TOKEN</h1><b>Требуется вход через Telegram</b><p>{backendStatus}</p><p>Здесь нет демобалансов, вымышленных игроков или графиков. После входа ты увидишь только собственные серверные данные.</p><a href="https://t.me/gm_token_test_bot" target="_blank" rel="noreferrer">Открыть @gm_token_test_bot</a><button onClick={()=>setTheme(theme==='dark'?'light':'dark')}>Сменить тему</button></div></div>}
+ if(demo){return <main className={'application auth-page theme-'+theme}>
+  <div className="auth-ambient" aria-hidden="true"/>
+  <section className="auth-gate pearl-card" aria-labelledby="auth-title">
+   <div className="auth-brand"><Brand theme={theme} size={78}/><div className="auth-brand-copy"><span>TELEGRAM MINI APP</span><h1 id="auth-title">GM TOKEN</h1></div></div>
+   <div className="auth-divider"/>
+   <div className="auth-status" role="status"><span className="auth-status-dot" aria-hidden="true"/><div><strong>Требуется вход через Telegram</strong><p>{backendStatus}</p></div></div>
+   <a className="auth-cta" href="https://t.me/gm_token_test_bot" target="_blank" rel="noreferrer">
+    <span className="auth-cta-icon"><Icon name="telegram" theme={theme} size={29}/></span>
+    <span className="auth-cta-copy"><strong>Открыть в Telegram</strong><small>@gm_token_test_bot</small></span>
+    <Icon name="chevron-right" theme={theme} size={22}/>
+   </a>
+   <div className="auth-theme-row"><span>Оформление</span><div className="auth-theme-toggle" role="group" aria-label="Выбор темы">
+    <button type="button" className={theme==='light'?'active':''} aria-pressed={theme==='light'} onClick={()=>setTheme('light')}><span className="auth-theme-mark auth-theme-light"/>Светлая</button>
+    <button type="button" className={theme==='dark'?'active':''} aria-pressed={theme==='dark'} onClick={()=>setTheme('dark')}><span className="auth-theme-mark auth-theme-dark"/>Тёмная</button>
+   </div></div>
+   <div className="auth-privacy"><Icon name="shield-check" theme={theme} size={22}/><span>Игровые данные появятся только после защищённого входа. Демобалансов здесь нет.</span></div>
+  </section>
+ </main>}
  let view:any;
  switch(screen){case 'home':view=Home();break;case 'trade':view=Trading();break;case 'earn':view=Earn();break;case 'tasks':view=Tasks();break;case 'leaderboard':view=Leaderboard();break;case 'profile':view=Profile();break;case 'reward':view=Reward();break;case 'splash':view=Splash();break;case 'mining':view=Mining();break;case 'vault':view=Vault();break;case 'shop':view=Shop();break;case 'boxes':view=Boxes();break;case 'referrals':view=Referrals();break;case 'history':view=History();break;case 'settings':view=Settings();break;case 'support':view=Support();break;case 'admin':view=Admin();break;case 'achievements':view=Achievements();break;case 'more':view=More();break;case 'streak':view=Streak();break;default:view=Home();}
  return <div className={'application theme-'+theme+(webapp?.initData?' is-telegram':'')}>

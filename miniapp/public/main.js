@@ -158,8 +158,7 @@ function App() {
     React.useEffect(() => { webapp?.ready?.(); webapp?.expand?.(); const init = webapp?.initData; if (!init) {
         setBackendStatus('Открой Mini App через @gm_token_test_bot: вход в браузере без Telegram отключён');
         return;
-    } fetch('/api/bootstrap', { headers: { 'Authorization': `tma ${init}` } }).then(async (r) => { if (!r.ok)
-        throw Error('auth'); const d = await r.json(); setDemo(false); setLiveRole(d.user?.role || 'player'); setBackendStatus(`Telegram аккаунт: ${d.user?.id || 'подтверждён'}`); if (d.wallet)
+    } fetch('/api/bootstrap', { headers: { 'Authorization': `tma ${init}` } }).then(async (r) => { const d = await r.json().catch(() => ({})); if (!r.ok) throw Error(String(d?.error || ('HTTP ' + r.status))); setDemo(false); setLiveRole(d.user?.role || 'player'); setBackendStatus(`Telegram аккаунт: ${d.user?.id || 'подтверждён'}`); if (d.wallet)
         setW((w) => ({ ...w, gm: d.wallet.gm / 100, cr: d.wallet.cr / 100, vault: d.wallet.vault / 100, level: d.user.level, xp: d.user.xp })); }).catch((e) => { setDemo(true); setBackendStatus('Ошибка авторизации Telegram. Попробуй открыть бот заново. ' + String(e.message || '')); }); }, []);
     const api = async (path, payload) => {
         const init = webapp?.initData;
@@ -878,15 +877,25 @@ function App() {
             React.createElement("p", null, "\u0421\u0435\u0440\u0438\u044F \u0435\u0436\u0435\u0434\u043D\u0435\u0432\u043D\u044B\u0445 \u043F\u043E\u0441\u0435\u0449\u0435\u043D\u0438\u0439. \u041F\u043E\u0432\u0442\u043E\u0440\u043D\u043E\u0435 \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435 \u043D\u0430\u0433\u0440\u0430\u0434\u044B \u0432 \u043E\u0434\u0438\u043D \u0434\u0435\u043D\u044C \u0437\u0430\u043F\u0440\u0435\u0449\u0435\u043D\u043E.")),
         React.createElement(GButton, { theme: theme, onClick: () => goto('reward') }, "\u0415\u0436\u0435\u0434\u043D\u0435\u0432\u043D\u0430\u044F \u043D\u0430\u0433\u0440\u0430\u0434\u0430")); }
     if (demo) {
-        return React.createElement("div", { className: 'application theme-' + theme, style: { minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24 } },
-            React.createElement("div", { className: "auth-gate pearl-card" },
-                React.createElement(Brand, { theme: theme, size: 86 }),
-                React.createElement("h1", null, "GM TOKEN"),
-                React.createElement("b", null, "\u0422\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044F \u0432\u0445\u043E\u0434 \u0447\u0435\u0440\u0435\u0437 Telegram"),
-                React.createElement("p", null, backendStatus),
-                React.createElement("p", null, "\u0417\u0434\u0435\u0441\u044C \u043D\u0435\u0442 \u0434\u0435\u043C\u043E\u0431\u0430\u043B\u0430\u043D\u0441\u043E\u0432, \u0432\u044B\u043C\u044B\u0448\u043B\u0435\u043D\u043D\u044B\u0445 \u0438\u0433\u0440\u043E\u043A\u043E\u0432 \u0438\u043B\u0438 \u0433\u0440\u0430\u0444\u0438\u043A\u043E\u0432. \u041F\u043E\u0441\u043B\u0435 \u0432\u0445\u043E\u0434\u0430 \u0442\u044B \u0443\u0432\u0438\u0434\u0438\u0448\u044C \u0442\u043E\u043B\u044C\u043A\u043E \u0441\u043E\u0431\u0441\u0442\u0432\u0435\u043D\u043D\u044B\u0435 \u0441\u0435\u0440\u0432\u0435\u0440\u043D\u044B\u0435 \u0434\u0430\u043D\u043D\u044B\u0435."),
-                React.createElement("a", { href: "https://t.me/gm_token_test_bot", target: "_blank", rel: "noreferrer" }, "\u041E\u0442\u043A\u0440\u044B\u0442\u044C @gm_token_test_bot"),
-                React.createElement("button", { onClick: () => setTheme(theme === 'dark' ? 'light' : 'dark') }, "\u0421\u043C\u0435\u043D\u0438\u0442\u044C \u0442\u0435\u043C\u0443")));
+      const e = React.createElement;
+      return e("main", {className: 'application auth-page theme-' + theme},
+        e("div", {className: "auth-ambient", "aria-hidden": "true"}),
+        e("section", {className: "auth-gate pearl-card", "aria-labelledby": "auth-title"},
+          e("div", {className: "auth-brand"},
+            e(Brand, {theme, size:78}),
+            e("div", {className:"auth-brand-copy"}, e("span",null,"TELEGRAM MINI APP"),e("h1",{id:"auth-title"},"GM TOKEN"))),
+          e("div", {className:"auth-divider"}),
+          e("div", {className:"auth-status",role:"status"},e("span",{className:"auth-status-dot","aria-hidden":"true"}),e("div",null,e("strong",null,"Требуется вход через Telegram"),e("p",null,backendStatus))),
+          e("a", {className:"auth-cta",href:"https://t.me/gm_token_test_bot",target:"_blank",rel:"noreferrer"},
+            e("span",{className:"auth-cta-icon"},e(Icon,{name:"telegram",theme,size:29})),
+            e("span",{className:"auth-cta-copy"},e("strong",null,"Открыть в Telegram"),e("small",null,"@gm_token_test_bot")),
+            e(Icon,{name:"chevron-right",theme,size:22})),
+          e("div",{className:"auth-theme-row"},e("span",null,"Оформление"),
+            e("div",{className:"auth-theme-toggle",role:"group","aria-label":"Выбор темы"},
+              e("button",{type:"button",className:theme==='light'?'active':'',"aria-pressed":theme==='light',onClick:()=>setTheme('light')},e("span",{className:"auth-theme-mark auth-theme-light"}),"Светлая"),
+              e("button",{type:"button",className:theme==='dark'?'active':'',"aria-pressed":theme==='dark',onClick:()=>setTheme('dark')},e("span",{className:"auth-theme-mark auth-theme-dark"}),"Тёмная"))),
+          e("div",{className:"auth-privacy"},e(Icon,{name:"shield-check",theme,size:22}),e("span",null,"Игровые данные появятся только после защищённого входа. Демобалансов здесь нет."))
+        ));
     }
     let view;
     switch (screen) {
