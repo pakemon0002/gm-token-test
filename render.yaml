@@ -6,7 +6,7 @@ services:
     runtime: node
     plan: free
     region: frankfurt
-    buildCommand: env -u BOT_TOKEN -u BOT_WEBHOOK_SECRET -u PUBLIC_APP_URL -u OWNER_TELEGRAM_IDS -u OWNER_TOTP_SECRETS -u GM_TEST_OPEN_TRADING -u GM_ADMIN_TEST_GRANTS npm test
+    buildCommand: env -u BOT_TOKEN -u BOT_WEBHOOK_SECRET -u PUBLIC_APP_URL -u OWNER_TELEGRAM_IDS -u OWNER_TOTP_SECRETS -u GM_TEST_OPEN_TRADING -u GM_ADMIN_TEST_GRANTS -u GM_TEST_STARTER_FUNDS npm test
     startCommand: npm start
     healthCheckPath: /api/health
     autoDeploy: false
@@ -20,6 +20,10 @@ services:
       - key: BOT_POLLING
         value: "0"
       - key: GM_ADMIN_TEST_GRANTS
+        value: "1"
+      - key: GM_TEST_OPEN_TRADING
+        value: "1"
+      - key: GM_TEST_STARTER_FUNDS
         value: "1"
       - key: DB_PATH
         value: /tmp/gm-token-test.sqlite

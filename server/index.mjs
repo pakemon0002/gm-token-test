@@ -63,6 +63,18 @@ function upsertUser(user){return tx(()=>{
   const preserved=role!=='player'?role:['owner','coowner'].includes(target.role)?'player':target.role;
   stmt('UPDATE users SET username=?,role=?,last_seen=? WHERE id=?').run(user.username,preserved,t,user.id)
  }
+ // One-time private spot test funding for the two configured owners only.
+ // Move coins from existing reserves; never inflate the total 150M GM / 1B CR.
+ if((role==='owner'||role==='coowner')&&process.env.GM_TEST_STARTER_FUNDS==='1'){
+  const marker='spot-test-starter:'+user.id;
+  if(!stmt('SELECT id FROM journal WHERE id=?').get(marker)){
+   const gm=10000*100,cr=50000*100;
+   if(!stmt("UPDATE pools SET gm=gm-? WHERE name='TREASURY' AND gm>=?").run(gm,gm).changes)throw Error('starter GM reserve insufficient');
+   if(!stmt("UPDATE pools SET cr=cr-? WHERE name='SHOP' AND cr>=?").run(cr,cr).changes)throw Error('starter CR reserve insufficient');
+   stmt('UPDATE wallets SET gm=gm+?,cr=cr+? WHERE user_id=?').run(gm,cr,user.id);
+   stmt('INSERT INTO journal(id,at,actor,kind,info) VALUES(?,?,?,?,?)').run(marker,t,'system','owner_test_starter',JSON.stringify({user:user.id,gm_cents:gm,cr_cents:cr,source_gm:'TREASURY',source_cr:'SHOP',test:true}));
+  }
+ }
  return stmt('SELECT * FROM users WHERE id=?').get(user.id)
 })}
 function roleCheck(user,roles){const role=stmt('SELECT role FROM users WHERE id=?').get(user.id)?.role;if(!roles.includes(role))throw Error('insufficient permission');return role}

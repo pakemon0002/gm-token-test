@@ -259,22 +259,42 @@ function App() {
     const miningClaim = async () => { await gameAction('/api/mining/claim'); };
     const depositVault = async () => { await gameAction('/api/vault/deposit', { amount: vaultAmount.replace(',', '.') }); };
     const withdrawVault = async () => { await gameAction('/api/vault/withdraw', { amount: vaultAmount.replace(',', '.') }); };
-    const submitOrder = async () => { const request = { type: orderType, side, amount: amount.replace(',', '.'), price: orderPrice.replace(',', '.'), duration: orderDuration }; const x = await gameAction('/api/exchange/order', request); if (x) {
-        setModal('');
-        setTradeReady(false);
-        flash(x.auction ? 'Предварительная заявка принята на аукцион' : 'Подтверждённый сервером ордер');
-    } };
-    const cancelLiveOrder = async (id) => { await gameAction('/api/exchange/cancel', { orderId: id }); };
+    const tradeIssue=()=>{
+  const v=String(amount||'').trim().replace(',','.');
+  if(!/^\d{1,13}(\.\d{1,2})?$/.test(v))return 'Введи количество GM с точностью до двух знаков.';
+  const n=Number(v);
+  if(!Number.isFinite(n)||n<10)return 'Минимальная заявка — 10 GM.';
+  if(side==='sell'){
+   if(n>wallet.gm+0.000001)return 'Недостаточно GM: доступно '+nf(wallet.gm)+' GM. Пополни баланс через Admin или Mining.';
+   if(orderType==='market'&&!liveTicker?.best_bid)return 'В стакане нет покупателей для Market-продажи. Используй Limit.';
+  } else if(orderType==='market'&&!liveTicker?.best_ask)return 'В стакане нет продавцов для Market-покупки. Используй Limit.';
+  if(liveTicker?.premarket&&orderType==='market')return 'До завершения Premarket допускаются только Limit-заявки.';
+  const p=String(orderPrice||'').trim().replace(',','.');
+  if(orderType==='limit'&&(!/^\d{1,13}(\.\d{1,2})?$/.test(p)||Number(p)<0.01))return 'Укажи цену Limit не меньше 0,01 CR за 1 GM.';
+  if(side==='buy'){
+   const rate=orderType==='limit'?Number(p):Math.floor(Number(liveTicker?.best_ask||0)*1.03)/100;
+   const locked=Math.ceil(n*rate*100)/100;
+   if(locked>wallet.cr+0.000001)return 'Недостаточно CR: потребуется около '+nf(locked)+' CR, доступно '+nf(wallet.cr)+' CR.';
+  }
+  return '';
+ };
+ const submitOrder=async()=>{
+  const issue=tradeIssue();if(issue){flash(issue);setModal('tradeForm');return;}
+  const request={type:orderType,side,amount:amount.replace(',','.'),price:orderPrice.replace(',','.'),duration:orderDuration};
+  const x=await gameAction('/api/exchange/order',request);
+  if(x){setModal('');setTradeReady(false);flash(x.auction?'Заявка Limit принята на аукцион':'Заявка GM/CR принята сервером');}
+ };
+ const cancelLiveOrder = async (id) => { await gameAction('/api/exchange/cancel', { orderId: id }); };
     const loadHistory = async () => { const x = await api('/api/history'); if (x)
         setServerHistory(x.events || []); };
-    const tradePreview = () => { const n = Number(amount.replace(',', '.')); if (orderType === 'limit' && (!(Number(orderPrice) > 0) || !Number.isFinite(Number(orderPrice)))) {
-        flash('Укажи цену Limit-заявки в CR за 1 GM');
-        return;
-    } if (!(n >= 10)) {
-        flash('Минимум нового ордера — 10 GM');
-        return;
-    } setModalText(`${side === 'buy' ? 'Покупка' : 'Продажа'} ${nf(n)} GM, ${orderType === 'limit' ? 'лимит ' + orderPrice + ' CR/GM' : 'рыночная цена ±3%'}. Комиссия: 0,5% с обеих сторон. Подтверди отправку на сервер.`); setTradeReady(true); setModal('order'); };
-    const loadTickets = async () => {
+    const tradePreview=()=>{
+  const issue=tradeIssue();if(issue){flash(issue);return;}
+  const n=Number(amount.replace(',','.'));
+  const price=Number(orderPrice.replace(',','.'));
+  setModalText((side==='buy'?'Покупка ':'Продажа ')+nf(n)+' GM. '+(orderType==='limit'?'Лимит '+nf(price)+' CR/GM.':'Market с защитой 3% от проскальзывания.')+' Комиссия при исполнении: 0,5% для каждой стороны. Подтверждение отправляет заявку на сервер.');
+  setTradeReady(true);setModal('order');
+ };
+ const loadTickets = async () => {
         try {
             const r = await fetch('/api/tickets', { headers: { Authorization: 'tma ' + webapp?.initData } });
             const x = await r.json();
@@ -371,88 +391,128 @@ function App() {
     shortcuts,pointGuide);
   return isLight?lightHome:darkHome;
  }
- function Trading() {
-        const pre = liveTicker?.premarket ?? !liveBook?.auction_done;
-        const remain = Math.max(0, (liveTicker?.auction_end_at || liveBook?.auction_end_at || 0) - clock);
-        const countdown = [Math.floor(remain / 3600), Math.floor(remain % 3600 / 60), remain % 60].map(x => String(x).padStart(2, '0')).join(':');
-        const p = liveTicker?.last_price;
-        const bid = liveTicker?.best_bid, ask = liveTicker?.best_ask;
-        const book = liveBook || { bids: [], asks: [] };
-        return React.createElement(React.Fragment, null,
-            top('GM/CR · Биржа', true, 'bar-chart'),
-            React.createElement("div", { className: "trade-meta" },
-                React.createElement("b", null, pre ? 'PREMARKET · предварительные заявки' : liveTicker?.trade_test_mode ? 'ТЕСТОВЫЙ SPOT · GM/CR' : 'SPOT · игровой GM/CR'),
-                React.createElement("span", null, pre ? `До открытия ${countdown}` : 'Торговля активна')),
-            React.createElement("div", { className: "market-price-panel pearl-card" },
-                React.createElement("small", null, pre ? 'Предварительная цена (не сделка)' : 'Последняя подтверждённая цена'),
-                React.createElement("div", { className: "price-big" },
-                    pre ? (liveTicker?.indicative?.price ? nf(liveTicker.indicative.price / 100) : '—') : (p ? nf(p / 100) : '—'),
-                    " ",
-                    React.createElement("small", null, "CR / GM")),
-                React.createElement("div", { className: "market-metrics" },
-                    React.createElement("span", null,
-                        "\u041E\u0431\u044A\u0451\u043C 24 \u0447: ",
-                        React.createElement("b", null,
-                            nf((liveTicker?.volume_24h_gm_cents || 0) / 100),
-                            " GM")),
-                    React.createElement("span", null,
-                        "\u0421\u0434\u0435\u043B\u043E\u043A: ",
-                        React.createElement("b", null, liveTicker?.trades_24h || 0))),
-                React.createElement("small", null, pre ? 'Примерный объём на аукционе: ' + nf((liveTicker?.indicative?.volume_gm_cents || 0) / 100) + ' GM · не исполнен' : liveTicker?.trade_test_mode ? 'Тестовая торговля открыта. Цена и объём появятся после настоящих сделок.' : 'Цена и объём только по реально исполненным проверенным ордерам')),
-            React.createElement("div", { className: "intervals" }, ['1m', '5m', '15m', '1h', '4h', '1d'].map(i => React.createElement("button", { className: period === i ? 'on' : '', key: i, onClick: () => setPeriod(i) }, i))),
-            React.createElement(Candles, { theme: theme, candles: liveCandles, selected: selectedCandle, onSelect: setSelectedCandle }),
-            React.createElement("p", { className: "disclaimer" }, pre ? 'Первые 24 часа — только предварительные Limit-заявки. Фактический объём равен нулю, пока сделки не исполняются.' : 'OHLCV получен из реальных сделок. Подозрительные сделки исключаются из доверенных свечей; это не биржа реальных денег.'),
-            React.createElement("div", { className: "market-book pearl-card" },
-                React.createElement("b", null, "\u0421\u0442\u0430\u043A\u0430\u043D \u0437\u0430\u044F\u0432\u043E\u043A \u00B7 GM / CR"),
-                React.createElement("div", { className: "book-columns" },
-                    React.createElement("div", null,
-                        React.createElement("strong", null, "\u041F\u043E\u043A\u0443\u043F\u043A\u0438"),
-                        book.bids.length ? book.bids.slice(0, 8).map((o) => React.createElement("div", { className: "book-level buy", key: 'b' + o.limit_price },
-                            React.createElement("span", null, nf(o.limit_price / 100)),
-                            React.createElement("span", null,
-                                nf(o.gm_cents / 100),
-                                " GM"))) : React.createElement("small", null, "\u041F\u043E\u043A\u0430 \u043D\u0435\u0442 \u0437\u0430\u044F\u0432\u043E\u043A")),
-                    React.createElement("div", null,
-                        React.createElement("strong", null, "\u041F\u0440\u043E\u0434\u0430\u0436\u0438"),
-                        book.asks.length ? book.asks.slice(0, 8).map((o) => React.createElement("div", { className: "book-level sell", key: 'a' + o.limit_price },
-                            React.createElement("span", null, nf(o.limit_price / 100)),
-                            React.createElement("span", null,
-                                nf(o.gm_cents / 100),
-                                " GM"))) : React.createElement("small", null, "\u041F\u043E\u043A\u0430 \u043D\u0435\u0442 \u0437\u0430\u044F\u0432\u043E\u043A"))),
-                React.createElement("small", null,
-                    "\u041B\u0443\u0447\u0448\u0430\u044F \u043F\u043E\u043A\u0443\u043F\u043A\u0430: ",
-                    bid ? nf(bid / 100) : '—',
-                    " CR \u00B7 \u043F\u0440\u043E\u0434\u0430\u0436\u0430: ",
-                    ask ? nf(ask / 100) : '—',
-                    " CR")),
-            React.createElement("div", { className: "pair-trade-buttons" },
-                React.createElement("button", { onClick: () => { setSide('buy'); setOrderType('limit'); setModal('tradeForm'); } }, "Buy GM"),
-                React.createElement("button", { onClick: () => { setSide('sell'); setOrderType('limit'); setModal('tradeForm'); } }, "Sell GM")),
-            React.createElement("div", { className: "form-surface pearl-card" },
-                React.createElement("b", null, "\u041C\u043E\u0438 \u0437\u0430\u044F\u0432\u043A\u0438"),
-                liveOrders.filter((o) => o.status === 'open').slice(0, 20).map((o) => React.createElement("div", { key: o.id, className: "split-line" },
-                    React.createElement("span", null,
-                        o.side === 'buy' ? 'Buy' : 'Sell',
-                        " \u00B7 ",
-                        nf(o.remaining_cents / 100),
-                        " GM \u00B7 ",
-                        nf(o.limit_price / 100),
-                        " CR"),
-                    React.createElement("button", { onClick: () => cancelLiveOrder(o.id) }, "\u041E\u0442\u043C\u0435\u043D\u0438\u0442\u044C"))),
-                !liveOrders.some((o) => o.status === 'open') && React.createElement("small", null, "\u0410\u043A\u0442\u0438\u0432\u043D\u044B\u0445 \u0437\u0430\u044F\u0432\u043E\u043A \u043D\u0435\u0442"),
-                React.createElement("button", { className: "small-button", onClick: refreshLive }, "\u041E\u0431\u043D\u043E\u0432\u0438\u0442\u044C \u0441\u0442\u0430\u043A\u0430\u043D")),
-            !pre && React.createElement("div", { className: "form-surface pearl-card" },
-                React.createElement("b", null, "\u041F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0435 \u0441\u0434\u0435\u043B\u043A\u0438"),
-                recentTrades.map((t, i) => React.createElement("div", { key: i, className: "split-line" },
-                    React.createElement("span", null,
-                        nf(t.price / 100),
-                        " CR"),
-                    React.createElement("span", null,
-                        nf(t.amount_cents / 100),
-                        " GM"))),
-                !recentTrades.length && React.createElement("small", null, "\u0421\u0434\u0435\u043B\u043E\u043A \u043F\u043E\u043A\u0430 \u043D\u0435\u0442")));
-    }
-    function Earn() { return React.createElement(React.Fragment, null,
+ 
+ function Trading(){
+  const e=React.createElement;
+  const pre=liveTicker?.premarket??!liveBook?.auction_done;
+  const remain=Math.max(0,(liveTicker?.auction_end_at||liveBook?.auction_end_at||0)-clock);
+  const countdown=[Math.floor(remain/3600),Math.floor(remain%3600/60),remain%60].map(x=>String(x).padStart(2,'0')).join(':');
+  const price=liveTicker?.last_price;
+  const book=liveBook||{bids:[],asks:[]};
+  const bids=book.bids||[],asks=book.asks||[];
+  const orders=liveOrders.filter(o=>o.status==='open');
+  const isOwner=['owner','coowner'].includes(liveRole);
+  const openTrade=kind=>{setSide(kind);setOrderType('limit');setModal('tradeForm')};
+  return e(React.Fragment,null,
+   top('GM / CR · Trade',true,'candlesticks'),
+   e('section',{className:'trade-hub '+(isLight?'pearl-card':'metallic-card')},
+    e('div',{className:'trade-heading'},
+     e('div',{className:'trade-pair-icon'},icon('gm-coin-orbit',36)),
+     e('div',{className:'trade-pair-name'},e('strong',null,'GM / CR'),e('small',null,'Виртуальная игровая биржа')),
+     e('span',{className:'trade-status'},e('i',{className:'trade-status-dot'}),pre?'PREMARKET':liveTicker?.trade_test_mode?'TEST SPOT':'SPOT')),
+    e('div',{className:'trade-spot-info'},e('span',null,pre?'До открытия '+countdown:'Торговля доступна'),e('button',{type:'button',className:'trade-refresh',onClick:refreshLive},icon('refresh',16),' Обновить')),
+    e('div',{className:'trade-price-hero'},
+     e('span',null,pre?'Индикативная цена':'Последняя цена сделки'),
+     e('div',null,pre?(liveTicker?.indicative?.price?nf(liveTicker.indicative.price/100):'—'):(price?nf(price/100):'—'),e('small',null,'CR / GM')),
+     e('p',null,price&&!pre?'Цена по последней исполненной сделке':'Цена появится после первой исполненной сделки между разными игроками')),
+    e('div',{className:'trade-metric-row'},
+     e('span',null,'Объём 24 ч',e('b',null,nf((liveTicker?.volume_24h_gm_cents||0)/100)+' GM')),
+     e('span',null,'Сделок 24 ч',e('b',null,String(liveTicker?.trades_24h||0))),
+     e('span',null,'Стакан',e('b',null,(bids.length+asks.length)+' уровней')))),
+   e('section',{className:'trade-wallet '+(isLight?'pearl-card':'metallic-card')},
+    e('div',{className:'trade-wallet-title'},icon('wallet',22),e('b',null,'Доступно для торговли')),
+    e('div',{className:'trade-wallet-balances'},
+     e('span',null,e('small',null,'GM'),e('strong',null,nf(wallet.gm))),
+     e('span',null,e('small',null,'CR'),e('strong',null,nf(wallet.cr)))),
+    (isOwner||wallet.gm<10||wallet.cr<10)?e('div',{className:'trade-wallet-tip'},
+     e('span',null,wallet.gm<10||wallet.cr<10?'Для продажи нужны GM, для покупки — CR. Открытые заявки резервируют средства.':'Хочешь проверить больше ордеров? Пополни виртуальный баланс через Admin.'),
+     e('button',{type:'button',onClick:()=>goto(isOwner?'admin':'mining')},isOwner?'Тестовые начисления':'Добывать GM',icon('chevron-right',16))):null),
+   e('div',{className:'trade-cta-row'},
+    e('button',{type:'button',className:'trade-cta buy',onClick:()=>openTrade('buy')},icon('deposit',23),e('span',null,e('b',null,'Купить GM'),e('small',null,'Оплата в CR'))),
+    e('button',{type:'button',className:'trade-cta sell',onClick:()=>openTrade('sell')},icon('withdraw',23),e('span',null,e('b',null,'Продать GM'),e('small',null,'Получить CR')))),
+   e('section',{className:'trade-chart-section '+(isLight?'pearl-card':'metallic-card')},
+    e('div',{className:'trade-section-head'},e('div',null,icon('candlesticks',22),e('b',null,'График сделок')),e('span',null,'OHLCV · без выдуманных цен')),
+    e('div',{className:'intervals trade-intervals'},['1m','5m','15m','1h','4h','1d'].map(i=>e('button',{type:'button',key:i,className:period===i?'on':'',onClick:()=>setPeriod(i)},i))),
+    e(Candles,{theme,candles:liveCandles,selected:selectedCandle,onSelect:setSelectedCandle})),
+   e('section',{className:'trade-orderbook '+(isLight?'pearl-card':'metallic-card')},
+    e('div',{className:'trade-section-head'},e('div',null,icon('database',22),e('b',null,'Стакан заявок')),e('span',null,'CR за 1 GM')),
+    e('div',{className:'trade-book-grid'},
+     e('div',null,e('strong',{className:'trade-buy-heading'},'Покупки'),
+      bids.length?bids.slice(0,8).map((o,i)=>e('div',{className:'trade-book-level',key:'b'+o.limit_price},
+       e('b',null,nf(o.limit_price/100)),e('span',null,nf(o.gm_cents/100)+' GM'))):e('small',{className:'trade-book-empty'},'Нет ордеров')),
+     e('div',null,e('strong',{className:'trade-sell-heading'},'Продажи'),
+      asks.length?asks.slice(0,8).map((o,i)=>e('div',{className:'trade-book-level',key:'a'+o.limit_price},
+       e('b',null,nf(o.limit_price/100)),e('span',null,nf(o.gm_cents/100)+' GM'))):e('small',{className:'trade-book-empty'},'Нет ордеров'))),
+    e('p',{className:'trade-book-footer'},'Лучший bid: '+(liveTicker?.best_bid?nf(liveTicker.best_bid/100):'—')+' CR · ask: '+(liveTicker?.best_ask?nf(liveTicker.best_ask/100):'—')+' CR')),
+   e('section',{className:'trade-open-orders '+(isLight?'pearl-card':'metallic-card')},
+    e('div',{className:'trade-section-head'},e('div',null,icon('clock',22),e('b',null,'Мои заявки')),e('span',null,orders.length+' активных')),
+    orders.length?orders.slice(0,20).map(o=>e('div',{className:'trade-open-row',key:o.id},
+     e('div',null,e('b',null,o.side==='buy'?'Покупка':'Продажа'),e('small',null,nf(o.remaining_cents/100)+' GM · '+nf(o.limit_price/100)+' CR/GM')),
+     e('button',{type:'button',onClick:()=>cancelLiveOrder(o.id)},'Отменить'))):
+     e('p',{className:'trade-book-empty'},'Пока нет активных заявок. Создай ордер через кнопки выше.')),
+   !pre?e('section',{className:'trade-recent '+(isLight?'pearl-card':'metallic-card')},
+    e('div',{className:'trade-section-head'},e('div',null,icon('trending-up',22),e('b',null,'Последние сделки')),e('span',null,'Подтверждены сервером')),
+    recentTrades.length?recentTrades.map((t,i)=>e('div',{className:'trade-fill-row',key:i},
+     e('b',null,nf(t.price/100)+' CR'),e('span',null,nf(t.amount_cents/100)+' GM'))):
+     e('p',{className:'trade-book-empty'},'Сделок ещё не было. Для исполнения нужны встречные заявки от разных игроков.')):null,
+   e('p',{className:'trade-disclaimer'},'Виртуальные GM/CR — не реальные деньги. Ордера проверяются сервером; график и объём строятся только по исполненным сделкам.')
+  );
+ }
+ 
+ function TradeOrderModal(){
+  const e=React.createElement;
+  const pre=!!liveTicker?.premarket;
+  const isForm=modal==='tradeForm';
+  const qty=Number(String(amount).replace(',','.'));
+  const px=Number(String(orderPrice).replace(',','.'));
+  const quotePrice=orderType==='limit'?px:(Number(liveTicker?.best_ask||0)/100)*1.03;
+  const estimate=Number.isFinite(qty)&&qty>0&&Number.isFinite(quotePrice)&&quotePrice>0?Math.ceil(qty*quotePrice*100)/100:0;
+  const available=side==='buy'?wallet.cr:wallet.gm;
+  const required=side==='buy'?estimate:qty;
+  const issue=tradeIssue();
+  const label=side==='buy'?'Купить GM':'Продать GM';
+  return e('div',{className:'overlay trade-overlay',onClick:()=>setModal('')},
+   e('div',{className:'modal-box trade-sheet',role:'dialog','aria-modal':'true','aria-label':isForm?label:'Подтверждение ордера',onClick:ev=>ev.stopPropagation()},
+    e('div',{className:'trade-sheet-head'},
+     e('div',{className:'trade-sheet-title'},
+      e('div',{className:'trade-sheet-icon'},icon(side==='buy'?'deposit':'withdraw',30)),
+      e('span',null,e('strong',null,isForm?label:'Проверь заявку'),e('small',null,'GM / CR · '+(pre?'Premarket':'Test Spot')))),
+     e('button',{type:'button',className:'trade-sheet-x',onClick:()=>setModal(''),'aria-label':'Закрыть'},icon('close',21))),
+    e('div',{className:'trade-sheet-balance'},
+     e('span',null,'Доступно '+(side==='buy'?'CR':'GM')),
+     e('strong',null,nf(available)+' '+(side==='buy'?'CR':'GM'))),
+    isForm?e(React.Fragment,null,
+     e('div',{className:'trade-field'},
+      e('label',{htmlFor:'trade-order-type'},'Тип заявки'),
+      e('select',{id:'trade-order-type',value:orderType,onChange:ev=>setOrderType(ev.target.value)},
+       e('option',{value:'limit'},'Limit · своя цена'),
+       e('option',{value:'market',disabled:pre},'Market · до 3% проскальзывания'))),
+     e('div',{className:'trade-field'},
+      e('label',{htmlFor:'trade-qty'},'Количество GM'),
+      e('input',{id:'trade-qty',type:'text',inputMode:'decimal',placeholder:'Например, 5000',value:amount,onChange:ev=>setAmount(ev.target.value)})),
+     e('div',{className:'trade-sheet-presets'},['10','100','1000','5000'].map(v=>e('button',{type:'button',key:v,className:amount===v?'active':'',onClick:()=>setAmount(v)},v))),
+     orderType==='limit'?e('div',{className:'trade-field'},
+      e('label',{htmlFor:'trade-price'},'Цена · CR за 1 GM'),
+      e('input',{id:'trade-price',type:'text',inputMode:'decimal',value:orderPrice,placeholder:'Например, 0.50',onChange:ev=>setOrderPrice(ev.target.value)})):null,
+     orderType==='limit'?e('div',{className:'trade-field'},
+      e('label',{htmlFor:'trade-expiry'},'Срок действия заявки'),
+      e('select',{id:'trade-expiry',value:orderDuration,onChange:ev=>setOrderDuration(ev.target.value)},
+       ['1h','6h','12h','24h','3d','7d','GTC'].map(x=>e('option',{key:x},x)))):null,
+     e('div',{className:'trade-sheet-estimate'},
+      e('span',null,side==='buy'?'Резерв по заявке':'Заблокируется GM'),
+      e('strong',null,(required>0?nf(required):'—')+' '+(side==='buy'?'CR':'GM'))),
+     issue?e('p',{className:'trade-form-alert',role:'alert'},icon('shield-check',17),issue):e('p',{className:'trade-form-help'},'Комиссия 0,5% при исполнении с обеих сторон. Без фиктивных сделок.'),
+     e('button',{type:'button',className:'trade-sheet-primary',disabled:!!issue,onClick:tradePreview},'Проверить заявку',icon('chevron-right',20))):
+    e(React.Fragment,null,
+     e('div',{className:'trade-review'},e('span',null,'ПОДТВЕРЖДЕНИЕ'),e('p',null,modalText)),
+     e('div',{className:'trade-sheet-estimate'},e('span',null,'Доступно сейчас'),e('strong',null,nf(available)+' '+(side==='buy'?'CR':'GM'))),
+     issue?e('p',{className:'trade-form-alert',role:'alert'},issue):null,
+     e('button',{type:'button',className:'trade-sheet-primary',disabled:!!issue,onClick:submitOrder},'Отправить ордер',icon('shield-check',20))),
+    e('button',{type:'button',className:'trade-sheet-secondary',onClick:()=>{setModal(isForm?'':'tradeForm')}},isForm?'Отмена':'Назад к форме')
+   )
+  );
+ }
+ function Earn() { return React.createElement(React.Fragment, null,
         !isLight ? React.createElement("header", { className: "dark-top" },
             React.createElement("b", null, "GM TOKEN"),
             React.createElement("button", { onClick: () => goto('settings') },
@@ -1056,29 +1116,7 @@ function App() {
         toast && React.createElement("div", { className: "toast-message", role: "status", onClick: () => setToast('') },
             toast,
             React.createElement("button", { onClick: () => setToast('') }, "\u00D7")),
-        modal && React.createElement("div", { className: "overlay", onClick: () => setModal('') },
-            React.createElement("div", { className: "modal-box", onClick: (e) => e.stopPropagation() },
-                React.createElement("b", null, modal === 'tradeForm' ? (side === 'buy' ? 'Buy GM' : 'Sell GM') : 'Подтверждение ордера'),
-                modal === 'tradeForm' ? React.createElement(React.Fragment, null,
-                    React.createElement("p", null,
-                        "\u0412\u0438\u0440\u0442\u0443\u0430\u043B\u044C\u043D\u044B\u0435 GM/CR \u00B7 ",
-                        liveTicker?.premarket ? 'PREMARKET · только Limit' : 'торговля открыта'),
-                    React.createElement("label", null, "\u0422\u0438\u043F \u043E\u0440\u0434\u0435\u0440\u0430"),
-                    React.createElement("select", { value: orderType, onChange: (e) => setOrderType(e.target.value) },
-                        React.createElement("option", { value: "limit" }, "Limit"),
-                        React.createElement("option", { value: "market", disabled: liveTicker?.premarket }, "Market (3% \u0437\u0430\u0449\u0438\u0442\u0430; \u043F\u043E\u0441\u043B\u0435 \u0430\u0443\u043A\u0446\u0438\u043E\u043D\u0430)")),
-                    React.createElement("label", null, "\u041A\u043E\u043B\u0438\u0447\u0435\u0441\u0442\u0432\u043E GM"),
-                    React.createElement("input", { inputMode: "decimal", value: amount, onChange: (e) => setAmount(e.target.value) }),
-                    orderType === 'limit' && React.createElement(React.Fragment, null,
-                        React.createElement("label", null, "\u0426\u0435\u043D\u0430 CR \u0437\u0430 1 GM"),
-                        React.createElement("input", { inputMode: "decimal", placeholder: "\u0412\u0432\u0435\u0434\u0438 \u0441\u0432\u043E\u044E \u0446\u0435\u043D\u0443 CR/GM", value: orderPrice, onChange: (e) => setOrderPrice(e.target.value) }),
-                        React.createElement("label", null, "\u0421\u0440\u043E\u043A \u043E\u0440\u0434\u0435\u0440\u0430"),
-                        React.createElement("select", { value: orderDuration, onChange: (e) => setOrderDuration(e.target.value) }, ['1h', '6h', '12h', '24h', '3d', '7d', 'GTC'].map(x => React.createElement("option", { key: x }, x)))),
-                    React.createElement("div", { className: "amount-presets" }, ['25', '50', '75', '100'].map(x => React.createElement("button", { key: x, onClick: () => setAmount(x) }, x))),
-                    React.createElement("button", { className: "modal-action", onClick: tradePreview }, "\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u044C \u0440\u0430\u0441\u0447\u0451\u0442")) : React.createElement(React.Fragment, null,
-                    React.createElement("p", null, modalText),
-                    React.createElement("button", { className: "modal-action", onClick: submitOrder }, 'Подтвердить и отправить заявку')),
-                React.createElement("button", { className: "modal-close", onClick: () => setModal('') }, "\u0417\u0430\u043A\u0440\u044B\u0442\u044C"))));
+        modal && TradeOrderModal());
 }
 // Offline renderer uses the bundled React 16.0 UMD (no built-in Hooks). A tiny
 // isolated adapter keeps the same React/TSX source working in preview.html.
