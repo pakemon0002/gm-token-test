@@ -12,12 +12,23 @@ export function makeTelegramWebhook({token, publicUrl, webhookSecret, botUsernam
   const baseUrl = url.origin + '/';
   const endpoint = `https://api.telegram.org/bot${token}/`;
   const api = async (method, body) => {
-    const response = await fetchImpl(endpoint + method, {
-      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
-    });
-    const answer = await response.json();
-    if (!response.ok || !answer?.ok) throw new Error(`Telegram ${method} failed: ${String(answer?.description || response.status).slice(0,140)}`);
-    return answer.result;
+    let lastError;
+    for (let attempt=0;attempt<3;attempt++) {
+      try {
+        const response = await fetchImpl(endpoint + method, {
+          method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+        });
+        const answer = await response.json();
+        if (!response.ok || !answer?.ok) throw new Error(`Telegram ${method} failed: ${String(answer?.description || response.status).slice(0,140)}`);
+        return answer.result;
+      } catch(error) {
+        lastError=error;
+        const temporary = /fetch failed|network|timeout|temporar|too many requests|429|502|503|504/i.test(String(error?.message||''));
+        if(!temporary || attempt===2) throw error;
+        await new Promise(resolve=>setTimeout(resolve,250*(attempt+1)));
+      }
+    }
+    throw lastError;
   };
   const configure = async () => {
     const bot = await api('getMe',{});
