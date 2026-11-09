@@ -4,7 +4,7 @@ export function verifyInitData(raw, botToken, now = Math.floor(Date.now()/1000))
   if(typeof raw!=='string'||!raw||!botToken||raw.length>8000)throw Error('missing/invalid initData');
   const params=new URLSearchParams(raw);const hash=params.get('hash');const ts=Number(params.get('auth_date'));
   if(!hash||!/^[0-9a-f]{64}$/i.test(hash)||!Number.isInteger(ts)||ts>now+60||now-ts>86400)throw Error('initData expired or invalid');
-  const data=[...params.entries()].filter(([k])=>k!=='hash'&&k!=='signature').map(([k,v])=>`${k}=${v}`).sort().join('\n');
+  const data=[...params.entries()].filter(([k])=>k!=='hash').map(([k,v])=>`${k}=${v}`).sort().join('\n');
   const secret=crypto.createHmac('sha256','WebAppData').update(botToken).digest();
   const check=crypto.createHmac('sha256',secret).update(data).digest('hex');
   if(!crypto.timingSafeEqual(Buffer.from(check,'hex'),Buffer.from(hash,'hex')))throw Error('initData signature mismatch');

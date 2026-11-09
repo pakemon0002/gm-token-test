@@ -11,3 +11,15 @@ test('real HMAC verification of Telegram initData and tampering detection',()=>{
  assert.throws(()=>verifyInitData(raw.replace('Demo','Bad'),token));assert.throws(()=>verifyInitData(raw,token,t+90000));
 });
 test('TOTP respects 30sec time window',()=>{const key='JBSWY3DPEHPK3PXP';const t=1700000000000;const code=totp(key,t);assert.equal(code.length,6);assert.equal(checkTotp(key,code,t),true);assert.equal(checkTotp(key,'000000',t+300000),false)});
+
+test('Telegram bot-token verification includes the signature field in the HMAC payload',()=>{
+ const token='123456:official-bot-token-example';
+ const now=Math.floor(Date.now()/1000);
+ const fields=new URLSearchParams({auth_date:String(now),user:JSON.stringify({id:7654321,first_name:'Test'}),query_id:'XYZ',signature:'example-ed25519-third-party-signature'});
+ const data=[...fields.entries()].map(([k,v])=>k+'='+v).sort().join('\n');
+ const key=crypto.createHmac('sha256','WebAppData').update(token).digest();
+ fields.set('hash',crypto.createHmac('sha256',key).update(data).digest('hex'));
+ assert.equal(verifyInitData(fields.toString(),token).id,'7654321');
+ fields.set('signature','tampered-ed25519-signature');
+ assert.throws(()=>verifyInitData(fields.toString(),token),/signature mismatch/);
+});
