@@ -10,7 +10,7 @@ test('Admin entry and route are restricted to verified Owner/Co-Owner in both UI
   assert.ok(has(code,"if(['owner','coowner'].includes(liveRole))groups.push"));
  }
  assert.ok(has(tsx,"case 'admin':view=['owner','coowner'].includes(liveRole)?Admin():Home()"));
- assert.ok(jhas(s,"view = ['owner', 'coowner'].includes(liveRole) ? Admin() : Home();"));
+ assert.ok(has(js,"view = ['owner', 'coowner'].includes(liveRole) ? Admin() : Home();"));
  const server=read('../server/index.mjs');
  assert.ok(has(server,"roleCheck({id},['owner','coowner'])"));
  assert.ok(has(server,"const ownerIds=(process.env.OWNER_TELEGRAM_IDS||'')"));
