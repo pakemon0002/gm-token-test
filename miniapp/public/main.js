@@ -187,6 +187,161 @@ const UI_TRANSLATIONS = {
     "boxes": { ru: "Боксы", uk: "Бокси", en: "Boxes", es: "Cajas", de: "Boxen", fr: "Coffres", tr: "Kutular", pt: "Caixas", pl: "Skrzynki", it: "Box" },
     "avatar": { ru: "Мой профиль", uk: "Мій профіль", en: "My profile", es: "Mi perfil", de: "Mein Profil", fr: "Mon profil", tr: "Profilim", pt: "Meu perfil", pl: "Mój profil", it: "Il mio profilo" },
 };
+const EXTRA_LANGUAGE = {
+    "Пока нет исполненных сделок": { pt: "Ainda não há negociações", uk: "Поки немає виконаних угод", en: "No completed trades yet" },
+    "График появится после первой сделки GM/CR. Пустые интервалы не заполняются искусственными свечами.": { pt: "O gráfico aparece após a primeira negociação GM/CR.", uk: "Графік з’явиться після першої угоди GM/CR.", en: "The chart appears after the first GM/CR trade." },
+    "Нет связи с сервером. Проверь интернет и открой приложение ещё раз.": { pt: "Sem conexão com o servidor. Verifique a internet.", uk: "Немає зв'язку із сервером. Перевір інтернет.", en: "No server connection. Check the internet." },
+    "Недоступно": { pt: "Indisponível", uk: "Недоступно", en: "Unavailable" },
+    "Проверяем вход через Telegram…": { pt: "Verificando acesso pelo Telegram…", uk: "Перевіряємо вхід через Telegram…", en: "Checking Telegram login…" },
+    "Открой GM TOKEN внутри Telegram": { pt: "Abra GM TOKEN dentro do Telegram", uk: "Відкрий GM TOKEN у Telegram", en: "Open GM TOKEN inside Telegram" },
+    "Ошибка: ": { pt: "Erro: ", uk: "Помилка: ", en: "Error: " },
+    "Операция выполнена": { pt: "Operação concluída", uk: "Операцію виконано", en: "Operation completed" },
+    "Задания": { pt: "Tarefas", uk: "Завдання", en: "Tasks" },
+    "Друзья": { pt: "Amigos", uk: "Друзі", en: "Friends" },
+    "Твой прогресс": { pt: "Seu progresso", uk: "Твій прогрес", en: "Your progress" },
+    "МОЙ БАЛАНС": { pt: "MEU SALDO", uk: "МІЙ БАЛАНС", en: "MY BALANCE" },
+    "Перейти в Mining": { pt: "Abrir mineração", uk: "Перейти до майнінгу", en: "Go to mining" },
+    "Перейти на рынок": { pt: "Abrir mercado", uk: "Перейти на ринок", en: "Go to market" },
+    "РЫНОК · ТЕСТОВЫЙ GM/CR": { pt: "MERCADO · TESTE GM/CR", uk: "РИНОК · ТЕСТОВИЙ GM/CR", en: "MARKET · TEST GM/CR" },
+    "Нет цены": { pt: "Preço indisponível", uk: "Немає ціни", en: "No price" },
+    "Только реальные игровые сделки · без искусственного графика": { pt: "Somente negociações reais do jogo", uk: "Лише справжні ігрові угоди", en: "Only real in-game trades" },
+    "График появится после нескольких сделок": { pt: "Gráfico disponível após algumas negociações", uk: "Графік з'явиться після кількох угод", en: "Chart appears after some trades" },
+    "Твои POINTS: ": { pt: "Seus POINTS: ", uk: "Твої POINTS: ", en: "Your POINTS: " },
+    " · гарантированные награды": { pt: " · recompensas garantidas", uk: " · гарантовані нагороди", en: " · guaranteed rewards" },
+    " Как играть": { pt: " Como jogar", uk: " Як грати", en: " How to play" },
+    "Стакан": { pt: "Livro de ofertas", uk: "Стакан", en: "Order book" },
+    "Сделки": { pt: "Negociações", uk: "Угоди", en: "Trades" },
+    "Мои ордера": { pt: "Minhas ordens", uk: "Мої ордери", en: "My orders" },
+    "Пока нет заявок": { pt: "Ainda não há ordens", uk: "Поки немає заявок", en: "No orders yet" },
+    "Цена": { pt: "Preço", uk: "Ціна", en: "Price" },
+    "Объём": { pt: "Volume", uk: "Обсяг", en: "Volume" },
+    "Здесь появятся исполненные, подтверждённые сервером сделки.": { pt: "As negociações executadas aparecerão aqui.", uk: "Тут з'являться виконані угоди.", en: "Completed trades will appear here." },
+    "Покупка GM": { pt: "Comprar GM", uk: "Купівля GM", en: "Buy GM" },
+    "Продажа GM": { pt: "Vender GM", uk: "Продаж GM", en: "Sell GM" },
+    "Отменить": { pt: "Cancelar", uk: "Скасувати", en: "Cancel" },
+    "Индикативная цена": { pt: "Preço indicativo", uk: "Орієнтовна ціна", en: "Indicative price" },
+    "Последняя цена сделки": { pt: "Último preço", uk: "Остання ціна угоди", en: "Last trade price" },
+    "Обновить котировки": { pt: "Atualizar cotações", uk: "Оновити котирування", en: "Refresh quotes" },
+    "ОБЪЁМ · 24 Ч": { pt: "VOLUME · 24 H", uk: "ОБСЯГ · 24 Г", en: "VOLUME · 24 H" },
+    "СДЕЛОК · 24 Ч": { pt: "NEGOCIAÇÕES · 24 H", uk: "УГОД · 24 Г", en: "TRADES · 24 H" },
+    "РЕЖИМ": { pt: "MODO", uk: "РЕЖИМ", en: "MODE" },
+    "Реальные сделки": { pt: "Negociações reais", uk: "Реальні угоди", en: "Real trades" },
+    "Интервал свечей": { pt: "Intervalo do gráfico", uk: "Інтервал свічок", en: "Candle interval" },
+    "Доступно для торговли": { pt: "Disponível para negociar", uk: "Доступно для торгів", en: "Available to trade" },
+    "Данные рынка": { pt: "Dados do mercado", uk: "Дані ринку", en: "Market data" },
+    "Купить GM": { pt: "Comprar GM", uk: "Купити GM", en: "Buy GM" },
+    "Продать GM": { pt: "Vender GM", uk: "Продати GM", en: "Sell GM" },
+    "Подтверждение ордера": { pt: "Confirmação da ordem", uk: "Підтвердження ордера", en: "Confirm order" },
+    "Проверь заявку": { pt: "Revise a ordem", uk: "Перевір заявку", en: "Review order" },
+    "Закрыть": { pt: "Fechar", uk: "Закрити", en: "Close" },
+    "Тип заявки": { pt: "Tipo de ordem", uk: "Тип заявки", en: "Order type" },
+    "Количество GM": { pt: "Quantidade de GM", uk: "Кількість GM", en: "GM amount" },
+    "Цена · CR за 1 GM": { pt: "Preço · CR por 1 GM", uk: "Ціна · CR за 1 GM", en: "Price · CR per GM" },
+    "Срок действия заявки": { pt: "Validade da ordem", uk: "Термін заявки", en: "Order duration" },
+    "Резерв по заявке": { pt: "Reserva da ordem", uk: "Резерв заявки", en: "Order reserve" },
+    "Заблокируется GM": { pt: "GM reservado", uk: "GM буде заблоковано", en: "GM to reserve" },
+    "Проверить заявку": { pt: "Revisar ordem", uk: "Перевірити заявку", en: "Review order" },
+    "ПОДТВЕРЖДЕНИЕ": { pt: "CONFIRMAÇÃO", uk: "ПІДТВЕРДЖЕННЯ", en: "CONFIRMATION" },
+    "Доступно сейчас": { pt: "Disponível agora", uk: "Доступно зараз", en: "Available now" },
+    "Отправить ордер": { pt: "Enviar ordem", uk: "Надіслати ордер", en: "Place order" },
+    "Отмена": { pt: "Cancelar", uk: "Скасувати", en: "Cancel" },
+    "Назад к форме": { pt: "Voltar ao formulário", uk: "Назад до форми", en: "Back to form" },
+    "Все": { pt: "Todos", uk: "Усі", en: "All" },
+    "Социальные": { pt: "Sociais", uk: "Соціальні", en: "Social" },
+    "Игровые": { pt: "Do jogo", uk: "Ігрові", en: "Game" },
+    "Подтверди выполнение условия": { pt: "Confirme a conclusão do requisito", uk: "Підтвердь виконання умови", en: "Confirm requirement" },
+    "Достижение": { pt: "Conquista", uk: "Досягнення", en: "Achievement" },
+    "Забрать": { pt: "Resgatar", uk: "Забрати", en: "Claim" },
+    "Игрок": { pt: "Jogador", uk: "Гравець", en: "Player" },
+    "Ежедневная награда": { pt: "Recompensa diária", uk: "Щоденна нагорода", en: "Daily reward" },
+    "НАГРАДА ЗА СЕГОДНЯ": { pt: "RECOMPENSA DE HOJE", uk: "НАГОРОДА ЗА СЬОГОДНІ", en: "TODAY'S REWARD" },
+    "Награда получена": { pt: "Recompensa recebida", uk: "Нагороду отримано", en: "Reward claimed" },
+    "Награды не включены": { pt: "Recompensas indisponíveis", uk: "Нагороди не ввімкнено", en: "Rewards unavailable" },
+    "Перейти в Майнинг": { pt: "Ir para mineração", uk: "Перейти до майнінгу", en: "Go to mining" },
+    "Добывай GM": { pt: "Minere GM", uk: "Видобувай GM", en: "Mine GM" },
+    "GM накоплено": { pt: "GM acumulado", uk: "GM накопичено", en: "GM accumulated" },
+    "Забрать GM": { pt: "Resgatar GM", uk: "Забрати GM", en: "Claim GM" },
+    "Хранилище": { pt: "Armazenamento", uk: "Сховище", en: "Storage" },
+    "Мощность": { pt: "Potência", uk: "Потужність", en: "Power" },
+    "Резерв": { pt: "Reserva", uk: "Резерв", en: "Reserve" },
+    "Уровень и ускорения": { pt: "Nível e melhorias", uk: "Рівень та прискорення", en: "Level and boosts" },
+    "Проверяем покупку…": { pt: "Verificando compra…", uk: "Перевіряємо купівлю…", en: "Checking purchase…" },
+    "Максимальный уровень открыт": { pt: "Nível máximo alcançado", uk: "Максимальний рівень відкрито", en: "Maximum level reached" },
+    "Начальный": { pt: "Inicial", uk: "Початковий", en: "Starter" },
+    "Пока недоступно": { pt: "Indisponível", uk: "Поки недоступно", en: "Unavailable" },
+    "Не хватает POINTS": { pt: "POINTS insuficientes", uk: "Недостатньо POINTS", en: "Not enough POINTS" },
+    "Открыть бокс": { pt: "Abrir caixa", uk: "Відкрити бокс", en: "Open box" },
+    "Как заработать ": { pt: "Como ganhar ", uk: "Як заробити ", en: "How to earn " },
+    "Твои POINTS": { pt: "Seus POINTS", uk: "Твої POINTS", en: "Your POINTS" },
+    "СТАНДАРТ": { pt: "PADRÃO", uk: "СТАНДАРТ", en: "STANDARD" },
+    "ПРЕМИУМ": { pt: "PREMIUM", uk: "ПРЕМІУМ", en: "PREMIUM" },
+    "ЭЛИТНЫЙ": { pt: "ELITE", uk: "ЕЛІТНИЙ", en: "ELITE" },
+    "Приглашай друзей": { pt: "Convide amigos", uk: "Запрошуй друзів", en: "Invite friends" },
+    "Приглашено игроков": { pt: "Jogadores convidados", uk: "Запрошено гравців", en: "Invited players" },
+    "Получено GM": { pt: "GM recebido", uk: "GM отримано", en: "GM received" },
+    "ТВОЯ ПЕРСОНАЛЬНАЯ ССЫЛКА": { pt: "SEU LINK PESSOAL", uk: "ТВОЄ ОСОБИСТЕ ПОСИЛАННЯ", en: "YOUR PERSONAL LINK" },
+    "Доступна после входа в Telegram": { pt: "Disponível após entrar no Telegram", uk: "Доступно після входу в Telegram", en: "Available after Telegram login" },
+    "Скопировать": { pt: "Copiar", uk: "Скопіювати", en: "Copy" },
+    " Поделиться в Telegram ": { pt: " Compartilhar no Telegram ", uk: " Поділитися в Telegram ", en: " Share on Telegram " },
+    "Не выполнено": { pt: "Não concluído", uk: "Не виконано", en: "Not completed" },
+    "Тема оформления": { pt: "Aparência", uk: "Тема оформлення", en: "Appearance" },
+    "Персонализация": { pt: "Personalização", uk: "Персоналізація", en: "Personalization" },
+    "Язык интерфейса": { pt: "Idioma da interface", uk: "Мова інтерфейсу", en: "Interface language" },
+    "Пройти инструкцию": { pt: "Rever tutorial", uk: "Пройти інструкцію", en: "Replay tutorial" },
+    "Виртуальные GM и CR": { pt: "GM e CR virtuais", uk: "Віртуальні GM і CR", en: "Virtual GM and CR" },
+    "Добро пожаловать в GM TOKEN": { pt: "Bem-vindo ao GM TOKEN", uk: "Ласкаво просимо до GM TOKEN", en: "Welcome to GM TOKEN" },
+    "Поддержка": { pt: "Suporte", uk: "Підтримка", en: "Support" },
+    "История операций пока пуста": { pt: "Nenhuma transação registrada", uk: "Історія операцій порожня", en: "No transactions yet" },
+    "Загрузить с сервера": { pt: "Carregar do servidor", uk: "Завантажити із сервера", en: "Load from server" },
+    "Инструкция": { pt: "Instruções", uk: "Інструкція", en: "Guide" },
+    "Профиль": { pt: "Perfil", uk: "Профіль", en: "Profile" },
+    "Рейтинг": { pt: "Classificação", uk: "Рейтинг", en: "Leaderboard" },
+    "Вывести": { pt: "Retirar", uk: "Вивести", en: "Withdraw" },
+    "Пополнить": { pt: "Depositar", uk: "Поповнити", en: "Deposit" },
+    "Доступно в кошельке: ": { pt: "Disponível na carteira: ", uk: "Доступно в гаманці: ", en: "Available in wallet: " },
+    "Награды к получению": { pt: "Recompensas para resgatar", uk: "Нагороди до отримання", en: "Pending rewards" },
+    "Поддержка GM TOKEN": { pt: "Suporte GM TOKEN", uk: "Підтримка GM TOKEN", en: "GM TOKEN support" },
+    "Новости": { pt: "Notícias", uk: "Новини", en: "News" },
+    "Настройки": { pt: "Configurações", uk: "Налаштування", en: "Settings" },
+    "Уровень ": { pt: "Nível ", uk: "Рівень ", en: "Level " },
+};
+// Translate all literal labels in React.createElement/JSX, not just the bottom navigation.
+// Unknown strings remain unchanged rather than being invented by a translation provider.
+let gmActiveLocale = 'ru';
+const gmNativeCreateElement = React.createElement.bind(React);
+const gmTranslate = (value) => {
+    if (gmActiveLocale === 'ru')
+        return value;
+    const t = gmActiveLocale;
+    const direct = EXTRA_LANGUAGE[value];
+    if (direct)
+        return direct[t] || direct.en || value;
+    for (const row of Object.values(UI_TRANSLATIONS)) {
+        if (row.ru === value || row.en === value)
+            return row[t] || row.en || value;
+    }
+    // Preserve numerals/amounts while translating commonly concatenated prefixes.
+    for (const [key, translations] of Object.entries(EXTRA_LANGUAGE)) {
+        if (!key.trim() || key.length < 5 || !value.startsWith(key))
+            continue;
+        const remainder = value.slice(key.length);
+        if (remainder && (/^\d|^\s\d/.test(remainder)))
+            return (translations[t] || translations.en || key) + remainder;
+    }
+    return value;
+};
+React.createElement = (type, props, ...children) => {
+    const mapped = children.map(x => typeof x === 'string' ? gmTranslate(x) : x);
+    if (props && typeof type === 'string') {
+        const p = { ...props };
+        for (const key of ['title', 'placeholder', 'aria-label', 'alt']) {
+            if (typeof p[key] === 'string')
+                p[key] = gmTranslate(p[key]);
+        }
+        return gmNativeCreateElement(type, p, ...mapped);
+    }
+    return gmNativeCreateElement(type, props, ...mapped);
+};
 function App() {
     const webapp = window.Telegram?.WebApp;
     const openBot = (ev) => {
@@ -212,6 +367,7 @@ function App() {
     const [introStep, setIntroStep] = React.useState(0);
     const telegramLanguage = String(webapp?.initDataUnsafe?.user?.language_code || navigator.language || 'en').toLowerCase().split(/[-_]/)[0];
     const actualLang = locale === 'auto' ? telegramLanguage : locale;
+    gmActiveLocale = actualLang;
     const lang = key => {
         const index = gmKeys.indexOf(key);
         return index < 0 ? key : (gmWords[actualLang] || gmWords.en)[index] || gmWords.en[index];
