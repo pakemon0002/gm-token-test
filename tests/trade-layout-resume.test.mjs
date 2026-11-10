@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 // TSC emits semantically equivalent whitespace; verify the same tokens across TSX and JS.
-const has=(code,fragment)=>code.replace(/\\s+/g,'').includes(fragment.replace(/\\s+/g,''));
+const has=(code,fragment)=>code.replace(/\s+/g,'').includes(fragment.replace(/\s+/g,''));
 test('Trade desk and order sheet are themed and warn before insufficient-funds submissions',()=>{
  const source=read('../miniapp/src/main.tsx'),served=read('../miniapp/public/main.js'),styles=read('../miniapp/public/styles.css');
  for(const code of [source,served]){
