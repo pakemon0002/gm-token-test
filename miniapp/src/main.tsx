@@ -769,6 +769,7 @@ function App(){
 
  function Trading(){
   const e=React.createElement;
+  const tr=(pt:string,uk:string,en:string,ru:string)=>walletLanguage(pt,uk,en,ru);
   const pre=liveTicker?.premarket??!liveBook?.auction_done;
   const remain=Math.max(0,(liveTicker?.auction_end_at||liveBook?.auction_end_at||0)-clock);
   const countdown=[Math.floor(remain/3600),Math.floor(remain%3600/60),remain%60].map(x=>String(x).padStart(2,'0')).join(':');
@@ -841,7 +842,7 @@ function App(){
      e('div',null,e('small',null,'СДЕЛОК · 24 Ч'),e('b',null,String(liveTicker?.trades_24h||0))),
      e('div',null,e('small',null,'РЕЖИМ'),e('b',null,pre?countdown:'Активен'))),
     e('div',{className:'terminal-chart-toolbar'},
-     e('div',null,e('b',null,'ГРАФИК'),e('small',null,'Свечи OHLCV')),
+     e('div',null,e('b',null,tr('GRÁFICO','ГРАФІК','CHART','ГРАФИК')),e('small',null,'OHLCV')),
      e('div',{className:'terminal-chart-truth'},icon('shield-check',15),'Реальные сделки')),
     e(Candles,{theme,candles:liveCandles,selected:selectedCandle,onSelect:setSelectedCandle,interval:period}),
     e('div',{className:'terminal-periods','aria-label':'Интервал свечей'},
@@ -856,24 +857,24 @@ function App(){
       e('span',null,e('b',null,nf(wallet.cr)),' CR'))),
     e('div',{className:'trade-cta-row terminal-buy-sell',role:'group','aria-label':'Купить или продать игровые GM'},
      e('button',{type:'button',className:'trade-cta buy '+(side==='buy'?'active':''),'aria-pressed':side==='buy',onClick:()=>setSide('buy')},
-      icon('plus',19),e('span',null,e('b',null,'КУПИТЬ GM'),e('small',null,'За игровые CR'))),
+      icon('plus',19),e('span',null,e('b',null,tr('COMPRAR GM','КУПИТИ GM','BUY GM','КУПИТЬ GM')),e('small',null,tr('Por CR do jogo','За ігрові CR','For in-game CR','За игровые CR')))),
      e('button',{type:'button',className:'trade-cta sell '+(side==='sell'?'active':''),'aria-pressed':side==='sell',onClick:()=>setSide('sell')},
-      icon('minus',19),e('span',null,e('b',null,'ПРОДАТЬ GM'),e('small',null,'Получить CR')))),
+      icon('minus',19),e('span',null,e('b',null,tr('VENDER GM','ПРОДАТИ GM','SELL GM','ПРОДАТЬ GM')),e('small',null,tr('Receber CR','Отримати CR','Receive CR','Получить CR'))))),
     e('div',{className:'gm-trade-quick-card gm-premium-card'},
      e('div',{className:'gm-trade-quick-head'},
-      e('span',null,side==='buy'?'ПОКУПКА · GM':'ПРОДАЖА · GM'),
+      e('span',null,side==='buy'?tr('COMPRA · GM','КУПІВЛЯ · GM','BUY · GM','ПОКУПКА · GM'):tr('VENDA · GM','ПРОДАЖ · GM','SELL · GM','ПРОДАЖА · GM')),
       e('b',null,'GM / CR')),
-     e('label',{htmlFor:'gm-trade-quick-amount'},'Количество'),
+     e('label',{htmlFor:'gm-trade-quick-amount'},tr('Quantidade','Кількість','Quantity','Количество')),
      e('div',{className:'gm-trade-quick-input'},
       e('input',{id:'gm-trade-quick-amount',inputMode:'decimal',type:'text',placeholder:'0.00',value:amount,onChange:ev=>setAmount(ev.target.value),'aria-label':'Количество GM'}),
       e('span',null,'GM')),
      e('div',{className:'gm-trade-quick-presets'},['10','100','500','1000'].map(x=>e('button',{type:'button',key:x,className:amount===x?'active':'',onClick:()=>setAmount(x)},x))),
      e('div',{className:'gm-trade-quick-total'},
-      e('span',null,side==='buy'?'Предварительно потребуется':'Предварительно получится'),
+      e('span',null,side==='buy'?tr('Valor estimado','Орієнтовна вартість','Estimated cost','Предварительно потребуется'):tr('Recebimento estimado','Орієнтовне надходження','Estimated proceeds','Предварительно получится')),
       e('strong',null,quickTotal)),
-     e('small',{className:'gm-trade-quick-disclaimer'},quickPriceCents>0?'Расчёт по последней доступной цене; окончательная цена указывается в заявке.':'Рыночная цена пока не подтверждена. Ты сможешь задать свою цену при проверке заявки.'),
+     e('small',{className:'gm-trade-quick-disclaimer'},quickPriceCents>0?tr('Estimativa pela última cotação; confirme o preço antes de enviar.','Оцінка за останньою ціною; підтвердь ціну перед відправленням.','Estimate from latest quote; review the price before submission.','Расчёт по последней доступной цене; окончательная цена указывается в заявке.'):tr('Preço ainda indisponível. Defina seu próprio preço na revisão.','Ціна ще недоступна. Встанови власну ціну під час перевірки.','Price unavailable. Set your own limit price during review.','Рыночная цена пока не подтверждена. Ты сможешь задать свою цену при проверке заявки.')),
      e('button',{type:'button',className:'gm-trade-quick-continue',disabled:!Number.isFinite(quickQty)||quickQty<10,onClick:()=>openTrade(side)},
-      side==='buy'?'Продолжить покупку':'Продолжить продажу',icon('chevron-right',21))),
+      side==='buy'?tr('Continuar compra','Продовжити купівлю','Continue buying','Продолжить покупку'):tr('Continuar venda','Продовжити продаж','Continue selling','Продолжить продажу'),icon('chevron-right',21))),
     (isOwner||wallet.gm<10)?e('div',{className:'terminal-funding'},
      e('span',null,'Доступно для торговли: GM и CR; открытые заявки резервируют средства.'),
      e('button',{type:'button',onClick:()=>goto(isOwner?'admin':'mining')},
@@ -1275,7 +1276,9 @@ function Settings(){
  
 function Support(){
  const e=React.createElement;
+ const tr=(pt:string,uk:string,en:string,ru:string)=>walletLanguage(pt,uk,en,ru);
  const categories=['Общий вопрос','Mining','Holding','Биржа GM/CR','Баланс GM/CR','Апелляция','Рефералы'];
+ const labels=[tr('Geral','Загальне питання','General','Общий вопрос'),tr('Mineração','Майнінг','Mining','Mining'),tr('Holding','Холдинг','Holding','Holding'),tr('Mercado GM/CR','Ринок GM/CR','GM/CR market','Биржа GM/CR'),tr('Saldo GM/CR','Баланс GM/CR','GM/CR balance','Баланс GM/CR'),tr('Recurso','Оскарження','Appeal','Апелляция'),tr('Indicações','Реферали','Referrals','Рефералы')];
  const rows=(supportTickets||[]).map(t=>{
   const isOwn=t.user_id===String(webapp?.initDataUnsafe?.user?.id||'');
   const isStaff=['owner','coowner','moderator'].includes(liveRole);
@@ -1300,24 +1303,24 @@ function Support(){
  return e(React.Fragment,null,
   top(L('support'),true,'info'),
   e('div',{className:'gm-support-hero gm-premium-card'},icon('shield-check',43,true),
-   e('div',null,e('b',null,'Центр поддержки GM TOKEN'),
-    e('p',null,'Поможем разобраться с Mining, бокcами, сделками, балансом и входом в Telegram.'))),
+   e('div',null,e('b',null,tr('Central de suporte GM TOKEN','Центр підтримки GM TOKEN','GM TOKEN Support Center','Центр поддержки GM TOKEN')),
+    e('p',null,tr('Ajuda com mineração, caixas, ordens, saldo e login no Telegram.','Допомога з майнінгом, боксами, угодами, балансом і входом у Telegram.','Help with Mining, Boxes, orders, balances and Telegram login.','Поможем разобраться с Mining, боксами, сделками, балансом и входом в Telegram.')))),
   e('section',{className:'gm-support-form gm-premium-card'},
-   e('div',{className:'gm-support-form-head'},icon('info',29),e('span',null,e('b',null,'Новое обращение'),e('small',null,'Ответы и статус сохраняются на сервере'))),
-   e('label',null,'Тема обращения'),
+   e('div',{className:'gm-support-form-head'},icon('info',29),e('span',null,e('b',null,tr('Novo chamado','Нове звернення','New ticket','Новое обращение')),e('small',null,tr('Histórico e respostas salvos no servidor','Історія й відповіді на сервері','Status and replies stored on the server','Ответы и статус сохраняются на сервере')))),
+   e('label',null,tr('Assunto','Тема звернення','Topic','Тема обращения')),
    e('div',{className:'gm-support-category-grid',role:'group','aria-label':'Тема обращения'},
     categories.map((x,i)=>e('button',{type:'button',key:x,className:'gm-support-category '+(supportCategory===x?'selected':''),'aria-pressed':supportCategory===x,onClick:()=>setSupportCategory(x)},
-     icon(['info','lightning','wallet','candlesticks','coins','shield-check','friends'][i],18),x))),
-   e('label',{htmlFor:'gm-support-message'},'Опиши проблему'),
+     icon(['info','lightning','wallet','candlesticks','coins','shield-check','friends'][i],18),labels[i]))),
+   e('label',{htmlFor:'gm-support-message'},tr('Descreva o problema','Опиши проблему','Describe the issue','Опиши проблему')),
    e('textarea',{id:'gm-support-message',rows:5,value:supportText,
-    placeholder:'Например: после открытия Mini App пропал баланс…',
+    placeholder:tr('Ex.: meu saldo sumiu após abrir o Mini App…','Наприклад: після відкриття Mini App зник баланс…','E.g. my balance disappeared after opening the Mini App…','Например: после открытия Mini App пропал баланс…'),
     onChange:event=>setSupportText(event.target.value)}),
-   e('small',{className:'gm-support-length'},supportText.trim().length+' / 3000 · минимум 10 символов'),
+   e('small',{className:'gm-support-length'},supportText.trim().length+' / 3000 · '+tr('mínimo 10 caracteres','мінімум 10 символів','minimum 10 characters','минимум 10 символов')),
    e('button',{type:'button',className:'gm-support-submit',disabled:demo||supportText.trim().length<10,onClick:createTicket},
-    icon('send',20),' Создать обращение')),
-  e('div',{className:'gm-support-section-label'},e('b',null,'Мои обращения'),
-   e('button',{type:'button',onClick:loadTickets},icon('refresh',17),' Обновить')),
-  rows.length?rows:e('p',{className:'gm-support-empty'},'Пока нет обращений. Создай обращение через форму выше.'),
+    icon('send',20),tr('Enviar chamado','Створити звернення','Submit ticket','Создать обращение'))),
+  e('div',{className:'gm-support-section-label'},e('b',null,tr('Meus chamados','Мої звернення','My tickets','Мои обращения')),
+   e('button',{type:'button',onClick:loadTickets},icon('refresh',17),tr('Atualizar','Оновити','Refresh','Обновить'))),
+  rows.length?rows:e('p',{className:'gm-support-empty'},tr('Você ainda não tem chamados. Use o formulário acima.','Звернень поки немає. Скористайся формою вище.','No tickets yet. Use the form above.','Пока нет обращений. Создай обращение через форму выше.')),
   e('p',{className:'gm-support-foot'},'При серьёзной ошибке баланса выбери «Баланс GM/CR». Не сообщай коды 2FA и секреты бота.')
  );
 }
