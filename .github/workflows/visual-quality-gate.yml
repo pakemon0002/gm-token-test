@@ -1,0 +1,35 @@
+name: GM visual redesign quality gate
+on:
+  push:
+    branches: [feature/visual-and-i18n-corrections-20261110]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  test-build-and-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: Build standalone Mini App in deployed public folder
+        run: |
+          npm install --prefix miniapp --no-audit --no-fund
+          npm run --prefix miniapp build:standalone
+      - name: Execute all server and UI regression tests
+        run: npm test
+      - name: JavaScript syntax
+        run: node --check miniapp/public/main.js
+      - name: Commit compiled assets after successful checks
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add miniapp/public/main.js miniapp/public/styles.css
+          if ! git diff --cached --quiet; then
+            git commit -m 'build: sync Telegram Mini App assets [skip ci]'
+            git push
+          fi
