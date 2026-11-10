@@ -188,6 +188,10 @@ function gmLocalizeTree(node:any,locale:string):any{
 }
 
 
+
+const gmGuides={"mining":[{"target":".gm-mining-coin-wrap","title":{"ru":"Монета GM","uk":"Монета GM","pt":"Moeda GM","en":"Монета GM"},"body":{"ru":"На этом экране копится игровой GM. Монета показывает доступную награду.","uk":"На цьому екрані накопичуються ігрові GM. Монета показує доступну винагороду.","pt":"Aqui o GM virtual é acumulado. A moeda mostra a recompensa disponível.","en":"На этом экране копится игровой GM. Монета показывает доступную награду."}},{"target":".gm-mining-energy","title":{"ru":"Накопление","uk":"Накопичення","pt":"Armazenamento","en":"Накопление"},"body":{"ru":"Следи за вместимостью хранилища. Если оно заполнится, обычная добыча остановится.","uk":"Стеж за місткістю сховища. Коли воно заповниться, звичайний видобуток зупиниться.","pt":"Acompanhe o armazenamento. Quando estiver cheio, a mineração normal para.","en":"Следи за вместимостью хранилища. Если оно заполнится, обычная добыча остановится."}},{"target":".gm-mining-upgrades","title":{"ru":"Улучшения","uk":"Покращення","pt":"Melhorias","en":"Улучшения"},"body":{"ru":"Новые уровни требуют проверки GM на внешнем кошельке. Игровые GM здесь не расходуются.","uk":"Нові рівні потребують перевірки GM у зовнішньому гаманці. Ігрові GM тут не витрачаються.","pt":"Novos níveis exigem verificação de GM numa carteira externa. O saldo do jogo não é gasto.","en":"Новые уровни требуют проверки GM на внешнем кошельке. Игровые GM здесь не расходуются."}}],"boxes":[{"target":".gm-boxes-gallery","title":{"ru":"Выбор бокса","uk":"Вибір боксу","pt":"Escolha a caixa","en":"Выбор бокса"},"body":{"ru":"У каждого бокса свой уровень и установленная награда. Сначала проверь стоимость в POINTS.","uk":"Кожен бокс має свій рівень та нагороду. Спершу перевір вартість у POINTS.","pt":"Cada caixa tem um nível e uma recompensa definida. Veja o custo em POINTS.","en":"У каждого бокса свой уровень и установленная награда. Сначала проверь стоимость в POINTS."}},{"target":".gm-boxes-points","title":{"ru":"Как открыть","uk":"Як відкрити","pt":"Como abrir","en":"Как открыть"},"body":{"ru":"POINTS выдаются за подтверждённые игровые действия. Подарок приходит только после проверки сервером.","uk":"POINTS нараховуються за підтверджені ігрові дії. Нагорода надходить після перевірки сервером.","pt":"POINTS vêm de ações verificadas no jogo. A recompensa só chega após a verificação do servidor.","en":"POINTS выдаются за подтверждённые игровые действия. Подарок приходит только после проверки сервером."}}],"trade":[{"target":".terminal-chart","title":{"ru":"Рыночный график","uk":"Ринковий графік","pt":"Gráfico do mercado","en":"Рыночный график"},"body":{"ru":"Здесь показана история реальных игровых сделок GM/CR. Мы не рисуем вымышленные цены.","uk":"Тут показані підтверджені ігрові угоди GM/CR. Ціни не вигадуються.","pt":"O gráfico usa operações confirmadas do jogo GM/CR, sem preços inventados.","en":"Здесь показана история реальных игровых сделок GM/CR. Мы не рисуем вымышленные цены."}},{"target":".terminal-buy-sell","title":{"ru":"Заявки","uk":"Заявки","pt":"Ordens","en":"Заявки"},"body":{"ru":"Перед действием проверь количество, цену и комиссии. Все операции только с виртуальными GM/CR.","uk":"Перед дією перевір кількість, ціну й комісії. Лише віртуальні GM/CR.","pt":"Revise quantidade, preço e taxas antes de agir. Apenas GM/CR virtuais.","en":"Перед действием проверь количество, цену и комиссии. Все операции только с виртуальными GM/CR."}}],"tasks":[{"target":".gm-task-filters","title":{"ru":"Категории","uk":"Категорії","pt":"Categorias","en":"Категории"},"body":{"ru":"Переключай категории, чтобы найти ежедневные и игровые цели.","uk":"Перемикай категорії, щоб знаходити щоденні та ігрові цілі.","pt":"Alterne as categorias para encontrar tarefas diárias e do jogo.","en":"Переключай категории, чтобы найти ежедневные и игровые цели."}},{"target":".gm-task-list","title":{"ru":"Подтверждение","uk":"Підтвердження","pt":"Verificação","en":"Подтверждение"},"body":{"ru":"Награда активируется только после выполнения проверяемого условия.","uk":"Нагорода стає доступною після перевірки виконання умови.","pt":"A recompensa só é liberada quando a condição é verificada.","en":"Награда активируется только после выполнения проверяемого условия."}}],"profile":[{"target":".profile-hero","title":{"ru":"Профиль","uk":"Профіль","pt":"Perfil","en":"Профиль"},"body":{"ru":"Здесь твой игровой прогресс, рамки и коллекционные награды.","uk":"Тут твій ігровий прогрес, рамки та колекційні нагороди.","pt":"Aqui estão seu progresso, molduras e recompensas colecionáveis.","en":"Здесь твой игровой прогресс, рамки и коллекционные награды."}},{"target":".xp-area","title":{"ru":"Опыт XP","uk":"Досвід XP","pt":"Experiência XP","en":"Опыт XP"},"body":{"ru":"Под шкалой прогресса можно посмотреть, сколько XP нужно до следующего уровня.","uk":"Під шкалою можна побачити, скільки XP потрібно до наступного рівня.","pt":"A barra mostra quanto XP falta para o próximo nível.","en":"Под шкалой прогресса можно посмотреть, сколько XP нужно до следующего уровня."}}],"achievements":[{"target":".achievement-list","title":{"ru":"Коллекция достижений","uk":"Колекція досягнень","pt":"Conquistas","en":"Коллекция достижений"},"body":{"ru":"Серые карточки ещё закрыты. Первые 20 игроков получают особую памятную награду.","uk":"Сірі картки ще заблоковані. Перші 20 гравців отримують особливу відзнаку.","pt":"Os cartões cinzentos estão bloqueados. Os primeiros 20 jogadores recebem um prêmio especial.","en":"Серые карточки ещё закрыты. Первые 20 игроков получают особую памятную награду."}}],"settings":[{"target":".gm-language-grid","title":{"ru":"Выбор языка","uk":"Вибір мови","pt":"Escolha do idioma","en":"Выбор языка"},"body":{"ru":"Выбранный язык сохраняется на этом устройстве. Используй поиск, чтобы быстро найти его.","uk":"Обрана мова зберігається на пристрої. Скористайся пошуком.","pt":"O idioma selecionado fica guardado neste dispositivo. Use a pesquisa.","en":"Выбранный язык сохраняется на этом устройстве. Используй поиск, чтобы быстро найти его."}}],"support":[{"target":".gm-support-submit","title":{"ru":"Напиши в поддержку","uk":"Напиши в підтримку","pt":"Fale com o suporte","en":"Напиши в поддержку"},"body":{"ru":"Выбери тему и опиши проблему подробно. Статус обращения сохранится в истории.","uk":"Обери тему та докладно опиши проблему. Статус звернення збережеться.","pt":"Escolha um assunto e descreva o problema. O estado será guardado no histórico.","en":"Выбери тему и опиши проблему подробно. Статус обращения сохранится в истории."}}],"referrals":[{"target":".gm-referral-link","title":{"ru":"Твоя ссылка","uk":"Твоє посилання","pt":"Seu link","en":"Твоя ссылка"},"body":{"ru":"Приглашай друзей по персональной ссылке. Реферал закрепляется при регистрации.","uk":"Запрошуй друзів за особистим посиланням.","pt":"Convide amigos pelo seu link pessoal.","en":"Приглашай друзей по персональной ссылке. Реферал закрепляется при регистрации."}}]};
+function gmTourLanguage(locale:string){return locale==='uk'?'uk':locale==='pt'?'pt':locale==='en'?'en':'ru';}
+
 function App(){
  const webapp=(window as any).Telegram?.WebApp;
  const openBot=(ev:any)=>{
@@ -202,7 +206,7 @@ function App(){
    window.location.assign(url);
  };
  const [theme,setTheme]=React.useState((store.getItem('gm_theme')||webapp?.colorScheme||'light')==='dark'?'dark':'light');
- const [screen,setScreen]=React.useState('home');
+ const [screen,setScreen]=React.useState('splash');
  const [locale,setLocale]=React.useState(store.getItem('gm_lang')||'auto');
  const [introStep,setIntroStep]=React.useState(0);
  const [langSearch,setLangSearch]=React.useState('');
@@ -247,6 +251,8 @@ function App(){
  const [tradeReady,setTradeReady]=React.useState(false);
  const [serverHistory,setServerHistory]=React.useState([] as any[]);
  const [demo,setDemo]=React.useState(true);
+ const [booting,setBooting]=React.useState(true);
+ const [tour,setTour]=React.useState(null as any);
  const [liveRole,setLiveRole]=React.useState('player');
  const [adminId,setAdminId]=React.useState('');
  const [adminCode,setAdminCode]=React.useState('');
@@ -287,7 +293,7 @@ function App(){
  const goto=s=>{
   const route=String(s||'home');
   if(route!==screen){navStack.current.push(screen);if(navStack.current.length>30)navStack.current.shift();}
-  setScreen(route);setModal('');
+  setScreen(route);setModal('');setTour(null);
   try{history.pushState({gmScreen:route},'','#'+route)}catch{}
   document.querySelector('.phone-scroll')?.scrollTo(0,0);
  };
@@ -307,15 +313,15 @@ function App(){
  React.useEffect(()=>{
   webapp?.ready?.();webapp?.expand?.();
   const init=webapp?.initData;
-  if(!init){setBackendStatus('Открой приложение через @gm_token_test_bot в Telegram');return;}
+  if(!init){setBackendStatus('Открой приложение через @gm_token_test_bot в Telegram');setBooting(false);return;}
   let valid=true;
   gmFetchJson('/api/bootstrap',{headers:{Authorization:'tma '+init}},2)
    .then(d=>{if(!valid)return;
-    setDemo(false);if(!store.getItem('gm_onboarding_complete'))setScreen('intro');setLiveRole(d.user?.role||'player');
+    setDemo(false);setScreen(store.getItem('gm_onboarding_complete')?'home':'intro');window.setTimeout(()=>{if(valid)setBooting(false)},850);setLiveRole(d.user?.role||'player');
     setBackendStatus('Telegram аккаунт: '+(d.user?.id||'подтверждён'));
     if(d.wallet)setW(w=>({...w,gm:d.wallet.gm/100,cr:d.wallet.cr/100,vault:d.wallet.vault/100,level:d.user?.level||w.level,xp:d.user?.xp??w.xp}));
    })
-   .catch(err=>{if(!valid)return;setDemo(true);
+   .catch(err=>{if(!valid)return;setDemo(true);setBooting(false);
     const msg=String(err?.message||'');
     setBackendStatus(/signature mismatch/i.test(msg)?'Ошибка подписи Telegram. Проверь настройки токена бота.':
       /expired|invalid initData/i.test(msg)?'Срок авторизации истёк — открой GM TOKEN заново из чата бота.':
@@ -336,6 +342,22 @@ function App(){
  const refreshLive=async()=>{if(!webapp?.initData)return;const d=await api('/api/game/status',undefined,true);if(!d)return;setLiveState(d);setW((w:Wallet)=>({...w,gm:d.wallet.gm/100,cr:d.wallet.cr/100,vault:d.wallet.vault/100,storage:d.mining.pending_cents/100,level:d.user?.level||w.level,xp:d.user?.xp??w.xp}));const [orders,book,tasks,achievements,refs,ranks,ticker,chart,trades]=await Promise.all([api('/api/exchange/orders',undefined,true),api('/api/exchange/book',undefined,true),api('/api/tasks',undefined,true),api('/api/achievements',undefined,true),api('/api/referrals/me',undefined,true),api('/api/leaderboard',undefined,true),api('/api/market/ticker',undefined,true),api('/api/market/ohlcv?interval='+period,undefined,true),api('/api/exchange/trades',undefined,true)]);if(orders)setLiveOrders(orders.orders||[]);if(book)setLiveBook(book);if(tasks)setLiveTasks(tasks.tasks||[]);if(achievements)setLiveAchievements(achievements.achievements||[]);if(refs)setLiveReferrals(refs);if(ranks)setLiveRanks(ranks);if(ticker)setLiveTicker(ticker);if(chart)setLiveCandles(chart.candles||[]);if(trades)setRecentTrades((trades.trades||[]).filter((t:any)=>!t.suspect).slice(0,10));setW((w:Wallet)=>({...w,streak:d.daily?.streak||0,lastClaim:d.daily?.last_claim_day||''}))};
  const gameAction=async(path:string,payload:any={})=>{const result=await api(path,{operationId:cryptoId(),...payload});if(result){if(result.wallet)setW((w:Wallet)=>({...w,gm:result.wallet.gm/100,cr:result.wallet.cr/100,vault:result.wallet.vault/100}));await refreshLive()}return result};
  React.useEffect(()=>{if(demo)return;refreshLive();const timer=setInterval(()=>{refreshLive()},12000);return()=>clearInterval(timer)},[demo,period]);
+
+ React.useEffect(()=>{
+  if(demo||!gmGuides[screen]||store.getItem('gm_tour_seen_'+screen))return;
+  setTour({route:screen,step:0});
+ },[screen,demo]);
+ React.useEffect(()=>{
+  if(!tour)return;
+  const guide=gmGuides[tour.route]?.[tour.step];if(!guide)return;
+  const el=document.querySelector(guide.target) as HTMLElement|null;
+  if(el){el.classList.add('gm-tour-target');try{el.scrollIntoView({block:'center',behavior:'smooth'})}catch{}}
+  return()=>{el?.classList.remove('gm-tour-target')};
+ },[tour?.route,tour?.step]);
+ const finishTour=()=>{if(tour?.route)store.setItem('gm_tour_seen_'+tour.route,'1');setTour(null)};
+ const advanceTour=()=>{if(!tour)return;const steps=gmGuides[tour.route]||[];
+  if(tour.step>=steps.length-1)finishTour();else setTour({...tour,step:tour.step+1})};
+
  const nav=(s:any)=>goto(s);
  const adminRequest=async(path:string,payload?:any)=>{
    if(demo||!webapp?.initData){flash('Только после Telegram-авторизации владельца');return;}
@@ -702,7 +724,7 @@ function Reward(){
  );
 }
 
- function Splash(){return <div className="splash-view"><div className="splash-glow"></div><div className="splash-logo"><img src={BRAND+'gm-lettermark-metallic-transparent.png'} alt="GM TOKEN"/></div><h1>GM TOKEN</h1><p>Earn · Hold · Grow</p><button className="splash-start" onClick={()=>goto('home')}>Открыть приложение</button></div>}
+ function Splash(){return <div className="splash-view gm-splash-loading" role="status" aria-live="polite"><div className="splash-glow"></div><div className="splash-logo"><img src={BRAND+'gm-lettermark-metallic-transparent.png'} alt="GM TOKEN"/></div><h1>GM TOKEN</h1><p>Earn · Hold · Grow</p><div className="gm-splash-bottom"><span>{gmTranslateText('Загрузка приложения…',actualLang)}</span><div className="gm-splash-track"><i/></div></div></div>}
  
  function Mining(){
   const e=React.createElement;
@@ -1057,6 +1079,7 @@ function Intro(){
 }
 
 function Streak(){return <>{top('Daily Streak',true,'flame')}<div className="referral-hero pearl-card">{icon('flame',90,true)}<h1>{wallet.streak} дней</h1><p>Серия ежедневных посещений. Повторное получение награды в один день запрещено.</p></div><GButton theme={theme} onClick={()=>goto('reward')}>Ежедневная награда</GButton></>}
+ if(booting&&webapp?.initData){return <main className={'application theme-'+theme+' is-telegram gm-boot-screen'}>{Splash()}</main>}
  if(demo){return <main className={'application auth-page theme-'+theme}>
   <div className="auth-ambient" aria-hidden="true"/>
   <section className="auth-gate pearl-card" aria-labelledby="auth-title">
@@ -1082,6 +1105,19 @@ function Streak(){return <>{top('Daily Streak',true,'flame')}<div className="ref
  <div className="device-stage"><div className="phone-frame"><div className={'phone-scroll '+((screen==='splash')?'no-scroll':'')}>{gmLocalizeTree(view,actualLang)}</div>{!['reward','splash','intro'].includes(screen)&&bottom()}<div className="home-indicator"/></div><div className="underphone"><span className="demo-pill">{'Серверная авторизация · виртуальные GM/CR'}</span><button onClick={()=>goto('splash')}>Заставка</button><button onClick={()=>goto('home')}>Home</button><button onClick={()=>setTheme(isLight?'dark':'light')}>Сменить тему</button></div><small className="status-note">{backendStatus}</small></div>
  {toast&&<div className="toast-message" role="status" onClick={()=>setToast('')}>{toast}<button onClick={()=>setToast('')}>×</button></div>}
  {modal==='boxReveal'?BoxRevealModal():modal&&TradeOrderModal()}
+ {tour&&gmGuides[tour.route]?.[tour.step]&&<div className="gm-tour-layer">
+  <div className="gm-tour-dim" aria-hidden="true"/>
+  <section className="gm-tour-card" role="dialog" aria-modal="true" aria-label="Обучение в разделе">
+    <div className="gm-tour-bar"><span>{tour.step+1} / {gmGuides[tour.route].length}</span><button onClick={finishTour}>{gmTranslateText('Пропустить',actualLang)}</button></div>
+    <div className="gm-tour-dots">{gmGuides[tour.route].map((_:any,i:number)=><i key={i} className={i===tour.step?'active':''}/>)}</div>
+    <h3>{gmGuides[tour.route][tour.step].title[gmTourLanguage(actualLang)]}</h3>
+    <p>{gmGuides[tour.route][tour.step].body[gmTourLanguage(actualLang)]}</p>
+    <div className="gm-tour-buttons">
+      {tour.step>0&&<button className="gm-tour-back" onClick={()=>setTour({...tour,step:tour.step-1})}>{gmTranslateText('Назад',actualLang)}</button>}
+      <button className="gm-tour-next" onClick={advanceTour}>{tour.step===gmGuides[tour.route].length-1?gmTranslateText('Начать',actualLang):gmTranslateText('Далее',actualLang)}</button>
+    </div>
+  </section>
+ </div>}
  </div>;
 }
 // Offline renderer uses the bundled React 16.0 UMD (no built-in Hooks). A tiny
