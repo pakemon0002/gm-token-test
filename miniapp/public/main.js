@@ -375,23 +375,86 @@ function App() {
     const L = (key) => UI_TRANSLATIONS[key]?.[actualLang] || UI_TRANSLATIONS[key]?.en || key;
     const [guideScreen, setGuideScreen] = React.useState('');
     const [guideStep, setGuideStep] = React.useState(0);
+    const [guideSpot, setGuideSpot] = React.useState(null);
+    const [languageOpen, setLanguageOpen] = React.useState(false);
+    const [languageSearch, setLanguageSearch] = React.useState('');
+    // Each tutorial entry points at a real, visible control rather than a generic icon.
     const guideCatalog = {
-        home: [['wallet', 'balance', 'wallet'], ['lightning', 'miningUpgrades', 'upgrade'], ['gift', 'boxes', 'claim']],
-        mining: [['gm-coin-orbit', 'mining', 'claim'], ['lightning', 'miningUpgrades', 'upgrade'], ['clock', 'speed', 'nextLevel']],
-        trade: [['candlesticks', 'market', 'next'], ['wallet', 'balance', 'wallet'], ['shield-check', 'instruction', 'finish']],
-        boxes: [['gift', 'boxes', 'claim'], ['diamond', 'achievements', 'earned']],
-        tasks: [['tasks', 'tasks', 'claim'], ['trophy', 'achievements', 'earned']],
-        profile: [['profile', 'profile', 'frames'], ['trophy', 'achievements', 'earned'], ['settings', 'customize', 'finish']],
-        more: [['settings', 'customize', 'next'], ['shield-check', 'support', 'finish']],
-        achievements: [['trophy', 'achievements', 'achievementsLocked']],
-        settings: [['settings', 'theme', 'interfaceLanguage']]
+        home: [['wallet', 'balance', '.gm-home-wallet', 'home.balance'], ['lightning', 'mining', '.gm-home-shortcuts button', 'home.shortcuts'], ['gift', 'boxes', '.gm-home-offer', 'home.reward']],
+        mining: [['gm-coin-orbit', 'mining', '.gm-mining-coin-wrap', 'mining.coin'], ['diamond', 'claim', '.gm-mining-claim', 'mining.claim'], ['lightning', 'miningUpgrades', '.gm-mining-upgrades', 'mining.upgrades'], ['clock', 'speed', '.gm-mining-energy', 'mining.storage']],
+        trade: [['candlesticks', 'market', '.terminal-quote', 'trade.price'], ['candlesticks', 'market', '.terminal-periods', 'trade.chart'], ['wallet', 'balance', '.terminal-wallet-line', 'trade.balance'], ['coins', 'market', '.terminal-buy-sell', 'trade.actions'], ['shield-check', 'next', '.gm-trade-quick-card', 'trade.quantity']],
+        boxes: [['gift', 'boxes', '.gm-box-card', 'boxes.choose'], ['trophy', 'achievements', '.gm-box-open', 'boxes.claim']],
+        tasks: [['tasks', 'tasks', '.gm-task-filters', 'tasks.filter'], ['trophy', 'achievements', '.gm-task-list', 'tasks.claim']],
+        profile: [['profile', 'profile', '.gm-league-card', 'profile.league'], ['trophy', 'frames', '.gm-frames-section', 'profile.frames']],
+        more: [['settings', 'customize', '.gm-more-list', 'more.menu']],
+        achievements: [['trophy', 'achievements', '.gm-achievement-planned', 'achievements.locked']],
+        settings: [['settings', 'theme', '.gm-theme-list', 'settings.theme'], ['globe', 'interfaceLanguage', '.gm-language-grid', 'settings.language']],
+        support: [['shield-check', 'support', '.gm-support-v8', 'support.ticket']]
+    };
+    const guideText = {
+        'home.balance': { ru: 'Здесь отображаются твои игровые GM и CR. Нажми на соответствующую кнопку, чтобы перейти к основным возможностям; это не криптовалютный кошелёк.', uk: 'Тут показано твої ігрові GM і CR. Натисни потрібну кнопку, щоб перейти до функцій — це не криптогаманець.', pt: 'Veja seus GM e CR do jogo. Os saldos aqui não são uma carteira cripto.', en: 'Your in-game GM and CR balances live here. These are not on-chain wallet balances.' },
+        'home.shortcuts': { ru: 'Эти кнопки ведут прямо в Майнинг, Боксы, Задания и Друзья. Начни с майнинга: монета показывает накопление, а собирать GM можно с установленного минимума.', uk: 'Ці кнопки відкривають Майнінг, Бокси, Завдання та Друзів. Почни з майнінгу.', pt: 'Estes atalhos abrem Mineração, Caixas, Tarefas e Amigos. Comece pela mineração.', en: 'These shortcuts open Mining, Boxes, Tasks, and Friends. Start by exploring Mining.' },
+        'home.reward': { ru: 'В карточке наград находятся игровые задания и бонусы. Начисления всегда подтверждаются сервером; обещаний случайных призов здесь нет.', uk: 'У картці нагород є завдання та бонуси. Нарахування перевіряє сервер.', pt: 'Aqui ficam tarefas e recompensas. Os prêmios são verificados pelo servidor.', en: 'Tasks and rewards are here. The server confirms any earned rewards.' },
+        'mining.coin': { ru: 'Это главная GM-монета. Майнинг идёт автоматически по действующей скорости. Нажимая на монету, ты собираешь накопленные игровые GM — если накопилось не меньше 1 GM.', uk: 'Це головна монета GM. Майнінг відбувається автоматично. Натисни монету, коли накопичиш щонайменше 1 GM.', pt: 'Esta é a moeda GM. A mineração é automática. Toque na moeda para coletar após acumular pelo menos 1 GM.', en: 'This is the main GM coin. Mining accrues automatically. Tap to claim after at least 1 GM is stored.' },
+        'mining.claim': { ru: 'Эта отдельная кнопка выполняет тот же сбор. Пока на счёте меньше 1 GM, она неактивна. Сбор не требует оплаты или подключения кошелька.', uk: 'Ця кнопка збирає накопичені GM. До 1 GM вона неактивна.', pt: 'Este botão coleta os GM acumulados. Ele fica desativado até 1 GM.', en: 'This button claims stored GM. It stays disabled below the 1 GM minimum.' },
+        'mining.upgrades': { ru: 'Здесь показаны 200 уровней, цена каждого и бонус к скорости. По договорённости уровни будут связаны с подтверждённым внешним кошельком. Пока контракт GM не проверен, оплата и покупка отключены, игровые GM не списываются.', uk: 'Тут 200 рівнів, ціни та бонуси. Оплата через зовнішній гаманець поки недоступна — контракт GM ще не підтверджений.', pt: 'Aqui estão 200 níveis e seus bônus. Compras com carteira externa estão desativadas até verificar o contrato GM.', en: 'Explore all 200 levels and bonuses. Wallet-based purchases remain disabled until the GM contract is verified.' },
+        'mining.storage': { ru: 'Полоса показывает, сколько GM накоплено относительно вместимости. Когда хранилище заполнено, новые начисления останавливаются до сбора. Ниже указана текущая скорость за час.', uk: 'Смуга показує наповнення сховища. Коли воно повне, зберіть GM, щоб звільнити місце.', pt: 'A barra mostra o armazenamento atual. Colete GM para liberar espaço quando estiver cheio.', en: 'The bar shows storage capacity. Claim stored GM when the container is full.' },
+        'trade.price': { ru: 'Здесь указана рыночная цена GM/CR. Для тестового рынка она берётся из реально исполненных игровых заявок; мы не рисуем вымышленные сделки.', uk: 'Тут ціна GM/CR за виконаними ігровими угодами, без штучних свічок.', pt: 'O preço GM/CR vem de negociações reais dentro do jogo, sem dados inventados.', en: 'The GM/CR price reflects executed in-game trades; no synthetic market data.' },
+        'trade.chart': { ru: 'Выбирай интервал свечей — от минуты до дня. График показывает историю исполненных игровых сделок, а пустые интервалы остаются пустыми.', uk: 'Обери інтервал від хвилини до дня. Порожні періоди не домальовуються.', pt: 'Escolha o intervalo do gráfico. Períodos sem negociações permanecem vazios.', en: 'Choose a candle interval. Periods without executed in-game trades stay empty.' },
+        'trade.balance': { ru: 'Тут доступны твои игровые GM и CR. Открытые заявки могут резервировать часть средств; перед отправкой заявки проверь остаток.', uk: 'Тут доступні ігрові GM і CR. Відкриті ордери можуть резервувати кошти.', pt: 'Aqui estão seus GM e CR do jogo. Ordens abertas podem reservar saldo.', en: 'Your in-game GM and CR balances are shown here. Open orders reserve funds.' },
+        'trade.actions': { ru: 'Выбери «Купить GM» или «Продать GM». Кнопки переключают форму ниже, не отправляя заявку. Это тренировочный игровой рынок, не биржа настоящих денег.', uk: 'Обери «Купити» або «Продати». Перемикач змінює форму, але нічого не надсилає.', pt: 'Escolha Comprar ou Vender. Os botões apenas alternam o formulário, sem enviar ordem.', en: 'Select Buy or Sell. These buttons only switch the form; they do not place an order.' },
+        'trade.quantity': { ru: 'Укажи количество GM. Ниже сразу появится приблизительный итог в CR. Нажми «Продолжить», проверь цену и срок заявки в следующем окне, затем отдельно подтверди отправку.', uk: 'Вкажи кількість GM, переглянь приблизну суму в CR і відкрий перевірку заявки.', pt: 'Digite o valor em GM para ver a estimativa em CR e abrir a revisão da ordem.', en: 'Enter a GM amount, review the CR estimate, and continue to the separate confirmation step.' },
+        'boxes.choose': { ru: 'Здесь выбирают тип бокса. В каждом — заранее утверждённые игровые награды; их состав и доступность показывает сервер.', uk: 'Тут обирають тип боксу. Нагороди визначає сервер.', pt: 'Escolha o tipo de caixa. As recompensas são aprovadas pelo servidor.', en: 'Choose a box type. Rewards and availability come from the server.' },
+        'boxes.claim': { ru: 'Кнопка открытия активируется только при достаточном количестве POINTS. Содержимое показывается после подтверждения операции сервером.', uk: 'Бокс відкривається за POINTS; результат підтверджує сервер.', pt: 'Abra caixas com POINTS; o resultado é confirmado pelo servidor.', en: 'Use POINTS to open a box; the reveal follows server confirmation.' },
+        'tasks.filter': { ru: 'Фильтры разделяют задания на общие, социальные и игровые. Выполняй условия; неподтверждённые задания не начисляют наград.', uk: 'Фільтри розділяють завдання за типами. Нагороду дають лише за виконану умову.', pt: 'Filtre tarefas por tipo. Recompensas exigem conclusão verificada.', en: 'Filter tasks by type. Rewards require verified completion.' },
+        'tasks.claim': { ru: 'Каждая карточка содержит условие и награду. После выполнения появится кнопка получения; выдача проверяется сервером.', uk: 'Кожна картка містить умову й нагороду. Видачу перевіряє сервер.', pt: 'Cada cartão mostra o objetivo e a recompensa verificada.', en: 'Each task shows an objective and a server-verified reward.' },
+        'profile.league': { ru: 'Это твоя лига и опыт XP. Полоса показывает прогресс, а под ней указано, сколько XP осталось до следующего ранга.', uk: 'Це твоя ліга та XP. Смуга показує шлях до наступного рангу.', pt: 'Sua liga e XP. A barra mostra o progresso até o próximo nível.', en: 'Your league and XP are here. The progress bar shows how close the next rank is.' },
+        'profile.frames': { ru: 'Рамки профиля открываются за игровые достижения. Серые пока закрыты. У первых 20 участников есть особые уникальные рамки.', uk: 'Рамки відкриваються за досягнення. Сірі ще заблоковані.', pt: 'Molduras são liberadas por conquistas. As cinzas estão bloqueadas.', en: 'Earn frames from achievements. Grey frames are locked; the earliest 20 players have exclusive ones.' },
+        'more.menu': { ru: 'Здесь находятся профиль, достижения, история, поддержка и настройки. Нужный раздел откроется по нажатию на карточку.', uk: 'Тут профіль, досягнення, історія та підтримка.', pt: 'Aqui ficam Perfil, Conquistas, Histórico e Suporte.', en: 'Find Profile, Achievements, History, Support, and Settings here.' },
+        'achievements.locked': { ru: 'Цветные карточки — открытые награды, серые — ещё недоступные. Уникальные ранние награды закрепляются за конкретными игроками.', uk: 'Кольорові нагороди відкриті, сірі — ще заблоковані.', pt: 'Conquistas coloridas estão abertas; as cinzas continuam bloqueadas.', en: 'Unlocked achievements are colored; locked achievements are grey.' },
+        'settings.theme': { ru: 'Выбирай Premium Silver или Premium Graphite — оба варианта используют один GM-дизайн и одинаковые функции.', uk: 'Обери Premium Silver або Premium Graphite — функції ті самі.', pt: 'Escolha Premium Silver ou Premium Graphite. As funções são iguais.', en: 'Choose Premium Silver or Premium Graphite; both themes have the same features.' },
+        'settings.language': { ru: 'Выбери язык здесь. Настройка сохраняется на устройстве и применяется к переводимым элементам приложения. Кнопка «Auto» использует язык Telegram.', uk: 'Обери мову тут; Auto використовує мову Telegram.', pt: 'Escolha o idioma aqui. Auto usa o idioma do Telegram.', en: 'Pick your preferred language. Auto follows your Telegram language.' },
+        'support.ticket': { ru: 'Выбери категорию и опиши проблему минимум десятью символами. Обращение создаётся на сервере и появляется в списке; можно просматривать ответы.', uk: 'Оберіть категорію й опишіть проблему. Звернення збережеться на сервері.', pt: 'Escolha a categoria e descreva o problema. O chamado será salvo no servidor.', en: 'Choose a category and describe the issue. Your ticket is saved on the server.' }
     };
     const closeGuide = () => { if (guideScreen)
-        store.setItem('gm_guide_' + guideScreen, '1'); setGuideScreen(''); setGuideStep(0); };
+        store.setItem('gm_guide_' + guideScreen, '1'); setGuideScreen(''); setGuideStep(0); setGuideSpot(null); };
     const openGuide = (name) => { if (guideCatalog[name]) {
         setGuideScreen(name);
         setGuideStep(0);
+        setGuideSpot(null);
     } };
+    React.useEffect(() => {
+        if (!guideScreen)
+            return;
+        const step = guideCatalog[guideScreen]?.[guideStep];
+        if (!step)
+            return;
+        const selector = String(step[2] || '');
+        let handle;
+        const align = () => {
+            const element = document.querySelector(selector);
+            if (!element) {
+                setGuideSpot(null);
+                return;
+            }
+            const rect = element.getBoundingClientRect();
+            const height = window.visualViewport?.height || window.innerHeight;
+            const top = Math.max(8, rect.top - 5), bottom = Math.min(height - 8, rect.bottom + 5);
+            const x = Math.max(8, rect.left - 6), right = Math.min(window.innerWidth - 8, rect.right + 6);
+            const spotHeight = Math.max(36, bottom - top);
+            const cardHeight = 260;
+            const above = top - cardHeight - 15;
+            const below = bottom + 14;
+            const cardTop = (above >= 12 ? above : below + cardHeight <= height - 10 ? below : Math.max(12, height - cardHeight - 12));
+            setGuideSpot({ top, left: x, width: right - x, height: spotHeight, cardTop });
+        };
+        const element = document.querySelector(selector);
+        element?.scrollIntoView?.({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+        const timer = window.setTimeout(align, 320);
+        window.addEventListener('resize', align);
+        window.addEventListener('scroll', align, true);
+        return () => { window.clearTimeout(timer); window.removeEventListener('resize', align); window.removeEventListener('scroll', align, true); };
+    }, [guideScreen, guideStep]);
     const [wallet, setWallet] = React.useState(firstWallet);
     const [toast, setToast] = React.useState('');
     const [period, setPeriod] = React.useState('1h');
@@ -803,7 +866,7 @@ function App() {
     const top = (title, back = true, right = 'more') => React.createElement("header", { className: 'screen-header ' + (!isLight ? 'dark-head' : '') },
         React.createElement("button", { className: "header-icon", "aria-label": "\u041D\u0430\u0437\u0430\u0434", onClick: () => back ? goBack() : goto('more') }, back ? icon('chevron-left', 24) : React.createElement(Brand, { theme: theme, size: 35 })),
         React.createElement("strong", null, title),
-        React.createElement("button", { className: "header-icon", onClick: () => right === 'settings' ? goto('settings') : goto('more'), "aria-label": "\u0414\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0435 \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u044F" }, icon(right, 23)));
+        React.createElement("button", { className: "header-icon", onClick: () => right === 'settings' ? goto('settings') : right === 'info' ? openGuide(screen) : goto('more'), "aria-label": right === 'info' ? L('instruction') : "Дополнительные действия" }, icon(right, 23)));
     const menuItems = [['home', 'home', lang('home')], ['trade', 'candlesticks', lang('market')], ['mining', 'lightning', lang('mining')], ['boxes', 'gift', lang('boxes')], ['more', 'more', lang('more')]];
     const bottom = () => React.createElement("nav", { className: "bottom-nav", "aria-label": "\u041E\u0441\u043D\u043E\u0432\u043D\u044B\u0435 \u0440\u0430\u0437\u0434\u0435\u043B\u044B" }, menuItems.map(([s, i, t]) => React.createElement(BarButton, { key: s, name: i, theme: theme, title: t, selected: screen === s || (isLight && s === 'earn' && screen === 'tasks') || (!isLight && s === 'earn' && screen === 'tasks'), onClick: () => goto(s === 'earn' && isLight ? 'tasks' : s) })));
     function Home() {
@@ -833,7 +896,19 @@ function App() {
         const activeOrders = liveOrders.filter(o => o.status === 'open');
         const isOwner = ['owner', 'coowner'].includes(liveRole);
         const topDepth = Math.max(1, ...[...bids, ...asks].map(o => o.gm_cents));
-        const openTrade = kind => { setSide(kind); setOrderType('limit'); setModal('tradeForm'); };
+        const openTrade = (kind) => {
+            setSide(kind);
+            setOrderType('limit');
+            if (!orderPrice) {
+                const px = Number((pre ? liveTicker?.indicative?.price : kind === 'buy' ? liveTicker?.best_ask : liveTicker?.best_bid) || liveTicker?.last_price || 0);
+                if (px > 0)
+                    setOrderPrice((px / 100).toFixed(2));
+            }
+            setModal('tradeForm');
+        };
+        const quickPriceCents = Number((pre ? liveTicker?.indicative?.price : side === 'buy' ? liveTicker?.best_ask : liveTicker?.best_bid) || liveTicker?.last_price || 0);
+        const quickQty = Number(String(amount).replace(',', '.'));
+        const quickTotal = Number.isFinite(quickQty) && quickQty > 0 && quickPriceCents > 0 ? nf(quickQty * quickPriceCents / 100, 2) + ' CR' : '—';
         const tradeName = pre ? 'PREMARKET' : liveTicker?.trade_test_mode ? 'TEST SPOT' : 'SPOT';
         const timeframe = ['1m', '5m', '15m', '1h', '4h', '1d'];
         const tabNames = [['book', 'Стакан'], ['recent', 'Сделки'], ['orders', 'Мои ордера']];
@@ -845,8 +920,8 @@ function App() {
             : e('div', { className: 'terminal-tab-empty' }, icon('clock', 30), e('b', null, 'Сделок пока нет'), e('small', null, 'Здесь появятся исполненные, подтверждённые сервером сделки.')));
         const ordersPanel = e('div', { className: 'terminal-my-orders' }, activeOrders.length ? activeOrders.slice(0, 25).map(o => e('div', { className: 'trade-open-row terminal-own-row', key: o.id }, e('div', null, e('b', { className: o.side === 'buy' ? 'terminal-order-buy' : 'terminal-order-sell' }, o.side === 'buy' ? 'Покупка GM' : 'Продажа GM'), e('small', null, nf(o.remaining_cents / 100) + ' GM · ' + nf(o.limit_price / 100) + ' CR/GM')), e('button', { type: 'button', onClick: () => cancelLiveOrder(o.id) }, 'Отменить')))
             : e('div', { className: 'terminal-tab-empty' }, icon('layers', 30), e('b', null, 'Активных ордеров нет'), e('small', null, 'Выбери «Купить» или «Продать», чтобы создать Limit-заявку.')));
-        return e(React.Fragment, null, top('Trade', true, 'more'), e('section', { className: 'terminal-shell' }, e('div', { className: 'terminal-pair-top' }, e('div', { className: 'terminal-pair-logo' }, icon('gm-coin-orbit', 39)), e('div', { className: 'terminal-pair-text' }, e('b', null, 'GM / CR'), e('small', null, 'GM TOKEN · торговая пара')), e('div', { className: 'terminal-live-tag' }, e('i', { className: 'terminal-live-dot' }), tradeName)), e('div', { className: 'terminal-quote' }, e('div', { className: 'terminal-quote-label' }, e('span', null, pre ? 'Индикативная цена' : 'Последняя цена сделки'), e('button', { type: 'button', onClick: refreshLive, 'aria-label': 'Обновить котировки' }, icon('refresh', 17))), e('div', { className: 'terminal-quote-value' }, quote ? nf(quote / 100) : '—', e('small', null, 'CR')), e('p', null, quote ? pre ? 'Ориентировочная цена не означает исполненную сделку.' : 'Подтверждено исполненной сделкой GM/CR.' : 'Цена появится после первой исполненной сделки между разными игроками')), e('div', { className: 'terminal-metrics' }, e('div', null, e('small', null, 'ОБЪЁМ · 24 Ч'), e('b', null, nf((liveTicker?.volume_24h_gm_cents || 0) / 100) + ' GM')), e('div', null, e('small', null, 'СДЕЛОК · 24 Ч'), e('b', null, String(liveTicker?.trades_24h || 0))), e('div', null, e('small', null, 'РЕЖИМ'), e('b', null, pre ? countdown : 'Активен'))), e('div', { className: 'terminal-chart-toolbar' }, e('div', null, e('b', null, 'ГРАФИК'), e('small', null, 'Свечи OHLCV')), e('div', { className: 'terminal-chart-truth' }, icon('shield-check', 15), 'Реальные сделки')), e('div', { className: 'terminal-periods', 'aria-label': 'Интервал свечей' }, timeframe.map(t => e('button', { type: 'button', key: t, className: period === t ? 'active' : '',
-            'aria-pressed': period === t, onClick: () => { setSelectedCandle(null); setPeriod(t); } }, t))), e(Candles, { theme, candles: liveCandles, selected: selectedCandle, onSelect: setSelectedCandle, interval: period })), e('section', { className: 'terminal-controls' }, e('div', { className: 'trade-wallet-balances terminal-wallet-line' }, e('div', null, e('small', null, 'Доступно для торговли'), e('span', null, icon('wallet', 17), ' Твой баланс')), e('div', { className: 'terminal-wallet-amounts' }, e('span', null, e('b', null, nf(wallet.gm)), ' GM'), e('span', null, e('b', null, nf(wallet.cr)), ' CR'))), e('div', { className: 'trade-cta-row terminal-buy-sell' }, e('button', { type: 'button', className: 'trade-cta buy', onClick: () => openTrade('buy') }, icon('plus', 19), e('span', null, e('b', null, 'КУПИТЬ GM'), e('small', null, 'За игровые CR'))), e('button', { type: 'button', className: 'trade-cta sell', onClick: () => openTrade('sell') }, icon('minus', 19), e('span', null, e('b', null, 'ПРОДАТЬ GM'), e('small', null, 'Получить CR')))), (isOwner || wallet.gm < 10) ? e('div', { className: 'terminal-funding' }, e('span', null, 'Доступно для торговли: GM и CR; открытые заявки резервируют средства.'), e('button', { type: 'button', onClick: () => goto(isOwner ? 'admin' : 'mining') }, isOwner ? 'Пополнить тестовый баланс' : 'Mining', icon('chevron-right', 16))) : null), e('section', { className: 'terminal-data-panel' }, e('div', { className: 'terminal-data-tabs', role: 'tablist', 'aria-label': 'Данные рынка' }, tabNames.map(([value, label]) => e('button', { type: 'button', key: value, role: 'tab',
+        return e(React.Fragment, null, top(L('market'), true, 'info'), e('section', { className: 'terminal-shell' }, e('div', { className: 'terminal-pair-top' }, e('div', { className: 'terminal-pair-logo' }, icon('gm-coin-orbit', 39)), e('div', { className: 'terminal-pair-text' }, e('b', null, 'GM / CR'), e('small', null, 'GM TOKEN · торговая пара')), e('div', { className: 'terminal-live-tag' }, e('i', { className: 'terminal-live-dot' }), tradeName)), e('div', { className: 'terminal-quote' }, e('div', { className: 'terminal-quote-label' }, e('span', null, pre ? 'Индикативная цена' : 'Последняя цена сделки'), e('button', { type: 'button', onClick: refreshLive, 'aria-label': 'Обновить котировки' }, icon('refresh', 17))), e('div', { className: 'terminal-quote-value' }, quote ? nf(quote / 100) : '—', e('small', null, 'CR')), e('p', null, quote ? pre ? 'Ориентировочная цена не означает исполненную сделку.' : 'Подтверждено исполненной сделкой GM/CR.' : 'Цена появится после первой исполненной сделки между разными игроками')), e('div', { className: 'terminal-metrics' }, e('div', null, e('small', null, 'ОБЪЁМ · 24 Ч'), e('b', null, nf((liveTicker?.volume_24h_gm_cents || 0) / 100) + ' GM')), e('div', null, e('small', null, 'СДЕЛОК · 24 Ч'), e('b', null, String(liveTicker?.trades_24h || 0))), e('div', null, e('small', null, 'РЕЖИМ'), e('b', null, pre ? countdown : 'Активен'))), e('div', { className: 'terminal-chart-toolbar' }, e('div', null, e('b', null, 'ГРАФИК'), e('small', null, 'Свечи OHLCV')), e('div', { className: 'terminal-chart-truth' }, icon('shield-check', 15), 'Реальные сделки')), e(Candles, { theme, candles: liveCandles, selected: selectedCandle, onSelect: setSelectedCandle, interval: period }), e('div', { className: 'terminal-periods', 'aria-label': 'Интервал свечей' }, timeframe.map(t => e('button', { type: 'button', key: t, className: period === t ? 'active' : '',
+            'aria-pressed': period === t, onClick: () => { setSelectedCandle(null); setPeriod(t); } }, t)))), e('section', { className: 'terminal-controls' }, e('div', { className: 'trade-wallet-balances terminal-wallet-line' }, e('div', null, e('small', null, 'Доступно для торговли'), e('span', null, icon('wallet', 17), ' Твой баланс')), e('div', { className: 'terminal-wallet-amounts' }, e('span', null, e('b', null, nf(wallet.gm)), ' GM'), e('span', null, e('b', null, nf(wallet.cr)), ' CR'))), e('div', { className: 'trade-cta-row terminal-buy-sell', role: 'group', 'aria-label': 'Купить или продать игровые GM' }, e('button', { type: 'button', className: 'trade-cta buy ' + (side === 'buy' ? 'active' : ''), 'aria-pressed': side === 'buy', onClick: () => setSide('buy') }, icon('plus', 19), e('span', null, e('b', null, 'КУПИТЬ GM'), e('small', null, 'За игровые CR'))), e('button', { type: 'button', className: 'trade-cta sell ' + (side === 'sell' ? 'active' : ''), 'aria-pressed': side === 'sell', onClick: () => setSide('sell') }, icon('minus', 19), e('span', null, e('b', null, 'ПРОДАТЬ GM'), e('small', null, 'Получить CR')))), e('div', { className: 'gm-trade-quick-card gm-premium-card' }, e('div', { className: 'gm-trade-quick-head' }, e('span', null, side === 'buy' ? 'ПОКУПКА · GM' : 'ПРОДАЖА · GM'), e('b', null, 'GM / CR')), e('label', { htmlFor: 'gm-trade-quick-amount' }, 'Количество'), e('div', { className: 'gm-trade-quick-input' }, e('input', { id: 'gm-trade-quick-amount', inputMode: 'decimal', type: 'text', placeholder: '0.00', value: amount, onChange: ev => setAmount(ev.target.value), 'aria-label': 'Количество GM' }), e('span', null, 'GM')), e('div', { className: 'gm-trade-quick-presets' }, ['10', '100', '500', '1000'].map(x => e('button', { type: 'button', key: x, className: amount === x ? 'active' : '', onClick: () => setAmount(x) }, x))), e('div', { className: 'gm-trade-quick-total' }, e('span', null, side === 'buy' ? 'Предварительно потребуется' : 'Предварительно получится'), e('strong', null, quickTotal)), e('small', { className: 'gm-trade-quick-disclaimer' }, quickPriceCents > 0 ? 'Расчёт по последней доступной цене; окончательная цена указывается в заявке.' : 'Рыночная цена пока не подтверждена. Ты сможешь задать свою цену при проверке заявки.'), e('button', { type: 'button', className: 'gm-trade-quick-continue', disabled: !Number.isFinite(quickQty) || quickQty < 10, onClick: () => openTrade(side) }, side === 'buy' ? 'Продолжить покупку' : 'Продолжить продажу', icon('chevron-right', 21))), (isOwner || wallet.gm < 10) ? e('div', { className: 'terminal-funding' }, e('span', null, 'Доступно для торговли: GM и CR; открытые заявки резервируют средства.'), e('button', { type: 'button', onClick: () => goto(isOwner ? 'admin' : 'mining') }, isOwner ? 'Пополнить тестовый баланс' : 'Mining', icon('chevron-right', 16))) : null), e('section', { className: 'terminal-data-panel' }, e('div', { className: 'terminal-data-tabs', role: 'tablist', 'aria-label': 'Данные рынка' }, tabNames.map(([value, label]) => e('button', { type: 'button', key: value, role: 'tab',
             className: tradeTab === value ? 'active' : '', 'aria-selected': tradeTab === value,
             onClick: () => setTradeTab(value) }, label))), e('div', { className: 'terminal-tab-content' }, tradeTab === 'book' ? bookPanel : tradeTab === 'recent' ? tradesPanel : ordersPanel)), e('p', { className: 'terminal-fine-print' }, 'GM и CR — виртуальные игровые единицы. Свечи и объём рассчитываются только по исполненным сделкам. Комиссия 0,5% для каждой стороны при исполнении.'));
     }
@@ -862,7 +937,7 @@ function App() {
         const required = side === 'buy' ? estimate : qty;
         const issue = tradeIssue();
         const label = side === 'buy' ? 'Купить GM' : 'Продать GM';
-        return e('div', { className: 'overlay trade-overlay', onClick: () => setModal('') }, e('div', { className: 'modal-box trade-sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': isForm ? label : 'Подтверждение ордера', onClick: ev => ev.stopPropagation() }, e('div', { className: 'trade-sheet-head' }, e('div', { className: 'trade-sheet-title' }, e('div', { className: 'trade-sheet-icon' }, icon(side === 'buy' ? 'deposit' : 'withdraw', 30)), e('span', null, e('strong', null, isForm ? label : 'Проверь заявку'), e('small', null, 'GM / CR · ' + (pre ? 'Premarket' : 'Test Spot')))), e('button', { type: 'button', className: 'trade-sheet-x', onClick: () => setModal(''), 'aria-label': 'Закрыть' }, icon('close', 21))), e('div', { className: 'trade-sheet-balance' }, e('span', null, 'Доступно ' + (side === 'buy' ? 'CR' : 'GM')), e('strong', null, nf(available) + ' ' + (side === 'buy' ? 'CR' : 'GM'))), isForm ? e(React.Fragment, null, e('div', { className: 'trade-field' }, e('label', { htmlFor: 'trade-order-type' }, 'Тип заявки'), e('select', { id: 'trade-order-type', value: orderType, onChange: ev => setOrderType(ev.target.value) }, e('option', { value: 'limit' }, 'Limit · своя цена'), e('option', { value: 'market', disabled: pre }, 'Market · до 3% проскальзывания'))), e('div', { className: 'trade-field' }, e('label', { htmlFor: 'trade-qty' }, 'Количество GM'), e('input', { id: 'trade-qty', type: 'text', inputMode: 'decimal', placeholder: 'Например, 5000', value: amount, onChange: ev => setAmount(ev.target.value) })), e('div', { className: 'trade-sheet-presets' }, ['10', '100', '1000', '5000'].map(v => e('button', { type: 'button', key: v, className: amount === v ? 'active' : '', onClick: () => setAmount(v) }, v))), orderType === 'limit' ? e('div', { className: 'trade-field' }, e('label', { htmlFor: 'trade-price' }, 'Цена · CR за 1 GM'), e('input', { id: 'trade-price', type: 'text', inputMode: 'decimal', value: orderPrice, placeholder: 'Например, 0.50', onChange: ev => setOrderPrice(ev.target.value) })) : null, orderType === 'limit' ? e('div', { className: 'trade-field' }, e('label', { htmlFor: 'trade-expiry' }, 'Срок действия заявки'), e('select', { id: 'trade-expiry', value: orderDuration, onChange: ev => setOrderDuration(ev.target.value) }, ['1h', '6h', '12h', '24h', '3d', '7d', 'GTC'].map(x => e('option', { key: x }, x)))) : null, e('div', { className: 'trade-sheet-estimate' }, e('span', null, side === 'buy' ? 'Резерв по заявке' : 'Заблокируется GM'), e('strong', null, (required > 0 ? nf(required) : '—') + ' ' + (side === 'buy' ? 'CR' : 'GM'))), issue ? e('p', { className: 'trade-form-alert', role: 'alert' }, icon('shield-check', 17), issue) : e('p', { className: 'trade-form-help' }, 'Комиссия 0,5% при исполнении с обеих сторон. Без фиктивных сделок.'), e('button', { type: 'button', className: 'trade-sheet-primary', disabled: !!issue, onClick: tradePreview }, 'Проверить заявку', icon('chevron-right', 20))) :
+        return e('div', { className: 'overlay trade-overlay', onClick: () => setModal('') }, e('div', { className: 'modal-box trade-sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': isForm ? label : 'Подтверждение ордера', onClick: ev => ev.stopPropagation() }, e('div', { className: 'trade-sheet-head' }, e('div', { className: 'trade-sheet-title' }, e('div', { className: 'trade-sheet-icon' }, icon(side === 'buy' ? 'deposit' : 'withdraw', 30)), e('span', null, e('strong', null, isForm ? label : 'Проверь заявку'), e('small', null, 'GM / CR · ' + (pre ? 'Premarket' : 'Test Spot')))), e('button', { type: 'button', className: 'trade-sheet-x', onClick: () => setModal(''), 'aria-label': 'Закрыть' }, icon('close', 21))), e('div', { className: 'trade-sheet-balance' }, e('span', null, 'Доступно ' + (side === 'buy' ? 'CR' : 'GM')), e('strong', null, nf(available) + ' ' + (side === 'buy' ? 'CR' : 'GM'))), isForm ? e(React.Fragment, null, e('div', { className: 'trade-field' }, e('label', { htmlFor: 'trade-order-type' }, 'Тип заявки'), e('div', { className: 'gm-trade-type-pills', role: 'group', 'aria-label': 'Тип заявки' }, e('button', { type: 'button', className: orderType === 'limit' ? 'active' : '', 'aria-pressed': orderType === 'limit', onClick: () => setOrderType('limit') }, 'LIMIT', e('small', null, 'Своя цена')), e('button', { type: 'button', disabled: pre, className: orderType === 'market' ? 'active' : '', 'aria-pressed': orderType === 'market', onClick: () => setOrderType('market') }, 'MARKET', e('small', null, 'До 3% проскальзывания')))), e('div', { className: 'trade-field' }, e('label', { htmlFor: 'trade-qty' }, 'Количество GM'), e('input', { id: 'trade-qty', type: 'text', inputMode: 'decimal', placeholder: 'Например, 5000', value: amount, onChange: ev => setAmount(ev.target.value) })), e('div', { className: 'trade-sheet-presets' }, ['10', '100', '1000', '5000'].map(v => e('button', { type: 'button', key: v, className: amount === v ? 'active' : '', onClick: () => setAmount(v) }, v))), orderType === 'limit' ? e('div', { className: 'trade-field' }, e('label', { htmlFor: 'trade-price' }, 'Цена · CR за 1 GM'), e('input', { id: 'trade-price', type: 'text', inputMode: 'decimal', value: orderPrice, placeholder: 'Например, 0.50', onChange: ev => setOrderPrice(ev.target.value) })) : null, orderType === 'limit' ? e('div', { className: 'trade-field' }, e('label', { htmlFor: 'trade-expiry' }, 'Срок действия заявки'), e('div', { className: 'gm-trade-duration-pills', role: 'group', 'aria-label': 'Срок действия заявки' }, ['1h', '6h', '12h', '24h', '3d', '7d', 'GTC'].map(x => e('button', { type: 'button', key: x, className: orderDuration === x ? 'active' : '', 'aria-pressed': orderDuration === x, onClick: () => setOrderDuration(x) }, x)))) : null, e('div', { className: 'trade-sheet-estimate' }, e('span', null, side === 'buy' ? 'Резерв по заявке' : 'Заблокируется GM'), e('strong', null, (required > 0 ? nf(required) : '—') + ' ' + (side === 'buy' ? 'CR' : 'GM'))), issue ? e('p', { className: 'trade-form-alert', role: 'alert' }, icon('shield-check', 17), issue) : e('p', { className: 'trade-form-help' }, 'Комиссия 0,5% при исполнении с обеих сторон. Без фиктивных сделок.'), e('button', { type: 'button', className: 'trade-sheet-primary', disabled: !!issue, onClick: tradePreview }, 'Проверить заявку', icon('chevron-right', 20))) :
             e(React.Fragment, null, e('div', { className: 'trade-review' }, e('span', null, 'ПОДТВЕРЖДЕНИЕ'), e('p', null, modalText)), e('div', { className: 'trade-sheet-estimate' }, e('span', null, 'Доступно сейчас'), e('strong', null, nf(available) + ' ' + (side === 'buy' ? 'CR' : 'GM'))), issue ? e('p', { className: 'trade-form-alert', role: 'alert' }, issue) : null, e('button', { type: 'button', className: 'trade-sheet-primary', disabled: !!issue, onClick: submitOrder }, 'Отправить ордер', icon('shield-check', 20))), e('button', { type: 'button', className: 'trade-sheet-secondary', onClick: () => { setModal(isForm ? '' : 'tradeForm'); } }, isForm ? 'Отмена' : 'Назад к форме')));
     }
     function Earn() { return React.createElement(React.Fragment, null,
@@ -899,7 +974,7 @@ function App() {
             return e('div', { className: 'gm-task-item gm-premium-card', key: t.id }, e('span', { className: 'gm-task-icon' }, icon(t.icon || 'tasks', 29, true)), e('div', { className: 'gm-task-details' }, e('b', null, t.title || 'Задание'), e('small', null, t.description || 'Подтверди выполнение условия'), e('strong', null, caption || 'Достижение')), e('button', { type: 'button', disabled: demo || completed || !ready, onClick: action,
                 className: completed ? 'done' : ready ? 'ready' : '' }, completed ? icon('check', 18) : ready ? 'Забрать' : icon('clock', 18)));
         }) : e('div', { className: 'gm-task-empty gm-premium-card' }, icon('tasks', 44, true), e('b', null, 'Задания готовятся'), e('small', null, 'Проверь список после подключения Telegram.'));
-        return e(React.Fragment, null, top('Задания', true, 'tasks'), e('div', { className: 'gm-task-header gm-premium-card' }, icon('tasks', 44, true), e('div', null, e('b', null, 'Выполняй цели'), e('small', null, 'Игровые задания с проверяемыми условиями. Награды начисляет только сервер.'))), e('div', { className: 'gm-task-filters' }, tabs.map(([value, label]) => e('button', { type: 'button', key: value,
+        return e(React.Fragment, null, top(L('tasks'), true, 'info'), e('div', { className: 'gm-task-header gm-premium-card' }, icon('tasks', 44, true), e('div', null, e('b', null, 'Выполняй цели'), e('small', null, 'Игровые задания с проверяемыми условиями. Награды начисляет только сервер.'))), e('div', { className: 'gm-task-filters' }, tabs.map(([value, label]) => e('button', { type: 'button', key: value,
             className: taskFilter === value ? 'active' : '', onClick: () => setTaskFilter(value) }, label))), e('div', { className: 'gm-task-list' }, rows), e('p', { className: 'gm-task-note' }, 'Задания за подписки появятся после настройки безопасной проверки членства через Telegram. Сейчас доступны только проверяемые игровые действия.'));
     }
     function Leaderboard() { const users = (liveRanks?.users || []).filter((u) => rankFilter === 'Global' || (liveReferrals?.referred || []).some((r) => r.user_id === u.id)); return React.createElement(React.Fragment, null,
@@ -1085,7 +1160,7 @@ function App() {
         const items = liveAchievements;
         const planned = [['origin', 'trophy', 'Первопроходец', 'Один из первых 20 игроков — уникальная рамка'], ['first_claim', 'lightning', 'Искра GM', 'Первый сбор майнинга'], ['mining_25', 'gm-coin-orbit', 'Стальной майнер', '25 улучшений майнинга'], ['mining_50', 'diamond', 'Серебряная легенда', '50 улучшений майнинга'], ['collector', 'gift', 'Хранитель артефактов', 'Собери серию игровых наград'], ['community', 'friends', 'Сила сообщества', 'Пригласи друзей'], ['immortal', 'crown', 'GM Immortal', 'Достигни максимальной лиги']];
         return React.createElement(React.Fragment, null,
-            top(L('achievements'), true, 'trophy'),
+            top(L('achievements'), true, 'info'),
             React.createElement("div", { className: "achievement-list" }, items.map((t) => React.createElement("div", { className: "earn-item pearl-card", key: t.id },
                 icon(t.icon || 'trophy', 45, true),
                 React.createElement("span", null,
@@ -1265,8 +1340,10 @@ function App() {
         const step = steps[Math.max(0, Math.min(steps.length - 1, introStep))];
         const complete = () => { store.setItem('gm_onboarding_complete', '1'); navStack.current = []; setScreen('home'); };
         const ticks = steps.map((_, i) => e('i', { key: i, className: i <= introStep ? 'current' : '' }));
-        const languages = gmLanguages.map(([value, name]) => e('option', { key: value, value }, name));
-        const languagePicker = introStep === 0 ? e('div', { className: 'gm-intro-language' }, e('label', null, lang('language')), e('select', { value: locale, onChange: event => { setLocale(event.target.value); store.setItem('gm_lang', event.target.value); } }, languages)) : null;
+        const displayedLanguages = gmLanguages.filter(([code, label]) => (label.toLowerCase().includes(languageSearch.toLowerCase()) || code.includes(languageSearch.toLowerCase())));
+        const chosenLanguage = gmLanguages.find(([code]) => code === locale)?.[1] || gmLanguages[0][1];
+        const chooseLanguage = (code) => { setLocale(code); store.setItem('gm_lang', code); setLanguageOpen(false); setLanguageSearch(''); };
+        const languagePicker = introStep === 0 ? e('div', { className: 'gm-intro-language gm-premium-card' }, e('label', { className: 'gm-intro-language-label' }, L('interfaceLanguage')), e('button', { type: 'button', className: 'gm-intro-lang-trigger', onClick: () => setLanguageOpen(!languageOpen), 'aria-expanded': languageOpen }, e('span', null, chosenLanguage), icon(languageOpen ? 'chevron-up' : 'chevron-down', 18)), languageOpen ? e('div', { className: 'gm-intro-lang-panel', role: 'group', 'aria-label': L('interfaceLanguage') }, e('input', { type: 'search', placeholder: 'Search / Поиск / Pesquisar', value: languageSearch, onChange: (ev) => setLanguageSearch(ev.target.value), 'aria-label': 'Search languages' }), e('div', { className: 'gm-intro-lang-results' }, displayedLanguages.map(([code, label]) => e('button', { key: code, type: 'button', className: 'gm-intro-lang-option ' + (locale === code ? 'selected' : ''), onClick: () => chooseLanguage(code) }, e('span', null, label), locale === code ? icon('check', 18) : null)))) : null) : null;
         const back = introStep > 0 ? e('button', { type: 'button', className: 'gm-intro-prev', onClick: () => setIntroStep(introStep - 1) }, L('back')) : null;
         return e('div', { className: 'gm-intro-v8' }, e('header', { className: 'gm-intro-header' }, e(Brand, { theme, size: 34 }), e('b', null, 'GM TOKEN'), e('button', { type: 'button', onClick: complete }, lang('skip'))), e('div', { className: 'gm-intro-progress' }, ticks), e('div', { className: 'gm-intro-art' }, e('div', { className: 'gm-intro-art-ring' }, icon(step[0], 114, true))), e('div', { className: 'gm-intro-copy' }, e('small', null, L('tutorialStep') + ' ' + (introStep + 1) + ' / 4'), e('h1', null, introStep === 0 ? L('welcome') : step[1]), e('p', null, step[2])), languagePicker, e('div', { className: 'gm-intro-actions' }, e('button', { type: 'button', className: 'gm-intro-next',
             onClick: () => introStep === steps.length - 1 ? complete() : setIntroStep(introStep + 1) }, introStep === steps.length - 1 ? lang('start') : lang('next'), icon('chevron-right', 20)), back));
@@ -1274,27 +1351,48 @@ function App() {
     function GuideOverlay() {
         if (!guideScreen || !guideCatalog[guideScreen])
             return null;
-        const steps = guideCatalog[guideScreen], step = steps[Math.min(guideStep, steps.length - 1)];
+        const steps = guideCatalog[guideScreen];
+        const step = steps[Math.min(guideStep, steps.length - 1)];
+        const copy = guideText[step[3]];
+        const description = copy?.[actualLang] || copy?.en || L(step[3]);
+        const next = () => { setGuideSpot(null); if (guideStep + 1 >= steps.length)
+            closeGuide();
+        else
+            setGuideStep(guideStep + 1); };
+        const dimensions = guideSpot;
+        const viewportWidth = window.innerWidth, viewportHeight = window.visualViewport?.height || window.innerHeight;
         return React.createElement("div", { className: "gm-tour-backdrop", role: "dialog", "aria-modal": "true", "aria-label": L('instruction') },
-            React.createElement("div", { className: "gm-tour-card" },
+            dimensions ? React.createElement(React.Fragment, null,
+                React.createElement("div", { className: "gm-tour-shade", style: { left: 0, top: 0, width: '100%', height: dimensions.top } }),
+                React.createElement("div", { className: "gm-tour-shade", style: { left: 0, top: dimensions.top, width: dimensions.left, height: dimensions.height } }),
+                React.createElement("div", { className: "gm-tour-shade", style: { left: dimensions.left + dimensions.width, top: dimensions.top, width: Math.max(0, viewportWidth - dimensions.left - dimensions.width), height: dimensions.height } }),
+                React.createElement("div", { className: "gm-tour-shade", style: { left: 0, top: dimensions.top + dimensions.height, width: '100%', height: Math.max(0, viewportHeight - dimensions.top - dimensions.height) } }),
+                React.createElement("div", { className: "gm-tour-spotlight", style: { left: dimensions.left, top: dimensions.top, width: dimensions.width, height: dimensions.height }, onClick: next },
+                    React.createElement("span", { className: "gm-tour-pointer" }, "\u2193"))) : React.createElement("div", { className: "gm-tour-shade gm-tour-shade-full" }),
+            React.createElement("div", { className: "gm-tour-card", style: dimensions ? { top: dimensions.cardTop } : undefined },
                 React.createElement("div", { className: "gm-tour-head" },
-                    React.createElement(Brand, { theme: theme, size: 35 }),
-                    React.createElement("span", null,
+                    React.createElement(Brand, { theme: theme, size: 37 }),
+                    React.createElement("span", { className: "gm-tour-step-counter" },
                         L('tutorialStep'),
                         " ",
                         guideStep + 1,
                         " / ",
                         steps.length),
                     React.createElement("button", { type: "button", onClick: closeGuide, "aria-label": L('skip') }, icon('close', 19))),
-                React.createElement("div", { className: "gm-tour-art" }, icon(step[0], 80, true)),
+                React.createElement("div", { className: "gm-tour-guide-name" },
+                    L('instruction'),
+                    " \u00B7 GM TOKEN"),
                 React.createElement("h2", null, L(step[1])),
-                React.createElement("p", null, L(step[2])),
+                React.createElement("p", null, description),
+                React.createElement("div", { className: "gm-tour-hint" },
+                    icon('info', 16),
+                    " ",
+                    actualLang === 'ru' ? 'Выделена нужная кнопка или область экрана.' : actualLang === 'uk' ? 'Підсвічено потрібну кнопку або ділянку.' : actualLang === 'pt' ? 'O botão ou a área relevante está destacado.' : 'The relevant button or area is highlighted.'),
                 React.createElement("div", { className: "gm-tour-track" }, steps.map((_, i) => React.createElement("i", { className: i <= guideStep ? 'active' : '', key: i }))),
                 React.createElement("div", { className: "gm-tour-actions" },
-                    React.createElement("button", { onClick: closeGuide }, L('skip')),
-                    React.createElement("button", { className: "gm-tour-primary", onClick: () => guideStep + 1 >= steps.length ? closeGuide() : setGuideStep(guideStep + 1) },
+                    React.createElement("button", { type: "button", onClick: closeGuide }, L('skip')),
+                    React.createElement("button", { type: "button", className: "gm-tour-primary", onClick: next },
                         guideStep + 1 >= steps.length ? L('finish') : L('next'),
-                        " ",
                         icon('chevron-right', 18)))));
     }
     function Streak() { return React.createElement(React.Fragment, null,
