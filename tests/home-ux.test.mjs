@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 const source=()=>read('../miniapp/src/main.tsx');
-const compiled=()=>read('../miniapp/public/main.js');
+// Generated JS may add whitespace and unicode-escape JSX text; compare semantics.
+const compiled=()=>read('../miniapp/public/main.js').replace(/\\u([0-9a-fA-F]{4})/g,(_,hex)=>String.fromCharCode(parseInt(hex,16))).replace(/\s+/g,'');
 test('Premium Home is shared across Silver and Graphite and has real server balances/market data',()=>{
  for(const code of [source(),compiled()]){
   assert.ok(code.includes('gm-home-v8'));
