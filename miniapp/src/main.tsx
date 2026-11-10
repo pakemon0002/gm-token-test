@@ -667,9 +667,77 @@ function Tasks(){
  );
 }
 
- function Leaderboard(){const users=(liveRanks?.users||[]).filter((u:any)=>rankFilter==='Global'||(liveReferrals?.referred||[]).some((r:any)=>r.user_id===u.id));return <>{top('Leaderboard',true,'trophy')}<div className="rank-tabs"><button onClick={()=>setRankFilter('Global')} className={rankFilter==='Global'?'on':''}>Global</button><button onClick={()=>setRankFilter('Friends')} className={rankFilter==='Friends'?'on':''}>Friends</button></div><div className="leader-rows">{users.map((u:any,i:number)=><div className="leader-row" key={u.id}><b>{i+1}</b>{icon('profile',27)}<span>{clean(u.username||'Игрок')}</span><small>{nf(u.score_cents/100)} GM</small></div>)}</div>{users.length===0&&<p className="disclaimer">{liveRanks?.pending_rule?'Рейтинг ещё не включён: формула не утверждена. Фальшивых участников нет.':'Пока нет игроков в выбранном списке.'}</p>}</>}
- function Profile(){return <>{isLight?<header className="profile-top"><span></span><button className="header-icon" onClick={()=>goto('settings')}>{icon('settings',25)}</button></header>:<header className="dark-top"><b>GM TOKEN</b><button onClick={()=>goto('settings')}>{icon('more',20)} {icon('close',17)}</button></header>}<div className="profile-hero"><Brand theme={theme} size={isLight?103:98}/><h2>{webapp?.initDataUnsafe?.user?.username||webapp?.initDataUnsafe?.user?.first_name||'Игрок'}</h2><p>#{String(webapp?.initDataUnsafe?.user?.id||'')} <button className="inline-icon" onClick={()=>{navigator.clipboard?.writeText(String(webapp?.initDataUnsafe?.user?.id||''));flash('ID скопирован')}}>{icon('copy',15)}</button></p></div><div className="xp-area"><div className="xp-line"><b>Lv. {wallet.level}</b><small>{nf(wallet.xp,0)} / {nf(xpThreshold[Math.min(wallet.level,9)]||4400,0)} XP</small></div><div className="progress"><div style={{width:(Math.min(100,100*wallet.xp/(xpThreshold[Math.min(wallet.level,9)]||4400)))+'%'}}/></div></div><div className="stats-grid">{[['friends',String(liveReferrals?.referred?.length||0),'Friends'],['wallet',nf(wallet.gm,0),'Balance'],['lightning',String(wallet.streak),'Streak']].map(([i,n,label])=><div className="stat-card" key={label}>{icon(i,23)}<b>{n}</b><small>{label}</small></div>)}</div><div className="profile-menu">{[['trophy','Achievements','achievements'],['friends','Referral Program','referrals'],['clock','Transaction History','history'],['settings','Settings','settings'],['info','Support','support']].map(([i,t,s])=><button key={t} onClick={()=>goto(s as Route)}>{icon(i,21)}<span>{t}</span>{icon('chevron-right',18)}</button>)}</div>{isLight&&<button className="logout" onClick={()=>flash('Закрой Mini App в Telegram для выхода')}>{icon('logout',20)} Log Out</button>}</>}
- 
+ function Leaderboard(){
+  const e=React.createElement;
+  const leagues=(liveState?.league?.all||[{id:'bronze',name:'Bronze',xp:0},{id:'silver',name:'Silver',xp:1000},{id:'gold',name:'Gold',xp:3000},{id:'platinum',name:'Platinum',xp:7500},{id:'diamond',name:'Diamond',xp:15000},{id:'master',name:'Master',xp:30000},{id:'grandmaster',name:'Grandmaster',xp:50000},{id:'elite',name:'Elite',xp:75000},{id:'legend',name:'Legend',xp:110000},{id:'immortal',name:'GM Immortal',xp:160000}]);
+  const current=liveState?.league?.current?.id||'bronze';
+  const users=(liveRanks?.users||[]).filter((u:any)=>rankFilter==='Global'||(liveReferrals?.referred||[]).some((r:any)=>r.user_id===u.id));
+  return e(React.Fragment,null,
+   top(t('league')+' · GM',true,'trophy'),
+   e('section',{className:'gm-league-hero gm-premium-card'},
+    icon('trophy',50,true),
+    e('div',null,e('small',null,t('league')+' · '+(liveState?.league?.current?.name||'Bronze')),
+     e('strong',null,nf(wallet.xp,0)+' XP'),
+     e('span',null,(liveState?.league?.next? t('nextLeague')+': '+nf(liveState.league.remaining_xp,0)+' XP':'GM Immortal')))),
+   e('div',{className:'gm-league-list'},leagues.map((item:any,i:number)=>e('div',{
+    key:item.id,className:'gm-league-row gm-premium-card '+(item.id===current?'active':'')},
+     e('span',{className:'gm-league-number'},String(i+1).padStart(2,'0')),
+     icon(i>=8?'crown':i>=3?'diamond':'shield',27,true),
+     e('div',null,e('b',null,item.name),e('small',null,nf(item.xp,0)+' XP')),
+     item.id===current?icon('check',18):null))),
+   e('div',{className:'rank-tabs'},e('button',{type:'button',onClick:()=>setRankFilter('Global'),className:rankFilter==='Global'?'on':''},'Global'),
+    e('button',{type:'button',onClick:()=>setRankFilter('Friends'),className:rankFilter==='Friends'?'on':''},t('friends'))),
+   e('div',{className:'leader-rows'},users.map((u:any,i:number)=>e('div',{className:'leader-row',key:u.id},
+    e('b',null,i+1),icon('profile',27),e('span',null,clean(u.username||'Player')),
+    e('small',null,nf(u.score_cents/100)+' GM')))),
+   !users.length&&e('p',{className:'disclaimer'},liveRanks?.pending_rule?'Таблица лидеров будет доступна после проверки критериев рейтинга.':'В выбранном рейтинге пока нет игроков.'));
+ }
+ function Profile(){
+  const e=React.createElement;
+  const league=liveState?.league;
+  const xpNext=wallet.level<10?xpThreshold[wallet.level]:null;
+  const xpPrev=xpThreshold[Math.max(0,wallet.level-1)]||0;
+  const xpPct=xpNext==null?100:Math.max(0,Math.min(100,(wallet.xp-xpPrev)*100/(xpNext-xpPrev)));
+  const menu=[['trophy',t('achievements'),'achievements'],['friends',t('referrals'),'referrals'],
+   ['clock',t('history'),'history'],['settings',lang('settings'),'settings'],['info',t('support'),'support']];
+  const milestones=[25,50,75,100,125,150,175,200];
+  const unlockLevel=Number(liveState?.mining?.upgrade_level||1);
+  return e(React.Fragment,null,
+   top(t('profile'),true,'settings'),
+   e('div',{className:'profile-hero gm-profile-hero'},e('div',{className:'gm-profile-avatar'},
+    e(Brand,{theme,size:94})),
+    e('h2',null,clean(webapp?.initDataUnsafe?.user?.first_name||webapp?.initDataUnsafe?.user?.username||'Player')),
+    e('p',null,'#'+String(webapp?.initDataUnsafe?.user?.id||''))),
+   e('div',{className:'xp-area gm-premium-card gm-profile-level'},
+    e('div',{className:'xp-line'},e('b',null,t('level')+' '+wallet.level),
+     e('small',null,nf(wallet.xp,0)+' / '+(xpNext==null?'MAX':nf(xpNext,0))+' XP')),
+    e('div',{className:'progress'},e('div',{style:{width:xpPct+'%'}})),
+    e('div',{className:'gm-profile-next'},xpNext==null?'MAX XP':t('nextLeague')+': '+nf(league?.remaining_xp??0,0)+' XP')),
+   e('button',{type:'button',className:'gm-profile-league gm-premium-card',onClick:()=>goto('leaderboard')},
+    icon('trophy',32,true),
+    e('span',null,e('b',null,t('league')+': '+(league?.current?.name||'Bronze')),
+     e('small',null,(league?.next?.name||'GM Immortal')+' · '+Math.floor(league?.progress_pct||0)+'%')),
+    icon('chevron-right',20)),
+   e('div',{className:'stats-grid'},[
+     ['friends',String(liveReferrals?.referred?.length||0),t('friends')],
+     ['wallet',nf(wallet.gm,0),t('balance')],
+     ['lightning',String(wallet.streak),t('streak')]].map(([i,n,label])=>e('div',{className:'stat-card',key:label},
+      icon(i,23),e('b',null,n),e('small',null,label)))),
+   e('div',{className:'profile-menu'},menu.map(([i,title,route])=>e('button',{type:'button',key:route,
+    onClick:()=>goto(route)},icon(i,22),e('span',null,title),icon('chevron-right',19))),
+    e('button',{type:'button',onClick:()=>document.getElementById('gm-profile-frames')?.scrollIntoView({behavior:'smooth',block:'start'})},
+     icon('diamond',22),e('span',null,actualLang==='uk'?'Рамки профілю':'Profile Frames'),icon('chevron-right',19))),
+   e('section',{id:'gm-profile-frames',className:'gm-profile-frames'},
+    e('h3',null,actualLang==='uk'?'Колекція рамок':'Коллекция рамок'),
+    e('p',null,actualLang==='uk'?'За досягнення та рівні майнінгу. Нагороди поки не активовані.':'За достижения и уровни майнинга. Выдача наград пока не активирована.'),
+    e('div',{className:'gm-frame-grid'},milestones.map((m:number)=>e('div',{
+     className:'gm-frame-item gm-premium-card '+(unlockLevel>=m?'unlocked':'locked'),key:m},
+      e('div',{className:'gm-frame-preview'},e(Brand,{theme,size:42})),
+      e('b',null,m===200?'GM Immortal':'LV. '+m),
+      e('small',null,'🔒 '+(actualLang==='uk'?'Незабаром':'Скоро'))))),
+   e('p',{className:'gm-profile-footnote'},'GM/CR — виртуальные игровые единицы, не реальные средства.'));
+ }
+
  
 function Reward(){
  const e=React.createElement;
@@ -902,8 +970,49 @@ function Referrals(){
 }
 
  function History(){return <>{top('Transaction History',true,'clock')}{!serverHistory.length&&<div className="empty-state">{icon('clock',62,true)}<h3>История операций пока пуста</h3><button onClick={loadHistory}>Загрузить с сервера</button></div>}{serverHistory.map((x:any)=><div key={x.id} className="pearl-card form-surface"><b>{x.kind}</b><small>{new Date(x.at*1000).toLocaleString('ru-RU')}</small><p>{x.info}</p></div>)}</>}
- function Achievements(){const items=liveAchievements;return <>{top('Achievements',true,'trophy')}<div className="achievement-list">{items.map((t:any)=><div className="earn-item pearl-card" key={t.id}>{icon(t.icon||'trophy',45,true)}<span><b>{t.title||t.id}</b><small>{t.description||''}{!demo?` · ${t.xp||0} XP`:''}</small></span>{!demo&&<button disabled={t.claimed||!t.available} onClick={async()=>{const x=await gameAction('/api/achievements/claim',{id:t.id});if(x)await refreshLive()}}>{t.claimed?'Получено':t.available?'Получить':'Не выполнено'}</button>}</div>)}</div>{!items.length&&<p className="disclaimer">Достижения ещё не утверждены владельцами. Скрытые награды не начисляются.</p>}</>}
- 
+ function Achievements(){
+  const e=React.createElement;
+  const future=[
+   ['Пробуждение GM','Первый подтверждённый Claim','lightning'],
+   ['Серебряный старт','Пять сборов GM','gm-coin-orbit'],
+   ['Ритм майнера','30 сборов GM','clock'],
+   ['Сила привычки','Серия в 7 дней','flame'],
+   ['Без остановки','Серия в 30 дней','flame'],
+   ['Первый шаг','Открыть первое улучшение','lightning'],
+   ['Металлическая воля','Уровень майнинга 25','shield-check'],
+   ['Серебряный мастер','Уровень майнинга 50','diamond'],
+   ['Легенда улучшений','Уровень майнинга 100','crown'],
+   ['GM Immortal','Уровень майнинга 200 · скин','crown'],
+   ['Исследователь','Открыть все разделы','info'],
+   ['Коллекционер','Открыть пять боксов','gift'],
+   ['Первое знакомство','Первый подтверждённый друг','friends'],
+   ['Народ GM','Пригласить 25 друзей','community'],
+   ['Наследие','Пригласить 100 друзей','trophy'],
+   ['Первые свечи','Первая игровая сделка','candlesticks'],
+   ['Серебряная лига','Достичь Silver','shield'],
+   ['Золотое сердце','Достичь Gold','trophy'],
+   ['Алмазный путь','Достичь Diamond','diamond'],
+   ['Великое имя','Достичь GM Immortal League','crown']
+  ];
+  return e(React.Fragment,null,
+   top(t('achievements'),true,'trophy'),
+   e('div',{className:'gm-achieve-intro gm-premium-card'},
+    icon('trophy',43,true),e('span',null,e('b',null,'GM · ACHIEVEMENTS'),
+     e('small',null,'20 достижений и 20 уникальных наград первопроходцев — коллекции в разработке'))),
+   e('div',{className:'achievement-list'},(liveAchievements||[]).map((a:any)=>e('div',{
+    className:'earn-item pearl-card '+(!a.claimed?'gm-achievement-locked':''),key:a.id},
+    icon(a.icon||'trophy',43,true),e('span',null,e('b',null,a.title||a.id),e('small',null,a.description||'')),
+    !demo&&e('button',{disabled:a.claimed||!a.available,
+     onClick:async()=>{await gameAction('/api/achievements/claim',{id:a.id})}},
+     a.claimed?'✓':a.available?'Получить':'🔒')))),
+   e('h3',{className:'gm-achieve-subhead'},'GM · FUTURE BADGES'),
+   e('div',{className:'achievement-list'},future.map(([title,desc,ico],i)=>e('div',{
+    className:'earn-item pearl-card gm-achievement-locked',key:'future-'+i},
+    icon(ico,39,true),e('span',null,e('b',null,title),e('small',null,desc)),
+    e('span',{className:'gm-locked-tag'},icon('lock',17)))),
+   e('p',{className:'disclaimer'},'Серые значки — ещё не заработанные достижения. Предпросмотр не начисляет XP, GM или скины.'));
+ }
+
 function Settings(){
  const e=React.createElement;
  const themes=[['light','Premium Silver'],['dark','Premium Graphite']];
