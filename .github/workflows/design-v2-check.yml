@@ -18,13 +18,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22.16.0'
-      - name: Server integration and contract tests
-        run: npm test
       - name: Compile React TypeScript into live /public
         run: |
           npm install --prefix miniapp --no-fund --no-audit
           npm run --prefix miniapp build:standalone
           node --check miniapp/public/main.js
+      - name: Server integration and contract tests
+        run: npm test
       - name: Sync deployable assets to the same feature branch
         run: |
           git config user.name "github-actions[bot]"
