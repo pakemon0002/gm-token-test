@@ -1,0 +1,36 @@
+name: GM TOKEN V2 design and localization checks
+on:
+  push:
+    branches:
+      - feature/design-v2-onboarding-i18n
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: Compile React TypeScript into live /public
+        run: |
+          npm install --prefix miniapp --no-fund --no-audit
+          npm run --prefix miniapp build:standalone
+          node --check miniapp/public/main.js
+      - name: Server integration and contract tests
+        run: npm test
+      - name: Sync deployable assets to the same feature branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add miniapp/public/main.js miniapp/public/styles.css
+          if ! git diff --cached --quiet; then
+            git commit -m "build(ui): refresh compiled assets [skip ci]"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi

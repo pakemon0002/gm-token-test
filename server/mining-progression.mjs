@@ -1,4 +1,4 @@
-// GM TOKEN 2.0 — deterministic upgrade schedule (virtual GM only).
+// GM TOKEN 2.0 — deterministic proposed upgrade schedule; token payment not active without verified contract.
 // Upgrades are separate from the account XP level. Do not replace legacy levels.
 export const MAX_MINING_UPGRADE_LEVEL = 200;
 export const MINING_UPGRADE_VERSION = 'v2-proposal-2026-11-10';
@@ -8,10 +8,11 @@ export function miningUpgradeCost(level) {
   if (level === 2) return 150;
   return Math.round((200 * 1.04 ** (level - 3)) / 10) * 10;
 }
-export function miningUpgradeBonusPct(level) {
+export function miningUpgradeBonusBps(level) {
   if (!Number.isInteger(level) || level < 1 || level > MAX_MINING_UPGRADE_LEVEL) throw new RangeError('invalid mining upgrade level');
   return level === 1 ? 0 : 10 + 2 * (level - 2);
 }
+export function miningUpgradeBonusPct(level) { return miningUpgradeBonusBps(level) / 100; }
 export function miningUpgradeTotalCost(level) {
   if (!Number.isInteger(level) || level < 1 || level > MAX_MINING_UPGRADE_LEVEL) throw new RangeError('invalid mining upgrade level');
   let total = 0;

@@ -276,6 +276,30 @@ const routes=async(req,res)=>{
    sendTelegram(target,`GM TOKEN: тестовое начисление +${(amount/100).toFixed(2)} ${currency}. Виртуальная валюта; причина: ${reason}`);
    return send(res,200,{ok:true,userId:target,currency,amount_cents:amount,sourcePool:pool,operationId:op,test:true});
   }
+  // Points are in-game non-monetary rewards; controlled test grants require owner 2FA and audit.
+  if(p==='/api/admin/points-grant'&&verb==='POST'){
+   roleCheck({id},['owner','coowner']);
+   if(process.env.GM_ADMIN_TEST_GRANTS!=='1')throw Error('POINTS test grants disabled');
+   const body=await readBody(req),reason=String(body.reason||'').trim(),recipient=String(body.recipient||'');
+   const target=recipient==='self'?id:recipient==='other-owner'?ownerIds.find(x=>x!==id):recipient==='id'?String(body.userId||'').trim():null;
+   const amount=Number(body.amount),op=String(body.operationId||'');
+   if(!target||!/^\d{5,20}$/.test(target))throw Error('invalid recipient');
+   if(!Number.isSafeInteger(amount)||amount<=0||amount>1000)throw Error('POINTS grants require 1..1000 integer points');
+   if(reason.length<15||reason.length>200)throw Error('reason must be 15-200 characters');
+   if(!/^[A-Za-z0-9_.:-]{8,100}$/.test(op))throw Error('operationId required');
+   require2FA({id},body);
+   tx(()=>{
+    if(stmt('SELECT id FROM journal WHERE id=?').get(op))throw Error('duplicate operationId');
+    if(!stmt('SELECT id FROM users WHERE id=?').get(target))throw Error('recipient must open GM TOKEN first');
+    const records=stmt("SELECT info FROM journal WHERE kind='admin_points_grant' AND at>=?").all(Math.floor(now()/86400)*86400);
+    let used=0;for(const row of records){const detail=JSON.parse(row.info);if(detail.user===target)used+=detail.points||0}
+    if(used+amount>5000)throw Error('recipient daily POINTS test limit reached');
+    stmt('INSERT OR IGNORE INTO points_account(user_id) VALUES(?)').run(target);
+    stmt('UPDATE points_account SET points=points+? WHERE user_id=?').run(amount,target);
+    stmt('INSERT INTO journal(id,at,actor,kind,info) VALUES(?,?,?,?,?)').run(op,now(),id,'admin_points_grant',JSON.stringify({user:target,points:amount,reason,test:true}));
+   });
+   return send(res,200,{ok:true,userId:target,points:amount,operationId:op,test:true});
+  }
   if(p==='/api/admin/correction'&&verb==='POST'){
    roleCheck({id},['owner','coowner']);const body=await readBody(req);require2FA({id},body);
    const target=String(body.userId||''),pool=String(body.sourcePool||''),currency=String(body.currency||''),direction=body.direction==='debit'?'debit':'credit';
@@ -310,7 +334,7 @@ function staticFile(path,res){
  const full=resolve(staticRoot,'.'+loc);if(!full.startsWith(staticRoot+'/'))return res.writeHead(403).end('Forbidden');
  if(!existsSync(full))return res.writeHead(404).end('Not found');
  const ext=extname(full),mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.json':'application/json','.jpg':'image/jpeg'}[ext]||'application/octet-stream';
- res.writeHead(200,{'Content-Type':mime,'X-Content-Type-Options':'nosniff'});res.end(readFileSync(full));
+ res.writeHead(200,{'Content-Type':mime,'X-Content-Type-Options':'nosniff',...(loc==='/tonconnect-manifest.json'?{'Access-Control-Allow-Origin':'*','Cache-Control':'public, max-age=300'}:{})});res.end(readFileSync(full));
 }
 // Automated housekeeping runs even when no moderators are online.
 const housekeeping=setInterval(()=>{try{tx(()=>{cleanTickets();game.settle();stmt('DELETE FROM order_activity WHERE at<?').run(now()-120);stmt('DELETE FROM admin_2fa_failures WHERE at<?').run(now()-3600)})}catch(e){console.error('housekeeping failed',e)}},60000);housekeeping.unref();
