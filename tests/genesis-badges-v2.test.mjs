@@ -34,6 +34,7 @@ test('V2 Genesis: exactly 20 unique first-claim slots, protected skin selection,
   headers:{Authorization:'tma '+sign(id),'Content-Type':'application/json'},
   body:data?JSON.stringify(data):undefined});return {status:r.status,data:await r.json()}};
  const ids=Array.from({length:21},(_,i)=>890000+i);
+ assert.equal((await call(870011,'/api/bootstrap')).status,200);
  for(const id of ids)assert.equal((await call(id,'/api/bootstrap')).status,200);
  const db=new DatabaseSync(dbPath);db.exec('BEGIN IMMEDIATE');
  db.prepare("UPDATE pools SET gm=gm-2100 WHERE name='MINING'").run();
@@ -53,6 +54,6 @@ test('V2 Genesis: exactly 20 unique first-claim slots, protected skin selection,
  assert.equal((await call(ids[0],'/api/cosmetics/equip',{operationId:crypto.randomUUID(),skin:'genesis_silver'})).status,200);
  assert.equal((await call(ids[20],'/api/cosmetics/equip',{operationId:crypto.randomUUID(),skin:'genesis_silver'})).status,400);
  assert.equal((await call(ids[0],'/api/game/status')).data.cosmetics.coin_skin,'genesis_silver');
- assert.equal((await call(ids[0],'/api/admin/supply-audit')).data.ok,true);
+ assert.equal((await call(870011,'/api/admin/supply-audit')).data.ok,true);
  assert.ok(!/SQLITE_ERROR|ReferenceError/.test(stderr),stderr);
 });
