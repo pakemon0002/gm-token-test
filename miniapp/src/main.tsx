@@ -574,6 +574,7 @@ function App(){
  },[screen,demo]);
  const buyMiningUpgrade=async()=>{
   if(upgradeBusy||demo)return;
+  if(!upgradeData?.upgrade?.purchasable){goto('wallet');return;}
   const next=upgradeData?.upgrade?.next_level ?? liveState?.mining?.upgrade?.next_level;
   if(!next)return;
   setUpgradeBusy(true);
@@ -967,7 +968,7 @@ function Reward(){
   const e=React.createElement;
   const rate=liveState?.mining?.rate_cents_day!=null?liveState.mining.rate_cents_day/100:gmRate(wallet);
   const upgrade=upgradeData?.upgrade||liveState?.mining?.upgrade||{level:1,max_level:200,bonus_pct:0,next_level:2,next_cost_gm:150,next_bonus_pct:10};
-  const upgradeList=upgradeData?.levels||Array.from({length:200},(_,i)=>{const level=i+1;return {level,cost_gm:level===1?0:level===2?150:Math.round(200*Math.pow(1.04,level-3)/10)*10,bonus_pct:level===1?0:10+2*(level-2)}});
+  const upgradeList=upgradeData?.levels||Array.from({length:200},(_,i)=>{const level=i+1;return {level,cost_gm:level===1?0:level===2?150:Math.round(200*Math.pow(1.04,level-3)/10)*10,bonus_pct:level===1?0:(10+2*(level-2))/100}});
   const visibleUpgrades=showAllUpgrades?upgradeList:upgradeList.filter((row:any)=>row.level>=Math.max(1,upgrade.level-1)&&row.level<=Math.min(200,upgrade.level+5));
   const stored=wallet.storage;
   const hours=storageHours(wallet.level);
@@ -1001,14 +1002,14 @@ function Reward(){
     e('div',{className:'gm-upgrades-head'},e('div',null,e('small',null,'MINING UPGRADES'),e('h3',null,L('miningUpgrades'))),icon('lightning',28)),
     e('div',{className:'gm-upgrades-summary'},
      e('div',null,e('small',null,L('level')),e('strong',null,upgrade.level+' / 200')),
-     e('div',null,e('small',null,L('speed')),e('strong',null,'+'+upgrade.bonus_pct+'%'))),
+     e('div',null,e('small',null,L('speed')),e('strong',null,'+'+nf(Number(upgrade.bonus_pct),2)+'%'))),
     e('div',{className:'gm-upgrades-progress'},e('span',{style:{width:upgrade.level/200*100+'%'}})),
     upgrade.next_level?
      e('div',{className:'gm-upgrade-next'},
       e('span',null,L('nextLevel')+' '+upgrade.next_level),
-      e('strong',null,nf(upgrade.next_cost_gm,0)+' GM · +'+upgrade.next_bonus_pct+'%'),
-      e('button',{type:'button',className:'gm-upgrades-purchase',disabled:demo||upgradeBusy||wallet.gm<upgrade.next_cost_gm||!upgradeData?.upgrade,onClick:buyMiningUpgrade},
-       upgradeBusy?'Проверяем покупку…':wallet.gm<upgrade.next_cost_gm?L('insufficient'):L('upgrade'),icon('chevron-right',17)))
+      e('strong',null,nf(upgrade.next_cost_gm,0)+' GM · +'+nf(Number(upgrade.next_bonus_pct),2)+'%'),
+      e('button',{type:'button',className:'gm-upgrades-purchase',disabled:demo||upgradeBusy||(!upgrade.purchasable&&upgrade.purchasable!==undefined)||(upgrade.purchasable&&wallet.gm<upgrade.next_cost_gm)||!upgradeData?.upgrade,onClick:buyMiningUpgrade},
+       upgradeBusy?'Проверяем покупку…':!upgrade.purchasable?'Привязка GM к кошельку ещё не настроена':wallet.gm<upgrade.next_cost_gm?L('insufficient'):L('upgrade'),icon('chevron-right',17)))
      :e('div',{className:'gm-upgrades-max'},icon('crown',21),'Максимальный уровень открыт'),
     e('div',{className:'gm-upgrade-preview'},
      ...visibleUpgrades.map((row:any)=>
@@ -1016,7 +1017,7 @@ function Reward(){
        e('span',{className:'gm-upgrade-number'},row.level),
        e('span',{className:'gm-upgrade-row-copy'},e('b',null,row.level===200?'GM Immortal':'Уровень '+row.level),
         e('small',null,row.level===1?'Начальный':nf(row.cost_gm,0)+' GM')),
-       e('strong',null,'+'+row.bonus_pct+'%'),
+       e('strong',null,'+'+nf(Number(row.bonus_pct),2)+'%'),
        row.level<=upgrade.level?icon('check',17):icon('minus',17)))),
     e('button',{type:'button',className:'gm-upgrades-toggle',onClick:()=>setShowAllUpgrades(!showAllUpgrades)},
      showAllUpgrades?L('collapse'):L('allLevels'),icon(showAllUpgrades?'chevron-up':'chevron-down',16))),
