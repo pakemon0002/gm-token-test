@@ -113,6 +113,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
  }
  function genesisStatus(id){return {slot:stmt('SELECT slot FROM genesis_badges WHERE user_id=?').get(id)?.slot||null,claimed_slots:stmt('SELECT COUNT(*) n FROM genesis_badges').get().n,max_slots:20,coin_skin:stmt('SELECT coin_skin FROM cosmetic_state WHERE user_id=?').get(id)?.coin_skin||'default'};}
  function awardGenesis(id){
+  if(!miningV2)return null; // Legacy miners should not consume V2 Genesis slots.
   // Exactly 20 global slots. Invoked inside an IMMEDIATE transaction, on first claim.
   const already=stmt('SELECT slot FROM genesis_badges WHERE user_id=?').get(id);
   if(already)return already.slot;
