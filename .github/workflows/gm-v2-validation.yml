@@ -1,0 +1,40 @@
+name: GM TOKEN 2.0 validation
+on:
+  push:
+    branches:
+      - feature/gm-token-200-levels-redesign
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: Server syntax
+        run: node --check server/game.mjs && node --check server/mining-progression.mjs
+      - name: Server and integration tests
+        run: npm test
+        env:
+          GM_MINING_V2: '0'
+          GM_TEST_STARTER_FUNDS: '0'
+          GM_TEST_OPEN_TRADING: '0'
+      - name: Typecheck and compile miniapp
+        run: |
+          cd miniapp
+          npm install --no-audit --no-fund
+          npx tsc -p tsconfig.standalone.json
+          node --check public/main.js
+      - name: Retain compiled preview for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: gm-token-v2-preview
+          path: |
+            miniapp/public/main.js
+            miniapp/public/styles.css
