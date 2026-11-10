@@ -737,7 +737,7 @@ function Tasks(){
       e('span',null,e('b',null,'GM GENESIS · FIRST 20'),
        e('small',null,liveState?.cosmetics?.slot?
         ('№ '+liveState.cosmetics.slot+' / 20 · '+(actualLang==='uk'?'Рідкісна нагорода':'Уникальная награда')):
-        ((liveState?.cosmetics?.claimed_slots||0)+' / 20 · '+(actualLang==='uk'?'Нагорода заблокована':'Награда заблокирована')))),
+        ((liveState?.cosmetics?.claimed_slots||0)+' / 20 · '+(actualLang==='uk'?'Нагорода заблокована':'Награда заблокирована'))))),
     liveState?.cosmetics?.slot?e('button',{type:'button',className:'gm-upgrade-buy',
      onClick:async()=>{const equipped=liveState?.cosmetics?.coin_skin==='genesis_silver';
       const x=await gameAction('/api/cosmetics/equip',{skin:equipped?'default':'genesis_silver'});
