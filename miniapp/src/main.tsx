@@ -1175,6 +1175,29 @@ function Support(){
  return <>{top('Admin Panel',true,'settings')}<div className="admin-banner pearl-card">{icon('crown',49,true)}<div><b>{liveRole.toUpperCase()}</b><small>Вход подтверждён Telegram; критические операции требуют TOTP</small></div></div>
  <div className="admin-numbers">{[['Users',adminStats?.users??'—'],['Orders',adminStats?.orders??'—'],['Trades (24h)',adminStats?.trades_24h??'—'],['Open tickets',adminStats?.open_tickets??'—']].map(([a,b])=><div className="pearl-card" key={a}><small>{a}</small><b>{b}</b><small>Серверные данные</small></div>)}</div>
  {AdminTestGrants()}
+ <section className="gm-admin-ambassadors gm-premium-card">
+  <header>{icon('crown',31,true)}<div><b>GM AMBASSADORS</b><small>Проверка каналов, заявок и рейтингов · 2FA</small></div></header>
+  <button type="button" className="gm-amb-load" onClick={adminLoadAmbassadors}>Загрузить заявки</button>
+  <div className="gm-admin-amb-list">{adminAmbassadors.map((app:any)=><button type="button" key={app.user_id}
+   className={'gm-amb-admin-row '+(adminAmbTarget===app.user_id?'selected':'')}
+   onClick={()=>{setAdminAmbTarget(app.user_id);setAdminAmbVerified(String(app.claimed_followers||2000))}}>
+    <span><b>{app.username||app.user_id}</b><small>{app.channel_url}</small></span>
+    <span><b>{app.status}</b><small>{app.referrals} друзей · {app.claimed_followers} подписчиков</small></span>
+   </button>)}</div>
+  {adminAmbTarget&&<>
+   <label>ID заявки</label><input value={adminAmbTarget} readOnly/>
+   <label>Проверенные подписчики</label><input type="number" value={adminAmbVerified}
+    onChange={(e:any)=>setAdminAmbVerified(e.target.value)} min={0} max={100000000}/>
+   <label>Причина решения (15+ символов)</label><textarea rows={2} value={adminAmbNote}
+    onChange={(e:any)=>setAdminAmbNote(e.target.value)}/>
+   <label>6-значный код 2FA</label><input inputMode="numeric" value={adminAmbCode}
+    maxLength={6} onChange={(e:any)=>setAdminAmbCode(e.target.value)} placeholder="000000"/>
+   <div className="gm-amb-admin-actions">
+    <button type="button" disabled={adminAmbCode.length!==6} onClick={()=>adminReviewAmbassador('approved')}>Одобрить</button>
+    <button type="button" disabled={adminAmbCode.length!==6} onClick={()=>adminReviewAmbassador('rejected')}>Отклонить</button>
+   </div>
+  </>}
+ </section>
  <section className="gm-admin-points gm-premium-card">
   <header>{icon('diamond',34,true)}<div><h3>POINTS · начисление</h3><p>Только Owner и Co-Owner · подтверждение 2FA и журнал операций</p></div></header>
   <label>Telegram ID игрока</label>
