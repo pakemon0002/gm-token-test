@@ -52,9 +52,9 @@ test('Premium design has reduced-motion support, 5 tabs, consistent font and bot
  for(const term of ['GM TOKEN Premium v8','gm-home-v8','gm-mining-coin-wrap',
  'gm-box-open','.theme-dark .gm-premium-card','.theme-dark .gm-mining-coin-wrap',
  "font-family:'Inter'",'repeat(5,minmax(0,1fr))','prefers-reduced-motion:reduce']){
-  assert.ok(cshas(s,term),'missing '+term);
+  assert.ok(has(css,term),'missing '+term);
  }
- assert.ok(cshas(s,'-webkit-tap-highlight-color:transparent'));
- assert.ok(cshas(s,'focus-visible'));
- assert.ok(cshas(s,'.theme-dark .vault-deposit'));
+ assert.ok(has(css,'-webkit-tap-highlight-color:transparent'));
+ assert.ok(has(css,'focus-visible'));
+ assert.ok(has(css,'.theme-dark .vault-deposit'));
 });
