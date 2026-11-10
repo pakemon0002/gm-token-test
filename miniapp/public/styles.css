@@ -1206,3 +1206,30 @@ html,body,button,input,textarea,select{font-family:'Exo 2',system-ui,-apple-syst
 .gm-admin-points label{font-size:11px;font-weight:800}
 .gm-admin-points input,.gm-admin-points textarea{background:var(--surface);border:1px solid var(--border);border-radius:12px;min-height:42px;width:100%;padding:9px 11px;color:var(--ink);font-size:12px}
 .gm-admin-points small{color:var(--muted);line-height:1.5;font-size:10px}
+
+
+/* GM TOKEN v2 · premium Ambassador programme */
+.gm-amb-hero,.gm-amb-progress,.gm-amb-form,.gm-admin-ambassadors{padding:15px;display:grid;gap:10px;margin-bottom:12px}
+.gm-amb-hero{grid-template-columns:65px 1fr;align-items:center}
+.gm-amb-hero>div,.gm-amb-tier>span,.gm-admin-ambassadors header>div{display:grid;gap:5px}
+.gm-amb-hero h2{font-size:18px;margin:0}.gm-amb-hero p{font-size:11px;margin:0;line-height:1.5;color:var(--muted)}
+.gm-amb-hero small,.gm-amb-progress small,.gm-amb-tier small,.gm-amb-form small,.gm-admin-ambassadors small{font-size:10px;color:var(--muted);line-height:1.5}
+.gm-amb-progress>div:first-child{display:flex;justify-content:space-between;font-size:12px}
+.gm-amb-progress b{font-size:16px}
+.gm-amb-tiers,.gm-admin-amb-list{display:grid;gap:8px}
+.gm-amb-tier{display:flex;gap:10px;align-items:center;padding:12px}
+.gm-amb-tier>span{flex:1}
+.gm-amb-tier b{font-size:12px}.gm-amb-tier strong{font-size:16px}
+.gm-amb-subhead,.gm-amb-form h3{font-size:13px;margin:15px 0 9px}
+.gm-amb-form label,.gm-admin-ambassadors label{font-size:11px;font-weight:800}
+.gm-amb-form input,.gm-admin-ambassadors input,.gm-admin-ambassadors textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--ink);padding:11px;font-size:12px;min-height:44px}
+.gm-admin-ambassadors header{display:flex;gap:10px;align-items:center}
+.gm-admin-ambassadors header b{font-size:13px}
+.gm-amb-load,.gm-amb-admin-actions button{padding:11px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--ink);font-weight:800;font-size:11px}
+.gm-admin-amb-list{max-height:240px;overflow-y:auto}
+.gm-amb-admin-row{border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--ink);padding:11px;text-align:left;display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap}
+.gm-amb-admin-row span{display:grid;gap:4px;min-width:0}.gm-amb-admin-row b{font-size:11px}.gm-amb-admin-row small{overflow-wrap:anywhere}
+.gm-amb-admin-row.selected{outline:2px solid #97a4b7}
+.gm-amb-admin-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.gm-amb-admin-actions button:first-child{background:linear-gradient(145deg,#fff,#aeb9cb);color:#111821}
+.gm-amb-admin-actions button:disabled{opacity:.48}
