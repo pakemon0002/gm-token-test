@@ -7,7 +7,7 @@ const store = {getItem:(key:string)=>{try{return window.localStorage.getItem(key
 const A = './assets/icons/';
 const BRAND = './assets/brand-original-reference/';
 type Theme = 'light' | 'dark';
-type Route = 'home'|'trade'|'earn'|'tasks'|'leaderboard'|'profile'|'reward'|'splash'|'intro'|'mining'|'vault'|'shop'|'referrals'|'history'|'settings'|'support'|'admin'|'achievements'|'more'|'streak'|'boxes';
+type Route = 'home'|'trade'|'earn'|'tasks'|'leaderboard'|'profile'|'reward'|'splash'|'intro'|'mining'|'vault'|'shop'|'referrals'|'history'|'settings'|'support'|'admin'|'achievements'|'more'|'streak'|'boxes'|'ambassador';
 type Wallet = { gm:number; cr:number; vault:number; xp:number; level:number; claims:number; lastClaim:string; lastMiningXpDay:string; lastVaultWithdrawDay:string; streak:number; storage:number; storageUpdated:number; tickets:any[]; orders:any[]; traded:number; rewardClaimed:boolean; };
 const firstWallet:Wallet = {gm:0,cr:0,vault:0,xp:0,level:1,claims:0,lastClaim:'',lastMiningXpDay:'',lastVaultWithdrawDay:'',streak:0,storage:0,storageUpdated:0,tickets:[],orders:[],traded:0,rewardClaimed:false};
 const xpThreshold=[0,100,250,450,750,1150,1700,2400,3300,4400];
@@ -246,6 +246,15 @@ function App(){
  const [liveTasks,setLiveTasks]=React.useState([] as any[]);
  const [liveAchievements,setLiveAchievements]=React.useState([] as any[]);
  const [liveReferrals,setLiveReferrals]=React.useState(null as any);
+ const [liveAmbassador,setLiveAmbassador]=React.useState(null as any);
+ const [ambChannel,setAmbChannel]=React.useState('');
+ const [ambFollowers,setAmbFollowers]=React.useState('2000');
+ const [ambPending,setAmbPending]=React.useState(false);
+ const [adminAmbassadors,setAdminAmbassadors]=React.useState([] as any[]);
+ const [adminAmbVerified,setAdminAmbVerified]=React.useState('2000');
+ const [adminAmbNote,setAdminAmbNote]=React.useState('Канал и аудитория проверены администратором');
+ const [adminAmbCode,setAdminAmbCode]=React.useState('');
+ const [adminAmbTarget,setAdminAmbTarget]=React.useState('');
  const [liveRanks,setLiveRanks]=React.useState(null as any);
  const [shopQuote,setShopQuote]=React.useState(null as any);
  const [orderType,setOrderType]=React.useState('limit');
@@ -301,7 +310,7 @@ function App(){
  };
  React.useEffect(()=>{
   const onPop=()=>{const prev=navStack.current.pop()||'home',route=location.hash.slice(1);
-   const allowed=['home','trade','earn','tasks','leaderboard','profile','reward','splash','intro','mining','vault','shop','referrals','history','settings','support','admin','achievements','more','streak','boxes'];
+   const allowed=['home','trade','earn','tasks','leaderboard','profile','reward','splash','intro','mining','vault','shop','referrals','history','settings','support','admin','achievements','more','streak','boxes','ambassador'];
    setScreen(allowed.includes(route)?route:prev);setModal('');
    document.querySelector('.phone-scroll')?.scrollTo(0,0);
   };
@@ -348,6 +357,7 @@ function App(){
  const refreshLive=async()=>{if(!webapp?.initData)return;const d=await api('/api/game/status',undefined,true);if(!d)return;setLiveState(d);setW((w:Wallet)=>({...w,gm:d.wallet.gm/100,cr:d.wallet.cr/100,vault:d.wallet.vault/100,storage:d.mining.pending_cents/100,level:d.user?.level||w.level,xp:d.user?.xp??w.xp}));const [orders,book,tasks,achievements,refs,ranks,ticker,chart,trades]=await Promise.all([api('/api/exchange/orders',undefined,true),api('/api/exchange/book',undefined,true),api('/api/tasks',undefined,true),api('/api/achievements',undefined,true),api('/api/referrals/me',undefined,true),api('/api/leaderboard',undefined,true),api('/api/market/ticker',undefined,true),api('/api/market/ohlcv?interval='+period,undefined,true),api('/api/exchange/trades',undefined,true)]);if(orders)setLiveOrders(orders.orders||[]);if(book)setLiveBook(book);if(tasks)setLiveTasks(tasks.tasks||[]);if(achievements)setLiveAchievements(achievements.achievements||[]);if(refs)setLiveReferrals(refs);if(ranks)setLiveRanks(ranks);if(ticker)setLiveTicker(ticker);if(chart)setLiveCandles(chart.candles||[]);if(trades)setRecentTrades((trades.trades||[]).filter((t:any)=>!t.suspect).slice(0,10));setW((w:Wallet)=>({...w,streak:d.daily?.streak||0,lastClaim:d.daily?.last_claim_day||''}))};
  const gameAction=async(path:string,payload:any={})=>{const result=await api(path,{operationId:cryptoId(),...payload});if(result){if(result.wallet)setW((w:Wallet)=>({...w,gm:result.wallet.gm/100,cr:result.wallet.cr/100,vault:result.wallet.vault/100}));await refreshLive()}return result};
  React.useEffect(()=>{if(demo)return;refreshLive();const timer=setInterval(()=>{refreshLive()},12000);return()=>clearInterval(timer)},[demo,period]);
+ React.useEffect(()=>{if(demo||screen!=='ambassador')return;api('/api/ambassador/me',undefined,true).then(d=>{if(d)setLiveAmbassador(d)})},[screen,demo]);
  const nav=(s:any)=>goto(s);
  const adminRequest=async(path:string,payload?:any)=>{
    if(demo||!webapp?.initData){flash('Только после Telegram-авторизации владельца');return;}
@@ -357,6 +367,15 @@ function App(){
  const adminTransfer=()=>adminRequest('/api/admin/transfer',{source:adminFrom,target:adminTo,amount:adminAmount,code:adminCode,reason:adminReason,operationId:cryptoId()}).then(()=>adminRequest('/api/admin/pools').then(x=>x&&setAdminFunds(x.pools||[])));
  const adminCorrection=()=>adminRequest('/api/admin/correction',{userId:adminId,sourcePool:adminCorrectionPool,currency:adminCorrectionCurrency,amount:adminAmount,direction:'credit',ticket:adminTicket,code:adminCode,reason:adminReason,operationId:cryptoId()});
  const adminGrantPoints=async()=>{const x=await adminRequest('/api/admin/points',{userId:adminPointsTarget,points:Number(adminPointsAmount),reason:adminPointsReason,code:adminPointsCode,operationId:cryptoId()});if(x?.success){setAdminPointsCode('');flash('+'+x.points+' POINTS · игрок '+x.userId)}};
+ const adminLoadAmbassadors=async()=>{const data=await adminRequest('/api/admin/ambassadors');if(data)setAdminAmbassadors(data.applications||[])};
+ const adminReviewAmbassador=async(decision:string)=>{const data=await adminRequest('/api/admin/ambassadors/review',
+  {userId:adminAmbTarget,decision,verifiedFollowers:Number(adminAmbVerified),note:adminAmbNote,code:adminAmbCode,operationId:cryptoId()});
+  if(data?.success){setAdminAmbCode('');await adminLoadAmbassadors()}};
+ const applyAmbassador=async()=>{if(ambPending)return;setAmbPending(true);
+  try{const out=await gameAction('/api/ambassador/apply',{channel:ambChannel,followers:Number(ambFollowers)});
+   if(out?.submitted){flash('Заявка отправлена на проверку');const status=await api('/api/ambassador/me',undefined,true);if(status)setLiveAmbassador(status)}}
+  finally{setAmbPending(false)}};
+
  const testGrant=async()=>{if(testBusy)return;setTestBusy(true);
   try{const out=await adminRequest('/api/admin/test-grant',{recipient:testRecipient,userId:testRecipient==='id'?testUserId:undefined,currency:testCurrency,amount:testAmount,reason:testReason,code:testCode,operationId:cryptoId()});
    if(out?.ok){setTestCode('');flash('Начислено '+testAmount+' '+testCurrency+' игроку '+out.userId);await refreshLive();}
@@ -704,7 +723,7 @@ function Tasks(){
   const xpPrev=xpThreshold[Math.max(0,wallet.level-1)]||0;
   const xpPct=xpNext==null?100:Math.max(0,Math.min(100,(wallet.xp-xpPrev)*100/(xpNext-xpPrev)));
   const menu=[['trophy',t('achievements'),'achievements'],['friends',t('referrals'),'referrals'],
-   ['clock',t('history'),'history'],['settings',lang('settings'),'settings'],['info',t('support'),'support']];
+   ['clock',t('history'),'history'],['ambassador','crown','GM Ambassador'],['settings',lang('settings'),'settings'],['info',t('support'),'support']];
   const milestones=[25,50,75,100,125,150,175,200];
   const unlockLevel=Number(liveState?.mining?.upgrade_level||1);
   return e(React.Fragment,null,
@@ -1179,11 +1198,50 @@ function Support(){
  <p className="disclaimer">В демо все административные действия отключены. У двух владельцев одинаковые защищённые права; владелец не может удалить другого владельца через UI.</p></>;
  }
  
+function Ambassador(){
+ const e=React.createElement;
+ const status=liveAmbassador||{};
+ const referrals=Number(status.referrals??liveReferrals?.referred?.length??0);
+ const eligible=referrals>=100;
+ const app=status.application;
+ const tiers=[['GM Player',0,'25%'],['GM Scout',2000,'32%'],['GM Partner',10000,'35%'],['GM Elite',50000,'40%'],['GM Ambassador',100000,'50%']];
+ const subtitle=actualLang==='uk'?'Заявка на амбасадорську програму':'Заявка в амбассадорскую программу';
+ return e(React.Fragment,null,
+  top('GM Ambassador',true,'crown'),
+  e('section',{className:'gm-amb-hero gm-premium-card'},icon('crown',68,true),
+   e('div',null,e('small',null,'GM TOKEN · AMBASSADORS'),
+    e('h2',null,'От 25% до 50%'),e('p',null,subtitle))),
+  e('section',{className:'gm-amb-progress gm-premium-card'},
+   e('div',null,e('span',null,'Подтверждённые друзья'),
+    e('b',null,referrals+' / 100')),
+   e('div',{className:'gm-upgrade-progress'},e('span',{style:{width:Math.min(100,referrals)+'%'}})),
+   e('small',null,eligible?'✓ Условие приглашений выполнено':'Для подачи заявки нужно пригласить 100 пользователей.')),
+  e('h3',{className:'gm-amb-subhead'},'Статусы и бонусы'),
+  e('div',{className:'gm-amb-tiers'},tiers.map(([name,followers,rate])=>e('div',{
+   className:'gm-amb-tier gm-premium-card',key:name},icon('crown',25,true),
+    e('span',null,e('b',null,name),e('small',null,followers?nf(Number(followers),0)+' подписчиков':'Без канала')),
+    e('strong',null,rate)))),
+  e('section',{className:'gm-amb-form gm-premium-card'},
+   e('h3',null,'Подать заявку'),
+   app&&e('p',{className:'gm-amb-status'},
+    'Статус: '+(app.status==='approved'?'✓ Одобрена · '+app.rate_pct+'%':app.status==='pending'?'На проверке':'Отклонена · '+(app.review_note||''))),
+   e('label',null,'Публичный Telegram-канал'),
+   e('input',{value:ambChannel,onChange:(event:any)=>setAmbChannel(event.target.value),
+    placeholder:'https://t.me/your_channel',autoComplete:'off'}),
+   e('label',null,'Подписчиков в канале'),
+   e('input',{value:ambFollowers,onChange:(event:any)=>setAmbFollowers(event.target.value),
+    type:'number',inputMode:'numeric',min:2000,max:100000000}),
+   e('button',{type:'button',className:'gm-upgrade-buy',disabled:demo||!eligible||!ambChannel||ambPending||app?.status==='approved'||app?.status==='pending',onClick:applyAmbassador},
+    app?.status==='approved'?'Участие подтверждено':app?.status==='pending'?'Заявка на проверке':ambPending?'Отправляем…':'Отправить заявку'),
+   e('small',null,'Владение каналом, охваты и количество подписчиков проверяются администраторами. Простой ввод ссылки не даёт повышенный процент.'),
+   e('small',null,status.mining_rewards_enabled?'Игровые бонусы начисляются из ограниченного фонда COMMUNITY.':'Начисление бонусов за майнинг будет включено только после проверки экономики.')));
+}
+
 function More(){
  const e=React.createElement;
  const groups:any[]=[
   ['АККАУНТ',[['profile','profile','Профиль','Баланс и уровень'],['achievements','trophy','Достижения','Награды и прогресс'],['history','clock','История','Подтверждённые операции']]],
-  ['ИГРА',[['reward','gift','Daily Reward','Ежедневный бонус'],['tasks','tasks','Задания','Выполняй игровые цели'],['referrals','friends','Пригласить друзей','Реферальная программа'],['leaderboard','trophy','Лиги и рейтинг','10 лиг · XP и лидеры']]],
+  ['ИГРА',[['reward','gift','Daily Reward','Ежедневный бонус'],['tasks','tasks','Задания','Выполняй игровые цели'],['referrals','friends','Пригласить друзей','Реферальная программа'],['leaderboard','trophy','Лиги и рейтинг','10 лиг · XP и лидеры'],['ambassador','crown','GM Ambassador','Заявки и реферальный бонус']]],
   ['ПОМОЩЬ',[['support','shield-check','Поддержка','Обращения и ответы'],['settings','settings','Настройки','Оформление и язык'],['intro','info','Инструкция','Как играть в GM TOKEN']]]
  ];
  if(['owner','coowner'].includes(liveRole))groups.push(['АДМИНИСТРИРОВАНИЕ',[['admin','crown','Admin Panel','Только Owner и Co-Owner']]]);
@@ -1264,7 +1322,7 @@ function Streak(){return <>{top('Daily Streak',true,'flame')}<div className="ref
   </section>
  </main>}
  let view:any;
- switch(screen){case 'home':view=Home();break;case 'trade':view=Trading();break;case 'earn':view=Earn();break;case 'tasks':view=Tasks();break;case 'leaderboard':view=Leaderboard();break;case 'profile':view=Profile();break;case 'reward':view=Reward();break;case 'splash':view=Splash();break;case 'intro':view=Intro();break;case 'mining':view=Mining();break;case 'vault':view=Vault();break;case 'shop':view=Shop();break;case 'boxes':view=Boxes();break;case 'referrals':view=Referrals();break;case 'history':view=History();break;case 'settings':view=Settings();break;case 'support':view=Support();break;case 'admin':view=['owner','coowner'].includes(liveRole)?Admin():Home();break;case 'achievements':view=Achievements();break;case 'more':view=More();break;case 'streak':view=Streak();break;default:view=Home();}
+ switch(screen){case 'home':view=Home();break;case 'trade':view=Trading();break;case 'earn':view=Earn();break;case 'tasks':view=Tasks();break;case 'leaderboard':view=Leaderboard();break;case 'profile':view=Profile();break;case 'reward':view=Reward();break;case 'splash':view=Splash();break;case 'intro':view=Intro();break;case 'mining':view=Mining();break;case 'vault':view=Vault();break;case 'shop':view=Shop();break;case 'boxes':view=Boxes();break;case 'referrals':view=Referrals();break;case 'history':view=History();break;case 'settings':view=Settings();break;case 'support':view=Support();break;case 'admin':view=['owner','coowner'].includes(liveRole)?Admin():Home();break;case 'achievements':view=Achievements();break;case 'more':view=More();break;case 'ambassador':view=Ambassador();break;case 'streak':view=Streak();break;default:view=Home();}
  return <div className={'application theme-'+theme+(webapp?.initData?' is-telegram':'')}>
  <aside className="desktop-toolbar"><div className="toolbar-logo"><Brand theme={theme} size={42}/><span><b>GM TOKEN</b><small>Оригинальные эскизы · интерактивная сборка</small></span></div><div className="toolbar-tabs"><button onClick={()=>setTheme('light')} className={isLight?'chosen':''}>Light</button><button onClick={()=>setTheme('dark')} className={!isLight?'chosen':''}>Dark</button></div><div className="toolbar-links">{(['home','trade','earn','tasks','leaderboard','profile','mining','vault','shop','support','admin'] as Route[]).map(s=><button key={s} className={screen===s?'chosen':''} onClick={()=>goto(s)}>{s}</button>)}</div><p>Оригинальные PNG · 54 иконки × 4 варианта · без подмены сторонними пиктограммами</p></aside>
  <div className="device-stage"><div className="phone-frame"><div className={'phone-scroll '+((screen==='splash')?'no-scroll':'')}>{view}</div>{!['reward','splash','intro'].includes(screen)&&bottom()}
