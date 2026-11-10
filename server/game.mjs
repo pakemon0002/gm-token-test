@@ -41,6 +41,8 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
  CREATE TABLE IF NOT EXISTS daily_claim(user_id TEXT NOT NULL,day TEXT NOT NULL,PRIMARY KEY(user_id,day));
  CREATE TABLE IF NOT EXISTS tasks_claim(user_id TEXT NOT NULL,task_id TEXT NOT NULL,PRIMARY KEY(user_id,task_id));
  CREATE TABLE IF NOT EXISTS achievements(user_id TEXT NOT NULL,code TEXT NOT NULL,PRIMARY KEY(user_id,code));
+ CREATE TABLE IF NOT EXISTS genesis_badges(slot INTEGER PRIMARY KEY CHECK(slot BETWEEN 1 AND 20),user_id TEXT NOT NULL UNIQUE REFERENCES users(id),awarded_at INTEGER NOT NULL);
+ CREATE TABLE IF NOT EXISTS cosmetic_state(user_id TEXT PRIMARY KEY REFERENCES users(id),coin_skin TEXT NOT NULL DEFAULT 'default' CHECK(coin_skin IN ('default','genesis_silver')));
  CREATE TABLE IF NOT EXISTS balance_ledger(id TEXT NOT NULL,account TEXT NOT NULL,currency TEXT NOT NULL,delta_cents INTEGER NOT NULL,created_at INTEGER NOT NULL,PRIMARY KEY(id,account,currency));`);
  // Existing test databases created before this audit have no quote_remainder.
  if(!stmt('PRAGMA table_info(orders)').all().some(x=>x.name==='quote_remainder'))db.exec('ALTER TABLE orders ADD COLUMN quote_remainder INTEGER NOT NULL DEFAULT 0');
@@ -109,7 +111,18 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
    log('system','private_test_premarket_shortened',{at:now()});
   }
  }
- function ensure(id){const t=now();stmt('INSERT OR IGNORE INTO mining_state(user_id,last_at) VALUES(?,?)').run(id,t);stmt('INSERT OR IGNORE INTO holding_state(user_id,last_checkpoint) VALUES(?,?)').run(id,t);stmt('INSERT OR IGNORE INTO points_account(user_id) VALUES(?)').run(id);stmt('INSERT OR IGNORE INTO holding_peak(user_id,peak_cents) SELECT user_id,vault FROM wallets WHERE user_id=?').run(id)}
+ function genesisStatus(id){return {slot:stmt('SELECT slot FROM genesis_badges WHERE user_id=?').get(id)?.slot||null,claimed_slots:stmt('SELECT COUNT(*) n FROM genesis_badges').get().n,max_slots:20,coin_skin:stmt('SELECT coin_skin FROM cosmetic_state WHERE user_id=?').get(id)?.coin_skin||'default'};}
+ function awardGenesis(id){
+  // Exactly 20 global slots. Invoked inside an IMMEDIATE transaction, on first claim.
+  const already=stmt('SELECT slot FROM genesis_badges WHERE user_id=?').get(id);
+  if(already)return already.slot;
+  const next=Number(stmt('SELECT MAX(slot) AS n FROM genesis_badges').get().n||0)+1;
+  if(next>20)return null;
+  stmt('INSERT INTO genesis_badges(slot,user_id,awarded_at) VALUES(?,?,?)').run(next,id,now());
+  log('system','genesis_badge_awarded',{user:id,slot:next,skin:'genesis_silver'});
+  return next;
+ }
+ function ensure(id){const t=now();stmt('INSERT OR IGNORE INTO mining_state(user_id,last_at) VALUES(?,?)').run(id,t);stmt('INSERT OR IGNORE INTO holding_state(user_id,last_checkpoint) VALUES(?,?)').run(id,t);stmt('INSERT OR IGNORE INTO points_account(user_id) VALUES(?)').run(id);stmt('INSERT OR IGNORE INTO holding_peak(user_id,peak_cents) SELECT user_id,vault FROM wallets WHERE user_id=?').run(id);stmt('INSERT OR IGNORE INTO cosmetic_state(user_id) VALUES(?)').run(id)}
  function once(id,actor,kind,callback){const existing=stmt('SELECT actor,kind,response FROM request_ids WHERE id=?').get(id);if(existing){if(existing.actor!==actor||existing.kind!==kind)throw Error('operationId already used for another operation');return JSON.parse(existing.response)}const response=callback();stmt('INSERT INTO request_ids(id,actor,kind,created_at,response) VALUES(?,?,?,?,?)').run(id,actor,kind,now(),JSON.stringify(response));return response}
  const wal=(id)=>stmt('SELECT * FROM wallets WHERE user_id=?').get(id);
  const pool=(name,col='gm')=>stmt(`SELECT ${col} as balance FROM pools WHERE name=?`).get(name)?.balance??0;
@@ -294,7 +307,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
   if(p==='/api/achievements'&&verb==='GET')return response(200,{achievements:catalogStatus(id,'achievements')});
   if(p==='/api/tasks/claim'&&verb==='POST')return response(200,claimCatalog(id,'tasks',await read()));
   if(p==='/api/achievements/claim'&&verb==='POST')return response(200,claimCatalog(id,'achievements',await read()));
-  if(p==='/api/game/status'&&verb==='GET')return response(200,tx(()=>{ensure(id);settle();const m=stmt('SELECT * FROM mining_state WHERE user_id=?').get(id),h=stmt('SELECT * FROM holding_state WHERE user_id=?').get(id),u=stmt('SELECT level,xp,username FROM users WHERE id=?').get(id);const next=m.upgrade_level<MAX_MINING_LEVEL?m.upgrade_level+1:null;return {user:u,wallet:wal(id),mining:{...m,rate_cents_day:rate({...u,upgrade_level:m.upgrade_level},wal(id)),upgrade_enabled:miningV2,max_level:MAX_MINING_LEVEL,bonus_pct:miningBonusPercent(m.upgrade_level),next_level:next,next_cost_gm:next?upgradeCostGM(next):null,storage_hours:miningV2?miningStorageHours(m.upgrade_level):capacity(u.level),milestones:miningMilestones()},league:{...leagueForXP(u.xp),all:LEAGUES},holding:h,points:stmt('SELECT * FROM points_account WHERE user_id=?').get(id),daily:dailyProfile(id),auction:{end_at:Number(v('auction_end')),done:v('auction_done')==='1'},config:{test_economy:testEconomy,mining_upgrade_enabled:miningV2,holding_enabled:!miningV2&&Number(v('holding_daily_bps'))>0,daily_enabled:Number(v('daily_gm_cents'))>0,shop_enabled:v('shop_rate_mode')!=='disabled',boxes_enabled:Object.keys(JSON.parse(v('box_rewards_json'))).length===3,box_rewards:JSON.parse(v('box_rewards_json')),daily_reward_gm:Number(v('daily_gm_cents'))/100}}}));
+  if(p==='/api/game/status'&&verb==='GET')return response(200,tx(()=>{ensure(id);settle();const m=stmt('SELECT * FROM mining_state WHERE user_id=?').get(id),h=stmt('SELECT * FROM holding_state WHERE user_id=?').get(id),u=stmt('SELECT level,xp,username FROM users WHERE id=?').get(id);const next=m.upgrade_level<MAX_MINING_LEVEL?m.upgrade_level+1:null;return {user:u,wallet:wal(id),mining:{...m,rate_cents_day:rate({...u,upgrade_level:m.upgrade_level},wal(id)),upgrade_enabled:miningV2,max_level:MAX_MINING_LEVEL,bonus_pct:miningBonusPercent(m.upgrade_level),next_level:next,next_cost_gm:next?upgradeCostGM(next):null,storage_hours:miningV2?miningStorageHours(m.upgrade_level):capacity(u.level),milestones:miningMilestones()},league:{...leagueForXP(u.xp),all:LEAGUES},cosmetics:genesisStatus(id),holding:h,points:stmt('SELECT * FROM points_account WHERE user_id=?').get(id),daily:dailyProfile(id),auction:{end_at:Number(v('auction_end')),done:v('auction_done')==='1'},config:{test_economy:testEconomy,mining_upgrade_enabled:miningV2,holding_enabled:!miningV2&&Number(v('holding_daily_bps'))>0,daily_enabled:Number(v('daily_gm_cents'))>0,shop_enabled:v('shop_rate_mode')!=='disabled',boxes_enabled:Object.keys(JSON.parse(v('box_rewards_json'))).length===3,box_rewards:JSON.parse(v('box_rewards_json')),daily_reward_gm:Number(v('daily_gm_cents'))/100}}}));
   const body=verb==='POST'?await read():{};
   const op=()=>requestId(body.operationId);
   if(p==='/api/mining/upgrade'&&verb==='POST')return response(200,tx(()=>{
@@ -313,7 +326,18 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
     return {upgrade_level:target,bonus_pct:miningBonusPercent(target),paid_gm_cents:price,wallet:wal(id)};
    });
   }));
-  if(p==='/api/mining/claim'&&verb==='POST')return response(200,tx(()=>{ensure(id);settle();return once(op(),id,'mining_claim',()=>{const m=stmt('SELECT * FROM mining_state WHERE user_id=?').get(id),n=m.pending_cents;if(n<100)throw Error('minimum mining Claim is 1 GM');walletChange(id,'gm',n);const d=day(now()),xp=m.last_xp_day===d?0:20;if(xp)awardXp(id,xp);stmt('UPDATE mining_state SET pending_cents=0,reg_micro=0,overflow_micro=0,processed_cents=0,last_at=?,last_xp_day=? WHERE user_id=?').run(now(),d,id);log(id,'mining_claim',{user:id,gm_cents:n,xp});return {gm_cents:n,xp,wallet:wal(id)}})}));
+  if(p==='/api/cosmetics/equip'&&verb==='POST')return response(200,tx(()=>{
+   ensure(id);
+   return once(op(),id,'coin_skin_equip',()=>{
+    const skin=String(body.skin||'');
+    if(!['default','genesis_silver'].includes(skin))throw Error('unknown skin');
+    if(skin==='genesis_silver'&&!stmt('SELECT slot FROM genesis_badges WHERE user_id=?').get(id))throw Error('skin is locked');
+    stmt('UPDATE cosmetic_state SET coin_skin=? WHERE user_id=?').run(skin,id);
+    log(id,'coin_skin_equip',{user:id,skin});
+    return {equipped:skin,cosmetics:genesisStatus(id)};
+   });
+  }));
+  if(p==='/api/mining/claim'&&verb==='POST')return response(200,tx(()=>{ensure(id);settle();return once(op(),id,'mining_claim',()=>{const m=stmt('SELECT * FROM mining_state WHERE user_id=?').get(id),n=m.pending_cents;if(n<100)throw Error('minimum mining Claim is 1 GM');walletChange(id,'gm',n);const d=day(now()),xp=m.last_xp_day===d?0:20;if(xp)awardXp(id,xp);stmt('UPDATE mining_state SET pending_cents=0,reg_micro=0,overflow_micro=0,processed_cents=0,last_at=?,last_xp_day=? WHERE user_id=?').run(now(),d,id);const genesis_slot=awardGenesis(id);log(id,'mining_claim',{user:id,gm_cents:n,xp,genesis_slot});return {gm_cents:n,xp,genesis_slot,wallet:wal(id)}})}));
   if(p==='/api/vault/deposit'&&verb==='POST')return response(200,tx(()=>{if(miningV2)throw Error('new Vault deposits are closed; existing funds may still be withdrawn');ensure(id);settle();return once(op(),id,'vault_deposit',()=>{const n=amount(body.amount);accrueHoldingPosition(id);walletChange(id,'gm',-n);stmt('UPDATE wallets SET vault=vault+? WHERE user_id=?').run(n,id);stmt('INSERT INTO holding_peak(user_id,peak_cents) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET peak_cents=MAX(peak_cents,excluded.peak_cents)').run(id,wal(id).vault);log(id,'vault_deposit',{user:id,gm_cents:n});return {vault_cents:wal(id).vault,wallet:wal(id)}})}));
   if(p==='/api/vault/withdraw'&&verb==='POST')return response(200,tx(()=>{ensure(id);settle();return once(op(),id,'vault_withdraw',()=>{const n=amount(body.amount),w=wal(id),d=day(now()),h=stmt('SELECT * FROM holding_state WHERE user_id=?').get(id);if(h.last_withdraw_day===d)throw Error('only one vault withdrawal per UTC day');if(n>w.vault||(n<100000&&n!==w.vault))throw Error('partial withdrawal minimum 1000 GM; full balance may be smaller');const fee=mulDiv(n,5,100);accrueHoldingPosition(id);stmt('UPDATE wallets SET vault=vault-? WHERE user_id=?').run(n,id);walletChange(id,'gm',n-fee);addPool('HOLDING_FEES','gm',fee);stmt('UPDATE holding_state SET last_withdraw_day=? WHERE user_id=?').run(d,id);log(id,'vault_withdraw',{user:id,gm_cents:n,fee_cents:fee});return {received_cents:n-fee,fee_cents:fee,wallet:wal(id)}})}));
   if(p==='/api/vault/claim'&&verb==='POST')return response(200,tx(()=>{ensure(id);settle();return once(op(),id,'holding_claim',()=>{const h=stmt('SELECT * FROM holding_state WHERE user_id=?').get(id);if(!h.pending_cents)throw Error('no holding rewards pending');walletChange(id,'gm',h.pending_cents);stmt('UPDATE holding_state SET pending_cents=0 WHERE user_id=?').run(id);const ref=stmt('SELECT referrer_id FROM referrals WHERE user_id=?').get(id);let refPaid=0;
