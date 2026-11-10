@@ -251,10 +251,6 @@ function App(){
  };
  const closeGuide=()=>{if(guideScreen)store.setItem('gm_guide_'+guideScreen,'1');setGuideScreen('');setGuideStep(0)};
  const openGuide=(name:string)=>{if(guideCatalog[name]){setGuideScreen(name);setGuideStep(0)}};
- React.useEffect(()=>{if(screen!=='splash'||demo)return;const timeout=setTimeout(()=>{setScreen(store.getItem('gm_onboarding_complete')?'home':'intro')},1350);return()=>clearTimeout(timeout)},[screen,demo]);
- React.useEffect(()=>{if(demo||['splash','intro','reward'].includes(screen)||!guideCatalog[screen]||guideScreen)return;
- if(!store.getItem('gm_guide_'+screen)){const timeout=setTimeout(()=>openGuide(screen),550);return()=>clearTimeout(timeout)}
- },[screen,demo,guideScreen]);
 
  
  const [wallet,setWallet]=React.useState(firstWallet);
@@ -291,6 +287,11 @@ function App(){
  const [tradeReady,setTradeReady]=React.useState(false);
  const [serverHistory,setServerHistory]=React.useState([] as any[]);
  const [demo,setDemo]=React.useState(true);
+ React.useEffect(()=>{if(screen!=='splash'||demo)return;const timeout=setTimeout(()=>{setScreen(store.getItem('gm_onboarding_complete')?'home':'intro')},1350);return()=>clearTimeout(timeout)},[screen,demo]);
+ React.useEffect(()=>{if(demo||['splash','intro','reward'].includes(screen)||!guideCatalog[screen]||guideScreen)return;
+ if(!store.getItem('gm_guide_'+screen)){const timeout=setTimeout(()=>openGuide(screen),550);return()=>clearTimeout(timeout)}
+ },[screen,demo,guideScreen]);
+
  const [liveRole,setLiveRole]=React.useState('player');
  const [adminId,setAdminId]=React.useState('');
  const [adminCode,setAdminCode]=React.useState('');
