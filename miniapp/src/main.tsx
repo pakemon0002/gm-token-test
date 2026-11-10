@@ -391,19 +391,77 @@ function App(){
  const L=(key:string)=>UI_TRANSLATIONS[key]?.[actualLang]||UI_TRANSLATIONS[key]?.en||key;
  const [guideScreen,setGuideScreen]=React.useState('');
  const [guideStep,setGuideStep]=React.useState(0);
+ const [guideSpot,setGuideSpot]=React.useState(null as null|{top:number;left:number;width:number;height:number;cardTop:number});
+ const [languageOpen,setLanguageOpen]=React.useState(false);
+ const [languageSearch,setLanguageSearch]=React.useState('');
+ // Each tutorial entry points at a real, visible control rather than a generic icon.
  const guideCatalog:any={
-  home:[['wallet','balance','wallet'],['lightning','miningUpgrades','upgrade'],['gift','boxes','claim']],
-  mining:[['gm-coin-orbit','mining','claim'],['lightning','miningUpgrades','upgrade'],['clock','speed','nextLevel']],
-  trade:[['candlesticks','market','next'],['wallet','balance','wallet'],['shield-check','instruction','finish']],
-  boxes:[['gift','boxes','claim'],['diamond','achievements','earned']],
-  tasks:[['tasks','tasks','claim'],['trophy','achievements','earned']],
-  profile:[['profile','profile','frames'],['trophy','achievements','earned'],['settings','customize','finish']],
-  more:[['settings','customize','next'],['shield-check','support','finish']],
-  achievements:[['trophy','achievements','achievementsLocked']],
-  settings:[['settings','theme','interfaceLanguage']]
+  home:[['wallet','balance','.gm-home-wallet','home.balance'],['lightning','mining','.gm-home-shortcuts button','home.shortcuts'],['gift','boxes','.gm-home-offer','home.reward']],
+  mining:[['gm-coin-orbit','mining','.gm-mining-coin-wrap','mining.coin'],['diamond','claim','.gm-mining-claim','mining.claim'],['lightning','miningUpgrades','.gm-mining-upgrades','mining.upgrades'],['clock','speed','.gm-mining-energy','mining.storage']],
+  trade:[['candlesticks','market','.terminal-quote','trade.price'],['candlesticks','market','.terminal-periods','trade.chart'],['wallet','balance','.terminal-wallet-line','trade.balance'],['coins','market','.terminal-buy-sell','trade.actions'],['shield-check','next','.gm-trade-quick-card','trade.quantity']],
+  boxes:[['gift','boxes','.gm-box-card','boxes.choose'],['trophy','achievements','.gm-box-open','boxes.claim']],
+  tasks:[['tasks','tasks','.gm-task-filters','tasks.filter'],['trophy','achievements','.gm-task-list','tasks.claim']],
+  profile:[['profile','profile','.gm-league-card','profile.league'],['trophy','frames','.gm-frames-section','profile.frames']],
+  more:[['settings','customize','.gm-more-list','more.menu']],
+  achievements:[['trophy','achievements','.gm-achievement-planned','achievements.locked']],
+  settings:[['settings','theme','.gm-theme-list','settings.theme'],['globe','interfaceLanguage','.gm-language-grid','settings.language']],
+  support:[['shield-check','support','.gm-support-v8','support.ticket']]
  };
- const closeGuide=()=>{if(guideScreen)store.setItem('gm_guide_'+guideScreen,'1');setGuideScreen('');setGuideStep(0)};
- const openGuide=(name:string)=>{if(guideCatalog[name]){setGuideScreen(name);setGuideStep(0)}};
+ const guideText:Record<string,Record<string,string>>={
+  'home.balance':{ru:'Здесь отображаются твои игровые GM и CR. Нажми на соответствующую кнопку, чтобы перейти к основным возможностям; это не криптовалютный кошелёк.',uk:'Тут показано твої ігрові GM і CR. Натисни потрібну кнопку, щоб перейти до функцій — це не криптогаманець.',pt:'Veja seus GM e CR do jogo. Os saldos aqui não são uma carteira cripto.',en:'Your in-game GM and CR balances live here. These are not on-chain wallet balances.'},
+  'home.shortcuts':{ru:'Эти кнопки ведут прямо в Майнинг, Боксы, Задания и Друзья. Начни с майнинга: монета показывает накопление, а собирать GM можно с установленного минимума.',uk:'Ці кнопки відкривають Майнінг, Бокси, Завдання та Друзів. Почни з майнінгу.',pt:'Estes atalhos abrem Mineração, Caixas, Tarefas e Amigos. Comece pela mineração.',en:'These shortcuts open Mining, Boxes, Tasks, and Friends. Start by exploring Mining.'},
+  'home.reward':{ru:'В карточке наград находятся игровые задания и бонусы. Начисления всегда подтверждаются сервером; обещаний случайных призов здесь нет.',uk:'У картці нагород є завдання та бонуси. Нарахування перевіряє сервер.',pt:'Aqui ficam tarefas e recompensas. Os prêmios são verificados pelo servidor.',en:'Tasks and rewards are here. The server confirms any earned rewards.'},
+  'mining.coin':{ru:'Это главная GM-монета. Майнинг идёт автоматически по действующей скорости. Нажимая на монету, ты собираешь накопленные игровые GM — если накопилось не меньше 1 GM.',uk:'Це головна монета GM. Майнінг відбувається автоматично. Натисни монету, коли накопичиш щонайменше 1 GM.',pt:'Esta é a moeda GM. A mineração é automática. Toque na moeda para coletar após acumular pelo menos 1 GM.',en:'This is the main GM coin. Mining accrues automatically. Tap to claim after at least 1 GM is stored.'},
+  'mining.claim':{ru:'Эта отдельная кнопка выполняет тот же сбор. Пока на счёте меньше 1 GM, она неактивна. Сбор не требует оплаты или подключения кошелька.',uk:'Ця кнопка збирає накопичені GM. До 1 GM вона неактивна.',pt:'Este botão coleta os GM acumulados. Ele fica desativado até 1 GM.',en:'This button claims stored GM. It stays disabled below the 1 GM minimum.'},
+  'mining.upgrades':{ru:'Здесь показаны 200 уровней, цена каждого и бонус к скорости. По договорённости уровни будут связаны с подтверждённым внешним кошельком. Пока контракт GM не проверен, оплата и покупка отключены, игровые GM не списываются.',uk:'Тут 200 рівнів, ціни та бонуси. Оплата через зовнішній гаманець поки недоступна — контракт GM ще не підтверджений.',pt:'Aqui estão 200 níveis e seus bônus. Compras com carteira externa estão desativadas até verificar o contrato GM.',en:'Explore all 200 levels and bonuses. Wallet-based purchases remain disabled until the GM contract is verified.'},
+  'mining.storage':{ru:'Полоса показывает, сколько GM накоплено относительно вместимости. Когда хранилище заполнено, новые начисления останавливаются до сбора. Ниже указана текущая скорость за час.',uk:'Смуга показує наповнення сховища. Коли воно повне, зберіть GM, щоб звільнити місце.',pt:'A barra mostra o armazenamento atual. Colete GM para liberar espaço quando estiver cheio.',en:'The bar shows storage capacity. Claim stored GM when the container is full.'},
+  'trade.price':{ru:'Здесь указана рыночная цена GM/CR. Для тестового рынка она берётся из реально исполненных игровых заявок; мы не рисуем вымышленные сделки.',uk:'Тут ціна GM/CR за виконаними ігровими угодами, без штучних свічок.',pt:'O preço GM/CR vem de negociações reais dentro do jogo, sem dados inventados.',en:'The GM/CR price reflects executed in-game trades; no synthetic market data.'},
+  'trade.chart':{ru:'Выбирай интервал свечей — от минуты до дня. График показывает историю исполненных игровых сделок, а пустые интервалы остаются пустыми.',uk:'Обери інтервал від хвилини до дня. Порожні періоди не домальовуються.',pt:'Escolha o intervalo do gráfico. Períodos sem negociações permanecem vazios.',en:'Choose a candle interval. Periods without executed in-game trades stay empty.'},
+  'trade.balance':{ru:'Тут доступны твои игровые GM и CR. Открытые заявки могут резервировать часть средств; перед отправкой заявки проверь остаток.',uk:'Тут доступні ігрові GM і CR. Відкриті ордери можуть резервувати кошти.',pt:'Aqui estão seus GM e CR do jogo. Ordens abertas podem reservar saldo.',en:'Your in-game GM and CR balances are shown here. Open orders reserve funds.'},
+  'trade.actions':{ru:'Выбери «Купить GM» или «Продать GM». Кнопки переключают форму ниже, не отправляя заявку. Это тренировочный игровой рынок, не биржа настоящих денег.',uk:'Обери «Купити» або «Продати». Перемикач змінює форму, але нічого не надсилає.',pt:'Escolha Comprar ou Vender. Os botões apenas alternam o formulário, sem enviar ordem.',en:'Select Buy or Sell. These buttons only switch the form; they do not place an order.'},
+  'trade.quantity':{ru:'Укажи количество GM. Ниже сразу появится приблизительный итог в CR. Нажми «Продолжить», проверь цену и срок заявки в следующем окне, затем отдельно подтверди отправку.',uk:'Вкажи кількість GM, переглянь приблизну суму в CR і відкрий перевірку заявки.',pt:'Digite o valor em GM para ver a estimativa em CR e abrir a revisão da ordem.',en:'Enter a GM amount, review the CR estimate, and continue to the separate confirmation step.'},
+  'boxes.choose':{ru:'Здесь выбирают тип бокса. В каждом — заранее утверждённые игровые награды; их состав и доступность показывает сервер.',uk:'Тут обирають тип боксу. Нагороди визначає сервер.',pt:'Escolha o tipo de caixa. As recompensas são aprovadas pelo servidor.',en:'Choose a box type. Rewards and availability come from the server.'},
+  'boxes.claim':{ru:'Кнопка открытия активируется только при достаточном количестве POINTS. Содержимое показывается после подтверждения операции сервером.',uk:'Бокс відкривається за POINTS; результат підтверджує сервер.',pt:'Abra caixas com POINTS; o resultado é confirmado pelo servidor.',en:'Use POINTS to open a box; the reveal follows server confirmation.'},
+  'tasks.filter':{ru:'Фильтры разделяют задания на общие, социальные и игровые. Выполняй условия; неподтверждённые задания не начисляют наград.',uk:'Фільтри розділяють завдання за типами. Нагороду дають лише за виконану умову.',pt:'Filtre tarefas por tipo. Recompensas exigem conclusão verificada.',en:'Filter tasks by type. Rewards require verified completion.'},
+  'tasks.claim':{ru:'Каждая карточка содержит условие и награду. После выполнения появится кнопка получения; выдача проверяется сервером.',uk:'Кожна картка містить умову й нагороду. Видачу перевіряє сервер.',pt:'Cada cartão mostra o objetivo e a recompensa verificada.',en:'Each task shows an objective and a server-verified reward.'},
+  'profile.league':{ru:'Это твоя лига и опыт XP. Полоса показывает прогресс, а под ней указано, сколько XP осталось до следующего ранга.',uk:'Це твоя ліга та XP. Смуга показує шлях до наступного рангу.',pt:'Sua liga e XP. A barra mostra o progresso até o próximo nível.',en:'Your league and XP are here. The progress bar shows how close the next rank is.'},
+  'profile.frames':{ru:'Рамки профиля открываются за игровые достижения. Серые пока закрыты. У первых 20 участников есть особые уникальные рамки.',uk:'Рамки відкриваються за досягнення. Сірі ще заблоковані.',pt:'Molduras são liberadas por conquistas. As cinzas estão bloqueadas.',en:'Earn frames from achievements. Grey frames are locked; the earliest 20 players have exclusive ones.'},
+  'more.menu':{ru:'Здесь находятся профиль, достижения, история, поддержка и настройки. Нужный раздел откроется по нажатию на карточку.',uk:'Тут профіль, досягнення, історія та підтримка.',pt:'Aqui ficam Perfil, Conquistas, Histórico e Suporte.',en:'Find Profile, Achievements, History, Support, and Settings here.'},
+  'achievements.locked':{ru:'Цветные карточки — открытые награды, серые — ещё недоступные. Уникальные ранние награды закрепляются за конкретными игроками.',uk:'Кольорові нагороди відкриті, сірі — ще заблоковані.',pt:'Conquistas coloridas estão abertas; as cinzas continuam bloqueadas.',en:'Unlocked achievements are colored; locked achievements are grey.'},
+  'settings.theme':{ru:'Выбирай Premium Silver или Premium Graphite — оба варианта используют один GM-дизайн и одинаковые функции.',uk:'Обери Premium Silver або Premium Graphite — функції ті самі.',pt:'Escolha Premium Silver ou Premium Graphite. As funções são iguais.',en:'Choose Premium Silver or Premium Graphite; both themes have the same features.'},
+  'settings.language':{ru:'Выбери язык здесь. Настройка сохраняется на устройстве и применяется к переводимым элементам приложения. Кнопка «Auto» использует язык Telegram.',uk:'Обери мову тут; Auto використовує мову Telegram.',pt:'Escolha o idioma aqui. Auto usa o idioma do Telegram.',en:'Pick your preferred language. Auto follows your Telegram language.'},
+  'support.ticket':{ru:'Выбери категорию и опиши проблему минимум десятью символами. Обращение создаётся на сервере и появляется в списке; можно просматривать ответы.',uk:'Оберіть категорію й опишіть проблему. Звернення збережеться на сервері.',pt:'Escolha a categoria e descreva o problema. O chamado será salvo no servidor.',en:'Choose a category and describe the issue. Your ticket is saved on the server.'}
+ };
+ const closeGuide=()=>{if(guideScreen)store.setItem('gm_guide_'+guideScreen,'1');setGuideScreen('');setGuideStep(0);setGuideSpot(null)};
+ const openGuide=(name:string)=>{if(guideCatalog[name]){setGuideScreen(name);setGuideStep(0);setGuideSpot(null)}};
+ React.useEffect(()=>{
+  if(!guideScreen)return;
+  const step=guideCatalog[guideScreen]?.[guideStep];
+  if(!step)return;
+  const selector=String(step[2]||'');
+  let handle:any;
+  const align=()=>{
+   const element=document.querySelector(selector) as HTMLElement|null;
+   if(!element){setGuideSpot(null);return}
+   const rect=element.getBoundingClientRect();
+   const height=window.visualViewport?.height||window.innerHeight;
+   const top=Math.max(8,rect.top-5),bottom=Math.min(height-8,rect.bottom+5);
+   const x=Math.max(8,rect.left-6),right=Math.min(window.innerWidth-8,rect.right+6);
+   const spotHeight=Math.max(36,bottom-top);
+   const cardHeight=260;
+   const above=top-cardHeight-15;
+   const below=bottom+14;
+   const cardTop=(above>=12?above:below+cardHeight<=height-10?below:Math.max(12,height-cardHeight-12));
+   setGuideSpot({top,left:x,width:right-x,height:spotHeight,cardTop});
+  };
+  const element=document.querySelector(selector) as HTMLElement|null;
+  element?.scrollIntoView?.({behavior:'smooth',block:'center',inline:'nearest'});
+  const timer=window.setTimeout(align,320);
+  window.addEventListener('resize',align);
+  window.addEventListener('scroll',align,true);
+  return()=>{window.clearTimeout(timer);window.removeEventListener('resize',align);window.removeEventListener('scroll',align,true)};
+ },[guideScreen,guideStep]);
+
 
  
  const [wallet,setWallet]=React.useState(firstWallet);
@@ -640,7 +698,7 @@ function App(){
  };
  const icon=(n:string,size=23,tile=false)=> <Icon name={n} theme={theme} size={size} tile={tile}/>;
  const isLight=theme==='light';
- const top=(title:string,back=true,right='more')=><header className={'screen-header '+(!isLight?'dark-head':'')}><button className="header-icon" aria-label="Назад" onClick={()=>back?goBack():goto('more')} >{back?icon('chevron-left',24):<Brand theme={theme} size={35}/>}</button><strong>{title}</strong><button className="header-icon" onClick={()=>right==='settings'?goto('settings'):goto('more')} aria-label="Дополнительные действия">{icon(right,23)}</button></header>;
+ const top=(title:string,back=true,right='more')=><header className={'screen-header '+(!isLight?'dark-head':'')}><button className="header-icon" aria-label="Назад" onClick={()=>back?goBack():goto('more')} >{back?icon('chevron-left',24):<Brand theme={theme} size={35}/>}</button><strong>{title}</strong><button className="header-icon" onClick={()=>right==='settings'?goto('settings'):right==='info'?openGuide(screen):goto('more')} aria-label={right==='info'?L('instruction'):"Дополнительные действия"}>{icon(right,23)}</button></header>;
  const menuItems=[['home','home',lang('home')],['trade','candlesticks',lang('market')],['mining','lightning',lang('mining')],['boxes','gift',lang('boxes')],['more','more',lang('more')]];
  const bottom=()=> <nav className="bottom-nav" aria-label="Основные разделы">{menuItems.map(([s,i,t]:any)=><BarButton key={s} name={i} theme={theme} title={t} selected={screen===s||(isLight&&s==='earn'&&screen==='tasks')||(!isLight&&s==='earn'&&screen==='tasks')} onClick={()=>goto(s==='earn'&&isLight?'tasks':s)}/>)}</nav>;
  
@@ -755,7 +813,7 @@ function App(){
    :e('div',{className:'terminal-tab-empty'},icon('layers',30),
     e('b',null,'Активных ордеров нет'),e('small',null,'Выбери «Купить» или «Продать», чтобы создать Limit-заявку.')));
   return e(React.Fragment,null,
-   top('Trade',true,'more'),
+   top(L('market'),true,'info'),
    e('section',{className:'terminal-shell'},
     e('div',{className:'terminal-pair-top'},
      e('div',{className:'terminal-pair-logo'},icon('gm-coin-orbit',39)),
@@ -878,7 +936,7 @@ function Tasks(){
  }):e('div',{className:'gm-task-empty gm-premium-card'},icon('tasks',44,true),
    e('b',null,'Задания готовятся'),e('small',null,'Проверь список после подключения Telegram.'));
  return e(React.Fragment,null,
-  top('Задания',true,'tasks'),
+  top(L('tasks'),true,'info'),
   e('div',{className:'gm-task-header gm-premium-card'},icon('tasks',44,true),
    e('div',null,e('b',null,'Выполняй цели'),e('small',null,'Игровые задания с проверяемыми условиями. Награды начисляет только сервер.'))),
   e('div',{className:'gm-task-filters'},tabs.map(([value,label])=>e('button',{type:'button',key:value,
@@ -1159,7 +1217,7 @@ function Referrals(){
  function History(){return <>{top(L('history'),true,'clock')}{!serverHistory.length&&<div className="empty-state">{icon('clock',62,true)}<h3>История операций пока пуста</h3><button onClick={loadHistory}>Загрузить с сервера</button></div>}{serverHistory.map((x:any)=><div key={x.id} className="pearl-card form-surface"><b>{x.kind}</b><small>{new Date(x.at*1000).toLocaleString('ru-RU')}</small><p>{x.info}</p></div>)}</>}
  function Achievements(){const items=liveAchievements;
  const planned=[['origin','trophy','Первопроходец','Один из первых 20 игроков — уникальная рамка'],['first_claim','lightning','Искра GM','Первый сбор майнинга'],['mining_25','gm-coin-orbit','Стальной майнер','25 улучшений майнинга'],['mining_50','diamond','Серебряная легенда','50 улучшений майнинга'],['collector','gift','Хранитель артефактов','Собери серию игровых наград'],['community','friends','Сила сообщества','Пригласи друзей'],['immortal','crown','GM Immortal','Достигни максимальной лиги']];
- return <>{top(L('achievements'),true,'trophy')}<div className="achievement-list">{items.map((t:any)=><div className="earn-item pearl-card" key={t.id}>{icon(t.icon||'trophy',45,true)}<span><b>{t.title||t.id}</b><small>{t.description||''}{!demo?` · ${t.xp||0} XP`:''}</small></span>{!demo&&<button disabled={t.claimed||!t.available} onClick={async()=>{const x=await gameAction('/api/achievements/claim',{id:t.id});if(x)await refreshLive()}}>{t.claimed?'Получено':t.available?'Получить':'Не выполнено'}</button>}</div>)}</div><div className="gm-achievement-planned"><h3>{L('achievements')} · {L('locked')}</h3>
+ return <>{top(L('achievements'),true,'info')}<div className="achievement-list">{items.map((t:any)=><div className="earn-item pearl-card" key={t.id}>{icon(t.icon||'trophy',45,true)}<span><b>{t.title||t.id}</b><small>{t.description||''}{!demo?` · ${t.xp||0} XP`:''}</small></span>{!demo&&<button disabled={t.claimed||!t.available} onClick={async()=>{const x=await gameAction('/api/achievements/claim',{id:t.id});if(x)await refreshLive()}}>{t.claimed?'Получено':t.available?'Получить':'Не выполнено'}</button>}</div>)}</div><div className="gm-achievement-planned"><h3>{L('achievements')} · {L('locked')}</h3>
   {(liveState?.cosmetics?.frames||[]).map((f:any)=><div className={'gm-achievement-locked '+(f.claimed?'claimed':'')} key={f.id}>{icon(f.category==='founder'?'crown':'diamond',35,true)}<span><b>{f.title}</b><small>{f.limited?'LIMITED · 1 / 20':'MINING MILESTONE'}</small></span>{icon(f.claimed?'check':'minus',17)}</div>)}<p>{L('achievementsLocked')}. {L('later')}.</p>{planned.map(([id,ic,title,desc])=><div className="gm-achievement-locked" key={id}>{icon(ic,35,true)}<span><b>{title}</b><small>{desc}</small></span>{icon('minus',16)}</div>)}</div></>}
  
 function Settings(){
