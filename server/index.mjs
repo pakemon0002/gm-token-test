@@ -327,7 +327,7 @@ const routes=async(req,res)=>{
    sendTelegram(target,`GM TOKEN: проведена корректировка ${direction==='credit'?'+':'-'}${(n/100).toFixed(2)} ${currency}. Тикет: ${ticket}`);
    return send(res,200,{success:true,operationId:op});
   }
-  if(['/api/market','/api/exchange','/api/shop','/api/mining','/api/vault','/api/game','/api/boxes','/api/daily','/api/referrals','/api/tasks','/api/achievements','/api/leaderboard'].some(prefix=>p.startsWith(prefix)))return await game.handle(p,verb,id,req,res);
+  if(['/api/market','/api/exchange','/api/shop','/api/mining','/api/vault','/api/game','/api/boxes','/api/daily','/api/referrals','/api/tasks','/api/achievements','/api/leaderboard','/api/cosmetics'].some(prefix=>p.startsWith(prefix)))return await game.handle(p,verb,id,req,res);
   return fail(res,404,'endpoint not found');
  }catch(e){const message=e instanceof Error?e.message:String(e);return fail(res,message.match(/permission|role|TOTP|protected|assigned/i)?403:400,message)}
 };
