@@ -7,7 +7,7 @@ const store = {getItem:(key:string)=>{try{return window.localStorage.getItem(key
 const A = './assets/icons/';
 const BRAND = './assets/brand-original-reference/';
 type Theme = 'light' | 'dark';
-type Route = 'home'|'trade'|'earn'|'tasks'|'leaderboard'|'profile'|'reward'|'splash'|'intro'|'mining'|'vault'|'shop'|'referrals'|'history'|'settings'|'support'|'admin'|'achievements'|'more'|'streak'|'boxes';
+type Route = 'home'|'trade'|'earn'|'tasks'|'leaderboard'|'profile'|'reward'|'splash'|'intro'|'mining'|'vault'|'wallet'|'shop'|'referrals'|'history'|'settings'|'support'|'admin'|'achievements'|'more'|'streak'|'boxes';
 type Wallet = { gm:number; cr:number; vault:number; xp:number; level:number; claims:number; lastClaim:string; lastMiningXpDay:string; lastVaultWithdrawDay:string; streak:number; storage:number; storageUpdated:number; tickets:any[]; orders:any[]; traded:number; rewardClaimed:boolean; };
 const firstWallet:Wallet = {gm:0,cr:0,vault:0,xp:0,level:1,claims:0,lastClaim:'',lastMiningXpDay:'',lastVaultWithdrawDay:'',streak:0,storage:0,storageUpdated:0,tickets:[],orders:[],traded:0,rewardClaimed:false};
 const xpThreshold=[0,100,250,450,750,1150,1700,2400,3300,4400];
@@ -462,10 +462,27 @@ function App(){
  const [testUserId,setTestUserId]=React.useState('');
  const [testCurrency,setTestCurrency]=React.useState('GM');
  const [selectedFrame,setSelectedFrame]=React.useState(store.getItem('gm_profile_frame')||'standard');
+ const [tonAccount,setTonAccount]=React.useState('' as string);
+ const [tonError,setTonError]=React.useState('' as string);
+ const tonUi=React.useRef(null as any);
  const [testAmount,setTestAmount]=React.useState('1000');
  const [testReason,setTestReason]=React.useState('Начисление виртуальных GM/CR для проверки торговой системы');
  const [testCode,setTestCode]=React.useState('');
  const [testBusy,setTestBusy]=React.useState(false);
+ React.useEffect(()=>{
+  if(demo||!webapp?.initData)return;
+  const sdk=(window as any).TON_CONNECT_UI;
+  if(!sdk?.TonConnectUI){setTonError('TON Connect SDK unavailable');return}
+  try{
+   const instance=new sdk.TonConnectUI({manifestUrl:window.location.origin+'/tonconnect-manifest.json'});
+   tonUi.current=instance;
+   const unsubscribe=instance.onStatusChange((connected:any)=>{setTonAccount(connected?.account?.address||'');setTonError('')},(error:any)=>setTonError(String(error?.message||error)));
+   return()=>{if(typeof unsubscribe==='function')unsubscribe();tonUi.current=null};
+  }catch(error:any){setTonError(String(error?.message||error))}
+ },[demo]);
+ const walletLanguage=(pt:string,uk:string,en:string,ru:string)=>actualLang==='pt'?pt:actualLang==='uk'?uk:actualLang==='ru'?ru:en;
+ const connectTonWallet=async()=>{try{if(!tonUi.current)throw Error('TON Connect is not ready');await tonUi.current.openModal()}catch(err:any){setTonError(String(err?.message||err))}};
+ const disconnectTonWallet=async()=>{try{await tonUi.current?.disconnect();setTonAccount('')}catch(err:any){setTonError(String(err?.message||err))}};
  const [backendStatus,setBackendStatus]=React.useState('Проверяем вход через Telegram…');
  const [modal,setModal]=React.useState('');
  const [boxReveal,setBoxReveal]=React.useState({kind:'bronze',gm:0});
@@ -492,7 +509,7 @@ function App(){
  };
  React.useEffect(()=>{
   const onPop=()=>{const prev=navStack.current.pop()||'home',route=location.hash.slice(1);
-   const allowed=['home','trade','earn','tasks','leaderboard','profile','reward','splash','intro','mining','vault','shop','referrals','history','settings','support','admin','achievements','more','streak','boxes'];
+   const allowed=['home','trade','earn','tasks','leaderboard','profile','reward','splash','intro','mining','vault','wallet','shop','referrals','history','settings','support','admin','achievements','more','streak','boxes'];
    setScreen(allowed.includes(route)?route:prev);setModal('');
    document.querySelector('.phone-scroll')?.scrollTo(0,0);
   };
@@ -909,7 +926,7 @@ function Tasks(){
       icon(f.category==='founder'?'crown':f.category==='milestone'?'diamond':'profile',27,true),
       e('span',null,f.title),f.claimed?icon('check',16):icon('minus',16))))),
    e('div',{className:'profile-menu'},
-    [['trophy',L('achievements'),'achievements'],['friends',L('referrals'),'referrals'],['clock',L('history'),'history'],['settings',L('customize'),'settings'],['info',L('support'),'support']].map(([i,t,route])=>
+    [['trophy',L('achievements'),'achievements'],['friends',L('referrals'),'referrals'],['clock',L('history'),'history'],['wallet',L('wallet'),'wallet'],['settings',L('customize'),'settings'],['info',L('support'),'support']].map(([i,t,route])=>
      e('button',{key:route,onClick:()=>goto(route)},icon(i,21),e('span',null,t),icon('chevron-right',18)))),
    e('button',{type:'button',className:'gm-settings-onboard gm-premium-card',onClick:()=>openGuide('profile')},icon('info',22),L('startTour'),icon('chevron-right',18))
   );
@@ -1004,6 +1021,29 @@ function Reward(){
     e('button',{type:'button',className:'gm-upgrades-toggle',onClick:()=>setShowAllUpgrades(!showAllUpgrades)},
      showAllUpgrades?L('collapse'):L('allLevels'),icon(showAllUpgrades?'chevron-up':'chevron-down',16))),
    e('p',{className:'gm-mining-footnote'},'GM — виртуальная валюта игры. Улучшения покупаются по порядку. Цена списывается сервером, бонус заменяет предыдущий. Mining Pool ограничен — фактические начисления могут отличаться от расчётных.'));
+ }
+
+ function WalletConnection(){
+  const e=React.createElement;
+  const display=tonAccount?(tonAccount.length>24?tonAccount.slice(0,12)+'…'+tonAccount.slice(-8):tonAccount):'—';
+  return e('div',{className:'gm-wallet-screen'},
+   top(L('wallet'),true,'shield-check'),
+   e('div',{className:'gm-wallet-hero gm-premium-card'},
+    e('div',{className:'gm-wallet-hero-icon'},icon('wallet',72,true)),
+    e('small',null,'TON CONNECT · READ-ONLY'),
+    e('h2',null,L('wallet')),
+    e('p',null,walletLanguage('Conecte sua carteira TON para exibir o endereço. Nenhuma transferência será solicitada.','Підключіть TON-гаманець, щоб переглянути адресу. Перекази не запитуються.','Connect a TON wallet to display its address. No transfers are requested.','Подключи TON-кошелёк, чтобы увидеть адрес. Переводы и оплаты не запрашиваются.')),
+    e('div',{className:'gm-wallet-address'},e('small',null,walletLanguage('Endereço da carteira','Адреса гаманця','Wallet address','Адрес кошелька')),e('strong',null,display)),
+    e('button',{type:'button',className:'gm-wallet-connect',onClick:tonAccount?disconnectTonWallet:connectTonWallet},
+     icon(tonAccount?'close':'link',22),tonAccount?walletLanguage('Desconectar','Від’єднати','Disconnect','Отключить'):walletLanguage('Conectar carteira TON','Підключити TON-гаманець','Connect TON wallet','Подключить TON-кошелёк'))),
+   tonError?e('div',{className:'gm-wallet-error',role:'status'},tonError):null,
+   e('section',{className:'gm-wallet-facts gm-premium-card'},e('h3',null,L('holdings')),
+    e('p',null,walletLanguage('O saldo de GM na blockchain ainda não é verificado. Até definir o contrato, nenhuma vantagem de mineração será concedida.','GM на блокчейні ще не перевіряються. До визначення контракту бонуси майнінгу не нараховуються.','On-chain GM holdings are not verified yet. No mining bonus is granted until the token contract is confirmed.','Количество GM в блокчейне пока не проверяется. Пока не подтверждён контракт токена, бонусы к майнингу не выдаются.')),
+    e('div',{className:'gm-wallet-total'},icon('shield-check',24),walletLanguage('Saldo pendente de verificação','Баланс очікує перевірки','Holdings pending verification','Холдинг ожидает проверки'))),
+   wallet.vault>0?e('button',{type:'button',className:'gm-wallet-legacy',onClick:()=>goto('vault')},
+     icon('database',20),walletLanguage('Saldo legado no jogo: ','Старий ігровий баланс: ','Legacy in-game Vault: ','Старый игровой Vault: ')+nf(wallet.vault)+' GM',icon('chevron-right',18)):null,
+   e('p',{className:'gm-mining-footnote'},walletLanguage('Nunca compartilhe sua frase-semente ou chave privada.','Ніколи не повідомляйте seed-фразу чи приватний ключ.','Never share your seed phrase or private key.','Никогда не передавай сид-фразу или приватный ключ.'))
+  );
  }
 
  function Vault(){
@@ -1243,7 +1283,7 @@ function More(){
  const e=React.createElement;
  const groups:[string,string[][]][]=[
   [L('account'),[['profile','profile',L('profile'),L('balance')],['achievements','trophy',L('achievements'),L('earned')],['history','clock',L('history'),L('history')]]],
-  [L('game'),[['reward','gift','Daily Reward',L('claim')],['tasks','tasks',L('tasks'),L('earned')],['referrals','friends',L('friends'),L('referrals')],['leaderboard','trophy',L('leaderboard'),L('holdings')]]],
+  [L('game'),[['reward','gift','Daily Reward',L('claim')],['tasks','tasks',L('tasks'),L('earned')],['referrals','friends',L('friends'),L('referrals')],['leaderboard','trophy',L('leaderboard'),L('holdings')],['wallet','wallet',L('wallet'),L('wallet')]]],
   [L('help'),[['support','shield-check',L('support'),L('help')],['settings','settings',L('customize'),L('interfaceLanguage')],['intro','info',L('instruction'),L('replay')]]]
  ];
  if(['owner','coowner'].includes(liveRole))groups.push(['АДМИНИСТРИРОВАНИЕ',[['admin','crown','Admin Panel','Только Owner и Co-Owner']]]);
@@ -1329,9 +1369,9 @@ function Streak(){return <>{top('Daily Streak',true,'flame')}<div className="ref
   </section>
  </main>}
  let view:any;
- switch(screen){case 'home':view=Home();break;case 'trade':view=Trading();break;case 'earn':view=Earn();break;case 'tasks':view=Tasks();break;case 'leaderboard':view=Leaderboard();break;case 'profile':view=Profile();break;case 'reward':view=Reward();break;case 'splash':view=Splash();break;case 'intro':view=Intro();break;case 'mining':view=Mining();break;case 'vault':view=Vault();break;case 'shop':view=Shop();break;case 'boxes':view=Boxes();break;case 'referrals':view=Referrals();break;case 'history':view=History();break;case 'settings':view=Settings();break;case 'support':view=Support();break;case 'admin':view=['owner','coowner'].includes(liveRole)?Admin():Home();break;case 'achievements':view=Achievements();break;case 'more':view=More();break;case 'streak':view=Streak();break;default:view=Home();}
+ switch(screen){case 'home':view=Home();break;case 'trade':view=Trading();break;case 'earn':view=Earn();break;case 'tasks':view=Tasks();break;case 'leaderboard':view=Leaderboard();break;case 'profile':view=Profile();break;case 'reward':view=Reward();break;case 'splash':view=Splash();break;case 'intro':view=Intro();break;case 'mining':view=Mining();break;case 'vault':view=Vault();break;case 'wallet':view=WalletConnection();break;case 'shop':view=Shop();break;case 'boxes':view=Boxes();break;case 'referrals':view=Referrals();break;case 'history':view=History();break;case 'settings':view=Settings();break;case 'support':view=Support();break;case 'admin':view=['owner','coowner'].includes(liveRole)?Admin():Home();break;case 'achievements':view=Achievements();break;case 'more':view=More();break;case 'streak':view=Streak();break;default:view=Home();}
  return <div className={'application theme-'+theme+(webapp?.initData?' is-telegram':'')}>
- <aside className="desktop-toolbar"><div className="toolbar-logo"><Brand theme={theme} size={42}/><span><b>GM TOKEN</b><small>Оригинальные эскизы · интерактивная сборка</small></span></div><div className="toolbar-tabs"><button onClick={()=>setTheme('light')} className={isLight?'chosen':''}>Light</button><button onClick={()=>setTheme('dark')} className={!isLight?'chosen':''}>Dark</button></div><div className="toolbar-links">{(['home','trade','earn','tasks','leaderboard','profile','mining','vault','shop','support','admin'] as Route[]).map(s=><button key={s} className={screen===s?'chosen':''} onClick={()=>goto(s)}>{s}</button>)}</div><p>Оригинальные PNG · 54 иконки × 4 варианта · без подмены сторонними пиктограммами</p></aside>
+ <aside className="desktop-toolbar"><div className="toolbar-logo"><Brand theme={theme} size={42}/><span><b>GM TOKEN</b><small>Оригинальные эскизы · интерактивная сборка</small></span></div><div className="toolbar-tabs"><button onClick={()=>setTheme('light')} className={isLight?'chosen':''}>Light</button><button onClick={()=>setTheme('dark')} className={!isLight?'chosen':''}>Dark</button></div><div className="toolbar-links">{(['home','trade','earn','tasks','leaderboard','profile','mining','wallet','vault','shop','support','admin'] as Route[]).map(s=><button key={s} className={screen===s?'chosen':''} onClick={()=>goto(s)}>{s}</button>)}</div><p>Оригинальные PNG · 54 иконки × 4 варианта · без подмены сторонними пиктограммами</p></aside>
  <div className="device-stage"><div className="phone-frame"><div className={'phone-scroll '+((screen==='splash')?'no-scroll':'')}>{view}</div>{!['reward','splash','intro'].includes(screen)&&bottom()}<div className="home-indicator"/></div><div className="underphone"><span className="demo-pill">{'Серверная авторизация · виртуальные GM/CR'}</span><button onClick={()=>goto('splash')}>Заставка</button><button onClick={()=>goto('home')}>Home</button><button onClick={()=>setTheme(isLight?'dark':'light')}>Сменить тему</button></div><small className="status-note">{backendStatus}</small></div>
  {toast&&<div className="toast-message" role="status" onClick={()=>setToast('')}>{toast}<button onClick={()=>setToast('')}>×</button></div>}
  {modal==='boxReveal'?BoxRevealModal():modal&&TradeOrderModal()}
