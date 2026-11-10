@@ -2,6 +2,7 @@
 // ECONOMY_PENDING settings are intentionally disabled until both co-owners approve them.
 import crypto from 'node:crypto';
 import {toCents} from './lib.mjs';
+import {AMBASSADOR_TIERS,AMBASSADOR_MIN_REFERRALS,ambassadorTierForFollowers,normalizedChannelLink} from './ambassador.mjs';
 import {MAX_MINING_LEVEL,upgradeCostGM,miningBonusPercent,miningRateCentsDay,miningStorageHours,leagueForXP,LEAGUES,miningMilestones} from './mining-progression.mjs';
 import {makeCandles,tradingSnapshot,indicativeAuction,INTERVALS} from './market-data.mjs';
 const DAY=86400, HOUR=3600, MICRO=1000000;
@@ -43,6 +44,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
  CREATE TABLE IF NOT EXISTS achievements(user_id TEXT NOT NULL,code TEXT NOT NULL,PRIMARY KEY(user_id,code));
  CREATE TABLE IF NOT EXISTS genesis_badges(slot INTEGER PRIMARY KEY CHECK(slot BETWEEN 1 AND 20),user_id TEXT NOT NULL UNIQUE REFERENCES users(id),awarded_at INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS cosmetic_state(user_id TEXT PRIMARY KEY REFERENCES users(id),coin_skin TEXT NOT NULL DEFAULT 'default' CHECK(coin_skin IN ('default','genesis_silver')));
+ CREATE TABLE IF NOT EXISTS ambassador_applications(user_id TEXT PRIMARY KEY REFERENCES users(id),channel_url TEXT NOT NULL,claimed_followers INTEGER NOT NULL,verified_followers INTEGER NOT NULL DEFAULT 0,rate_pct INTEGER NOT NULL DEFAULT 25,status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected')),created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL,reviewed_by TEXT,review_note TEXT);
  CREATE TABLE IF NOT EXISTS balance_ledger(id TEXT NOT NULL,account TEXT NOT NULL,currency TEXT NOT NULL,delta_cents INTEGER NOT NULL,created_at INTEGER NOT NULL,PRIMARY KEY(id,account,currency));`);
  // Existing test databases created before this audit have no quote_remainder.
  if(!stmt('PRAGMA table_info(orders)').all().some(x=>x.name==='quote_remainder'))db.exec('ALTER TABLE orders ADD COLUMN quote_remainder INTEGER NOT NULL DEFAULT 0');
@@ -311,6 +313,34 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
   if(p==='/api/game/status'&&verb==='GET')return response(200,tx(()=>{ensure(id);settle();const m=stmt('SELECT * FROM mining_state WHERE user_id=?').get(id),h=stmt('SELECT * FROM holding_state WHERE user_id=?').get(id),u=stmt('SELECT level,xp,username FROM users WHERE id=?').get(id);const next=m.upgrade_level<MAX_MINING_LEVEL?m.upgrade_level+1:null;return {user:u,wallet:wal(id),mining:{...m,rate_cents_day:rate({...u,upgrade_level:m.upgrade_level},wal(id)),upgrade_enabled:miningV2,max_level:MAX_MINING_LEVEL,bonus_pct:miningBonusPercent(m.upgrade_level),next_level:next,next_cost_gm:next?upgradeCostGM(next):null,storage_hours:miningV2?miningStorageHours(m.upgrade_level):capacity(u.level),milestones:miningMilestones()},league:{...leagueForXP(u.xp),all:LEAGUES},cosmetics:genesisStatus(id),holding:h,points:stmt('SELECT * FROM points_account WHERE user_id=?').get(id),daily:dailyProfile(id),auction:{end_at:Number(v('auction_end')),done:v('auction_done')==='1'},config:{test_economy:testEconomy,mining_upgrade_enabled:miningV2,holding_enabled:!miningV2&&Number(v('holding_daily_bps'))>0,daily_enabled:Number(v('daily_gm_cents'))>0,shop_enabled:v('shop_rate_mode')!=='disabled',boxes_enabled:Object.keys(JSON.parse(v('box_rewards_json'))).length===3,box_rewards:JSON.parse(v('box_rewards_json')),daily_reward_gm:Number(v('daily_gm_cents'))/100}}}));
   const body=verb==='POST'?await read():{};
   const op=()=>requestId(body.operationId);
+  if(p==='/api/ambassador/tiers'&&verb==='GET')return response(200,{tiers:AMBASSADOR_TIERS,min_referrals:AMBASSADOR_MIN_REFERRALS});
+  if(p==='/api/ambassador/me'&&verb==='GET'){
+   const referrals=stmt('SELECT COUNT(*) AS n FROM referrals WHERE referrer_id=?').get(id).n;
+   const application=stmt('SELECT user_id,channel_url,claimed_followers,verified_followers,rate_pct,status,created_at,updated_at,review_note FROM ambassador_applications WHERE user_id=?').get(id)||null;
+   return response(200,{referrals,required_referrals:AMBASSADOR_MIN_REFERRALS,
+    current_rate_pct:application?.status==='approved'?application.rate_pct:25,
+    application,tiers:AMBASSADOR_TIERS});
+  }
+  if(p==='/api/ambassador/apply'&&verb==='POST')return response(200,tx(()=>{
+   const data=await read();
+   const opId=requestId(data.operationId);
+   return once(opId,id,'ambassador_apply',()=>{
+    const referrals=stmt('SELECT COUNT(*) AS n FROM referrals WHERE referrer_id=?').get(id).n;
+    if(referrals<AMBASSADOR_MIN_REFERRALS)throw Error('at least 100 confirmed referrals are required');
+    const channel=normalizedChannelLink(data.channel);
+    const claimed=Number(data.followers);
+    if(!Number.isSafeInteger(claimed)||claimed<2000||claimed>100000000)throw Error('channel audience must be at least 2,000');
+    const previous=stmt('SELECT status FROM ambassador_applications WHERE user_id=?').get(id);
+    if(previous?.status==='approved')throw Error('already an approved ambassador');
+    if(previous?.status==='pending')throw Error('your application is already pending');
+    const time=now();
+    stmt(`INSERT INTO ambassador_applications(user_id,channel_url,claimed_followers,created_at,updated_at) VALUES(?,?,?,?,?)
+      ON CONFLICT(user_id) DO UPDATE SET channel_url=excluded.channel_url,claimed_followers=excluded.claimed_followers,verified_followers=0,rate_pct=25,status='pending',updated_at=excluded.updated_at,reviewed_by=NULL,review_note=NULL`
+    ).run(id,channel,claimed,time,time);
+    log(id,'ambassador_application',{user:id,channel,claimed_followers:claimed});
+    return {submitted:true,channel,review:'pending'};
+   });
+  }));
   if(p==='/api/mining/upgrade'&&verb==='POST')return response(200,tx(()=>{
    ensure(id);if(!miningV2)throw Error('mining upgrades are not enabled on this server');
    // Settle at the *old* rate before charging, to avoid retroactive higher earnings.
