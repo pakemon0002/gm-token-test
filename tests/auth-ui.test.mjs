@@ -7,7 +7,8 @@ test('auth button invokes Telegram native navigation with browser fallback',()=>
   const s=read(path);
   assert.ok(s.includes('openTelegramLink(url)'));
   assert.ok(s.includes('window.location.assign(url)'));
-  assert.ok(s.includes('Открыть чат бота'));
+  const decoded=s.replace(/\\u([0-9a-fA-F]{4})/g,(_,hex)=>String.fromCharCode(parseInt(hex,16)));
+  assert.ok(decoded.includes('Открыть чат бота'));
  }
 });
 test('auth has original GM themed icons and matching CTA contrast rules',()=>{
