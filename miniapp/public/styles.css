@@ -1177,3 +1177,32 @@ html,body,button,input,textarea,select{font-family:'Exo 2',system-ui,-apple-syst
 @keyframes gm-boot-load{from{transform:translateX(-30%)}to{transform:translateX(230%)}}
 @media(prefers-reduced-motion:reduce){.gm-boot-progress span{animation:none}.gm-mining-coin-wrap,.gm-mining-tabs button{transition:none}}
 @media(max-width:340px){.gm-mining-premium .gm-mining-coin-wrap{width:186px!important;height:186px!important;min-width:186px;min-height:186px}.gm-mining-premium .gm-mining-coin-rim .brand-coin{width:173px!important;height:173px!important}.gm-language-list{grid-template-columns:1fr}.gm-guide-card{padding:13px}}
+
+
+/* The first twenty real server-verified mining claimants receive this cosmetic skin. */
+.gm-genesis-profile{padding:13px;margin:13px 0;display:grid;gap:11px}
+.gm-genesis-profile-head{display:flex;align-items:center;gap:10px}
+.gm-genesis-profile-head>span{display:grid;gap:4px;flex:1}
+.gm-genesis-profile-head b{font-size:12px;letter-spacing:.05em}
+.gm-genesis-profile-head small{font-size:10px;line-height:1.4;color:var(--muted)}
+.gm-genesis-profile>p{font-size:10px;line-height:1.6;color:var(--muted);margin:0}
+.gm-genesis-coin-wrap{
+ box-shadow:0 13px 35px #7997ba61,0 0 0 4px #fff9,0 0 37px #b6c8e790,inset 0 2px 9px #fff!important;
+}
+.theme-dark .gm-genesis-coin-wrap{
+ box-shadow:0 11px 32px #000d,0 0 0 3px #a4bbcc7a,0 0 42px #b3c7ed5a,inset 0 3px 7px #ffffff67!important;
+}
+@media(prefers-reduced-motion:no-preference) {
+ .gm-genesis-coin-wrap .gm-mining-orbit-first{animation:gm-genesis-halo 9s linear infinite}
+ .gm-genesis-coin-wrap .gm-mining-orbit-second{animation:gm-genesis-halo-two 14s linear infinite}
+}
+@keyframes gm-genesis-halo{to{transform:rotate(332deg) scale(1.1)}}
+@keyframes gm-genesis-halo-two{to{transform:rotate(-315deg) scale(1.18)}}
+.gm-admin-points{padding:16px;display:grid;gap:9px;margin:13px 0}
+.gm-admin-points header{display:flex;align-items:center;gap:10px}
+.gm-admin-points header div{display:grid;gap:4px;flex:1}
+.gm-admin-points h3{font-size:14px;margin:0}
+.gm-admin-points p{font-size:10px;color:var(--muted);line-height:1.5;margin:0}
+.gm-admin-points label{font-size:11px;font-weight:800}
+.gm-admin-points input,.gm-admin-points textarea{background:var(--surface);border:1px solid var(--border);border-radius:12px;min-height:42px;width:100%;padding:9px 11px;color:var(--ink);font-size:12px}
+.gm-admin-points small{color:var(--muted);line-height:1.5;font-size:10px}
