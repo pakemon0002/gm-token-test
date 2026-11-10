@@ -776,7 +776,18 @@ function App(){
   const activeOrders=liveOrders.filter(o=>o.status==='open');
   const isOwner=['owner','coowner'].includes(liveRole);
   const topDepth=Math.max(1,...[...bids,...asks].map(o=>o.gm_cents));
-  const openTrade=kind=>{setSide(kind);setOrderType('limit');setModal('tradeForm');};
+  const openTrade=(kind:string)=>{
+   setSide(kind);
+   setOrderType('limit');
+   if(!orderPrice){
+    const px=Number((pre?liveTicker?.indicative?.price:kind==='buy'?liveTicker?.best_ask:liveTicker?.best_bid)||liveTicker?.last_price||0);
+    if(px>0)setOrderPrice((px/100).toFixed(2));
+   }
+   setModal('tradeForm');
+  };
+  const quickPriceCents=Number((pre?liveTicker?.indicative?.price:side==='buy'?liveTicker?.best_ask:liveTicker?.best_bid)||liveTicker?.last_price||0);
+  const quickQty=Number(String(amount).replace(',','.'));
+  const quickTotal=Number.isFinite(quickQty)&&quickQty>0&&quickPriceCents>0?nf(quickQty*quickPriceCents/100,2)+' CR':'—';
   const tradeName=pre?'PREMARKET':liveTicker?.trade_test_mode?'TEST SPOT':'SPOT';
   const timeframe=['1m','5m','15m','1h','4h','1d'];
   const tabNames=[['book','Стакан'],['recent','Сделки'],['orders','Мои ордера']];
@@ -831,10 +842,10 @@ function App(){
     e('div',{className:'terminal-chart-toolbar'},
      e('div',null,e('b',null,'ГРАФИК'),e('small',null,'Свечи OHLCV')),
      e('div',{className:'terminal-chart-truth'},icon('shield-check',15),'Реальные сделки')),
+    e(Candles,{theme,candles:liveCandles,selected:selectedCandle,onSelect:setSelectedCandle,interval:period}),
     e('div',{className:'terminal-periods','aria-label':'Интервал свечей'},
      timeframe.map(t=>e('button',{type:'button',key:t,className:period===t?'active':'',
-       'aria-pressed':period===t,onClick:()=>{setSelectedCandle(null);setPeriod(t);}},t))),
-    e(Candles,{theme,candles:liveCandles,selected:selectedCandle,onSelect:setSelectedCandle,interval:period})
+       'aria-pressed':period===t,onClick:()=>{setSelectedCandle(null);setPeriod(t);}},t)))
    ),
    e('section',{className:'terminal-controls'},
     e('div',{className:'trade-wallet-balances terminal-wallet-line'},
@@ -842,11 +853,26 @@ function App(){
      e('div',{className:'terminal-wallet-amounts'},
       e('span',null,e('b',null,nf(wallet.gm)),' GM'),
       e('span',null,e('b',null,nf(wallet.cr)),' CR'))),
-    e('div',{className:'trade-cta-row terminal-buy-sell'},
-     e('button',{type:'button',className:'trade-cta buy',onClick:()=>openTrade('buy')},
+    e('div',{className:'trade-cta-row terminal-buy-sell',role:'group','aria-label':'Купить или продать игровые GM'},
+     e('button',{type:'button',className:'trade-cta buy '+(side==='buy'?'active':''),'aria-pressed':side==='buy',onClick:()=>setSide('buy')},
       icon('plus',19),e('span',null,e('b',null,'КУПИТЬ GM'),e('small',null,'За игровые CR'))),
-     e('button',{type:'button',className:'trade-cta sell',onClick:()=>openTrade('sell')},
+     e('button',{type:'button',className:'trade-cta sell '+(side==='sell'?'active':''),'aria-pressed':side==='sell',onClick:()=>setSide('sell')},
       icon('minus',19),e('span',null,e('b',null,'ПРОДАТЬ GM'),e('small',null,'Получить CR')))),
+    e('div',{className:'gm-trade-quick-card gm-premium-card'},
+     e('div',{className:'gm-trade-quick-head'},
+      e('span',null,side==='buy'?'ПОКУПКА · GM':'ПРОДАЖА · GM'),
+      e('b',null,'GM / CR')),
+     e('label',{htmlFor:'gm-trade-quick-amount'},'Количество'),
+     e('div',{className:'gm-trade-quick-input'},
+      e('input',{id:'gm-trade-quick-amount',inputMode:'decimal',type:'text',placeholder:'0.00',value:amount,onChange:ev=>setAmount(ev.target.value),'aria-label':'Количество GM'}),
+      e('span',null,'GM')),
+     e('div',{className:'gm-trade-quick-presets'},['10','100','500','1000'].map(x=>e('button',{type:'button',key:x,className:amount===x?'active':'',onClick:()=>setAmount(x)},x))),
+     e('div',{className:'gm-trade-quick-total'},
+      e('span',null,side==='buy'?'Предварительно потребуется':'Предварительно получится'),
+      e('strong',null,quickTotal)),
+     e('small',{className:'gm-trade-quick-disclaimer'},quickPriceCents>0?'Расчёт по последней доступной цене; окончательная цена указывается в заявке.':'Рыночная цена пока не подтверждена. Ты сможешь задать свою цену при проверке заявки.'),
+     e('button',{type:'button',className:'gm-trade-quick-continue',disabled:!Number.isFinite(quickQty)||quickQty<10,onClick:()=>openTrade(side)},
+      side==='buy'?'Продолжить покупку':'Продолжить продажу',icon('chevron-right',21))),
     (isOwner||wallet.gm<10)?e('div',{className:'terminal-funding'},
      e('span',null,'Доступно для торговли: GM и CR; открытые заявки резервируют средства.'),
      e('button',{type:'button',onClick:()=>goto(isOwner?'admin':'mining')},
@@ -886,9 +912,9 @@ function App(){
     isForm?e(React.Fragment,null,
      e('div',{className:'trade-field'},
       e('label',{htmlFor:'trade-order-type'},'Тип заявки'),
-      e('select',{id:'trade-order-type',value:orderType,onChange:ev=>setOrderType(ev.target.value)},
-       e('option',{value:'limit'},'Limit · своя цена'),
-       e('option',{value:'market',disabled:pre},'Market · до 3% проскальзывания'))),
+      e('div',{className:'gm-trade-type-pills',role:'group','aria-label':'Тип заявки'},
+       e('button',{type:'button',className:orderType==='limit'?'active':'','aria-pressed':orderType==='limit',onClick:()=>setOrderType('limit')},'LIMIT',e('small',null,'Своя цена')),
+       e('button',{type:'button',disabled:pre,className:orderType==='market'?'active':'','aria-pressed':orderType==='market',onClick:()=>setOrderType('market')},'MARKET',e('small',null,'До 3% проскальзывания')))),
      e('div',{className:'trade-field'},
       e('label',{htmlFor:'trade-qty'},'Количество GM'),
       e('input',{id:'trade-qty',type:'text',inputMode:'decimal',placeholder:'Например, 5000',value:amount,onChange:ev=>setAmount(ev.target.value)})),
@@ -898,8 +924,8 @@ function App(){
       e('input',{id:'trade-price',type:'text',inputMode:'decimal',value:orderPrice,placeholder:'Например, 0.50',onChange:ev=>setOrderPrice(ev.target.value)})):null,
      orderType==='limit'?e('div',{className:'trade-field'},
       e('label',{htmlFor:'trade-expiry'},'Срок действия заявки'),
-      e('select',{id:'trade-expiry',value:orderDuration,onChange:ev=>setOrderDuration(ev.target.value)},
-       ['1h','6h','12h','24h','3d','7d','GTC'].map(x=>e('option',{key:x},x)))):null,
+      e('div',{className:'gm-trade-duration-pills',role:'group','aria-label':'Срок действия заявки'},
+       ['1h','6h','12h','24h','3d','7d','GTC'].map(x=>e('button',{type:'button',key:x,className:orderDuration===x?'active':'','aria-pressed':orderDuration===x,onClick:()=>setOrderDuration(x)},x)))):null,
      e('div',{className:'trade-sheet-estimate'},
       e('span',null,side==='buy'?'Резерв по заявке':'Заблокируется GM'),
       e('strong',null,(required>0?nf(required):'—')+' '+(side==='buy'?'CR':'GM'))),
