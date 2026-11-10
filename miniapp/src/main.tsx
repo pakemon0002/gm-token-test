@@ -734,7 +734,7 @@ function Tasks(){
      className:'gm-frame-item gm-premium-card '+(unlockLevel>=m?'unlocked':'locked'),key:m},
       e('div',{className:'gm-frame-preview'},e(Brand,{theme,size:42})),
       e('b',null,m===200?'GM Immortal':'LV. '+m),
-      e('small',null,'🔒 '+(actualLang==='uk'?'Незабаром':'Скоро'))))),
+      e('small',null,'🔒 '+(actualLang==='uk'?'Незабаром':'Скоро')))))),
    e('p',{className:'gm-profile-footnote'},'GM/CR — виртуальные игровые единицы, не реальные средства.'));
  }
 
@@ -1009,7 +1009,7 @@ function Referrals(){
    e('div',{className:'achievement-list'},future.map(([title,desc,ico],i)=>e('div',{
     className:'earn-item pearl-card gm-achievement-locked',key:'future-'+i},
     icon(ico,39,true),e('span',null,e('b',null,title),e('small',null,desc)),
-    e('span',{className:'gm-locked-tag'},icon('verified-user',17)))),
+    e('span',{className:'gm-locked-tag'},icon('verified-user',17))))),
    e('p',{className:'disclaimer'},'Серые значки — ещё не заработанные достижения. Предпросмотр не начисляет XP, GM или скины.'));
  }
 
