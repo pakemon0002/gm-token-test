@@ -276,6 +276,41 @@ const routes=async(req,res)=>{
    sendTelegram(target,`GM TOKEN: тестовое начисление +${(amount/100).toFixed(2)} ${currency}. Виртуальная валюта; причина: ${reason}`);
    return send(res,200,{ok:true,userId:target,currency,amount_cents:amount,sourcePool:pool,operationId:op,test:true});
   }
+  if(p==='/api/admin/ambassadors'&&verb==='GET'){
+   roleCheck({id},['owner','coowner']);
+   return send(res,200,{applications:stmt(`SELECT a.user_id,a.channel_url,a.claimed_followers,a.verified_followers,a.rate_pct,a.status,a.created_at,a.updated_at,a.review_note,u.username,
+    (SELECT COUNT(*) FROM referrals r WHERE r.referrer_id=a.user_id) AS referrals
+    FROM ambassador_applications a JOIN users u ON u.id=a.user_id ORDER BY CASE a.status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END,a.created_at ASC LIMIT 200`).all()});
+  }
+  if(p==='/api/admin/ambassadors/review'&&verb==='POST'){
+   roleCheck({id},['owner','coowner']);
+   const data=await readBody(req);require2FA({id},data);
+   const target=String(data.userId||''),decision=String(data.decision||'');
+   const note=String(data.note||'').trim(),verifiedFollowers=Number(data.verifiedFollowers);
+   const op=String(data.operationId||'');
+   if(!/^\\d{5,20}$/.test(target))throw Error('invalid player id');
+   if(!['approved','rejected'].includes(decision))throw Error('invalid ambassador review decision');
+   if(note.length<15||note.length>400)throw Error('review reason must contain 15..400 characters');
+   if(!/^[A-Za-z0-9_.:-]{8,100}$/.test(op))throw Error('operationId required');
+   if(decision==='approved'&&(!Number.isSafeInteger(verifiedFollowers)||verifiedFollowers<2000||verifiedFollowers>100000000))throw Error('verified audience must be at least 2,000');
+   let review;
+   tx(()=>{
+    if(stmt('SELECT id FROM journal WHERE id=?').get(op))throw Error('duplicate review');
+    const app=stmt('SELECT status,channel_url FROM ambassador_applications WHERE user_id=?').get(target);
+    if(!app||app.status!=='pending')throw Error('only pending applications may be reviewed');
+    const referrals=stmt('SELECT COUNT(*) n FROM referrals WHERE referrer_id=?').get(target).n;
+    if(decision==='approved'&&referrals<100)throw Error('100 confirmed referrals are required');
+    const followers=decision==='approved'?verifiedFollowers:0;
+    const rate=followers>=100000?50:followers>=50000?40:followers>=10000?35:followers>=2000?32:25;
+    stmt('UPDATE ambassador_applications SET status=?,verified_followers=?,rate_pct=?,updated_at=?,reviewed_by=?,review_note=? WHERE user_id=?')
+     .run(decision,followers,rate,now(),id,note,target);
+    review={userId:target,decision,verified_followers:followers,rate_pct:rate};
+    stmt('INSERT INTO journal(id,at,actor,kind,info) VALUES(?,?,?,?,?)')
+     .run(op,now(),id,'ambassador_review',JSON.stringify({...review,reason:note,channel:app.channel_url,referrals}));
+   });
+   sendTelegram(target,'GM TOKEN: заявка амбассадора '+(decision==='approved'?'одобрена':'отклонена')+'. Открой раздел Амбассадор.');
+   return send(res,200,{success:true,...review});
+  }
   if(p==='/api/admin/points'&&verb==='POST'){
    roleCheck({id},['owner','coowner']);const body=await readBody(req);require2FA({id},body);
    const target=String(body.userId||'').trim(),points=Number(body.points);
@@ -327,7 +362,7 @@ const routes=async(req,res)=>{
    sendTelegram(target,`GM TOKEN: проведена корректировка ${direction==='credit'?'+':'-'}${(n/100).toFixed(2)} ${currency}. Тикет: ${ticket}`);
    return send(res,200,{success:true,operationId:op});
   }
-  if(['/api/market','/api/exchange','/api/shop','/api/mining','/api/vault','/api/game','/api/boxes','/api/daily','/api/referrals','/api/tasks','/api/achievements','/api/leaderboard','/api/cosmetics'].some(prefix=>p.startsWith(prefix)))return await game.handle(p,verb,id,req,res);
+  if(['/api/market','/api/exchange','/api/shop','/api/mining','/api/vault','/api/game','/api/boxes','/api/daily','/api/referrals','/api/tasks','/api/achievements','/api/leaderboard','/api/cosmetics','/api/ambassador'].some(prefix=>p.startsWith(prefix)))return await game.handle(p,verb,id,req,res);
   return fail(res,404,'endpoint not found');
  }catch(e){const message=e instanceof Error?e.message:String(e);return fail(res,message.match(/permission|role|TOTP|protected|assigned/i)?403:400,message)}
 };
