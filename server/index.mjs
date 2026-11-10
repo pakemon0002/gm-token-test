@@ -276,6 +276,38 @@ const routes=async(req,res)=>{
    sendTelegram(target,`GM TOKEN: тестовое начисление +${(amount/100).toFixed(2)} ${currency}. Виртуальная валюта; причина: ${reason}`);
    return send(res,200,{ok:true,userId:target,currency,amount_cents:amount,sourcePool:pool,operationId:op,test:true});
   }
+  if(p==='/api/admin/points/grant'&&verb==='POST'){
+   roleCheck({id},['owner','coowner']);
+   if(process.env.GM_ADMIN_TEST_GRANTS!=='1')throw Error('test POINTS grants disabled');
+   const body=await readBody(req);
+   const target=String(body.userId||'').trim(),reason=String(body.reason||'').trim(),operationId=String(body.operationId||'');
+   const qty=Number(body.points);
+   if(!/^\d{5,20}$/.test(target)||!Number.isSafeInteger(qty)||qty<1||qty>25000)throw Error('recipient or POINTS amount invalid (1..25000)');
+   if(reason.length<15||reason.length>200)throw Error('reason must be 15..200 chars');
+   if(!/^[A-Za-z0-9_.:-]{8,100}$/.test(operationId))throw Error('operationId required');
+   require2FA({id},body);
+   const result=tx(()=>{
+    const prior=stmt('SELECT actor,kind,info FROM journal WHERE id=?').get(operationId);
+    if(prior) {
+     if(prior.actor!==id||prior.kind!=='admin_test_points')throw Error('operationId already used');
+     const d=JSON.parse(prior.info);
+     if(d.user!==target||d.points!==qty)throw Error('idempotency payload mismatch');
+     return {ok:true,points:qty,userId:target,duplicate:true};
+    }
+    if(!stmt('SELECT id FROM users WHERE id=?').get(target))throw Error('player must open Mini App first');
+    const today=Math.floor(now()/86400)*86400;
+    const grants=stmt("SELECT info FROM journal WHERE kind='admin_test_points' AND at>=?").all(today);
+    const already=grants.reduce((sum,row)=>{try{const d=JSON.parse(row.info);return sum+(d.user===target?d.points:0)}catch{return sum}},0);
+    if(already+qty>100000)throw Error('daily POINTS grant limit exceeded');
+    stmt('INSERT OR IGNORE INTO points_account(user_id,points) VALUES(?,0)').run(target);
+    if(!stmt('UPDATE points_account SET points=points+? WHERE user_id=? AND points<=?').run(qty,target,Number.MAX_SAFE_INTEGER-qty).changes)throw Error('POINTS accounting limit');
+    log(id,'admin_test_points',{user:target,points:qty,reason,test:true,operationId});
+    // Keep the request id as the journal primary key for one-time audit.
+    stmt('UPDATE journal SET id=? WHERE id=(SELECT id FROM journal WHERE actor=? AND kind=? ORDER BY rowid DESC LIMIT 1)').run(operationId,id,'admin_test_points');
+    return {ok:true,userId:target,points:qty};
+   });
+   return send(res,200,result);
+  }
   if(p==='/api/admin/correction'&&verb==='POST'){
    roleCheck({id},['owner','coowner']);const body=await readBody(req);require2FA({id},body);
    const target=String(body.userId||''),pool=String(body.sourcePool||''),currency=String(body.currency||''),direction=body.direction==='debit'?'debit':'credit';
