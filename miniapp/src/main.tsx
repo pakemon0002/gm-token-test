@@ -144,7 +144,7 @@ async function gmFetchJson(path,opts={},retries=0){
  throw lastError||Error('Недоступно');
 }
 
-const gmLanguages=[['auto','Telegram · Auto'],['ru','Русский'],['uk','Українська'],['en','English'],['es','Español'],['de','Deutsch'],['fr','Français'],['tr','Türkçe'],['pt','Português'],['pl','Polski'],['it','Italiano']];
+const gmLanguages=[['auto','🌐 Telegram · Auto'],['ru','🇷🇺 Русский'],['uk','🇺🇦 Українська'],['en','🇬🇧 English'],['es','🇪🇸 Español'],['de','🇩🇪 Deutsch'],['fr','🇫🇷 Français'],['tr','🇹🇷 Türkçe'],['pt','🇵🇹 Português'],['pl','🇵🇱 Polski'],['it','🇮🇹 Italiano']];
 const gmWords={
  ru:['Главная','Рынок','Майнинг','Боксы','Ещё','Язык','Настройки','Далее','Начать','Пропустить'],
  uk:['Головна','Ринок','Майнінг','Бокси','Ще','Мова','Налаштування','Далі','Почати','Пропустити'],
@@ -158,6 +158,59 @@ const gmWords={
  it:['Home','Mercato','Mining','Box','Altro','Lingua','Impostazioni','Avanti','Inizia','Salta']
 };
 const gmKeys=['home','market','mining','boxes','more','language','settings','next','start','skip'];
+
+const UI_TRANSLATIONS:Record<string,Record<string,string>> = {
+ "profile":{ru:"Профиль",uk:"Профіль",en:"Profile",es:"Perfil",de:"Profil",fr:"Profil",tr:"Profil",pt:"Perfil",pl:"Profil",it:"Profilo"},
+ "achievements":{ru:"Достижения",uk:"Досягнення",en:"Achievements",es:"Logros",de:"Erfolge",fr:"Succès",tr:"Başarılar",pt:"Conquistas",pl:"Osiągnięcia",it:"Obiettivi"},
+ "history":{ru:"История операций",uk:"Історія операцій",en:"Transaction history",es:"Historial",de:"Verlauf",fr:"Historique",tr:"İşlem geçmişi",pt:"Histórico de transações",pl:"Historia",it:"Cronologia"},
+ "friends":{ru:"Друзья",uk:"Друзі",en:"Friends",es:"Amigos",de:"Freunde",fr:"Amis",tr:"Arkadaşlar",pt:"Amigos",pl:"Znajomi",it:"Amici"},
+ "balance":{ru:"Баланс",uk:"Баланс",en:"Balance",es:"Saldo",de:"Guthaben",fr:"Solde",tr:"Bakiye",pt:"Saldo",pl:"Saldo",it:"Saldo"},
+ "streak":{ru:"Серия",uk:"Серія",en:"Streak",es:"Racha",de:"Serie",fr:"Série",tr:"Seri",pt:"Sequência",pl:"Seria",it:"Serie"},
+ "referrals":{ru:"Реферальная программа",uk:"Реферальна програма",en:"Referral program",es:"Referidos",de:"Empfehlungen",fr:"Parrainage",tr:"Davet programı",pt:"Programa de indicações",pl:"Polecenia",it:"Inviti"},
+ "support":{ru:"Поддержка",uk:"Підтримка",en:"Support",es:"Soporte",de:"Support",fr:"Assistance",tr:"Destek",pt:"Suporte",pl:"Wsparcie",it:"Supporto"},
+ "logout":{ru:"Выйти",uk:"Вийти",en:"Log out",es:"Salir",de:"Abmelden",fr:"Déconnexion",tr:"Çıkış yap",pt:"Sair",pl:"Wyloguj",it:"Esci"},
+ "theme":{ru:"Тема оформления",uk:"Тема оформлення",en:"Appearance",es:"Apariencia",de:"Design",fr:"Apparence",tr:"Görünüm",pt:"Aparência",pl:"Wygląd",it:"Aspetto"},
+ "personalization":{ru:"Персонализация",uk:"Персоналізація",en:"Personalization",es:"Personalización",de:"Personalisierung",fr:"Personnalisation",tr:"Kişiselleştirme",pt:"Personalização",pl:"Personalizacja",it:"Personalizzazione"},
+ "interfaceLanguage":{ru:"Язык интерфейса",uk:"Мова інтерфейсу",en:"Interface language",es:"Idioma de la interfaz",de:"Sprache",fr:"Langue de l’interface",tr:"Arayüz dili",pt:"Idioma da interface",pl:"Język interfejsu",it:"Lingua interfaccia"},
+ "instruction":{ru:"Инструкция",uk:"Інструкція",en:"Guide",es:"Guía",de:"Anleitung",fr:"Guide",tr:"Kılavuz",pt:"Instruções",pl:"Instrukcja",it:"Guida"},
+ "replay":{ru:"Пройти инструкцию",uk:"Пройти інструкцію",en:"Replay tutorial",es:"Repetir tutorial",de:"Tutorial wiederholen",fr:"Revoir le guide",tr:"Rehberi tekrar aç",pt:"Rever tutorial",pl:"Powtórz samouczek",it:"Rivedi tutorial"},
+ "account":{ru:"Аккаунт",uk:"Акаунт",en:"Account",es:"Cuenta",de:"Konto",fr:"Compte",tr:"Hesap",pt:"Conta",pl:"Konto",it:"Account"},
+ "game":{ru:"Игра",uk:"Гра",en:"Game",es:"Juego",de:"Spiel",fr:"Jeu",tr:"Oyun",pt:"Jogo",pl:"Gra",it:"Gioco"},
+ "help":{ru:"Помощь",uk:"Допомога",en:"Help",es:"Ayuda",de:"Hilfe",fr:"Aide",tr:"Yardım",pt:"Ajuda",pl:"Pomoc",it:"Aiuto"},
+ "tasks":{ru:"Задания",uk:"Завдання",en:"Tasks",es:"Tareas",de:"Aufgaben",fr:"Tâches",tr:"Görevler",pt:"Tarefas",pl:"Zadania",it:"Attività"},
+ "leaderboard":{ru:"Рейтинг",uk:"Рейтинг",en:"Leaderboard",es:"Clasificación",de:"Rangliste",fr:"Classement",tr:"Liderlik tablosu",pt:"Classificação",pl:"Ranking",it:"Classifica"},
+ "global":{ru:"Все",uk:"Усі",en:"Global",es:"Global",de:"Global",fr:"Global",tr:"Genel",pt:"Global",pl:"Globalny",it:"Globale"},
+ "miningUpgrades":{ru:"Улучшения майнинга",uk:"Покращення майнінгу",en:"Mining upgrades",es:"Mejoras de minería",de:"Mining-Upgrades",fr:"Améliorations de minage",tr:"Madencilik yükseltmeleri",pt:"Melhorias de mineração",pl:"Ulepszenia kopania",it:"Potenziamenti mining"},
+ "nextLevel":{ru:"Следующий уровень",uk:"Наступний рівень",en:"Next level",es:"Siguiente nivel",de:"Nächstes Level",fr:"Niveau suivant",tr:"Sonraki seviye",pt:"Próximo nível",pl:"Następny poziom",it:"Livello successivo"},
+ "level":{ru:"Уровень",uk:"Рівень",en:"Level",es:"Nivel",de:"Level",fr:"Niveau",tr:"Seviye",pt:"Nível",pl:"Poziom",it:"Livello"},
+ "speed":{ru:"Скорость",uk:"Швидкість",en:"Speed",es:"Velocidad",de:"Tempo",fr:"Vitesse",tr:"Hız",pt:"Velocidade",pl:"Prędkość",it:"Velocità"},
+ "upgrade":{ru:"Улучшить майнинг",uk:"Покращити майнінг",en:"Upgrade mining",es:"Mejorar minería",de:"Mining verbessern",fr:"Améliorer le minage",tr:"Madenciliği geliştir",pt:"Melhorar mineração",pl:"Ulepsz kopanie",it:"Migliora mining"},
+ "insufficient":{ru:"Недостаточно GM",uk:"Недостатньо GM",en:"Not enough GM",es:"GM insuficiente",de:"Zu wenig GM",fr:"GM insuffisants",tr:"Yetersiz GM",pt:"GM insuficiente",pl:"Za mało GM",it:"GM insufficienti"},
+ "allLevels":{ru:"Все 200 уровней",uk:"Усі 200 рівнів",en:"All 200 levels",es:"Los 200 niveles",de:"Alle 200 Level",fr:"Les 200 niveaux",tr:"200 seviye",pt:"Todos os 200 níveis",pl:"200 poziomów",it:"Tutti i 200 livelli"},
+ "collapse":{ru:"Свернуть список",uk:"Згорнути список",en:"Collapse list",es:"Cerrar lista",de:"Liste schließen",fr:"Réduire la liste",tr:"Listeyi daralt",pt:"Recolher lista",pl:"Zwiń listę",it:"Chiudi elenco"},
+ "locked":{ru:"Закрыто",uk:"Закрито",en:"Locked",es:"Bloqueado",de:"Gesperrt",fr:"Verrouillé",tr:"Kilitli",pt:"Bloqueado",pl:"Zablokowane",it:"Bloccato"},
+ "earned":{ru:"Получено",uk:"Отримано",en:"Claimed",es:"Obtenido",de:"Erhalten",fr:"Obtenu",tr:"Alındı",pt:"Obtido",pl:"Odebrane",it:"Ottenuto"},
+ "claim":{ru:"Получить",uk:"Отримати",en:"Claim",es:"Reclamar",de:"Abholen",fr:"Réclamer",tr:"Al",pt:"Resgatar",pl:"Odbierz",it:"Riscatta"},
+ "wallet":{ru:"Кошелёк",uk:"Гаманець",en:"Wallet",es:"Billetera",de:"Wallet",fr:"Portefeuille",tr:"Cüzdan",pt:"Carteira",pl:"Portfel",it:"Portafoglio"},
+ "holdings":{ru:"Рейтинг держателей",uk:"Рейтинг власників",en:"Holders leaderboard",es:"Clasificación de tenedores",de:"Halter-Rangliste",fr:"Classement des détenteurs",tr:"Sahipler sıralaması",pt:"Ranking de detentores",pl:"Ranking posiadaczy",it:"Classifica detentori"},
+ "welcome":{ru:"Добро пожаловать в GM TOKEN",uk:"Ласкаво просимо до GM TOKEN",en:"Welcome to GM TOKEN",es:"Bienvenido a GM TOKEN",de:"Willkommen bei GM TOKEN",fr:"Bienvenue sur GM TOKEN",tr:"GM TOKEN'a hoş geldiniz",pt:"Bem-vindo ao GM TOKEN",pl:"Witamy w GM TOKEN",it:"Benvenuto in GM TOKEN"},
+ "open":{ru:"Открыть приложение",uk:"Відкрити застосунок",en:"Open app",es:"Abrir app",de:"App öffnen",fr:"Ouvrir l’app",tr:"Uygulamayı aç",pt:"Abrir aplicativo",pl:"Otwórz aplikację",it:"Apri app"},
+ "loading":{ru:"Загрузка игры",uk:"Завантаження гри",en:"Loading game",es:"Cargando juego",de:"Spiel wird geladen",fr:"Chargement du jeu",tr:"Oyun yükleniyor",pt:"Carregando jogo",pl:"Ładowanie gry",it:"Caricamento gioco"},
+ "later":{ru:"Скоро",uk:"Незабаром",en:"Coming soon",es:"Próximamente",de:"Bald",fr:"Bientôt",tr:"Yakında",pt:"Em breve",pl:"Wkrótce",it:"Presto"},
+ "startTour":{ru:"Показать подсказки",uk:"Показати підказки",en:"Show guide",es:"Mostrar guía",de:"Anleitung zeigen",fr:"Afficher le guide",tr:"Rehberi göster",pt:"Mostrar guia",pl:"Pokaż poradnik",it:"Mostra guida"},
+ "back":{ru:"Назад",uk:"Назад",en:"Back",es:"Atrás",de:"Zurück",fr:"Retour",tr:"Geri",pt:"Voltar",pl:"Wstecz",it:"Indietro"},
+ "next":{ru:"Далее",uk:"Далі",en:"Next",es:"Siguiente",de:"Weiter",fr:"Suivant",tr:"İleri",pt:"Próximo",pl:"Dalej",it:"Avanti"},
+ "finish":{ru:"Понятно",uk:"Зрозуміло",en:"Got it",es:"Entendido",de:"Verstanden",fr:"Compris",tr:"Anladım",pt:"Entendi",pl:"Rozumiem",it:"Capito"},
+ "skip":{ru:"Пропустить",uk:"Пропустити",en:"Skip",es:"Omitir",de:"Überspringen",fr:"Passer",tr:"Atla",pt:"Pular",pl:"Pomiń",it:"Salta"},
+ "tutorialStep":{ru:"Шаг",uk:"Крок",en:"Step",es:"Paso",de:"Schritt",fr:"Étape",tr:"Adım",pt:"Passo",pl:"Krok",it:"Passo"},
+ "customize":{ru:"Оформление и язык",uk:"Оформлення і мова",en:"Appearance & language",es:"Apariencia e idioma",de:"Design & Sprache",fr:"Apparence et langue",tr:"Görünüm ve dil",pt:"Aparência e idioma",pl:"Wygląd i język",it:"Aspetto e lingua"},
+ "frames":{ru:"Рамки профиля",uk:"Рамки профілю",en:"Profile frames",es:"Marcos de perfil",de:"Profilrahmen",fr:"Cadres de profil",tr:"Profil çerçeveleri",pt:"Molduras de perfil",pl:"Ramki profilu",it:"Cornici profilo"},
+ "achievementsLocked":{ru:"Открой достижение, чтобы получить награду",uk:"Відкрий досягнення, щоб отримати нагороду",en:"Unlock achievements to earn rewards",es:"Desbloquea logros para ganar recompensas",de:"Schalte Erfolge für Belohnungen frei",fr:"Débloquez des succès pour des récompenses",tr:"Ödüller için başarıları aç",pt:"Desbloqueie conquistas para ganhar recompensas",pl:"Odblokuj osiągnięcia i nagrody",it:"Sblocca obiettivi e premi"},
+ "mining":{ru:"Майнинг",uk:"Майнінг",en:"Mining",es:"Minería",de:"Mining",fr:"Minage",tr:"Madencilik",pt:"Mineração",pl:"Kopanie",it:"Mining"},
+ "market":{ru:"Рынок",uk:"Ринок",en:"Market",es:"Mercado",de:"Markt",fr:"Marché",tr:"Pazar",pt:"Mercado",pl:"Rynek",it:"Mercato"},
+ "boxes":{ru:"Боксы",uk:"Бокси",en:"Boxes",es:"Cajas",de:"Boxen",fr:"Coffres",tr:"Kutular",pt:"Caixas",pl:"Skrzynki",it:"Box"},
+ "avatar":{ru:"Мой профиль",uk:"Мій профіль",en:"My profile",es:"Mi perfil",de:"Mein Profil",fr:"Mon profil",tr:"Profilim",pt:"Meu perfil",pl:"Mój profil",it:"Il mio profilo"},
+};
 
 function App(){
  const webapp=(window as any).Telegram?.WebApp;
@@ -173,7 +226,7 @@ function App(){
    window.location.assign(url);
  };
  const [theme,setTheme]=React.useState((store.getItem('gm_theme')||webapp?.colorScheme||'light')==='dark'?'dark':'light');
- const [screen,setScreen]=React.useState('home');
+ const [screen,setScreen]=React.useState('splash');
  const [locale,setLocale]=React.useState(store.getItem('gm_lang')||'auto');
  const [introStep,setIntroStep]=React.useState(0);
  const telegramLanguage=String(webapp?.initDataUnsafe?.user?.language_code||navigator.language||'en').toLowerCase().split(/[-_]/)[0];
@@ -182,6 +235,27 @@ function App(){
   const index=gmKeys.indexOf(key);
   return index<0?key:(gmWords[actualLang]||gmWords.en)[index]||gmWords.en[index];
  };
+ const L=(key:string)=>UI_TRANSLATIONS[key]?.[actualLang]||UI_TRANSLATIONS[key]?.en||key;
+ const [guideScreen,setGuideScreen]=React.useState('');
+ const [guideStep,setGuideStep]=React.useState(0);
+ const guideCatalog:any={
+  home:[['wallet','balance','wallet'],['lightning','miningUpgrades','upgrade'],['gift','boxes','claim']],
+  mining:[['gm-coin-orbit','mining','claim'],['lightning','miningUpgrades','upgrade'],['clock','speed','nextLevel']],
+  trade:[['candlesticks','market','next'],['wallet','balance','wallet'],['shield-check','instruction','finish']],
+  boxes:[['gift','boxes','claim'],['diamond','achievements','earned']],
+  tasks:[['tasks','tasks','claim'],['trophy','achievements','earned']],
+  profile:[['profile','profile','frames'],['trophy','achievements','earned'],['settings','customize','finish']],
+  more:[['settings','customize','next'],['shield-check','support','finish']],
+  achievements:[['trophy','achievements','achievementsLocked']],
+  settings:[['settings','theme','interfaceLanguage']]
+ };
+ const closeGuide=()=>{if(guideScreen)store.setItem('gm_guide_'+guideScreen,'1');setGuideScreen('');setGuideStep(0)};
+ const openGuide=(name:string)=>{if(guideCatalog[name]){setGuideScreen(name);setGuideStep(0)}};
+ React.useEffect(()=>{if(screen!=='splash'||demo)return;const timeout=setTimeout(()=>{setScreen(store.getItem('gm_onboarding_complete')?'home':'intro')},1350);return()=>clearTimeout(timeout)},[screen,demo]);
+ React.useEffect(()=>{if(demo||['splash','intro','reward'].includes(screen)||!guideCatalog[screen]||guideScreen)return;
+ if(!store.getItem('gm_guide_'+screen)){const timeout=setTimeout(()=>openGuide(screen),550);return()=>clearTimeout(timeout)}
+ },[screen,demo,guideScreen]);
+
  
  const [wallet,setWallet]=React.useState(firstWallet);
  const [toast,setToast]=React.useState('');
@@ -257,7 +331,7 @@ function App(){
  const goto=s=>{
   const route=String(s||'home');
   if(route!==screen){navStack.current.push(screen);if(navStack.current.length>30)navStack.current.shift();}
-  setScreen(route);setModal('');
+  closeGuide();setScreen(route);setModal('');
   try{history.pushState({gmScreen:route},'','#'+route)}catch{}
   document.querySelector('.phone-scroll')?.scrollTo(0,0);
  };
@@ -281,7 +355,7 @@ function App(){
   let valid=true;
   gmFetchJson('/api/bootstrap',{headers:{Authorization:'tma '+init}},2)
    .then(d=>{if(!valid)return;
-    setDemo(false);if(!store.getItem('gm_onboarding_complete'))setScreen('intro');setLiveRole(d.user?.role||'player');
+    setDemo(false);setScreen('splash');setLiveRole(d.user?.role||'player');
     setBackendStatus('Telegram аккаунт: '+(d.user?.id||'подтверждён'));
     if(d.wallet)setW(w=>({...w,gm:d.wallet.gm/100,cr:d.wallet.cr/100,vault:d.wallet.vault/100,level:d.user?.level||w.level,xp:d.user?.xp??w.xp}));
    })
@@ -641,8 +715,8 @@ function Tasks(){
  );
 }
 
- function Leaderboard(){const users=(liveRanks?.users||[]).filter((u:any)=>rankFilter==='Global'||(liveReferrals?.referred||[]).some((r:any)=>r.user_id===u.id));return <>{top('Leaderboard',true,'trophy')}<div className="rank-tabs"><button onClick={()=>setRankFilter('Global')} className={rankFilter==='Global'?'on':''}>Global</button><button onClick={()=>setRankFilter('Friends')} className={rankFilter==='Friends'?'on':''}>Friends</button></div><div className="leader-rows">{users.map((u:any,i:number)=><div className="leader-row" key={u.id}><b>{i+1}</b>{icon('profile',27)}<span>{clean(u.username||'Игрок')}</span><small>{nf(u.score_cents/100)} GM</small></div>)}</div>{users.length===0&&<p className="disclaimer">{liveRanks?.pending_rule?'Рейтинг ещё не включён: формула не утверждена. Фальшивых участников нет.':'Пока нет игроков в выбранном списке.'}</p>}</>}
- function Profile(){return <>{isLight?<header className="profile-top"><span></span><button className="header-icon" onClick={()=>goto('settings')}>{icon('settings',25)}</button></header>:<header className="dark-top"><b>GM TOKEN</b><button onClick={()=>goto('settings')}>{icon('more',20)} {icon('close',17)}</button></header>}<div className="profile-hero"><Brand theme={theme} size={isLight?103:98}/><h2>{webapp?.initDataUnsafe?.user?.username||webapp?.initDataUnsafe?.user?.first_name||'Игрок'}</h2><p>#{String(webapp?.initDataUnsafe?.user?.id||'')} <button className="inline-icon" onClick={()=>{navigator.clipboard?.writeText(String(webapp?.initDataUnsafe?.user?.id||''));flash('ID скопирован')}}>{icon('copy',15)}</button></p></div><div className="xp-area"><div className="xp-line"><b>Lv. {wallet.level}</b><small>{nf(wallet.xp,0)} / {nf(xpThreshold[Math.min(wallet.level,9)]||4400,0)} XP</small></div><div className="progress"><div style={{width:(Math.min(100,100*wallet.xp/(xpThreshold[Math.min(wallet.level,9)]||4400)))+'%'}}/></div></div><div className="stats-grid">{[['friends',String(liveReferrals?.referred?.length||0),'Friends'],['wallet',nf(wallet.gm,0),'Balance'],['lightning',String(wallet.streak),'Streak']].map(([i,n,label])=><div className="stat-card" key={label}>{icon(i,23)}<b>{n}</b><small>{label}</small></div>)}</div><div className="profile-menu">{[['trophy','Achievements','achievements'],['friends','Referral Program','referrals'],['clock','Transaction History','history'],['settings','Settings','settings'],['info','Support','support']].map(([i,t,s])=><button key={t} onClick={()=>goto(s as Route)}>{icon(i,21)}<span>{t}</span>{icon('chevron-right',18)}</button>)}</div>{isLight&&<button className="logout" onClick={()=>flash('Закрой Mini App в Telegram для выхода')}>{icon('logout',20)} Log Out</button>}</>}
+ function Leaderboard(){const users=(liveRanks?.users||[]).filter((u:any)=>rankFilter==='Global'||(liveReferrals?.referred||[]).some((r:any)=>r.user_id===u.id));return <>{top(L('leaderboard'),true,'trophy')}<div className="rank-tabs"><button onClick={()=>setRankFilter('Global')} className={rankFilter==='Global'?'on':''}>Global</button><button onClick={()=>setRankFilter('Friends')} className={rankFilter==='Friends'?'on':''}>Friends</button></div><div className="leader-rows">{users.map((u:any,i:number)=><div className="leader-row" key={u.id}><b>{i+1}</b>{icon('profile',27)}<span>{clean(u.username||'Игрок')}</span><small>{nf(u.score_cents/100)} GM</small></div>)}</div>{users.length===0&&<p className="disclaimer">{liveRanks?.pending_rule?'Рейтинг ещё не включён: формула не утверждена. Фальшивых участников нет.':'Пока нет игроков в выбранном списке.'}</p>}</>}
+ function Profile(){return <>{isLight?<header className="profile-top"><span></span><button className="header-icon" onClick={()=>goto('settings')}>{icon('settings',25)}</button></header>:<header className="dark-top"><b>GM TOKEN</b><button onClick={()=>goto('settings')}>{icon('more',20)} {icon('close',17)}</button></header>}<div className="profile-hero"><Brand theme={theme} size={isLight?103:98}/><h2>{webapp?.initDataUnsafe?.user?.username||webapp?.initDataUnsafe?.user?.first_name||'Игрок'}</h2><p>#{String(webapp?.initDataUnsafe?.user?.id||'')} <button className="inline-icon" onClick={()=>{navigator.clipboard?.writeText(String(webapp?.initDataUnsafe?.user?.id||''));flash('ID скопирован')}}>{icon('copy',15)}</button></p></div><div className="xp-area"><div className="xp-line"><b>Lv. {wallet.level}</b><small>{nf(wallet.xp,0)} / {nf(xpThreshold[Math.min(wallet.level,9)]||4400,0)} XP</small></div><div className="progress"><div style={{width:(Math.min(100,100*wallet.xp/(xpThreshold[Math.min(wallet.level,9)]||4400)))+'%'}}/></div></div><div className="stats-grid">{[['friends',String(liveReferrals?.referred?.length||0),L('friends')],['wallet',nf(wallet.gm,0),L('balance')],['lightning',String(wallet.streak),L('streak')]].map(([i,n,label])=><div className="stat-card" key={label}>{icon(i,23)}<b>{n}</b><small>{label}</small></div>)}</div><div className="profile-menu">{[['trophy',L('achievements'),'achievements'],['friends',L('referrals'),'referrals'],['clock',L('history'),'history'],['settings',L('customize'),'settings'],['info',L('support'),'support']].map(([i,t,s])=><button key={t} onClick={()=>goto(s as Route)}>{icon(i,21)}<span>{t}</span>{icon('chevron-right',18)}</button>)}</div>{isLight&&<button className="logout" onClick={()=>flash('Закрой Mini App в Telegram для выхода')}>{icon('logout',20)} {L('logout')}</button>}</>}
  
  
 function Reward(){
@@ -672,7 +746,7 @@ function Reward(){
  );
 }
 
- function Splash(){return <div className="splash-view"><div className="splash-glow"></div><div className="splash-logo"><img src={BRAND+'gm-lettermark-metallic-transparent.png'} alt="GM TOKEN"/></div><h1>GM TOKEN</h1><p>Earn · Hold · Grow</p><button className="splash-start" onClick={()=>goto('home')}>Открыть приложение</button></div>}
+ function Splash(){return <div className="splash-view gm-splash-v2" role="status" aria-live="polite"><div className="splash-glow"></div><div className="splash-logo"><img src={BRAND+'gm-lettermark-metallic-transparent.png'} alt="GM TOKEN"/></div><h1>GM TOKEN</h1><p>PREMIUM SILVER · PREMIUM GRAPHITE</p><div className="gm-splash-progress"><span></span></div><small>{L('loading')}</small></div>}
  
  function Mining(){
   const e=React.createElement;
@@ -689,7 +763,7 @@ function Reward(){
    miningClaim();
   };
   return e('div',{className:'gm-mining-v8'},
-   top('Майнинг',true,'info'),
+   top(L('mining'),true,'info'),
    e('div',{className:'gm-mining-title'},e('span',null,'Добывай GM'),e('small',null,'Майнинг '+upgrade.level+'/200 · '+nf(rate,0)+' GM / сутки')),
    e('button',{type:'button',className:'gm-mining-coin-wrap',onClick:mineClick,'aria-label':'Собрать накопленные GM'},
     e('span',{className:'gm-mining-coin-rim'},e(Brand,{theme,size:198})),
@@ -709,17 +783,17 @@ function Reward(){
     e('div',null,e('span',null,icon('clock',21),' Хранилище'),e('strong',null,hours+' часов')),
     e('div',null,e('span',null,icon('database',21),' Резерв'),e('strong',null,'45 млн GM'))),
    e('section',{className:'gm-mining-upgrades gm-premium-card'},
-    e('div',{className:'gm-upgrades-head'},e('div',null,e('small',null,'MINING UPGRADES'),e('h3',null,'Улучшения майнинга')),icon('lightning',28)),
+    e('div',{className:'gm-upgrades-head'},e('div',null,e('small',null,'MINING UPGRADES'),e('h3',null,L('miningUpgrades'))),icon('lightning',28)),
     e('div',{className:'gm-upgrades-summary'},
-     e('div',null,e('small',null,'Уровень'),e('strong',null,upgrade.level+' / 200')),
-     e('div',null,e('small',null,'Скорость'),e('strong',null,'+'+upgrade.bonus_pct+'%'))),
+     e('div',null,e('small',null,L('level')),e('strong',null,upgrade.level+' / 200')),
+     e('div',null,e('small',null,L('speed')),e('strong',null,'+'+upgrade.bonus_pct+'%'))),
     e('div',{className:'gm-upgrades-progress'},e('span',{style:{width:upgrade.level/200*100+'%'}})),
     upgrade.next_level?
      e('div',{className:'gm-upgrade-next'},
-      e('span',null,'Следующий уровень '+upgrade.next_level),
+      e('span',null,L('nextLevel')+' '+upgrade.next_level),
       e('strong',null,nf(upgrade.next_cost_gm,0)+' GM · +'+upgrade.next_bonus_pct+'%'),
       e('button',{type:'button',className:'gm-upgrades-purchase',disabled:demo||upgradeBusy||wallet.gm<upgrade.next_cost_gm||!upgradeData?.upgrade,onClick:buyMiningUpgrade},
-       upgradeBusy?'Проверяем покупку…':wallet.gm<upgrade.next_cost_gm?'Недостаточно GM':'Улучшить майнинг',icon('chevron-right',17)))
+       upgradeBusy?'Проверяем покупку…':wallet.gm<upgrade.next_cost_gm?L('insufficient'):L('upgrade'),icon('chevron-right',17)))
      :e('div',{className:'gm-upgrades-max'},icon('crown',21),'Максимальный уровень открыт'),
     e('div',{className:'gm-upgrade-preview'},
      ...visibleUpgrades.map((row:any)=>
@@ -730,7 +804,7 @@ function Reward(){
        e('strong',null,'+'+row.bonus_pct+'%'),
        row.level<=upgrade.level?icon('check',17):icon('minus',17)))),
     e('button',{type:'button',className:'gm-upgrades-toggle',onClick:()=>setShowAllUpgrades(!showAllUpgrades)},
-     showAllUpgrades?'Свернуть список':'Все 200 уровней',icon(showAllUpgrades?'chevron-up':'chevron-down',16))),
+     showAllUpgrades?L('collapse'):L('allLevels'),icon(showAllUpgrades?'chevron-up':'chevron-down',16))),
    e('p',{className:'gm-mining-footnote'},'GM — виртуальная валюта игры. Улучшения покупаются по порядку. Цена списывается сервером, бонус заменяет предыдущий. Mining Pool ограничен — фактические начисления могут отличаться от расчётных.'));
  }
 
@@ -843,8 +917,10 @@ function Referrals(){
  );
 }
 
- function History(){return <>{top('Transaction History',true,'clock')}{!serverHistory.length&&<div className="empty-state">{icon('clock',62,true)}<h3>История операций пока пуста</h3><button onClick={loadHistory}>Загрузить с сервера</button></div>}{serverHistory.map((x:any)=><div key={x.id} className="pearl-card form-surface"><b>{x.kind}</b><small>{new Date(x.at*1000).toLocaleString('ru-RU')}</small><p>{x.info}</p></div>)}</>}
- function Achievements(){const items=liveAchievements;return <>{top('Achievements',true,'trophy')}<div className="achievement-list">{items.map((t:any)=><div className="earn-item pearl-card" key={t.id}>{icon(t.icon||'trophy',45,true)}<span><b>{t.title||t.id}</b><small>{t.description||''}{!demo?` · ${t.xp||0} XP`:''}</small></span>{!demo&&<button disabled={t.claimed||!t.available} onClick={async()=>{const x=await gameAction('/api/achievements/claim',{id:t.id});if(x)await refreshLive()}}>{t.claimed?'Получено':t.available?'Получить':'Не выполнено'}</button>}</div>)}</div>{!items.length&&<p className="disclaimer">Достижения ещё не утверждены владельцами. Скрытые награды не начисляются.</p>}</>}
+ function History(){return <>{top(L('history'),true,'clock')}{!serverHistory.length&&<div className="empty-state">{icon('clock',62,true)}<h3>История операций пока пуста</h3><button onClick={loadHistory}>Загрузить с сервера</button></div>}{serverHistory.map((x:any)=><div key={x.id} className="pearl-card form-surface"><b>{x.kind}</b><small>{new Date(x.at*1000).toLocaleString('ru-RU')}</small><p>{x.info}</p></div>)}</>}
+ function Achievements(){const items=liveAchievements;
+ const planned=[['origin','trophy','Первопроходец','Один из первых 20 игроков — уникальная рамка'],['first_claim','lightning','Искра GM','Первый сбор майнинга'],['mining_25','gm-coin-orbit','Стальной майнер','25 улучшений майнинга'],['mining_50','diamond','Серебряная легенда','50 улучшений майнинга'],['collector','gift','Хранитель артефактов','Собери серию игровых наград'],['community','friends','Сила сообщества','Пригласи друзей'],['immortal','crown','GM Immortal','Достигни максимальной лиги']];
+ return <>{top(L('achievements'),true,'trophy')}<div className="achievement-list">{items.map((t:any)=><div className="earn-item pearl-card" key={t.id}>{icon(t.icon||'trophy',45,true)}<span><b>{t.title||t.id}</b><small>{t.description||''}{!demo?` · ${t.xp||0} XP`:''}</small></span>{!demo&&<button disabled={t.claimed||!t.available} onClick={async()=>{const x=await gameAction('/api/achievements/claim',{id:t.id});if(x)await refreshLive()}}>{t.claimed?'Получено':t.available?'Получить':'Не выполнено'}</button>}</div>)}</div><div className="gm-achievement-planned"><h3>{L('achievements')} · {L('locked')}</h3><p>{L('achievementsLocked')}. {L('later')}.</p>{planned.map(([id,ic,title,desc])=><div className="gm-achievement-locked" key={id}>{icon(ic,35,true)}<span><b>{title}</b><small>{desc}</small></span>{icon('minus',16)}</div>)}</div></>}
  
 function Settings(){
  const e=React.createElement;
@@ -852,23 +928,21 @@ function Settings(){
  const themeButtons=themes.map(([value,label])=>e('button',{type:'button',key:value,
   className:theme===value?'active':'',onClick:()=>setTheme(value)},
   e('i',{className:'gm-theme-swatch '+value}),e('b',null,label),theme===value?icon('check',18):null));
- const languageOptions=gmLanguages.map(([value,name])=>e('option',{key:value,value},name));
  return e(React.Fragment,null,
   top(lang('settings'),true,'settings'),
   e('div',{className:'gm-settings-summary gm-premium-card'},icon('settings',39,true),
-   e('span',null,e('b',null,'Персонализация'),e('small',null,'Оригинальный премиальный стиль GM TOKEN'))),
+   e('span',null,e('b',null,L('personalization')),e('small',null,'GM TOKEN · PREMIUM UI'))),
   e('section',{className:'gm-settings-block gm-premium-card'},
-   e('h3',null,'Тема оформления'),
+   e('h3',null,L('theme')),
    e('p',null,'Платиновый светлый вариант и графитовый тёмный вариант с тем же логотипом GM.'),
    e('div',{className:'gm-theme-list'},themeButtons)),
   e('section',{className:'gm-settings-block gm-premium-card'},
-   e('label',{htmlFor:'gm-lang-select'},lang('language')+' интерфейса'),
-   e('p',null,'По умолчанию используется язык Telegram. Пока основной перевод доступен для меню и знакомства с игрой; остальные экраны постепенно переводятся.'),
-   e('select',{id:'gm-lang-select',value:locale,onChange:event=>{
-    const next=event.target.value;setLocale(next);store.setItem('gm_lang',next);
-   }},languageOptions)),
+   e('label',{htmlFor:'gm-lang-select'},L('interfaceLanguage')),
+   e('p',null,'Telegram · '+L('interfaceLanguage')),
+   e('div',{className:'gm-language-grid',role:'group','aria-label':L('interfaceLanguage')},gmLanguages.map(([code,label])=>e('button',{type:'button',key:code,className:'gm-lang-choice '+(locale===code?'selected':''),onClick:()=>{setLocale(code);store.setItem('gm_lang',code)},'aria-pressed':locale===code},e('span',null,label),locale===code?icon('check',17):null)))),
   e('button',{type:'button',className:'gm-settings-onboard gm-premium-card',onClick:()=>goto('intro')},
-   icon('info',26),e('span',null,'Пройти инструкцию'),icon('chevron-right',20)),
+   icon('info',26),e('span',null,L('replay')),icon('chevron-right',20)),
+  e('button',{type:'button',className:'gm-settings-onboard gm-premium-card',onClick:()=>openGuide('settings')},icon('info',26),e('span',null,L('startTour')),icon('chevron-right',20)),
   e('p',{className:'gm-settings-note'},'GM TOKEN Premium · светлая и тёмная темы без цветного неона')
  );
 }
@@ -969,9 +1043,9 @@ function Support(){
 function More(){
  const e=React.createElement;
  const groups:[string,string[][]][]=[
-  ['АККАУНТ',[['profile','profile','Профиль','Баланс и уровень'],['achievements','trophy','Достижения','Награды и прогресс'],['history','clock','История','Подтверждённые операции']]],
-  ['ИГРА',[['reward','gift','Daily Reward','Ежедневный бонус'],['tasks','tasks','Задания','Выполняй игровые цели'],['referrals','friends','Пригласить друзей','Реферальная программа'],['vault','coins','Holding Vault','Внутриигровой кошелёк']]],
-  ['ПОМОЩЬ',[['support','shield-check','Поддержка','Обращения и ответы'],['settings','settings','Настройки','Оформление и язык'],['intro','info','Инструкция','Как играть в GM TOKEN']]]
+  [L('account'),[['profile','profile',L('profile'),L('balance')],['achievements','trophy',L('achievements'),L('earned')],['history','clock',L('history'),L('history')]]],
+  [L('game'),[['reward','gift','Daily Reward',L('claim')],['tasks','tasks',L('tasks'),L('earned')],['referrals','friends',L('friends'),L('referrals')],['leaderboard','trophy',L('leaderboard'),L('holdings')]]],
+  [L('help'),[['support','shield-check',L('support'),L('help')],['settings','settings',L('customize'),L('interfaceLanguage')],['intro','info',L('instruction'),L('replay')]]]
  ];
  if(['owner','coowner'].includes(liveRole))groups.push(['АДМИНИСТРИРОВАНИЕ',[['admin','crown','Admin Panel','Только Owner и Co-Owner']]]);
  const sections=groups.map(([title,rows])=>{
@@ -983,7 +1057,7 @@ function More(){
    e('h3',null,title),e('div',{className:'gm-more-list gm-premium-card'},buttons));
  });
  return e(React.Fragment,null,
-  top('Ещё',true,'more'),
+  top(lang('more'),true,'more'),
   e('div',{className:'gm-more-logo gm-premium-card'},e(Brand,{theme,size:54}),
    e('div',null,e('b',null,'GM TOKEN'),e('small',null,'PREMIUM SILVER · PREMIUM GRAPHITE'))),
   sections,e('p',{className:'gm-more-footer'},'Виртуальные GM и CR · GM TOKEN Premium')
@@ -1005,15 +1079,15 @@ function Intro(){
  const languages=gmLanguages.map(([value,name])=>e('option',{key:value,value},name));
  const languagePicker=introStep===0?e('div',{className:'gm-intro-language'},e('label',null,lang('language')),
   e('select',{value:locale,onChange:event=>{setLocale(event.target.value);store.setItem('gm_lang',event.target.value)}},languages)):null;
- const back=introStep>0?e('button',{type:'button',className:'gm-intro-prev',onClick:()=>setIntroStep(introStep-1)},'Назад'):null;
+ const back=introStep>0?e('button',{type:'button',className:'gm-intro-prev',onClick:()=>setIntroStep(introStep-1)},L('back')):null;
  return e('div',{className:'gm-intro-v8'},
   e('header',{className:'gm-intro-header'},e(Brand,{theme,size:34}),e('b',null,'GM TOKEN'),
    e('button',{type:'button',onClick:complete},lang('skip'))),
   e('div',{className:'gm-intro-progress'},ticks),
   e('div',{className:'gm-intro-art'},e('div',{className:'gm-intro-art-ring'},icon(step[0],114,true))),
   e('div',{className:'gm-intro-copy'},
-   e('small',null,'ШАГ '+(introStep+1)+' / 4'),
-   e('h1',null,introStep===0?'Добро пожаловать в GM TOKEN':step[1]),
+   e('small',null,L('tutorialStep')+' '+(introStep+1)+' / 4'),
+   e('h1',null,introStep===0?L('welcome'):step[1]),
    e('p',null,step[2])),
   languagePicker,
   e('div',{className:'gm-intro-actions'},
@@ -1024,6 +1098,18 @@ function Intro(){
  );
 }
 
+function GuideOverlay(){if(!guideScreen||!guideCatalog[guideScreen])return null;
+ const steps=guideCatalog[guideScreen],step=steps[Math.min(guideStep,steps.length-1)];
+ return <div className="gm-tour-backdrop" role="dialog" aria-modal="true" aria-label={L('instruction')}>
+  <div className="gm-tour-card">
+   <div className="gm-tour-head"><Brand theme={theme} size={35}/><span>{L('tutorialStep')} {guideStep+1} / {steps.length}</span><button type="button" onClick={closeGuide} aria-label={L('skip')}>{icon('close',19)}</button></div>
+   <div className="gm-tour-art">{icon(step[0],80,true)}</div>
+   <h2>{L(step[1])}</h2><p>{L(step[2])}</p>
+   <div className="gm-tour-track">{steps.map((_:any,i:number)=><i className={i<=guideStep?'active':''} key={i}/>)}</div>
+   <div className="gm-tour-actions"><button onClick={closeGuide}>{L('skip')}</button><button className="gm-tour-primary" onClick={()=>guideStep+1>=steps.length?closeGuide():setGuideStep(guideStep+1)}>{guideStep+1>=steps.length?L('finish'):L('next')} {icon('chevron-right',18)}</button></div>
+  </div>
+ </div>;
+}
 function Streak(){return <>{top('Daily Streak',true,'flame')}<div className="referral-hero pearl-card">{icon('flame',90,true)}<h1>{wallet.streak} дней</h1><p>Серия ежедневных посещений. Повторное получение награды в один день запрещено.</p></div><GButton theme={theme} onClick={()=>goto('reward')}>Ежедневная награда</GButton></>}
  if(demo){return <main className={'application auth-page theme-'+theme}>
   <div className="auth-ambient" aria-hidden="true"/>
@@ -1050,6 +1136,7 @@ function Streak(){return <>{top('Daily Streak',true,'flame')}<div className="ref
  <div className="device-stage"><div className="phone-frame"><div className={'phone-scroll '+((screen==='splash')?'no-scroll':'')}>{view}</div>{!['reward','splash','intro'].includes(screen)&&bottom()}<div className="home-indicator"/></div><div className="underphone"><span className="demo-pill">{'Серверная авторизация · виртуальные GM/CR'}</span><button onClick={()=>goto('splash')}>Заставка</button><button onClick={()=>goto('home')}>Home</button><button onClick={()=>setTheme(isLight?'dark':'light')}>Сменить тему</button></div><small className="status-note">{backendStatus}</small></div>
  {toast&&<div className="toast-message" role="status" onClick={()=>setToast('')}>{toast}<button onClick={()=>setToast('')}>×</button></div>}
  {modal==='boxReveal'?BoxRevealModal():modal&&TradeOrderModal()}
+ {guideScreen&&GuideOverlay()}
  </div>;
 }
 // Offline renderer uses the bundled React 16.0 UMD (no built-in Hooks). A tiny
