@@ -11,6 +11,14 @@ type Route = 'home'|'trade'|'earn'|'tasks'|'leaderboard'|'profile'|'reward'|'spl
 type Wallet = { gm:number; cr:number; vault:number; xp:number; level:number; claims:number; lastClaim:string; lastMiningXpDay:string; lastVaultWithdrawDay:string; streak:number; storage:number; storageUpdated:number; tickets:any[]; orders:any[]; traded:number; rewardClaimed:boolean; };
 const firstWallet:Wallet = {gm:0,cr:0,vault:0,xp:0,level:1,claims:0,lastClaim:'',lastMiningXpDay:'',lastVaultWithdrawDay:'',streak:0,storage:0,storageUpdated:0,tickets:[],orders:[],traded:0,rewardClaimed:false};
 const xpThreshold=[0,100,250,450,750,1150,1700,2400,3300,4400];
+
+const gmLeagues=[
+ {name:'Bronze',xp:0},{name:'Silver',xp:1000},{name:'Gold',xp:3000},{name:'Platinum',xp:7500},
+ {name:'Diamond',xp:15000},{name:'Master',xp:30000},{name:'Grandmaster',xp:50000},
+ {name:'Elite',xp:75000},{name:'Legend',xp:110000},{name:'GM Immortal',xp:160000}
+];
+const gmLeagueFor=(xp:number)=>gmLeagues.filter(row=>xp>=row.xp).slice(-1)[0]||gmLeagues[0];
+
 const miningBase=[10,14,19,25,32,40,50,62,75,90];
 const powerBonus=(lvl:number)=>lvl>=10?25:lvl>=8?20:lvl>=6?15:lvl>=4?10:lvl>=2?5:0;
 const storageHours=(lvl:number)=>lvl>=9?24:lvl>=7?20:lvl>=5?16:lvl>=3?12:8;
@@ -706,8 +714,51 @@ function Tasks(){
 }
 
  function Leaderboard(){const users=(liveRanks?.users||[]).filter((u:any)=>rankFilter==='Global'||(liveReferrals?.referred||[]).some((r:any)=>r.user_id===u.id));return <>{top('Leaderboard',true,'trophy')}<div className="rank-tabs"><button onClick={()=>setRankFilter('Global')} className={rankFilter==='Global'?'on':''}>Global</button><button onClick={()=>setRankFilter('Friends')} className={rankFilter==='Friends'?'on':''}>Friends</button></div><div className="leader-rows">{users.map((u:any,i:number)=><div className="leader-row" key={u.id}><b>{i+1}</b>{icon('profile',27)}<span>{clean(u.username||'Игрок')}</span><small>{nf(u.score_cents/100)} GM</small></div>)}</div>{users.length===0&&<p className="disclaimer">{liveRanks?.pending_rule?'Рейтинг ещё не включён: формула не утверждена. Фальшивых участников нет.':'Пока нет игроков в выбранном списке.'}</p>}</>}
- function Profile(){return <>{isLight?<header className="profile-top"><span></span><button className="header-icon" onClick={()=>goto('settings')}>{icon('settings',25)}</button></header>:<header className="dark-top"><b>GM TOKEN</b><button onClick={()=>goto('settings')}>{icon('more',20)} {icon('close',17)}</button></header>}<div className="profile-hero"><Brand theme={theme} size={isLight?103:98}/><h2>{webapp?.initDataUnsafe?.user?.username||webapp?.initDataUnsafe?.user?.first_name||'Игрок'}</h2><p>#{String(webapp?.initDataUnsafe?.user?.id||'')} <button className="inline-icon" onClick={()=>{navigator.clipboard?.writeText(String(webapp?.initDataUnsafe?.user?.id||''));flash('ID скопирован')}}>{icon('copy',15)}</button></p></div><div className="xp-area"><div className="xp-line"><b>Lv. {wallet.level}</b><small>{nf(wallet.xp,0)} / {nf(xpThreshold[Math.min(wallet.level,9)]||4400,0)} XP</small></div><div className="progress"><div style={{width:(Math.min(100,100*wallet.xp/(xpThreshold[Math.min(wallet.level,9)]||4400)))+'%'}}/></div></div><div className="stats-grid">{[['friends',String(liveReferrals?.referred?.length||0),'Friends'],['wallet',nf(wallet.gm,0),'Balance'],['lightning',String(wallet.streak),'Streak']].map(([i,n,label])=><div className="stat-card" key={label}>{icon(i,23)}<b>{n}</b><small>{label}</small></div>)}</div><div className="profile-menu">{[['trophy','Achievements','achievements'],['friends','Referral Program','referrals'],['clock','Transaction History','history'],['settings','Settings','settings'],['info','Support','support']].map(([i,t,s])=><button key={t} onClick={()=>goto(s as Route)}>{icon(i,21)}<span>{t}</span>{icon('chevron-right',18)}</button>)}</div>{isLight&&<button className="logout" onClick={()=>flash('Закрой Mini App в Telegram для выхода')}>{icon('logout',20)} Log Out</button>}</>}
- 
+ function Profile(){
+ const xpLevel=Math.min(10,Math.max(1,wallet.level||1));
+ const prevXp=xpThreshold[xpLevel-1]||0;
+ const nextXp=xpThreshold[Math.min(9,xpLevel)]||4400;
+ const maxed=xpLevel>=10;
+ const xpRemaining=maxed?0:Math.max(0,nextXp-wallet.xp);
+ const progressPercent=maxed?100:Math.max(0,Math.min(100,(wallet.xp-prevXp)/Math.max(1,nextXp-prevXp)*100));
+ const pioneer=liveState?.user?.pioneer_rank;
+ const tgUser=webapp?.initDataUnsafe?.user;
+ return <div className="gm-profile-v2">
+  {top(gmTranslateText('Профиль',actualLang),true,'settings')}
+  <div className={'profile-hero gm-profile-avatar '+(pioneer?'gm-founder-frame':'')}>
+   <div className="gm-profile-avatar-art">{tgUser?.photo_url?<img src={tgUser.photo_url} alt="" className="gm-tg-avatar"/>:<Brand theme={theme} size={100}/>}</div>
+   {pioneer&&<span className="gm-profile-pioneer">★ Pioneer #{pioneer} / 20</span>}
+   <h2>{tgUser?.username||tgUser?.first_name||gmTranslateText('Игрок',actualLang)}</h2>
+   <p>#{String(tgUser?.id||'')} <button className="inline-icon" onClick={()=>{navigator.clipboard?.writeText(String(tgUser?.id||''));flash('ID скопирован')}}>{icon('copy',15)}</button></p>
+  </div>
+  <button className="gm-profile-xp gm-premium-card" onClick={()=>goto('leagues')}>
+   <div className="xp-line"><b>{gmTranslateText('Уровень',actualLang)} {xpLevel}</b><small>{nf(wallet.xp,0)} / {nf(nextXp,0)} XP</small></div>
+   <div className="progress"><div style={{width:progressPercent+'%'}}/></div>
+   <small>{maxed?'Максимальный XP-уровень':gmTranslateText('Сколько нужно XP',actualLang)+': '+nf(xpRemaining,0)+' XP'} · {gmLeagueFor(wallet.xp).name}</small>
+   <span className="gm-profile-xp-open">{gmTranslateText('Лиги',actualLang)} {icon('chevron-right',15)}</span>
+  </button>
+  <div className="stats-grid">{[['friends',String(liveReferrals?.referred?.length||0),'Friends'],['wallet',nf(wallet.gm,0),'Balance'],['lightning',String(wallet.streak),'Streak']].map(([i,n,label])=><div className="stat-card gm-premium-card" key={label}>{icon(i,23)}<b>{n}</b><small>{gmTranslateText(label,actualLang)}</small></div>)}</div>
+  <section className="gm-profile-frames gm-premium-card">
+   <div className="gm-frames-title"><h3>{gmTranslateText('Полученные рамки',actualLang)}</h3><span>{pioneer?'1':'0'} / 4</span></div>
+   <div className="gm-frame-collection">
+    {[
+     ['pioneer','Pioneer 20',!!pioneer],
+     ['silver','Silver Aura',false],
+     ['graphite','Graphite Crown',false],
+     ['immortal','GM Immortal',false]
+    ].map(([id,title,unlocked]:any)=><div key={id} className={'gm-frame-tile '+(unlocked?'unlocked':'locked')} title={unlocked?'Разблокировано':'Откроется за достижения'}>
+      <div className={'gm-frame-preview '+id}>{icon(unlocked?'crown':'profile',24)}</div>
+      <small>{title}</small><b>{unlocked?'✓':'🔒'}</b>
+    </div>)}
+   </div>
+  </section>
+  <div className="profile-menu gm-profile-menu">{[
+   ['trophy','Achievements','achievements'],['crown','Лиги','leagues'],['wallet','Кошелёк','wallet'],
+   ['friends','Referral Program','referrals'],['star','Амбассадор','ambassador'],
+   ['clock','Transaction History','history'],['settings','Settings','settings'],['info','Support','support']
+  ].map(([i,t,route])=><button key={route} onClick={()=>goto(route as Route)}>{icon(i,23)}<span>{gmTranslateText(t,actualLang)}</span>{icon('chevron-right',19)}</button>)}</div>
+ </div>
+}
  
 function Reward(){
  const e=React.createElement;
@@ -798,6 +849,69 @@ function Reward(){
    e('p',{className:'gm-mining-footnote'},'GM — виртуальная валюта игры. Улучшения покупаются по порядку. Цена списывается сервером, бонус заменяет предыдущий. Mining Pool ограничен — фактические начисления могут отличаться от расчётных.'));
  }
 
+
+ function Wallet(){
+ const e=React.createElement;
+ const pioneer=liveState?.user?.pioneer_rank;
+ return e('div',{className:'gm-wallet-page'},
+  top('Кошелёк',true,'info'),
+  e('section',{className:'gm-wallet-hero gm-premium-card'},
+   e('div',{className:'gm-wallet-emblem'},icon('wallet',62,true)),
+   e('h2',null,'Внешний кошелёк GM'),e('p',null,'Важен реальный GM на подтверждённом кошельке, а не GM, добытый внутри игры.'),
+   e('div',{className:'gm-wallet-status'},icon('shield-check',19),'Контракт GM и сеть пока не указаны. Подключение и проверка владения ещё недоступны.')),
+  e('section',{className:'gm-wallet-steps gm-premium-card'},
+   e('h3',null,'Как будет работать холдинг'),
+   ...[
+    ['1','Подключи кошелёк без передачи секретной фразы'],
+    ['2','Подпиши запрос для подтверждения владения адресом'],
+    ['3','Сервер проверит баланс GM в нужной сети'],
+    ['4','Подтверждённые GM определят уровень и место в рейтинге']
+   ].map(([n,label])=>e('div',{key:n},e('b',null,n),e('span',null,label))),
+   e('button',{type:'button',className:'gm-wallet-connect',disabled:true},icon('wallet',21),'Подключить кошелёк — скоро')),
+  e('section',{className:'gm-wallet-holders gm-premium-card'},e('h3',null,'Рейтинг холдеров'),
+   e('p',null,'Нет подтверждённых кошельков. Позиции появятся только по данным блокчейна после проверки токена.')),
+  wallet.vault>0?e('section',{className:'gm-legacy-balance gm-premium-card'},
+   e('b',null,'Архивный игровой Vault'),e('p',null,'В старом хранилище есть '+nf(wallet.vault)+' GM. Сохранён доступ к выводу внутри игры.'),
+   e('button',{type:'button',onClick:()=>goto('vault')},'Управлять старым Vault',icon('chevron-right',17))):null,
+  pioneer?e('small',{className:'gm-wallet-note'},'Коллекционный знак раннего игрока: #'+pioneer+'/20'):null
+ );
+ }
+ function Leagues(){
+ const e=React.createElement,xp=Math.max(0,wallet.xp),current=gmLeagueFor(xp);
+ const next=gmLeagues.find(r=>r.xp>xp);
+ return e('div',{className:'gm-leagues-page'},
+  top('Лиги',true,'trophy'),
+  e('section',{className:'gm-league-hero gm-premium-card'},
+   icon('trophy',64,true),e('small',null,'ТВОЯ ЛИГА'),e('h2',null,current.name),
+   e('div',{className:'gm-league-progress'},e('span',{style:{width:next?Math.max(0,Math.min(100,100*(xp-current.xp)/(next.xp-current.xp)))+'%':'100%'}})),
+   e('p',null,next?'До '+next.name+': '+nf(next.xp-xp,0)+' XP':'Высшая лига открыта')),
+  e('section',{className:'gm-league-table'},
+   gmLeagues.map((row,i)=>e('div',{key:row.name,className:'gm-league-item gm-premium-card '+(row.name===current.name?'active':xp>=row.xp?'passed':'locked')},
+    e('div',{className:'gm-league-shield'},icon(i>7?'crown':i>3?'diamond':'trophy',23)),
+    e('span',null,e('b',null,row.name),e('small',null,nf(row.xp,0)+' XP')),
+    row.name===current.name?e('b',null,'ТЕКУЩАЯ'):xp>=row.xp?icon('check',20):icon('minus',20))))
+ );
+ }
+ function Ambassador(){
+ const e=React.createElement,referrals=liveReferrals?.referred?.length||0;
+ return e('div',{className:'gm-ambassador-page'},
+  top('Амбассадор',true,'star'),
+  e('section',{className:'gm-ambassador-hero gm-premium-card'},icon('crown',70,true),
+   e('h2',null,'GM AMBASSADOR'),e('p',null,'Создавай сообщество GM TOKEN и получай коллекционные звания.')),
+  e('div',{className:'gm-ambassador-progress gm-premium-card'},
+   e('b',null,'Путь к заявке'),e('strong',null,Math.min(referrals,100)+' / 100 приглашённых'),
+   e('div',{className:'gm-upgrades-progress'},e('span',{style:{width:Math.min(100,referrals)+'%'}})),
+   e('p',null,'Нужны 100 зарегистрированных приглашённых игроков и свой Telegram-канал.')),
+  e('section',{className:'gm-ambassador-levels gm-premium-card'},
+   e('h3',null,'Ранги амбассадоров'),
+   ...[['Стартер','100 приглашений','Заявка'],['Silver Partner','2 000 подписчиков','7% — предложение'],['Gold Partner','10 000 подписчиков','20% — предложение'],['GM Legend','100 000 подписчиков','50% — предложение']].map(([title,condition,reward])=>
+    e('div',{key:title},e('span',null,e('b',null,title),e('small',null,condition)),e('strong',null,reward)))),
+  e('section',{className:'gm-wallet-steps gm-premium-card'},e('h3',null,'Заявка на участие'),
+   e('p',null,'Проверка владельца канала, количества подписчиков и правил выплат ещё не включена.'),
+   e('button',{type:'button',disabled:true,className:'gm-wallet-connect'},'Подача заявок после проверки условий')),
+  e('small',{className:'gm-wallet-note'},'Проценты указаны для обсуждения, награды не начисляются до утверждения правил.')
+ );
+ }
  function Vault(){
   const e=React.createElement;
   return e(React.Fragment,null,
@@ -1111,7 +1225,7 @@ function Streak(){return <>{top('Daily Streak',true,'flame')}<div className="ref
   </section>
  </main>}
  let view:any;
- switch(screen){case 'home':view=Home();break;case 'trade':view=Trading();break;case 'earn':view=Earn();break;case 'tasks':view=Tasks();break;case 'leaderboard':view=Leaderboard();break;case 'profile':view=Profile();break;case 'reward':view=Reward();break;case 'splash':view=Splash();break;case 'intro':view=Intro();break;case 'mining':view=Mining();break;case 'vault':view=Vault();break;case 'shop':view=Shop();break;case 'boxes':view=Boxes();break;case 'referrals':view=Referrals();break;case 'history':view=History();break;case 'settings':view=Settings();break;case 'support':view=Support();break;case 'admin':view=['owner','coowner'].includes(liveRole)?Admin():Home();break;case 'achievements':view=Achievements();break;case 'more':view=More();break;case 'streak':view=Streak();break;default:view=Home();}
+ switch(screen){case 'home':view=Home();break;case 'trade':view=Trading();break;case 'earn':view=Earn();break;case 'tasks':view=Tasks();break;case 'leaderboard':view=Leaderboard();break;case 'profile':view=Profile();break;case 'reward':view=Reward();break;case 'splash':view=Splash();break;case 'intro':view=Intro();break;case 'mining':view=Mining();break;case 'vault':view=Vault();break;case 'wallet':view=Wallet();break;case 'leagues':view=Leagues();break;case 'ambassador':view=Ambassador();break;case 'shop':view=Shop();break;case 'boxes':view=Boxes();break;case 'referrals':view=Referrals();break;case 'history':view=History();break;case 'settings':view=Settings();break;case 'support':view=Support();break;case 'admin':view=['owner','coowner'].includes(liveRole)?Admin():Home();break;case 'achievements':view=Achievements();break;case 'more':view=More();break;case 'streak':view=Streak();break;default:view=Home();}
  return <div className={'application theme-'+theme+(webapp?.initData?' is-telegram':'')}>
  <aside className="desktop-toolbar"><div className="toolbar-logo"><Brand theme={theme} size={42}/><span><b>GM TOKEN</b><small>Оригинальные эскизы · интерактивная сборка</small></span></div><div className="toolbar-tabs"><button onClick={()=>setTheme('light')} className={isLight?'chosen':''}>Light</button><button onClick={()=>setTheme('dark')} className={!isLight?'chosen':''}>Dark</button></div><div className="toolbar-links">{(['home','trade','earn','tasks','leaderboard','profile','mining','vault','shop','support','admin'] as Route[]).map(s=><button key={s} className={screen===s?'chosen':''} onClick={()=>goto(s)}>{s}</button>)}</div><p>Оригинальные PNG · 54 иконки × 4 варианта · без подмены сторонними пиктограммами</p></aside>
  <div className="device-stage"><div className="phone-frame"><div className={'phone-scroll '+((screen==='splash')?'no-scroll':'')}>{gmLocalizeTree(view,actualLang)}</div>{!['reward','splash','intro'].includes(screen)&&bottom()}<div className="home-indicator"/></div><div className="underphone"><span className="demo-pill">{'Серверная авторизация · виртуальные GM/CR'}</span><button onClick={()=>goto('splash')}>Заставка</button><button onClick={()=>goto('home')}>Home</button><button onClick={()=>setTheme(isLight?'dark':'light')}>Сменить тему</button></div><small className="status-note">{backendStatus}</small></div>
