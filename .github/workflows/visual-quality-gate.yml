@@ -22,6 +22,10 @@ jobs:
           npm run --prefix miniapp build:standalone
       - name: Execute all server and UI regression tests
         run: npm test
+      - name: Browser DOM smoke test (Portuguese, wallet and guide)
+        run: |
+          npm install --prefix miniapp --no-save jsdom@26 --no-audit --no-fund
+          node tests/visual-browser.mjs
       - name: JavaScript syntax
         run: node --check miniapp/public/main.js
       - name: Commit compiled assets after successful checks
