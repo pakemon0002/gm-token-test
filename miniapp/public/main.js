@@ -453,10 +453,48 @@ function App() {
     const [testUserId, setTestUserId] = React.useState('');
     const [testCurrency, setTestCurrency] = React.useState('GM');
     const [selectedFrame, setSelectedFrame] = React.useState(store.getItem('gm_profile_frame') || 'standard');
+    const [tonAccount, setTonAccount] = React.useState('');
+    const [tonError, setTonError] = React.useState('');
+    const tonUi = React.useRef(null);
     const [testAmount, setTestAmount] = React.useState('1000');
     const [testReason, setTestReason] = React.useState('Начисление виртуальных GM/CR для проверки торговой системы');
     const [testCode, setTestCode] = React.useState('');
     const [testBusy, setTestBusy] = React.useState(false);
+    React.useEffect(() => {
+        if (demo || !webapp?.initData)
+            return;
+        const sdk = window.TON_CONNECT_UI;
+        if (!sdk?.TonConnectUI) {
+            setTonError('TON Connect SDK unavailable');
+            return;
+        }
+        try {
+            const instance = new sdk.TonConnectUI({ manifestUrl: window.location.origin + '/tonconnect-manifest.json' });
+            tonUi.current = instance;
+            const unsubscribe = instance.onStatusChange((connected) => { setTonAccount(connected?.account?.address || ''); setTonError(''); }, (error) => setTonError(String(error?.message || error)));
+            return () => { if (typeof unsubscribe === 'function')
+                unsubscribe(); tonUi.current = null; };
+        }
+        catch (error) {
+            setTonError(String(error?.message || error));
+        }
+    }, [demo]);
+    const walletLanguage = (pt, uk, en, ru) => actualLang === 'pt' ? pt : actualLang === 'uk' ? uk : actualLang === 'ru' ? ru : en;
+    const connectTonWallet = async () => { try {
+        if (!tonUi.current)
+            throw Error('TON Connect is not ready');
+        await tonUi.current.openModal();
+    }
+    catch (err) {
+        setTonError(String(err?.message || err));
+    } };
+    const disconnectTonWallet = async () => { try {
+        await tonUi.current?.disconnect();
+        setTonAccount('');
+    }
+    catch (err) {
+        setTonError(String(err?.message || err));
+    } };
     const [backendStatus, setBackendStatus] = React.useState('Проверяем вход через Telegram…');
     const [modal, setModal] = React.useState('');
     const [boxReveal, setBoxReveal] = React.useState({ kind: 'bronze', gm: 0 });
@@ -498,7 +536,7 @@ function App() {
     React.useEffect(() => {
         const onPop = () => {
             const prev = navStack.current.pop() || 'home', route = location.hash.slice(1);
-            const allowed = ['home', 'trade', 'earn', 'tasks', 'leaderboard', 'profile', 'reward', 'splash', 'intro', 'mining', 'vault', 'shop', 'referrals', 'history', 'settings', 'support', 'admin', 'achievements', 'more', 'streak', 'boxes'];
+            const allowed = ['home', 'trade', 'earn', 'tasks', 'leaderboard', 'profile', 'reward', 'splash', 'intro', 'mining', 'vault', 'wallet', 'shop', 'referrals', 'history', 'settings', 'support', 'admin', 'achievements', 'more', 'streak', 'boxes'];
             setScreen(allowed.includes(route) ? route : prev);
             setModal('');
             document.querySelector('.phone-scroll')?.scrollTo(0, 0);
@@ -888,7 +926,7 @@ function App() {
         return e(React.Fragment, null, top(L('profile'), false, 'settings'), e('div', { className: 'profile-hero gm-profile-v2' }, e('div', { className: 'gm-profile-avatar ' + (chosen === 'standard' ? '' : 'gm-profile-avatar-special') }, e(Brand, { theme, size: 100 })), e('h2', null, user?.username || user?.first_name || 'GM PLAYER'), e('p', null, '#' + String(user?.id || '')), cosmetics.founder_slot ? e('span', { className: 'gm-founders-medal' }, icon('crown', 18), ' FOUNDERS #' + cosmetics.founder_slot) : null), e('div', { className: 'gm-league-card gm-premium-card' }, e('div', { className: 'gm-league-head' }, e('div', null, e('small', null, 'GM LEAGUE'), e('h3', null, league.name)), e('b', null, nf(wallet.xp, 0) + ' XP')), e('div', { className: 'gm-upgrades-progress' }, e('span', { style: { width: progress + '%' } })), e('small', null, nextLeague ? '→ ' + nextLeague.name + ' · ' + nf(Math.max(0, nextXp - wallet.xp), 0) + ' XP' : 'GM IMMORTAL · MAX')), e('div', { className: 'stats-grid' }, [['friends', String(liveReferrals?.referred?.length || 0), L('friends')], ['wallet', nf(wallet.gm, 0), L('balance')], ['lightning', String(wallet.streak), L('streak')]].map(([i, n, label]) => e('div', { className: 'stat-card', key: label }, icon(i, 23), e('b', null, n), e('small', null, label)))), e('section', { className: 'gm-frames-section gm-premium-card' }, e('h3', null, L('frames')), e('p', null, L('achievementsLocked')), e('div', { className: 'gm-frame-grid' }, frames.map((f) => e('button', { key: f.id, type: 'button',
             className: 'gm-frame-card ' + (f.claimed ? 'unlocked' : 'locked') + (chosen === f.id ? ' active' : ''),
             disabled: !f.claimed, 'aria-pressed': chosen === f.id,
-            onClick: () => { setSelectedFrame(f.id); store.setItem('gm_profile_frame', f.id); } }, icon(f.category === 'founder' ? 'crown' : f.category === 'milestone' ? 'diamond' : 'profile', 27, true), e('span', null, f.title), f.claimed ? icon('check', 16) : icon('minus', 16))))), e('div', { className: 'profile-menu' }, [['trophy', L('achievements'), 'achievements'], ['friends', L('referrals'), 'referrals'], ['clock', L('history'), 'history'], ['settings', L('customize'), 'settings'], ['info', L('support'), 'support']].map(([i, t, route]) => e('button', { key: route, onClick: () => goto(route) }, icon(i, 21), e('span', null, t), icon('chevron-right', 18)))), e('button', { type: 'button', className: 'gm-settings-onboard gm-premium-card', onClick: () => openGuide('profile') }, icon('info', 22), L('startTour'), icon('chevron-right', 18)));
+            onClick: () => { setSelectedFrame(f.id); store.setItem('gm_profile_frame', f.id); } }, icon(f.category === 'founder' ? 'crown' : f.category === 'milestone' ? 'diamond' : 'profile', 27, true), e('span', null, f.title), f.claimed ? icon('check', 16) : icon('minus', 16))))), e('div', { className: 'profile-menu' }, [['trophy', L('achievements'), 'achievements'], ['friends', L('referrals'), 'referrals'], ['clock', L('history'), 'history'], ['wallet', L('wallet'), 'wallet'], ['settings', L('customize'), 'settings'], ['info', L('support'), 'support']].map(([i, t, route]) => e('button', { key: route, onClick: () => goto(route) }, icon(i, 21), e('span', null, t), icon('chevron-right', 18)))), e('button', { type: 'button', className: 'gm-settings-onboard gm-premium-card', onClick: () => openGuide('profile') }, icon('info', 22), L('startTour'), icon('chevron-right', 18)));
     }
     function Reward() {
         const e = React.createElement;
@@ -928,6 +966,11 @@ function App() {
         return e('div', { className: 'gm-mining-v8' }, top(L('mining'), true, 'info'), e('div', { className: 'gm-mining-title' }, e('span', null, 'Добывай GM'), e('small', null, 'Майнинг ' + upgrade.level + '/200 · ' + nf(rate, 0) + ' GM / сутки')), e('button', { type: 'button', className: 'gm-mining-coin-wrap', onClick: mineClick, 'aria-label': 'Собрать накопленные GM' }, e('span', { className: 'gm-mining-coin-rim' }, e(Brand, { theme, size: 198 })), e('span', { className: 'gm-mining-coin-glint' })), e('div', { className: 'gm-mining-total' }, icon('lightning', 28), e('strong', null, nf(stored)), e('span', null, 'GM накоплено')), e('p', { className: 'gm-mining-tap-guide' }, 'Нажми на монету, чтобы забрать накопленные GM (от 1 GM). Добыча идёт автоматически.'), e('div', { className: 'gm-mining-energy gm-premium-card' }, e('div', { className: 'gm-mining-energy-head' }, e('b', null, 'Хранилище'), e('span', null, nf(stored) + ' / ' + nf(cap) + ' GM')), e('div', { className: 'gm-mining-energy-track' }, e('span', { style: { width: pct + '%' } })), e('div', { className: 'gm-mining-energy-foot' }, e('small', null, 'Вместимость: ' + hours + ' ч'), e('small', null, nf(rate / 24, 2) + ' GM/час'))), e('button', { type: 'button', className: 'gm-mining-claim', disabled: demo || stored < 1, onClick: miningClaim }, icon('diamond', 23), e('span', null, 'Забрать GM'), icon('chevron-right', 19)), e('section', { className: 'gm-mining-benefits gm-premium-card' }, e('b', null, 'Уровень и ускорения'), e('div', null, e('span', null, icon('lightning', 21), ' Мощность'), e('strong', null, '+' + powerBonus(wallet.level) + '%')), e('div', null, e('span', null, icon('clock', 21), ' Хранилище'), e('strong', null, hours + ' часов')), e('div', null, e('span', null, icon('database', 21), ' Резерв'), e('strong', null, '45 млн GM'))), e('section', { className: 'gm-mining-upgrades gm-premium-card' }, e('div', { className: 'gm-upgrades-head' }, e('div', null, e('small', null, 'MINING UPGRADES'), e('h3', null, L('miningUpgrades'))), icon('lightning', 28)), e('div', { className: 'gm-upgrades-summary' }, e('div', null, e('small', null, L('level')), e('strong', null, upgrade.level + ' / 200')), e('div', null, e('small', null, L('speed')), e('strong', null, '+' + upgrade.bonus_pct + '%'))), e('div', { className: 'gm-upgrades-progress' }, e('span', { style: { width: upgrade.level / 200 * 100 + '%' } })), upgrade.next_level ?
             e('div', { className: 'gm-upgrade-next' }, e('span', null, L('nextLevel') + ' ' + upgrade.next_level), e('strong', null, nf(upgrade.next_cost_gm, 0) + ' GM · +' + upgrade.next_bonus_pct + '%'), e('button', { type: 'button', className: 'gm-upgrades-purchase', disabled: demo || upgradeBusy || wallet.gm < upgrade.next_cost_gm || !upgradeData?.upgrade, onClick: buyMiningUpgrade }, upgradeBusy ? 'Проверяем покупку…' : wallet.gm < upgrade.next_cost_gm ? L('insufficient') : L('upgrade'), icon('chevron-right', 17)))
             : e('div', { className: 'gm-upgrades-max' }, icon('crown', 21), 'Максимальный уровень открыт'), e('div', { className: 'gm-upgrade-preview' }, ...visibleUpgrades.map((row) => e('div', { key: row.level, className: 'gm-upgrade-row ' + (row.level <= upgrade.level ? 'gm-upgrade-unlocked' : row.level === upgrade.next_level ? 'gm-upgrade-available' : 'gm-upgrade-locked') }, e('span', { className: 'gm-upgrade-number' }, row.level), e('span', { className: 'gm-upgrade-row-copy' }, e('b', null, row.level === 200 ? 'GM Immortal' : 'Уровень ' + row.level), e('small', null, row.level === 1 ? 'Начальный' : nf(row.cost_gm, 0) + ' GM')), e('strong', null, '+' + row.bonus_pct + '%'), row.level <= upgrade.level ? icon('check', 17) : icon('minus', 17)))), e('button', { type: 'button', className: 'gm-upgrades-toggle', onClick: () => setShowAllUpgrades(!showAllUpgrades) }, showAllUpgrades ? L('collapse') : L('allLevels'), icon(showAllUpgrades ? 'chevron-up' : 'chevron-down', 16))), e('p', { className: 'gm-mining-footnote' }, 'GM — виртуальная валюта игры. Улучшения покупаются по порядку. Цена списывается сервером, бонус заменяет предыдущий. Mining Pool ограничен — фактические начисления могут отличаться от расчётных.'));
+    }
+    function WalletConnection() {
+        const e = React.createElement;
+        const display = tonAccount ? (tonAccount.length > 24 ? tonAccount.slice(0, 12) + '…' + tonAccount.slice(-8) : tonAccount) : '—';
+        return e('div', { className: 'gm-wallet-screen' }, top(L('wallet'), true, 'shield-check'), e('div', { className: 'gm-wallet-hero gm-premium-card' }, e('div', { className: 'gm-wallet-hero-icon' }, icon('wallet', 72, true)), e('small', null, 'TON CONNECT · READ-ONLY'), e('h2', null, L('wallet')), e('p', null, walletLanguage('Conecte sua carteira TON para exibir o endereço. Nenhuma transferência será solicitada.', 'Підключіть TON-гаманець, щоб переглянути адресу. Перекази не запитуються.', 'Connect a TON wallet to display its address. No transfers are requested.', 'Подключи TON-кошелёк, чтобы увидеть адрес. Переводы и оплаты не запрашиваются.')), e('div', { className: 'gm-wallet-address' }, e('small', null, walletLanguage('Endereço da carteira', 'Адреса гаманця', 'Wallet address', 'Адрес кошелька')), e('strong', null, display)), e('button', { type: 'button', className: 'gm-wallet-connect', onClick: tonAccount ? disconnectTonWallet : connectTonWallet }, icon(tonAccount ? 'close' : 'link', 22), tonAccount ? walletLanguage('Desconectar', 'Від’єднати', 'Disconnect', 'Отключить') : walletLanguage('Conectar carteira TON', 'Підключити TON-гаманець', 'Connect TON wallet', 'Подключить TON-кошелёк'))), tonError ? e('div', { className: 'gm-wallet-error', role: 'status' }, tonError) : null, e('section', { className: 'gm-wallet-facts gm-premium-card' }, e('h3', null, L('holdings')), e('p', null, walletLanguage('O saldo de GM na blockchain ainda não é verificado. Até definir o contrato, nenhuma vantagem de mineração será concedida.', 'GM на блокчейні ще не перевіряються. До визначення контракту бонуси майнінгу не нараховуються.', 'On-chain GM holdings are not verified yet. No mining bonus is granted until the token contract is confirmed.', 'Количество GM в блокчейне пока не проверяется. Пока не подтверждён контракт токена, бонусы к майнингу не выдаются.')), e('div', { className: 'gm-wallet-total' }, icon('shield-check', 24), walletLanguage('Saldo pendente de verificação', 'Баланс очікує перевірки', 'Holdings pending verification', 'Холдинг ожидает проверки'))), wallet.vault > 0 ? e('button', { type: 'button', className: 'gm-wallet-legacy', onClick: () => goto('vault') }, icon('database', 20), walletLanguage('Saldo legado no jogo: ', 'Старий ігровий баланс: ', 'Legacy in-game Vault: ', 'Старый игровой Vault: ') + nf(wallet.vault) + ' GM', icon('chevron-right', 18)) : null, e('p', { className: 'gm-mining-footnote' }, walletLanguage('Nunca compartilhe sua frase-semente ou chave privada.', 'Ніколи не повідомляйте seed-фразу чи приватний ключ.', 'Never share your seed phrase or private key.', 'Никогда не передавай сид-фразу или приватный ключ.')));
     }
     function Vault() {
         const e = React.createElement;
@@ -1196,7 +1239,7 @@ function App() {
         const e = React.createElement;
         const groups = [
             [L('account'), [['profile', 'profile', L('profile'), L('balance')], ['achievements', 'trophy', L('achievements'), L('earned')], ['history', 'clock', L('history'), L('history')]]],
-            [L('game'), [['reward', 'gift', 'Daily Reward', L('claim')], ['tasks', 'tasks', L('tasks'), L('earned')], ['referrals', 'friends', L('friends'), L('referrals')], ['leaderboard', 'trophy', L('leaderboard'), L('holdings')]]],
+            [L('game'), [['reward', 'gift', 'Daily Reward', L('claim')], ['tasks', 'tasks', L('tasks'), L('earned')], ['referrals', 'friends', L('friends'), L('referrals')], ['leaderboard', 'trophy', L('leaderboard'), L('holdings')], ['wallet', 'wallet', L('wallet'), L('wallet')]]],
             [L('help'), [['support', 'shield-check', L('support'), L('help')], ['settings', 'settings', L('customize'), L('interfaceLanguage')], ['intro', 'info', L('instruction'), L('replay')]]]
         ];
         if (['owner', 'coowner'].includes(liveRole))
@@ -1329,6 +1372,9 @@ function App() {
         case 'vault':
             view = Vault();
             break;
+        case 'wallet':
+            view = WalletConnection();
+            break;
         case 'shop':
             view = Shop();
             break;
@@ -1371,7 +1417,7 @@ function App() {
             React.createElement("div", { className: "toolbar-tabs" },
                 React.createElement("button", { onClick: () => setTheme('light'), className: isLight ? 'chosen' : '' }, "Light"),
                 React.createElement("button", { onClick: () => setTheme('dark'), className: !isLight ? 'chosen' : '' }, "Dark")),
-            React.createElement("div", { className: "toolbar-links" }, ['home', 'trade', 'earn', 'tasks', 'leaderboard', 'profile', 'mining', 'vault', 'shop', 'support', 'admin'].map(s => React.createElement("button", { key: s, className: screen === s ? 'chosen' : '', onClick: () => goto(s) }, s))),
+            React.createElement("div", { className: "toolbar-links" }, ['home', 'trade', 'earn', 'tasks', 'leaderboard', 'profile', 'mining', 'wallet', 'vault', 'shop', 'support', 'admin'].map(s => React.createElement("button", { key: s, className: screen === s ? 'chosen' : '', onClick: () => goto(s) }, s))),
             React.createElement("p", null, "\u041E\u0440\u0438\u0433\u0438\u043D\u0430\u043B\u044C\u043D\u044B\u0435 PNG \u00B7 54 \u0438\u043A\u043E\u043D\u043A\u0438 \u00D7 4 \u0432\u0430\u0440\u0438\u0430\u043D\u0442\u0430 \u00B7 \u0431\u0435\u0437 \u043F\u043E\u0434\u043C\u0435\u043D\u044B \u0441\u0442\u043E\u0440\u043E\u043D\u043D\u0438\u043C\u0438 \u043F\u0438\u043A\u0442\u043E\u0433\u0440\u0430\u043C\u043C\u0430\u043C\u0438")),
         React.createElement("div", { className: "device-stage" },
             React.createElement("div", { className: "phone-frame" },
