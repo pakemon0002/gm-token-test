@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 // TSC emits semantically equivalent whitespace; verify the same tokens across TSX and JS.
-const has=(code,fragment)=>code.replace(/\\s+/g,'').includes(fragment.replace(/\\s+/g,''));
+const has=(code,fragment)=>code.replace(/\s+/g,'').includes(fragment.replace(/\s+/g,''));
 test('Admin entry and route are restricted to verified Owner/Co-Owner in both UIs and server',()=>{
  const tsx=read('../miniapp/src/main.tsx'),js=read('../miniapp/public/main.js');
  for(const code of [tsx,js]){
