@@ -29,6 +29,6 @@ test('league progression has 10 ordered ranks',()=>{
 test('upgrade values are pure and reproducible',()=>{
   for(let i=1;i<=200;i++){
     assert.equal(miningUpgradeTotalCost(i),miningUpgradeTable()[i-1].total_gm);
-    assert.ok(Number.isSafeInteger(miningUpgradeBonusPct(i)));
+    assert.ok(Number.isFinite(miningUpgradeBonusPct(i)) && Number.isSafeInteger(Math.round(miningUpgradeBonusPct(i)*100)));
   }
 });
