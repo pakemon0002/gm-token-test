@@ -432,7 +432,7 @@ function App(){
   'settings.language':{ru:'Выбери язык здесь. Настройка сохраняется на устройстве и применяется к переводимым элементам приложения. Кнопка «Auto» использует язык Telegram.',uk:'Обери мову тут; Auto використовує мову Telegram.',pt:'Escolha o idioma aqui. Auto usa o idioma do Telegram.',en:'Pick your preferred language. Auto follows your Telegram language.'},
   'support.ticket':{ru:'Выбери категорию и опиши проблему минимум десятью символами. Обращение создаётся на сервере и появляется в списке; можно просматривать ответы.',uk:'Оберіть категорію й опишіть проблему. Звернення збережеться на сервері.',pt:'Escolha a categoria e descreva o problema. O chamado será salvo no servidor.',en:'Choose a category and describe the issue. Your ticket is saved on the server.'}
  };
- const closeGuide=()=>{if(guideScreen)store.setItem('gm_guide_'+guideScreen,'1');setGuideScreen('');setGuideStep(0);setGuideSpot(null)};
+ const closeGuide=()=>{if(guideScreen)store.setItem('gm_guide_v21_'+guideScreen,'1');setGuideScreen('');setGuideStep(0);setGuideSpot(null)};
  const openGuide=(name:string)=>{if(guideCatalog[name]){setGuideScreen(name);setGuideStep(0);setGuideSpot(null)}};
  React.useEffect(()=>{
   if(!guideScreen)return;
@@ -498,9 +498,9 @@ function App(){
  const [tradeReady,setTradeReady]=React.useState(false);
  const [serverHistory,setServerHistory]=React.useState([] as any[]);
  const [demo,setDemo]=React.useState(true);
- React.useEffect(()=>{if(screen!=='splash'||demo)return;const timeout=setTimeout(()=>{setScreen(store.getItem('gm_onboarding_complete')?'home':'intro')},1350);return()=>clearTimeout(timeout)},[screen,demo]);
+ React.useEffect(()=>{if(screen!=='splash'||demo)return;const timeout=setTimeout(()=>{setScreen(store.getItem('gm_onboarding_v21_complete')?'home':'intro')},1350);return()=>clearTimeout(timeout)},[screen,demo]);
  React.useEffect(()=>{if(demo||['splash','intro','reward'].includes(screen)||!guideCatalog[screen]||guideScreen)return;
- if(!store.getItem('gm_guide_'+screen)){const timeout=setTimeout(()=>openGuide(screen),550);return()=>clearTimeout(timeout)}
+ if(!store.getItem('gm_guide_v21_'+screen)){const timeout=setTimeout(()=>openGuide(screen),550);return()=>clearTimeout(timeout)}
  },[screen,demo,guideScreen]);
 
  const [liveRole,setLiveRole]=React.useState('player');
@@ -1405,7 +1405,7 @@ function Intro(){
   ['friends','Приглашай друзей','Поделись персональной ссылкой. Награды появляются только после подтверждённых действий друзей.']
  ];
  const step=steps[Math.max(0,Math.min(steps.length-1,introStep))];
- const complete=()=>{store.setItem('gm_onboarding_complete','1');navStack.current=[];setScreen('home')};
+ const complete=()=>{store.setItem('gm_onboarding_v21_complete','1');navStack.current=[];setScreen('home')};
  const ticks=steps.map((_,i)=>e('i',{key:i,className:i<=introStep?'current':''}));
  const displayedLanguages=gmLanguages.filter(([code,label])=>(label.toLowerCase().includes(languageSearch.toLowerCase())||code.includes(languageSearch.toLowerCase())));
  const chosenLanguage=gmLanguages.find(([code])=>code===locale)?.[1]||gmLanguages[0][1];
