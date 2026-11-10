@@ -34,7 +34,7 @@ function SparkLine({theme,compact=false}:{theme:Theme,compact?:boolean}){
  return <div className="real-data-empty" role="status">График баланса появится после накопления подтверждённой истории</div>;
 }
 
-function Candles({theme,candles=[],selected=null,onSelect=()=>{},interval='1h'}){
+function Candles({theme,candles=[],selected=null,onSelect=(_time:any)=>{},interval='1h'}){
  const e=React.createElement;
  const valid=(Array.isArray(candles)?candles:[]).filter(c=>
   c&&Number.isFinite(c.time)&&Number.isFinite(c.open)&&Number.isFinite(c.high)&&
@@ -132,7 +132,7 @@ async function gmFetchJson(path,opts={},retries=0){
    const res=await fetch(path,{...opts,...(ctl?{signal:ctl.signal}:{})});
    const body=await res.json().catch(()=>({}));
    if(res.ok)return body;
-   const error=Error(String(body?.error||'HTTP '+res.status));error.status=res.status;
+   const error=Error(String(body?.error||'HTTP '+res.status)) as Error&{status?:number};error.status=res.status;
    if(res.status<500)throw error;
    lastError=error;if(i===retries)throw error;
   }catch(err){
@@ -294,7 +294,7 @@ function App(){
   return()=>{valid=false};
  },[]);
 
- const api=async(path,payload,silent=false)=>{
+ const api=async(path,payload=undefined,silent=false)=>{
   const init=webapp?.initData;
   if(!init){if(!silent)flash('Открой GM TOKEN внутри Telegram');return null}
   try{return await gmFetchJson(path,{method:payload?'POST':'GET',
@@ -783,7 +783,7 @@ function Reward(){
        e('div',{className:'gm-crate-lock'},e(Brand,{theme,size:38})),e('div',{className:'gm-crate-body'}))),
      e('div',{className:'gm-box-copy'},
       e('b',null,name),e('span',null,nf(Number(payouts[kind]||0),0)+' GM · гарантированно'),
-      e('small',null,nf(cost,0)+' POINTS')),
+      e('small',null,nf(Number(cost),0)+' POINTS')),
      e('button',{type:'button',disabled:demo||!enabled||points<cost||boxBusy,onClick:()=>openBox(kind),
       className:'gm-box-open'},!enabled?'Пока недоступно':points<cost?'Не хватает POINTS':'Открыть бокс',icon('chevron-right',18))))),
    e('p',{className:'gm-boxes-honest'},'Анимация открытия — только оформление. Награда фиксирована и выдаётся сервером из фонда BOXES. Случайных призов и платных ставок нет.')
@@ -968,7 +968,7 @@ function Support(){
  
 function More(){
  const e=React.createElement;
- const groups=[
+ const groups:[string,string[][]][]=[
   ['АККАУНТ',[['profile','profile','Профиль','Баланс и уровень'],['achievements','trophy','Достижения','Награды и прогресс'],['history','clock','История','Подтверждённые операции']]],
   ['ИГРА',[['reward','gift','Daily Reward','Ежедневный бонус'],['tasks','tasks','Задания','Выполняй игровые цели'],['referrals','friends','Пригласить друзей','Реферальная программа'],['vault','coins','Holding Vault','Внутриигровой кошелёк']]],
   ['ПОМОЩЬ',[['support','shield-check','Поддержка','Обращения и ответы'],['settings','settings','Настройки','Оформление и язык'],['intro','info','Инструкция','Как играть в GM TOKEN']]]
