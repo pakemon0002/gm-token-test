@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
+const has=(source,fragment)=>source.replace(/\s+/g,'').includes(fragment.replace(/\s+/g,''));
 test('Admin entry and route are restricted to verified Owner/Co-Owner in both UIs and server',()=>{
  const tsx=read('../miniapp/src/main.tsx'),js=read('../miniapp/public/main.js');
  for(const code of [tsx,js]){
-  assert.ok(code.includes("if(['owner','coowner'].includes(liveRole))groups.push"));
+  assert.ok(has(code,"if(['owner','coowner'].includes(liveRole))groups.push"));
  }
- assert.ok(tsx.includes("case 'admin':view=['owner','coowner'].includes(liveRole)?Admin():Home()"));
- assert.ok(js.includes("view = ['owner', 'coowner'].includes(liveRole) ? Admin() : Home();"));
+ assert.ok(has(tsx,"case 'admin':view=['owner','coowner'].includes(liveRole)?Admin():Home()"));
+ assert.ok(has(js,"view = ['owner', 'coowner'].includes(liveRole) ? Admin() : Home();"));
  const server=read('../server/index.mjs');
  assert.ok(server.includes("roleCheck({id},['owner','coowner'])"));
  assert.ok(server.includes("const ownerIds=(process.env.OWNER_TELEGRAM_IDS||'')"));
