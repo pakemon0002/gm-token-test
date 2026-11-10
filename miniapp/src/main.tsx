@@ -144,7 +144,7 @@ async function gmFetchJson(path,opts={},retries=0){
  throw lastError||Error('Недоступно');
 }
 
-const gmLanguages=[['auto','Telegram · Auto'],['ru','Русский'],['uk','Українська'],['en','English'],['es','Español'],['de','Deutsch'],['fr','Français'],['tr','Türkçe'],['pt','Português'],['pl','Polski'],['it','Italiano']];
+const gmLanguages=[['auto','🌐 Telegram · Auto'],['ru','🇷🇺 Русский'],['uk','🇺🇦 Українська'],['en','🇬🇧 English'],['es','🇪🇸 Español'],['de','🇩🇪 Deutsch'],['fr','🇫🇷 Français'],['tr','🇹🇷 Türkçe'],['pt','🇵🇹 Português'],['pl','🇵🇱 Polski'],['it','🇮🇹 Italiano'],['ar','🇸🇦 العربية'],['zh','🇨🇳 中文'],['ja','🇯🇵 日本語'],['ko','🇰🇷 한국어'],['hi','🇮🇳 हिन्दी'],['id','🇮🇩 Bahasa Indonesia'],['vi','🇻🇳 Tiếng Việt'],['th','🇹🇭 ไทย'],['nl','🇳🇱 Nederlands'],['ro','🇷🇴 Română'],['sv','🇸🇪 Svenska'],['cs','🇨🇿 Čeština'],['el','🇬🇷 Ελληνικά']];
 const gmWords={
  ru:['Главная','Рынок','Майнинг','Боксы','Ещё','Язык','Настройки','Далее','Начать','Пропустить'],
  uk:['Головна','Ринок','Майнінг','Бокси','Ще','Мова','Налаштування','Далі','Почати','Пропустити'],
@@ -155,8 +155,38 @@ const gmWords={
  tr:['Ana sayfa','Pazar','Madencilik','Kutular','Diğer','Dil','Ayarlar','Devam','Başla','Atla'],
  pt:['Início','Mercado','Mineração','Caixas','Mais','Idioma','Configurações','Próximo','Começar','Pular'],
  pl:['Start','Rynek','Wydobycie','Skrzynki','Więcej','Język','Ustawienia','Dalej','Zacznij','Pomiń'],
- it:['Home','Mercato','Mining','Box','Altro','Lingua','Impostazioni','Avanti','Inizia','Salta']
+ it:['Home','Mercato','Mining','Box','Altro','Lingua','Impostazioni','Avanti','Inizia','Salta'],
+ ar:['الرئيسية','السوق','التعدين','الصناديق','المزيد','اللغة','الإعدادات','التالي','ابدأ','تخطي'],
+ zh:['主页','市场','挖矿','宝箱','更多','语言','设置','下一步','开始','跳过'],
+ ja:['ホーム','マーケット','マイニング','ボックス','その他','言語','設定','次へ','開始','スキップ'],
+ ko:['홈','시장','채굴','상자','더보기','언어','설정','다음','시작','건너뛰기'],
+ hi:['होम','बाज़ार','माइनिंग','बॉक्स','और','भाषा','सेटिंग','आगे','शुरू','छोड़ें'],
+ id:['Beranda','Pasar','Menambang','Kotak','Lainnya','Bahasa','Pengaturan','Lanjut','Mulai','Lewati'],
+ vi:['Trang chủ','Thị trường','Đào','Hộp','Thêm','Ngôn ngữ','Cài đặt','Tiếp','Bắt đầu','Bỏ qua'],
+ th:['หน้าแรก','ตลาด','ขุด','กล่อง','เพิ่มเติม','ภาษา','ตั้งค่า','ถัดไป','เริ่ม','ข้าม'],
+ nl:['Home','Markt','Mining','Boxen','Meer','Taal','Instellingen','Volgende','Start','Overslaan'],
+ ro:['Acasă','Piață','Minerit','Cutii','Mai mult','Limbă','Setări','Înainte','Start','Sari'],
+ sv:['Hem','Marknad','Mining','Boxar','Mer','Språk','Inställningar','Nästa','Starta','Hoppa över'],
+ cs:['Domů','Trh','Těžba','Boxy','Více','Jazyk','Nastavení','Dále','Začít','Přeskočit'],
+ el:['Αρχική','Αγορά','Εξόρυξη','Κουτιά','Περισσότερα','Γλώσσα','Ρυθμίσεις','Επόμενο','Έναρξη','Παράλειψη']
 };
+
+// Shared route UI copy. Legacy screens are progressively migrated to these keys.
+const gmText={
+ ru:{profile:'Профиль',achievements:'Достижения',referrals:'Реферальная программа',history:'История операций',support:'Поддержка',friends:'Друзья',balance:'Баланс',streak:'Серия',level:'Уровень',nextLeague:'До следующей лиги',league:'Лига',mining:'Майнинг',upgrades:'Улучшения',mine:'Добыча',daily:'в сутки',collected:'Накоплено',collect:'Забрать GM',storage:'Хранилище',buyUpgrade:'Улучшить майнинг',upgradeCost:'Стоимость',bonus:'Ускорение',maxLevel:'Максимальный уровень',notEnough:'Недостаточно GM',comingSoon:'Пока недоступно',selectLanguage:'Выберите язык интерфейса',searchLanguage:'Поиск языка',firstLaunch:'Добро пожаловать',guideNext:'Далее',guideDone:'Понятно',guideSkip:'Пропустить',opening:'Подключаем GM TOKEN…'},
+ uk:{profile:'Профіль',achievements:'Досягнення',referrals:'Реферальна програма',history:'Історія операцій',support:'Підтримка',friends:'Друзі',balance:'Баланс',streak:'Серія',level:'Рівень',nextLeague:'До наступної ліги',league:'Ліга',mining:'Майнінг',upgrades:'Покращення',mine:'Видобуток',daily:'на добу',collected:'Накопичено',collect:'Забрати GM',storage:'Сховище',buyUpgrade:'Покращити майнінг',upgradeCost:'Вартість',bonus:'Прискорення',maxLevel:'Максимальний рівень',notEnough:'Недостатньо GM',comingSoon:'Поки недоступно',selectLanguage:'Оберіть мову інтерфейсу',searchLanguage:'Пошук мови',firstLaunch:'Ласкаво просимо',guideNext:'Далі',guideDone:'Зрозуміло',guideSkip:'Пропустити',opening:'Підключаємо GM TOKEN…'},
+ en:{profile:'Profile',achievements:'Achievements',referrals:'Referral program',history:'Transaction history',support:'Support',friends:'Friends',balance:'Balance',streak:'Streak',level:'Level',nextLeague:'To the next league',league:'League',mining:'Mining',upgrades:'Upgrades',mine:'Mining',daily:'per day',collected:'Collected',collect:'Claim GM',storage:'Storage',buyUpgrade:'Upgrade mining',upgradeCost:'Cost',bonus:'Boost',maxLevel:'Maximum level',notEnough:'Not enough GM',comingSoon:'Not available yet',selectLanguage:'Choose interface language',searchLanguage:'Search languages',firstLaunch:'Welcome',guideNext:'Next',guideDone:'Got it',guideSkip:'Skip',opening:'Connecting GM TOKEN…'}
+};
+const gmUpgradeCost=(level:number)=>level<2?0:level===2?150:Math.round(200*Math.pow(1.04,level-3)/10)*10;
+const gmUpgradeBonus=(level:number)=>level===1?0:10+2*(level-2);
+const gmGuides:any={
+ mining:[['GM · Mining','Большая серебряная монета показывает добычу. Нажми её, когда накопишь минимум 1 GM.','.gm-mining-coin-wrap'],['Скорость и хранилище','Здесь показывается скорость добычи и вместимость хранилища.','.gm-mining-energy'],['200 улучшений','Открой вкладку «Улучшения» и покупай уровни за игровые GM. Каждая покупка проверяется сервером.','.gm-mining-tabs']],
+ boxes:[['GM Boxes','Выбирай вид бокса и смотри точную стоимость в POINTS до открытия.','.gm-boxes-v8'],['Награды','Награды выдаются только после подтверждённого сервером открытия.','.gm-boxes-v8']],
+ trade:[['Рынок GM/CR','Здесь показаны реальные сделки внутри игровой экономики. Это не торговля настоящими деньгами.','.terminal-candle-stage'],['Ордер','Сначала проверь сумму, цену и комиссию — затем подтверди игровую заявку.','.gm-trade-order']],
+ profile:[['Твой профиль','Следи за XP, лигой, рамками и достижениями.','.xp-area'],['Коллекция','За достижения открываются косметические награды.','.profile-menu']],
+ tasks:[['Задания','Выполняй задачи, получай XP и следи за прогрессом.','.tasks-list']]
+};
+
 const gmKeys=['home','market','mining','boxes','more','language','settings','next','start','skip'];
 
 function App(){
@@ -176,6 +206,12 @@ function App(){
  const [screen,setScreen]=React.useState('home');
  const [locale,setLocale]=React.useState(store.getItem('gm_lang')||'auto');
  const [introStep,setIntroStep]=React.useState(0);
+ const [booting,setBooting]=React.useState(true);
+ const [guideScreen,setGuideScreen]=React.useState('');
+ const [guideStep,setGuideStep]=React.useState(0);
+ const [langSearch,setLangSearch]=React.useState('');
+ const [miningTab,setMiningTab]=React.useState('mine');
+ const [upgradePreview,setUpgradePreview]=React.useState(2);
  const telegramLanguage=String(webapp?.initDataUnsafe?.user?.language_code||navigator.language||'en').toLowerCase().split(/[-_]/)[0];
  const actualLang=locale==='auto'?telegramLanguage:locale;
  const lang=key=>{
@@ -183,6 +219,7 @@ function App(){
   return index<0?key:(gmWords[actualLang]||gmWords.en)[index]||gmWords.en[index];
  };
  
+ const t=(key:string)=>((gmText as any)[actualLang]||gmText.en)[key]||(gmText.en as any)[key]||key;
  const [wallet,setWallet]=React.useState(firstWallet);
  const [toast,setToast]=React.useState('');
  const [period,setPeriod]=React.useState('1h');
@@ -269,6 +306,10 @@ function App(){
  },[]);
 
  React.useEffect(()=>{try{store.setItem('gm_theme',theme)}catch{};webapp?.setBackgroundColor?.(theme==='dark'?'#030406':'#E8EAF4')},[theme]);
+ React.useEffect(()=>{document.documentElement.lang=actualLang||'en'},[actualLang]);
+ React.useEffect(()=>{const timer=window.setTimeout(()=>setBooting(false),1100);return()=>window.clearTimeout(timer)},[]);
+ React.useEffect(()=>{if(demo||!gmGuides[screen]||store.getItem('gm_guide_'+screen)==='done'){setGuideScreen('');return;}setGuideScreen(screen);setGuideStep(0);},[screen,demo]);
+ React.useEffect(()=>{if(!guideScreen)return;const steps=gmGuides[guideScreen]||[];const selector=steps[guideStep]?.[2];const target=selector?document.querySelector(selector):null;if(target){target.classList.add('gm-guide-target');target.scrollIntoView({behavior:'smooth',block:'center'});}return()=>target?.classList.remove('gm-guide-target')},[guideScreen,guideStep,screen]);
  React.useEffect(()=>{try{window.localStorage.removeItem('gm_demo_wallet')}catch{}},[]);
  React.useEffect(()=>{const timer=setInterval(()=>setClock(Math.floor(Date.now()/1000)),1000);return ()=>clearInterval(timer)},[]);
  React.useEffect(()=>{
@@ -301,7 +342,7 @@ function App(){
  };
 
  const refreshLive=async()=>{if(!webapp?.initData)return;const d=await api('/api/game/status',undefined,true);if(!d)return;setLiveState(d);setW((w:Wallet)=>({...w,gm:d.wallet.gm/100,cr:d.wallet.cr/100,vault:d.wallet.vault/100,storage:d.mining.pending_cents/100,level:d.user?.level||w.level,xp:d.user?.xp??w.xp}));const [orders,book,tasks,achievements,refs,ranks,ticker,chart,trades]=await Promise.all([api('/api/exchange/orders',undefined,true),api('/api/exchange/book',undefined,true),api('/api/tasks',undefined,true),api('/api/achievements',undefined,true),api('/api/referrals/me',undefined,true),api('/api/leaderboard',undefined,true),api('/api/market/ticker',undefined,true),api('/api/market/ohlcv?interval='+period,undefined,true),api('/api/exchange/trades',undefined,true)]);if(orders)setLiveOrders(orders.orders||[]);if(book)setLiveBook(book);if(tasks)setLiveTasks(tasks.tasks||[]);if(achievements)setLiveAchievements(achievements.achievements||[]);if(refs)setLiveReferrals(refs);if(ranks)setLiveRanks(ranks);if(ticker)setLiveTicker(ticker);if(chart)setLiveCandles(chart.candles||[]);if(trades)setRecentTrades((trades.trades||[]).filter((t:any)=>!t.suspect).slice(0,10));setW((w:Wallet)=>({...w,streak:d.daily?.streak||0,lastClaim:d.daily?.last_claim_day||''}))};
- const gameAction=async(path:string,payload:any={})=>{const result=await api(path,{operationId:cryptoId(),...payload});if(result){if(result.wallet)setW((w:Wallet)=>({...w,gm:result.wallet.gm/100,cr:result.wallet.cr/100,vault:result.wallet.vault/100}));await refreshLive();flash('Операция подтверждена сервером')}return result};
+ const gameAction=async(path:string,payload:any={})=>{const result=await api(path,{operationId:cryptoId(),...payload});if(result){if(result.wallet)setW((w:Wallet)=>({...w,gm:result.wallet.gm/100,cr:result.wallet.cr/100,vault:result.wallet.vault/100}));await refreshLive()}return result};
  React.useEffect(()=>{if(demo)return;refreshLive();const timer=setInterval(()=>{refreshLive()},12000);return()=>clearInterval(timer)},[demo,period]);
  const nav=(s:any)=>goto(s);
  const adminRequest=async(path:string,payload?:any)=>{
@@ -318,7 +359,8 @@ function App(){
  };
  function cryptoId(){return (window.crypto&&window.crypto.randomUUID)?window.crypto.randomUUID():'manual-'+Date.now()+'-'+Math.floor(Math.random()*999999)}
  const todayClaim=async()=>{const x=await gameAction('/api/daily/claim');if(x)goto('reward')};
- const miningClaim=async()=>{await gameAction('/api/mining/claim')};
+ const miningClaim=async()=>{const result=await gameAction('/api/mining/claim');if(result?.gm_cents)flash(t('collected')+': '+nf(result.gm_cents/100)+' GM')};
+ const upgradeMining=async()=>{const next=(liveState?.mining?.upgrade_level||1)+1;const result=await gameAction('/api/mining/upgrade',{toLevel:next});if(result?.upgrade_level){setUpgradePreview(Math.min(200,result.upgrade_level+1));flash(t('level')+' '+result.upgrade_level+' · +'+result.bonus_pct+'%')}};
  const openBox=async(kind)=>{
   if(boxBusy)return;
   setBoxBusy(true);
