@@ -2,6 +2,7 @@
 // ECONOMY_PENDING settings are intentionally disabled until both co-owners approve them.
 import crypto from 'node:crypto';
 import {toCents} from './lib.mjs';
+import {MAX_MINING_UPGRADE_LEVEL,miningUpgradeCost,miningUpgradeBonusPct,miningUpgradeTotalCost,miningUpgradeTable} from './mining-progression.mjs';
 import {makeCandles,tradingSnapshot,indicativeAuction,INTERVALS} from './market-data.mjs';
 const DAY=86400, HOUR=3600, MICRO=1000000;
 const xpLevels=[0,100,250,450,750,1150,1700,2400,3300,4400];
@@ -17,10 +18,11 @@ const ceilDiv=(a,b)=>{if(!Number.isSafeInteger(a)||!Number.isSafeInteger(b)||b<=
 const quote=(amountGM,priceCR)=>safe(Number((BigInt(amountGM)*BigInt(priceCR)+99n)/100n));
 const requestId=(x)=>{const v=String(x||'');if(!/^[A-Za-z0-9_.:-]{8,100}$/.test(v))throw Error('operationId required (8..100 characters)');return v};
 const amount=(v)=>toCents(String(v??''));
-const rate=(u,w)=>{const base=bases[Math.min(9,Math.max(0,u.level-1))]*100;return mulDiv(base,(100+power(u.level))*(100+boost(w.vault)),10000)};
+const rate=(u,w)=>{const base=bases[Math.min(9,Math.max(0,u.level-1))]*100;const legacy=mulDiv(base,(100+power(u.level))*(100+boost(w.vault)),10000);const upgrade=Math.min(MAX_MINING_UPGRADE_LEVEL,Math.max(1,Number(u.upgrade_level)||1));return mulDiv(legacy,100+miningUpgradeBonusPct(upgrade),100)};
 export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
  db.exec(`CREATE TABLE IF NOT EXISTS game_settings(k TEXT PRIMARY KEY,v TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS mining_state(user_id TEXT PRIMARY KEY REFERENCES users(id),last_at INTEGER NOT NULL,reg_micro INTEGER NOT NULL DEFAULT 0,overflow_micro INTEGER NOT NULL DEFAULT 0,processed_cents INTEGER NOT NULL DEFAULT 0,pending_cents INTEGER NOT NULL DEFAULT 0,last_xp_day TEXT NOT NULL DEFAULT '');
+ CREATE TABLE IF NOT EXISTS mining_upgrades(user_id TEXT PRIMARY KEY REFERENCES users(id),level INTEGER NOT NULL DEFAULT 1 CHECK(level BETWEEN 1 AND 200),updated_at INTEGER NOT NULL DEFAULT 0);
  CREATE TABLE IF NOT EXISTS holding_state(user_id TEXT PRIMARY KEY REFERENCES users(id),pending_cents INTEGER NOT NULL DEFAULT 0,last_withdraw_day TEXT NOT NULL DEFAULT '',carry_micro INTEGER NOT NULL DEFAULT 0,partial_micro INTEGER NOT NULL DEFAULT 0,last_checkpoint INTEGER NOT NULL DEFAULT 0);
  CREATE TABLE IF NOT EXISTS holding_peak(user_id TEXT PRIMARY KEY REFERENCES users(id),peak_cents INTEGER NOT NULL DEFAULT 0);
  CREATE TABLE IF NOT EXISTS points_account(user_id TEXT PRIMARY KEY REFERENCES users(id),points INTEGER NOT NULL DEFAULT 0,day TEXT NOT NULL DEFAULT '',daily_volume_cents INTEGER NOT NULL DEFAULT 0,daily_points INTEGER NOT NULL DEFAULT 0);
@@ -104,15 +106,21 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
    log('system','private_test_premarket_shortened',{at:now()});
   }
  }
- function ensure(id){const t=now();stmt('INSERT OR IGNORE INTO mining_state(user_id,last_at) VALUES(?,?)').run(id,t);stmt('INSERT OR IGNORE INTO holding_state(user_id,last_checkpoint) VALUES(?,?)').run(id,t);stmt('INSERT OR IGNORE INTO points_account(user_id) VALUES(?)').run(id);stmt('INSERT OR IGNORE INTO holding_peak(user_id,peak_cents) SELECT user_id,vault FROM wallets WHERE user_id=?').run(id)}
+ function ensure(id){const t=now();stmt('INSERT OR IGNORE INTO mining_upgrades(user_id,level,updated_at) VALUES(?,1,?)').run(id,t);stmt('INSERT OR IGNORE INTO mining_state(user_id,last_at) VALUES(?,?)').run(id,t);stmt('INSERT OR IGNORE INTO holding_state(user_id,last_checkpoint) VALUES(?,?)').run(id,t);stmt('INSERT OR IGNORE INTO points_account(user_id) VALUES(?)').run(id);stmt('INSERT OR IGNORE INTO holding_peak(user_id,peak_cents) SELECT user_id,vault FROM wallets WHERE user_id=?').run(id)}
  function once(id,actor,kind,callback){const existing=stmt('SELECT actor,kind,response FROM request_ids WHERE id=?').get(id);if(existing){if(existing.actor!==actor||existing.kind!==kind)throw Error('operationId already used for another operation');return JSON.parse(existing.response)}const response=callback();stmt('INSERT INTO request_ids(id,actor,kind,created_at,response) VALUES(?,?,?,?,?)').run(id,actor,kind,now(),JSON.stringify(response));return response}
  const wal=(id)=>stmt('SELECT * FROM wallets WHERE user_id=?').get(id);
+ const upgradeLevel=(id)=>stmt('SELECT level FROM mining_upgrades WHERE user_id=?').get(id)?.level??1;
+ const upgradeState=(id)=>{
+  const level=upgradeLevel(id),next=level<MAX_MINING_UPGRADE_LEVEL?level+1:null;
+  return {level,max_level:MAX_MINING_UPGRADE_LEVEL,bonus_pct:miningUpgradeBonusPct(level),total_spent_gm:miningUpgradeTotalCost(level),
+   next_level:next,next_cost_gm:next?miningUpgradeCost(next):null,next_bonus_pct:next?miningUpgradeBonusPct(next):null};
+ };
  const pool=(name,col='gm')=>stmt(`SELECT ${col} as balance FROM pools WHERE name=?`).get(name)?.balance??0;
  function takePool(name,field,n){if(!stmt(`UPDATE pools SET ${field}=${field}-? WHERE name=? AND ${field}>=?`).run(n,name,n).changes)throw Error(`${name} reserve insufficient`)}
  function addPool(name,field,n){stmt(`UPDATE pools SET ${field}=${field}+? WHERE name=?`).run(n,name)}
  function walletChange(id,currency,n){if(!Number.isSafeInteger(n))throw Error('invalid balance delta');if(n<0){if(!stmt(`UPDATE wallets SET ${currency}=${currency}+? WHERE user_id=? AND ${currency}>=?`).run(n,id,-n).changes)throw Error(`insufficient ${currency.toUpperCase()}`)}else if(n>0)stmt(`UPDATE wallets SET ${currency}=${currency}+? WHERE user_id=?`).run(n,id)}
  function awardXp(id,value){const u=stmt('SELECT xp FROM users WHERE id=?').get(id);if(!u)return;const xp=u.xp+value;const lvl=Math.max(1,xpLevels.findLastIndex(th=>xp>=th)+1);stmt('UPDATE users SET xp=?,level=? WHERE id=?').run(xp,Math.min(10,lvl),id)}
- function settleMining(){const t=now();const miners=stmt('SELECT m.*,u.level,w.vault FROM mining_state m JOIN users u ON u.id=m.user_id JOIN wallets w ON w.user_id=m.user_id').all();const due=[];
+ function settleMining(){const t=now();const miners=stmt('SELECT m.*,u.level,w.vault,COALESCE(mu.level,1) AS upgrade_level FROM mining_state m JOIN users u ON u.id=m.user_id JOIN wallets w ON w.user_id=m.user_id LEFT JOIN mining_upgrades mu ON mu.user_id=m.user_id').all();const due=[];
   for(const m of miners){let secs=Math.max(0,t-m.last_at);if(!secs)continue;const b=rate(m,{vault:m.vault});const capReg=mulDiv(b*MICRO,capacity(m.level),24);const [pct,hr]=eff(m.level);const capOver=mulDiv(b*MICRO,hr*pct,2400);let reg=m.reg_micro,extra=m.overflow_micro;
    const produced=mulDiv(b*MICRO,Math.min(secs,30*DAY),DAY);const toReg=Math.min(Math.max(0,capReg-reg),produced);reg+=toReg;
    // Overflow is produced only after standard Storage is full, and only at Efficiency rate.
@@ -285,13 +293,29 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
   }
   if(p==='/api/market/ticker'&&verb==='GET')return response(200,tx(()=>{doAuction();expireOrders();const latest=stmt('SELECT rowid AS seq,price,amount_cents,quote_cents,at,suspect FROM trades ORDER BY at DESC,rowid DESC LIMIT 10000').all();const bids=stmt("SELECT limit_price FROM orders WHERE side='buy' AND status='open' ORDER BY limit_price DESC LIMIT 1").all();const asks=stmt("SELECT limit_price FROM orders WHERE side='sell' AND status='open' ORDER BY limit_price ASC LIMIT 1").all();return {...tradingSnapshot(latest,now(),bids,asks),auction_end_at:Number(v('auction_end')),auction_done:v('auction_done')==='1',premarket:v('auction_done')!=='1',trade_test_mode:v('trade_test_mode')==='1',indicative:v('auction_done')==='1'?null:indicativeAuction(stmt("SELECT user_id,side,limit_price,remaining_cents,auction,status FROM orders WHERE status='open' AND auction=1").all())}}));
     if(p==='/api/leaderboard'&&verb==='GET')return response(200,{users:process.env.LEADERBOARD_MODE==='wallet_plus_vault'?stmt('SELECT u.id,u.username,w.gm+w.vault AS score_cents FROM users u JOIN wallets w ON w.user_id=u.id ORDER BY score_cents DESC,u.id LIMIT 50').all():[],pending_rule:process.env.LEADERBOARD_MODE!=='wallet_plus_vault'});
+  if(p==='/api/mining/upgrades'&&verb==='GET')return response(200,tx(()=>{ensure(id);return {upgrade:upgradeState(id),levels:miningUpgradeTable()}}));
   if(p==='/api/tasks'&&verb==='GET')return response(200,{tasks:catalogStatus(id,'tasks')});
   if(p==='/api/achievements'&&verb==='GET')return response(200,{achievements:catalogStatus(id,'achievements')});
   if(p==='/api/tasks/claim'&&verb==='POST')return response(200,claimCatalog(id,'tasks',await read()));
   if(p==='/api/achievements/claim'&&verb==='POST')return response(200,claimCatalog(id,'achievements',await read()));
-  if(p==='/api/game/status'&&verb==='GET')return response(200,tx(()=>{ensure(id);settle();const m=stmt('SELECT * FROM mining_state WHERE user_id=?').get(id),h=stmt('SELECT * FROM holding_state WHERE user_id=?').get(id);return {user:stmt('SELECT level,xp,username FROM users WHERE id=?').get(id),wallet:wal(id),mining:{...m,rate_cents_day:rate(stmt('SELECT level FROM users WHERE id=?').get(id),wal(id))},holding:h,points:stmt('SELECT * FROM points_account WHERE user_id=?').get(id),daily:dailyProfile(id),auction:{end_at:Number(v('auction_end')),done:v('auction_done')==='1'},config:{test_economy:testEconomy,holding_enabled:Number(v('holding_daily_bps'))>0,daily_enabled:Number(v('daily_gm_cents'))>0,shop_enabled:v('shop_rate_mode')!=='disabled',boxes_enabled:Object.keys(JSON.parse(v('box_rewards_json'))).length===3,box_rewards:JSON.parse(v('box_rewards_json')),daily_reward_gm:Number(v('daily_gm_cents'))/100}}}));
+  if(p==='/api/game/status'&&verb==='GET')return response(200,tx(()=>{ensure(id);settle();const m=stmt('SELECT * FROM mining_state WHERE user_id=?').get(id),h=stmt('SELECT * FROM holding_state WHERE user_id=?').get(id);return {user:stmt('SELECT level,xp,username FROM users WHERE id=?').get(id),wallet:wal(id),mining:{...m,rate_cents_day:rate({...stmt('SELECT level FROM users WHERE id=?').get(id),upgrade_level:upgradeLevel(id)},wal(id)),upgrade:upgradeState(id)},holding:h,points:stmt('SELECT * FROM points_account WHERE user_id=?').get(id),daily:dailyProfile(id),auction:{end_at:Number(v('auction_end')),done:v('auction_done')==='1'},config:{test_economy:testEconomy,holding_enabled:Number(v('holding_daily_bps'))>0,daily_enabled:Number(v('daily_gm_cents'))>0,shop_enabled:v('shop_rate_mode')!=='disabled',boxes_enabled:Object.keys(JSON.parse(v('box_rewards_json'))).length===3,box_rewards:JSON.parse(v('box_rewards_json')),daily_reward_gm:Number(v('daily_gm_cents'))/100}}}));
   const body=verb==='POST'?await read():{};
   const op=()=>requestId(body.operationId);
+  if(p==='/api/mining/upgrade'&&verb==='POST')return response(200,tx(()=>{
+   ensure(id);settle();
+   return once(op(),id,'mining_upgrade',()=>{
+    const state=upgradeState(id);
+    if(state.level>=MAX_MINING_UPGRADE_LEVEL)throw Error('maximum mining upgrade level reached');
+    if(!Number.isInteger(body.level)||body.level!==state.level+1)throw Error('upgrade levels must be purchased sequentially');
+    const costCents=miningUpgradeCost(body.level)*100;
+    walletChange(id,'gm',-costCents);
+    addPool('TREASURY','gm',costCents);
+    if(!stmt('UPDATE mining_upgrades SET level=?,updated_at=? WHERE user_id=? AND level=?').run(body.level,now(),id,state.level).changes)
+     throw Error('mining upgrade changed; refresh state');
+    log(id,'mining_upgrade',{user:id,from:state.level,to:body.level,gm_cents:costCents,bonus_pct:miningUpgradeBonusPct(body.level)});
+    return {upgrade:upgradeState(id),wallet:wal(id)};
+   });
+  }));
   if(p==='/api/mining/claim'&&verb==='POST')return response(200,tx(()=>{ensure(id);settle();return once(op(),id,'mining_claim',()=>{const m=stmt('SELECT * FROM mining_state WHERE user_id=?').get(id),n=m.pending_cents;if(n<100)throw Error('minimum mining Claim is 1 GM');walletChange(id,'gm',n);const d=day(now()),xp=m.last_xp_day===d?0:20;if(xp)awardXp(id,xp);stmt('UPDATE mining_state SET pending_cents=0,reg_micro=0,overflow_micro=0,processed_cents=0,last_at=?,last_xp_day=? WHERE user_id=?').run(now(),d,id);log(id,'mining_claim',{user:id,gm_cents:n,xp});return {gm_cents:n,xp,wallet:wal(id)}})}));
   if(p==='/api/vault/deposit'&&verb==='POST')return response(200,tx(()=>{ensure(id);settle();return once(op(),id,'vault_deposit',()=>{const n=amount(body.amount);accrueHoldingPosition(id);walletChange(id,'gm',-n);stmt('UPDATE wallets SET vault=vault+? WHERE user_id=?').run(n,id);stmt('INSERT INTO holding_peak(user_id,peak_cents) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET peak_cents=MAX(peak_cents,excluded.peak_cents)').run(id,wal(id).vault);log(id,'vault_deposit',{user:id,gm_cents:n});return {vault_cents:wal(id).vault,wallet:wal(id)}})}));
   if(p==='/api/vault/withdraw'&&verb==='POST')return response(200,tx(()=>{ensure(id);settle();return once(op(),id,'vault_withdraw',()=>{const n=amount(body.amount),w=wal(id),d=day(now()),h=stmt('SELECT * FROM holding_state WHERE user_id=?').get(id);if(h.last_withdraw_day===d)throw Error('only one vault withdrawal per UTC day');if(n>w.vault||(n<100000&&n!==w.vault))throw Error('partial withdrawal minimum 1000 GM; full balance may be smaller');const fee=mulDiv(n,5,100);accrueHoldingPosition(id);stmt('UPDATE wallets SET vault=vault-? WHERE user_id=?').run(n,id);walletChange(id,'gm',n-fee);addPool('HOLDING_FEES','gm',fee);stmt('UPDATE holding_state SET last_withdraw_day=? WHERE user_id=?').run(d,id);log(id,'vault_withdraw',{user:id,gm_cents:n,fee_cents:fee});return {received_cents:n-fee,fee_cents:fee,wallet:wal(id)}})}));

@@ -34,7 +34,7 @@ function SparkLine({theme,compact=false}:{theme:Theme,compact?:boolean}){
  return <div className="real-data-empty" role="status">График баланса появится после накопления подтверждённой истории</div>;
 }
 
-function Candles({theme,candles=[],selected=null,onSelect=()=>{},interval='1h'}){
+function Candles({theme,candles=[],selected=null,onSelect=(_time:any)=>{},interval='1h'}){
  const e=React.createElement;
  const valid=(Array.isArray(candles)?candles:[]).filter(c=>
   c&&Number.isFinite(c.time)&&Number.isFinite(c.open)&&Number.isFinite(c.high)&&
@@ -132,7 +132,7 @@ async function gmFetchJson(path,opts={},retries=0){
    const res=await fetch(path,{...opts,...(ctl?{signal:ctl.signal}:{})});
    const body=await res.json().catch(()=>({}));
    if(res.ok)return body;
-   const error=Error(String(body?.error||'HTTP '+res.status));error.status=res.status;
+   const error=Error(String(body?.error||'HTTP '+res.status)) as Error&{status?:number};error.status=res.status;
    if(res.status<500)throw error;
    lastError=error;if(i===retries)throw error;
   }catch(err){
@@ -241,6 +241,9 @@ function App(){
  const [modal,setModal]=React.useState('');
  const [boxReveal,setBoxReveal]=React.useState({kind:'bronze',gm:0});
  const [boxBusy,setBoxBusy]=React.useState(false);
+ const [upgradeData,setUpgradeData]=React.useState(null as any);
+ const [upgradeBusy,setUpgradeBusy]=React.useState(false);
+ const [showAllUpgrades,setShowAllUpgrades]=React.useState(false);
  const [modalText,setModalText]=React.useState('');
  const toastRef=React.useRef(0);
  const flash=(msg:string)=>{setToast(msg);toastRef.current++;};
@@ -291,7 +294,7 @@ function App(){
   return()=>{valid=false};
  },[]);
 
- const api=async(path,payload,silent=false)=>{
+ const api=async(path,payload=undefined,silent=false)=>{
   const init=webapp?.initData;
   if(!init){if(!silent)flash('Открой GM TOKEN внутри Telegram');return null}
   try{return await gmFetchJson(path,{method:payload?'POST':'GET',
@@ -301,7 +304,7 @@ function App(){
  };
 
  const refreshLive=async()=>{if(!webapp?.initData)return;const d=await api('/api/game/status',undefined,true);if(!d)return;setLiveState(d);setW((w:Wallet)=>({...w,gm:d.wallet.gm/100,cr:d.wallet.cr/100,vault:d.wallet.vault/100,storage:d.mining.pending_cents/100,level:d.user?.level||w.level,xp:d.user?.xp??w.xp}));const [orders,book,tasks,achievements,refs,ranks,ticker,chart,trades]=await Promise.all([api('/api/exchange/orders',undefined,true),api('/api/exchange/book',undefined,true),api('/api/tasks',undefined,true),api('/api/achievements',undefined,true),api('/api/referrals/me',undefined,true),api('/api/leaderboard',undefined,true),api('/api/market/ticker',undefined,true),api('/api/market/ohlcv?interval='+period,undefined,true),api('/api/exchange/trades',undefined,true)]);if(orders)setLiveOrders(orders.orders||[]);if(book)setLiveBook(book);if(tasks)setLiveTasks(tasks.tasks||[]);if(achievements)setLiveAchievements(achievements.achievements||[]);if(refs)setLiveReferrals(refs);if(ranks)setLiveRanks(ranks);if(ticker)setLiveTicker(ticker);if(chart)setLiveCandles(chart.candles||[]);if(trades)setRecentTrades((trades.trades||[]).filter((t:any)=>!t.suspect).slice(0,10));setW((w:Wallet)=>({...w,streak:d.daily?.streak||0,lastClaim:d.daily?.last_claim_day||''}))};
- const gameAction=async(path:string,payload:any={})=>{const result=await api(path,{operationId:cryptoId(),...payload});if(result){if(result.wallet)setW((w:Wallet)=>({...w,gm:result.wallet.gm/100,cr:result.wallet.cr/100,vault:result.wallet.vault/100}));await refreshLive();flash('Операция подтверждена сервером')}return result};
+ const gameAction=async(path:string,payload:any={})=>{const result=await api(path,{operationId:cryptoId(),...payload});if(result){if(result.wallet)setW((w:Wallet)=>({...w,gm:result.wallet.gm/100,cr:result.wallet.cr/100,vault:result.wallet.vault/100}));await refreshLive()}return result};
  React.useEffect(()=>{if(demo)return;refreshLive();const timer=setInterval(()=>{refreshLive()},12000);return()=>clearInterval(timer)},[demo,period]);
  const nav=(s:any)=>goto(s);
  const adminRequest=async(path:string,payload?:any)=>{
@@ -318,7 +321,20 @@ function App(){
  };
  function cryptoId(){return (window.crypto&&window.crypto.randomUUID)?window.crypto.randomUUID():'manual-'+Date.now()+'-'+Math.floor(Math.random()*999999)}
  const todayClaim=async()=>{const x=await gameAction('/api/daily/claim');if(x)goto('reward')};
- const miningClaim=async()=>{await gameAction('/api/mining/claim')};
+ const miningClaim=async()=>{const result=await gameAction('/api/mining/claim');if(result?.gm_cents)flash('Собрано '+nf(result.gm_cents/100)+' GM')};
+ React.useEffect(()=>{if(screen!=='mining'||demo)return;let valid=true;
+  api('/api/mining/upgrades',undefined,true).then(data=>{if(valid&&data?.levels)setUpgradeData(data)});
+  return()=>{valid=false};
+ },[screen,demo]);
+ const buyMiningUpgrade=async()=>{
+  if(upgradeBusy||demo)return;
+  const next=upgradeData?.upgrade?.next_level ?? liveState?.mining?.upgrade?.next_level;
+  if(!next)return;
+  setUpgradeBusy(true);
+  try{const result=await gameAction('/api/mining/upgrade',{level:next});
+   if(result?.upgrade){setUpgradeData((old:any)=>old?{...old,upgrade:result.upgrade}:old);flash('Майнинг улучшен до уровня '+result.upgrade.level);}
+  }finally{setUpgradeBusy(false)}
+ };
  const openBox=async(kind)=>{
   if(boxBusy)return;
   setBoxBusy(true);
@@ -661,6 +677,9 @@ function Reward(){
  function Mining(){
   const e=React.createElement;
   const rate=liveState?.mining?.rate_cents_day!=null?liveState.mining.rate_cents_day/100:gmRate(wallet);
+  const upgrade=upgradeData?.upgrade||liveState?.mining?.upgrade||{level:1,max_level:200,bonus_pct:0,next_level:2,next_cost_gm:150,next_bonus_pct:10};
+  const upgradeList=upgradeData?.levels||Array.from({length:200},(_,i)=>{const level=i+1;return {level,cost_gm:level===1?0:level===2?150:Math.round(200*Math.pow(1.04,level-3)/10)*10,bonus_pct:level===1?0:10+2*(level-2)}});
+  const visibleUpgrades=showAllUpgrades?upgradeList:upgradeList.filter((row:any)=>row.level>=Math.max(1,upgrade.level-1)&&row.level<=Math.min(200,upgrade.level+5));
   const stored=wallet.storage;
   const hours=storageHours(wallet.level);
   const cap=Math.max(1,rate*hours/24);
@@ -671,7 +690,7 @@ function Reward(){
   };
   return e('div',{className:'gm-mining-v8'},
    top('Майнинг',true,'info'),
-   e('div',{className:'gm-mining-title'},e('span',null,'Добывай GM'),e('small',null,'Уровень '+wallet.level+' · '+nf(rate,0)+' GM / сутки')),
+   e('div',{className:'gm-mining-title'},e('span',null,'Добывай GM'),e('small',null,'Майнинг '+upgrade.level+'/200 · '+nf(rate,0)+' GM / сутки')),
    e('button',{type:'button',className:'gm-mining-coin-wrap',onClick:mineClick,'aria-label':'Собрать накопленные GM'},
     e('span',{className:'gm-mining-coin-rim'},e(Brand,{theme,size:198})),
     e('span',{className:'gm-mining-coin-glint'})),
@@ -689,7 +708,30 @@ function Reward(){
     e('div',null,e('span',null,icon('lightning',21),' Мощность'),e('strong',null,'+'+powerBonus(wallet.level)+'%')),
     e('div',null,e('span',null,icon('clock',21),' Хранилище'),e('strong',null,hours+' часов')),
     e('div',null,e('span',null,icon('database',21),' Резерв'),e('strong',null,'45 млн GM'))),
-   e('p',{className:'gm-mining-footnote'},'GM — виртуальная валюта игры. Скорость зависит от уровня и доступного Mining Pool; при высокой активности начисления распределяются пропорционально.'));
+   e('section',{className:'gm-mining-upgrades gm-premium-card'},
+    e('div',{className:'gm-upgrades-head'},e('div',null,e('small',null,'MINING UPGRADES'),e('h3',null,'Улучшения майнинга')),icon('lightning',28)),
+    e('div',{className:'gm-upgrades-summary'},
+     e('div',null,e('small',null,'Уровень'),e('strong',null,upgrade.level+' / 200')),
+     e('div',null,e('small',null,'Скорость'),e('strong',null,'+'+upgrade.bonus_pct+'%'))),
+    e('div',{className:'gm-upgrades-progress'},e('span',{style:{width:upgrade.level/200*100+'%'}})),
+    upgrade.next_level?
+     e('div',{className:'gm-upgrade-next'},
+      e('span',null,'Следующий уровень '+upgrade.next_level),
+      e('strong',null,nf(upgrade.next_cost_gm,0)+' GM · +'+upgrade.next_bonus_pct+'%'),
+      e('button',{type:'button',className:'gm-upgrades-purchase',disabled:demo||upgradeBusy||wallet.gm<upgrade.next_cost_gm||!upgradeData?.upgrade,onClick:buyMiningUpgrade},
+       upgradeBusy?'Проверяем покупку…':wallet.gm<upgrade.next_cost_gm?'Недостаточно GM':'Улучшить майнинг',icon('chevron-right',17)))
+     :e('div',{className:'gm-upgrades-max'},icon('crown',21),'Максимальный уровень открыт'),
+    e('div',{className:'gm-upgrade-preview'},
+     ...visibleUpgrades.map((row:any)=>
+      e('div',{key:row.level,className:'gm-upgrade-row '+(row.level<=upgrade.level?'gm-upgrade-unlocked':row.level===upgrade.next_level?'gm-upgrade-available':'gm-upgrade-locked')},
+       e('span',{className:'gm-upgrade-number'},row.level),
+       e('span',{className:'gm-upgrade-row-copy'},e('b',null,row.level===200?'GM Immortal':'Уровень '+row.level),
+        e('small',null,row.level===1?'Начальный':nf(row.cost_gm,0)+' GM')),
+       e('strong',null,'+'+row.bonus_pct+'%'),
+       row.level<=upgrade.level?icon('check',17):icon('minus',17)))),
+    e('button',{type:'button',className:'gm-upgrades-toggle',onClick:()=>setShowAllUpgrades(!showAllUpgrades)},
+     showAllUpgrades?'Свернуть список':'Все 200 уровней',icon(showAllUpgrades?'chevron-up':'chevron-down',16))),
+   e('p',{className:'gm-mining-footnote'},'GM — виртуальная валюта игры. Улучшения покупаются по порядку. Цена списывается сервером, бонус заменяет предыдущий. Mining Pool ограничен — фактические начисления могут отличаться от расчётных.'));
  }
 
  function Vault(){
@@ -741,7 +783,7 @@ function Reward(){
        e('div',{className:'gm-crate-lock'},e(Brand,{theme,size:38})),e('div',{className:'gm-crate-body'}))),
      e('div',{className:'gm-box-copy'},
       e('b',null,name),e('span',null,nf(Number(payouts[kind]||0),0)+' GM · гарантированно'),
-      e('small',null,nf(cost,0)+' POINTS')),
+      e('small',null,nf(Number(cost),0)+' POINTS')),
      e('button',{type:'button',disabled:demo||!enabled||points<cost||boxBusy,onClick:()=>openBox(kind),
       className:'gm-box-open'},!enabled?'Пока недоступно':points<cost?'Не хватает POINTS':'Открыть бокс',icon('chevron-right',18))))),
    e('p',{className:'gm-boxes-honest'},'Анимация открытия — только оформление. Награда фиксирована и выдаётся сервером из фонда BOXES. Случайных призов и платных ставок нет.')
@@ -926,7 +968,7 @@ function Support(){
  
 function More(){
  const e=React.createElement;
- const groups=[
+ const groups:[string,string[][]][]=[
   ['АККАУНТ',[['profile','profile','Профиль','Баланс и уровень'],['achievements','trophy','Достижения','Награды и прогресс'],['history','clock','История','Подтверждённые операции']]],
   ['ИГРА',[['reward','gift','Daily Reward','Ежедневный бонус'],['tasks','tasks','Задания','Выполняй игровые цели'],['referrals','friends','Пригласить друзей','Реферальная программа'],['vault','coins','Holding Vault','Внутриигровой кошелёк']]],
   ['ПОМОЩЬ',[['support','shield-check','Поддержка','Обращения и ответы'],['settings','settings','Настройки','Оформление и язык'],['intro','info','Инструкция','Как играть в GM TOKEN']]]

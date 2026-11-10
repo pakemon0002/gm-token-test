@@ -1,0 +1,26 @@
+name: GM TOKEN 2.0 checks
+on:
+  push:
+    branches: [feature/gm-token-2-design-economy]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: Run server and integration tests without secrets
+        run: npm test
+      - name: Check compiled Mini App syntax
+        run: node --check miniapp/public/main.js
+      - name: Build TypeScript UI
+        run: |
+          npm install --prefix miniapp --no-audit --no-fund
+          npm run --prefix miniapp build:standalone
