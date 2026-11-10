@@ -7,7 +7,7 @@ on:
     branches:
       - main
 permissions:
-  contents: read
+  contents: write
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -31,6 +31,16 @@ jobs:
           npm install --no-audit --no-fund
           npx tsc -p tsconfig.standalone.json
           node --check public/main.js
+      - name: Sync standalone preview into the feature branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/gm-token-200-levels-redesign'
+        run: |
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add miniapp/public/main.js miniapp/public/styles.css
+          if ! git diff --cached --quiet; then
+            git commit -m "build: sync generated standalone preview [skip ci]"
+            git push origin "HEAD:feature/gm-token-200-levels-redesign"
+          fi
       - name: Retain compiled preview for review
         uses: actions/upload-artifact@v4
         with:
