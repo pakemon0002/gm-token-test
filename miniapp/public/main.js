@@ -452,6 +452,7 @@ function App() {
     const [testRecipient, setTestRecipient] = React.useState('self');
     const [testUserId, setTestUserId] = React.useState('');
     const [testCurrency, setTestCurrency] = React.useState('GM');
+    const [selectedFrame, setSelectedFrame] = React.useState(store.getItem('gm_profile_frame') || 'standard');
     const [testAmount, setTestAmount] = React.useState('1000');
     const [testReason, setTestReason] = React.useState('Начисление виртуальных GM/CR для проверки торговой системы');
     const [testCode, setTestCode] = React.useState('');
@@ -609,7 +610,7 @@ function App() {
             return;
         setTestBusy(true);
         try {
-            const out = await adminRequest('/api/admin/test-grant', { recipient: testRecipient, userId: testRecipient === 'id' ? testUserId : undefined, currency: testCurrency, amount: testAmount, reason: testReason, code: testCode, operationId: cryptoId() });
+            const out = await adminRequest(testCurrency === 'POINTS' ? '/api/admin/points-grant' : '/api/admin/test-grant', { recipient: testRecipient, userId: testRecipient === 'id' ? testUserId : undefined, currency: testCurrency, amount: testAmount, reason: testReason, code: testCode, operationId: cryptoId() });
             if (out?.ok) {
                 setTestCode('');
                 flash('Начислено ' + testAmount + ' ' + testCurrency + ' игроку ' + out.userId);
@@ -872,47 +873,23 @@ function App() {
                 nf(u.score_cents / 100),
                 " GM")))),
         users.length === 0 && React.createElement("p", { className: "disclaimer" }, liveRanks?.pending_rule ? 'Рейтинг ещё не включён: формула не утверждена. Фальшивых участников нет.' : 'Пока нет игроков в выбранном списке.')); }
-    function Profile() { return React.createElement(React.Fragment, null,
-        isLight ? React.createElement("header", { className: "profile-top" },
-            React.createElement("span", null),
-            React.createElement("button", { className: "header-icon", onClick: () => goto('settings') }, icon('settings', 25))) : React.createElement("header", { className: "dark-top" },
-            React.createElement("b", null, "GM TOKEN"),
-            React.createElement("button", { onClick: () => goto('settings') },
-                icon('more', 20),
-                " ",
-                icon('close', 17))),
-        React.createElement("div", { className: "profile-hero" },
-            React.createElement(Brand, { theme: theme, size: isLight ? 103 : 98 }),
-            React.createElement("h2", null, webapp?.initDataUnsafe?.user?.username || webapp?.initDataUnsafe?.user?.first_name || 'Игрок'),
-            React.createElement("p", null,
-                "#",
-                String(webapp?.initDataUnsafe?.user?.id || ''),
-                " ",
-                React.createElement("button", { className: "inline-icon", onClick: () => { navigator.clipboard?.writeText(String(webapp?.initDataUnsafe?.user?.id || '')); flash('ID скопирован'); } }, icon('copy', 15)))),
-        React.createElement("div", { className: "xp-area" },
-            React.createElement("div", { className: "xp-line" },
-                React.createElement("b", null,
-                    "Lv. ",
-                    wallet.level),
-                React.createElement("small", null,
-                    nf(wallet.xp, 0),
-                    " / ",
-                    nf(xpThreshold[Math.min(wallet.level, 9)] || 4400, 0),
-                    " XP")),
-            React.createElement("div", { className: "progress" },
-                React.createElement("div", { style: { width: (Math.min(100, 100 * wallet.xp / (xpThreshold[Math.min(wallet.level, 9)] || 4400))) + '%' } }))),
-        React.createElement("div", { className: "stats-grid" }, [['friends', String(liveReferrals?.referred?.length || 0), L('friends')], ['wallet', nf(wallet.gm, 0), L('balance')], ['lightning', String(wallet.streak), L('streak')]].map(([i, n, label]) => React.createElement("div", { className: "stat-card", key: label },
-            icon(i, 23),
-            React.createElement("b", null, n),
-            React.createElement("small", null, label)))),
-        React.createElement("div", { className: "profile-menu" }, [['trophy', L('achievements'), 'achievements'], ['friends', L('referrals'), 'referrals'], ['clock', L('history'), 'history'], ['settings', L('customize'), 'settings'], ['info', L('support'), 'support']].map(([i, t, s]) => React.createElement("button", { key: t, onClick: () => goto(s) },
-            icon(i, 21),
-            React.createElement("span", null, t),
-            icon('chevron-right', 18)))),
-        isLight && React.createElement("button", { className: "logout", onClick: () => flash('Закрой Mini App в Telegram для выхода') },
-            icon('logout', 20),
-            " ",
-            L('logout'))); }
+    function Profile() {
+        const e = React.createElement;
+        const cosmetics = liveState?.cosmetics || { founder_slot: null, frames: [] };
+        const frames = [{ id: 'standard', title: 'GM Classic', claimed: true }, ...(cosmetics.frames || [])];
+        const chosen = frames.find((f) => f.id === selectedFrame && f.claimed) ? selectedFrame : 'standard';
+        const league = liveState?.league || { name: 'Bronze', min_xp: 0 };
+        const leagues = liveState?.leagues || [];
+        const nextLeague = leagues.find((x) => wallet.xp < x.min_xp);
+        const previousXp = Number(league.min_xp) || 0;
+        const nextXp = nextLeague?.min_xp ?? previousXp;
+        const progress = nextLeague ? Math.min(100, Math.max(0, (wallet.xp - previousXp) / Math.max(1, nextXp - previousXp) * 100)) : 100;
+        const user = webapp?.initDataUnsafe?.user;
+        return e(React.Fragment, null, top(L('profile'), false, 'settings'), e('div', { className: 'profile-hero gm-profile-v2' }, e('div', { className: 'gm-profile-avatar ' + (chosen === 'standard' ? '' : 'gm-profile-avatar-special') }, e(Brand, { theme, size: 100 })), e('h2', null, user?.username || user?.first_name || 'GM PLAYER'), e('p', null, '#' + String(user?.id || '')), cosmetics.founder_slot ? e('span', { className: 'gm-founders-medal' }, icon('crown', 18), ' FOUNDERS #' + cosmetics.founder_slot) : null), e('div', { className: 'gm-league-card gm-premium-card' }, e('div', { className: 'gm-league-head' }, e('div', null, e('small', null, 'GM LEAGUE'), e('h3', null, league.name)), e('b', null, nf(wallet.xp, 0) + ' XP')), e('div', { className: 'gm-upgrades-progress' }, e('span', { style: { width: progress + '%' } })), e('small', null, nextLeague ? '→ ' + nextLeague.name + ' · ' + nf(Math.max(0, nextXp - wallet.xp), 0) + ' XP' : 'GM IMMORTAL · MAX')), e('div', { className: 'stats-grid' }, [['friends', String(liveReferrals?.referred?.length || 0), L('friends')], ['wallet', nf(wallet.gm, 0), L('balance')], ['lightning', String(wallet.streak), L('streak')]].map(([i, n, label]) => e('div', { className: 'stat-card', key: label }, icon(i, 23), e('b', null, n), e('small', null, label)))), e('section', { className: 'gm-frames-section gm-premium-card' }, e('h3', null, L('frames')), e('p', null, L('achievementsLocked')), e('div', { className: 'gm-frame-grid' }, frames.map((f) => e('button', { key: f.id, type: 'button',
+            className: 'gm-frame-card ' + (f.claimed ? 'unlocked' : 'locked') + (chosen === f.id ? ' active' : ''),
+            disabled: !f.claimed, 'aria-pressed': chosen === f.id,
+            onClick: () => { setSelectedFrame(f.id); store.setItem('gm_profile_frame', f.id); } }, icon(f.category === 'founder' ? 'crown' : f.category === 'milestone' ? 'diamond' : 'profile', 27, true), e('span', null, f.title), f.claimed ? icon('check', 16) : icon('minus', 16))))), e('div', { className: 'profile-menu' }, [['trophy', L('achievements'), 'achievements'], ['friends', L('referrals'), 'referrals'], ['clock', L('history'), 'history'], ['settings', L('customize'), 'settings'], ['info', L('support'), 'support']].map(([i, t, route]) => e('button', { key: route, onClick: () => goto(route) }, icon(i, 21), e('span', null, t), icon('chevron-right', 18)))), e('button', { type: 'button', className: 'gm-settings-onboard gm-premium-card', onClick: () => openGuide('profile') }, icon('info', 22), L('startTour'), icon('chevron-right', 18)));
+    }
     function Reward() {
         const e = React.createElement;
         const enabled = !!liveState?.config?.daily_enabled;
@@ -1076,6 +1053,12 @@ function App() {
                     L('achievements'),
                     " \u00B7 ",
                     L('locked')),
+                (liveState?.cosmetics?.frames || []).map((f) => React.createElement("div", { className: 'gm-achievement-locked ' + (f.claimed ? 'claimed' : ''), key: f.id },
+                    icon(f.category === 'founder' ? 'crown' : 'diamond', 35, true),
+                    React.createElement("span", null,
+                        React.createElement("b", null, f.title),
+                        React.createElement("small", null, f.limited ? 'LIMITED · 1 / 20' : 'MINING MILESTONE')),
+                    icon(f.claimed ? 'check' : 'minus', 17))),
                 React.createElement("p", null,
                     L('achievementsLocked'),
                     ". ",
@@ -1124,7 +1107,7 @@ function App() {
     }
     function AdminTestGrants() {
         const e = React.createElement;
-        return e('section', { className: 'test-grants form-surface pearl-card', 'aria-label': 'Тестовые начисления GM и CR' }, e('div', { className: 'test-grants-heading' }, icon('coins', 40, true), e('div', null, e('strong', null, 'Тестовые начисления'), e('small', null, 'GM/CR для проверки Trading · только Owner / Co-Owner'))), e('p', { className: 'test-grants-note' }, 'Средства переводятся из Treasury (GM) или Shop Reserve (CR), а не создаются заново. Каждое начисление проверяется 2FA и записывается в журнал.'), e('label', null, 'Кому начислить'), e('div', { className: 'test-grants-options', role: 'group', 'aria-label': 'Получатель' }, [['self', 'Себе'], ['other-owner', 'Совладельцу'], ['id', 'Игроку']].map(([id, title]) => e('button', { type: 'button', className: testRecipient === id ? 'selected' : '', key: id, onClick: () => setTestRecipient(id), 'aria-pressed': testRecipient === id }, title))), testRecipient === 'id' ? e('input', { value: testUserId, placeholder: 'Telegram ID зарегистрированного игрока', inputMode: 'numeric', onChange: event => setTestUserId(event.target.value), 'aria-label': 'Telegram ID игрока' }) : null, e('label', null, 'Игровая валюта'), e('div', { className: 'test-grants-options', role: 'group', 'aria-label': 'Валюта' }, ['GM', 'CR'].map(currency => e('button', { key: currency, type: 'button', className: testCurrency === currency ? 'selected' : '', onClick: () => { setTestCurrency(currency); setTestAmount(currency === 'GM' ? '1000' : '10000'); }, 'aria-pressed': testCurrency === currency }, icon(currency === 'GM' ? 'gm-coin-orbit' : 'coins', 23), currency))), e('label', null, 'Сумма ' + testCurrency), e('input', { value: testAmount, inputMode: 'decimal', placeholder: 'Например, 1000', onChange: event => setTestAmount(event.target.value), 'aria-label': 'Сумма тестового начисления' }), e('div', { className: 'test-grants-presets' }, (testCurrency === 'GM' ? ['1000', '5000', '10000'] : ['10000', '50000', '100000']).map(n => e('button', { key: n, type: 'button', onClick: () => setTestAmount(n) }, n))), e('small', { className: 'test-grants-limit' }, testCurrency === 'GM' ? 'До 10 000 GM за операцию и 50 000 GM в UTC-день на игрока.' : 'До 100 000 CR за операцию и 500 000 CR в UTC-день на игрока.'), e('label', null, 'Зачем выдаём'), e('textarea', { rows: 2, value: testReason, onChange: event => setTestReason(event.target.value), 'aria-label': 'Причина начисления' }), e('label', null, 'Код 2FA владельца'), e('input', { value: testCode, inputMode: 'numeric', type: 'text', autoComplete: 'one-time-code', maxLength: 6, placeholder: '6 цифр из приложения 2FA', onChange: event => setTestCode(event.target.value), 'aria-label': 'Код TOTP' }), e(GButton, { theme, disabled: demo || testBusy || !testAmount || testCode.length !== 6, onClick: testGrant, icon: 'shield-check' }, testBusy ? 'Проверяем начисление...' : 'Выдать тестовые ' + testCurrency), e('p', { className: 'test-grants-footer' }, 'Другой совладелец или игрок должен хотя бы один раз открыть GM TOKEN. При необходимости между начислениями дождись нового кода 2FA.'));
+        return e('section', { className: 'test-grants form-surface pearl-card', 'aria-label': 'Тестовые начисления GM и CR' }, e('div', { className: 'test-grants-heading' }, icon('coins', 40, true), e('div', null, e('strong', null, 'Тестовые начисления'), e('small', null, 'GM / CR / POINTS · только Owner / Co-Owner'))), e('p', { className: 'test-grants-note' }, testCurrency === 'POINTS' ? 'POINTS — игровые очки, не токен. Выдача ограничена, требует 2FA и фиксируется в журнале.' : 'GM/CR берутся из существующих резервов. Все начисления проходят 2FA и фиксируются в журнале.'), e('label', null, 'Кому начислить'), e('div', { className: 'test-grants-options', role: 'group', 'aria-label': 'Получатель' }, [['self', 'Себе'], ['other-owner', 'Совладельцу'], ['id', 'Игроку']].map(([id, title]) => e('button', { type: 'button', className: testRecipient === id ? 'selected' : '', key: id, onClick: () => setTestRecipient(id), 'aria-pressed': testRecipient === id }, title))), testRecipient === 'id' ? e('input', { value: testUserId, placeholder: 'Telegram ID зарегистрированного игрока', inputMode: 'numeric', onChange: event => setTestUserId(event.target.value), 'aria-label': 'Telegram ID игрока' }) : null, e('label', null, 'Игровая валюта'), e('div', { className: 'test-grants-options', role: 'group', 'aria-label': 'Валюта' }, ['GM', 'CR', 'POINTS'].map(currency => e('button', { key: currency, type: 'button', className: testCurrency === currency ? 'selected' : '', onClick: () => { setTestCurrency(currency); setTestAmount(currency === 'POINTS' ? '300' : currency === 'GM' ? '1000' : '10000'); }, 'aria-pressed': testCurrency === currency }, icon(currency === 'GM' ? 'gm-coin-orbit' : currency === 'POINTS' ? 'trophy' : 'coins', 23), currency))), e('label', null, 'Сумма ' + testCurrency), e('input', { value: testAmount, inputMode: 'decimal', placeholder: 'Например, 1000', onChange: event => setTestAmount(event.target.value), 'aria-label': 'Сумма тестового начисления' }), e('div', { className: 'test-grants-presets' }, (testCurrency === 'POINTS' ? ['100', '300', '1000'] : testCurrency === 'GM' ? ['1000', '5000', '10000'] : ['10000', '50000', '100000']).map(n => e('button', { key: n, type: 'button', onClick: () => setTestAmount(n) }, n))), e('small', { className: 'test-grants-limit' }, testCurrency === 'POINTS' ? 'До 1 000 POINTS за операцию и 5 000 POINTS в UTC-день на игрока.' : testCurrency === 'GM' ? 'До 10 000 GM за операцию и 50 000 GM в UTC-день на игрока.' : 'До 100 000 CR за операцию и 500 000 CR в UTC-день на игрока.'), e('label', null, 'Зачем выдаём'), e('textarea', { rows: 2, value: testReason, onChange: event => setTestReason(event.target.value), 'aria-label': 'Причина начисления' }), e('label', null, 'Код 2FA владельца'), e('input', { value: testCode, inputMode: 'numeric', type: 'text', autoComplete: 'one-time-code', maxLength: 6, placeholder: '6 цифр из приложения 2FA', onChange: event => setTestCode(event.target.value), 'aria-label': 'Код TOTP' }), e(GButton, { theme, disabled: demo || testBusy || !testAmount || testCode.length !== 6, onClick: testGrant, icon: 'shield-check' }, testBusy ? 'Проверяем начисление...' : 'Выдать тестовые ' + testCurrency), e('p', { className: 'test-grants-footer' }, 'Другой совладелец или игрок должен хотя бы один раз открыть GM TOKEN. При необходимости между начислениями дождись нового кода 2FA.'));
     }
     function Admin() {
         const isOwner = ['owner', 'coowner'].includes(liveRole);
