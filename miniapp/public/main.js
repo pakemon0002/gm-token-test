@@ -417,7 +417,7 @@ function App() {
         'support.ticket': { ru: 'Выбери категорию и опиши проблему минимум десятью символами. Обращение создаётся на сервере и появляется в списке; можно просматривать ответы.', uk: 'Оберіть категорію й опишіть проблему. Звернення збережеться на сервері.', pt: 'Escolha a categoria e descreva o problema. O chamado será salvo no servidor.', en: 'Choose a category and describe the issue. Your ticket is saved on the server.' }
     };
     const closeGuide = () => { if (guideScreen)
-        store.setItem('gm_guide_' + guideScreen, '1'); setGuideScreen(''); setGuideStep(0); setGuideSpot(null); };
+        store.setItem('gm_guide_v21_' + guideScreen, '1'); setGuideScreen(''); setGuideStep(0); setGuideSpot(null); };
     const openGuide = (name) => { if (guideCatalog[name]) {
         setGuideScreen(name);
         setGuideStep(0);
@@ -490,11 +490,11 @@ function App() {
     const [serverHistory, setServerHistory] = React.useState([]);
     const [demo, setDemo] = React.useState(true);
     React.useEffect(() => { if (screen !== 'splash' || demo)
-        return; const timeout = setTimeout(() => { setScreen(store.getItem('gm_onboarding_complete') ? 'home' : 'intro'); }, 1350); return () => clearTimeout(timeout); }, [screen, demo]);
+        return; const timeout = setTimeout(() => { setScreen(store.getItem('gm_onboarding_v21_complete') ? 'home' : 'intro'); }, 1350); return () => clearTimeout(timeout); }, [screen, demo]);
     React.useEffect(() => {
         if (demo || ['splash', 'intro', 'reward'].includes(screen) || !guideCatalog[screen] || guideScreen)
             return;
-        if (!store.getItem('gm_guide_' + screen)) {
+        if (!store.getItem('gm_guide_v21_' + screen)) {
             const timeout = setTimeout(() => openGuide(screen), 550);
             return () => clearTimeout(timeout);
         }
@@ -1343,7 +1343,7 @@ function App() {
             ['friends', 'Приглашай друзей', 'Поделись персональной ссылкой. Награды появляются только после подтверждённых действий друзей.']
         ];
         const step = steps[Math.max(0, Math.min(steps.length - 1, introStep))];
-        const complete = () => { store.setItem('gm_onboarding_complete', '1'); navStack.current = []; setScreen('home'); };
+        const complete = () => { store.setItem('gm_onboarding_v21_complete', '1'); navStack.current = []; setScreen('home'); };
         const ticks = steps.map((_, i) => e('i', { key: i, className: i <= introStep ? 'current' : '' }));
         const displayedLanguages = gmLanguages.filter(([code, label]) => (label.toLowerCase().includes(languageSearch.toLowerCase()) || code.includes(languageSearch.toLowerCase())));
         const chosenLanguage = gmLanguages.find(([code]) => code === locale)?.[1] || gmLanguages[0][1];
