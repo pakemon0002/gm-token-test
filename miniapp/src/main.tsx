@@ -702,38 +702,96 @@ function Reward(){
  
  function Mining(){
   const e=React.createElement;
-  const rate=liveState?.mining?.rate_cents_day!=null?liveState.mining.rate_cents_day/100:gmRate(wallet);
+  const status=liveState?.mining||{};
+  const enabled=!!status.upgrade_enabled;
+  const level=Math.max(1,Math.min(200,Number(status.upgrade_level)||1));
+  const next=level<200?level+1:null;
+  const cost=Number(status.next_cost_gm??(next?gmUpgradeCost(next):0));
+  const rate=status.rate_cents_day!=null?status.rate_cents_day/100:gmRate(wallet);
   const stored=wallet.storage;
-  const hours=storageHours(wallet.level);
+  const hours=Number(status.storage_hours)||(enabled?8:storageHours(wallet.level));
   const cap=Math.max(1,rate*hours/24);
   const pct=Math.max(0,Math.min(100,stored/cap*100));
-  const mineClick=()=>{if(demo)return flash('Войди через Telegram для добычи GM');
-   if(stored<1)return flash('Монета активна: GM добываются автоматически. Сбор доступен от 1 GM.');
+  const preview=Math.max(1,Math.min(200,Number(upgradePreview)||1));
+  const mineClick=()=>{
+   if(demo)return flash('Открой GM TOKEN через Telegram');
+   if(stored<1)return flash('GM накапливаются автоматически. Минимум для сбора — 1 GM');
    miningClaim();
   };
-  return e('div',{className:'gm-mining-v8'},
-   top('Майнинг',true,'info'),
-   e('div',{className:'gm-mining-title'},e('span',null,'Добывай GM'),e('small',null,'Уровень '+wallet.level+' · '+nf(rate,0)+' GM / сутки')),
-   e('button',{type:'button',className:'gm-mining-coin-wrap',onClick:mineClick,'aria-label':'Собрать накопленные GM'},
-    e('span',{className:'gm-mining-coin-rim'},e(Brand,{theme,size:198})),
-    e('span',{className:'gm-mining-coin-glint'})),
-   e('div',{className:'gm-mining-total'},icon('lightning',28),e('strong',null,nf(stored)),e('span',null,'GM накоплено')),
-   e('p',{className:'gm-mining-tap-guide'},'Нажми на монету, чтобы забрать накопленные GM (от 1 GM). Добыча идёт автоматически.'),
-   e('div',{className:'gm-mining-energy gm-premium-card'},
-    e('div',{className:'gm-mining-energy-head'},e('b',null,'Хранилище'),e('span',null,nf(stored)+' / '+nf(cap)+' GM')),
+  const milestones=[25,50,75,100,125,150,175,200];
+  const isUpgrade=miningTab==='upgrades';
+  const tabButton=(kind:string,label:string)=>e('button',{type:'button',key:kind,
+   onClick:()=>setMiningTab(kind),className:miningTab===kind?'active':'',
+   'aria-pressed':miningTab===kind},label);
+  const intro=e('div',{className:'gm-mining-topline'},e('span',null,'GM TOKEN · MINING'),
+   e('span',null,'LV. '+level+' / 200'));
+  const mineView=e(React.Fragment,null,
+   e('div',{className:'gm-mining-coin-stage'},
+    e('button',{type:'button',className:'gm-mining-coin-wrap',onClick:mineClick,
+     'aria-label':t('collect')},
+     e('span',{className:'gm-mining-orbit gm-mining-orbit-first','aria-hidden':true}),
+     e('span',{className:'gm-mining-orbit gm-mining-orbit-second','aria-hidden':true}),
+     e('span',{className:'gm-mining-coin-rim'},e(Brand,{theme,size:206})),
+     e('span',{className:'gm-mining-coin-glint','aria-hidden':true}))),
+   e('div',{className:'gm-mining-total'},icon('lightning',27),
+    e('strong',null,nf(stored)),e('span',null,' GM')),
+   e('p',{className:'gm-mining-tap-guide'},t('collected')+' · '+nf(rate/24,2)+' GM/час'),
+   e('section',{className:'gm-mining-energy gm-premium-card'},
+    e('div',{className:'gm-mining-energy-head'},e('b',null,t('storage')),e('span',null,nf(stored)+' / '+nf(cap)+' GM')),
     e('div',{className:'gm-mining-energy-track'},e('span',{style:{width:pct+'%'}})),
-    e('div',{className:'gm-mining-energy-foot'},e('small',null,'Вместимость: '+hours+' ч'),
-     e('small',null,nf(rate/24,2)+' GM/час'))),
+    e('div',{className:'gm-mining-energy-foot'},e('small',null,hours+' ч'),
+     e('small',null,nf(rate,2)+' GM / '+t('daily')))),
    e('button',{type:'button',className:'gm-mining-claim',disabled:demo||stored<1,onClick:miningClaim},
-    icon('diamond',23),e('span',null,'Забрать GM'),icon('chevron-right',19)),
-   e('section',{className:'gm-mining-benefits gm-premium-card'},
-    e('b',null,'Уровень и ускорения'),
-    e('div',null,e('span',null,icon('lightning',21),' Мощность'),e('strong',null,'+'+powerBonus(wallet.level)+'%')),
-    e('div',null,e('span',null,icon('clock',21),' Хранилище'),e('strong',null,hours+' часов')),
-    e('div',null,e('span',null,icon('database',21),' Резерв'),e('strong',null,'45 млн GM'))),
-   e('p',{className:'gm-mining-footnote'},'GM — виртуальная валюта игры. Скорость зависит от уровня и доступного Mining Pool; при высокой активности начисления распределяются пропорционально.'));
+    icon('diamond',22),e('span',null,t('collect')),icon('chevron-right',18)),
+   e('div',{className:'gm-mining-hint'},'Добыча начисляется сервером из ограниченного игрового фонда.'),
+   e('button',{type:'button',className:'gm-mining-open-upgrades gm-premium-card',
+    onClick:()=>setMiningTab('upgrades')},icon('lightning',29,true),
+    e('span',null,e('b',null,t('upgrades')+' · 200'),
+     e('small',null,t('bonus')+' +'+gmUpgradeBonus(level)+'%')),
+    icon('chevron-right',20)));
+  const upgradeView=e('section',{className:'gm-upgrade-panel'},
+   e('header',{className:'gm-upgrade-heading'},e('div',null,
+    e('small',null,'MINING UPGRADES'),e('h2',null,t('level')+' '+level+'/200')),
+    e('span',{className:'gm-upgrade-bonus'},'+'+gmUpgradeBonus(level)+'%')),
+   e('div',{className:'gm-upgrade-progress','role':'progressbar','aria-valuenow':level,'aria-valuemin':1,'aria-valuemax':200},
+    e('span',{style:{width:(level/200*100)+'%'}})),
+   e('div',{className:'gm-upgrade-stats'},
+    e('div',{className:'gm-premium-card'},e('small',null,'GM / '+t('daily')),e('strong',null,nf(rate))),
+    e('div',{className:'gm-premium-card'},e('small',null,t('storage')),e('strong',null,hours+' ч'))),
+   e('div',{className:'gm-upgrade-next gm-premium-card'},
+    e('small',null,next?t('level')+' '+next:'GM Immortal'),
+    e('strong',null,next?nf(cost,0)+' GM':t('maxLevel')),
+    e('span',null,next?'+'+gmUpgradeBonus(next)+'% '+t('bonus'):'200 / 200'),
+    e('button',{type:'button',className:'gm-upgrade-buy',onClick:upgradeMining,
+     disabled:!enabled||demo||!next||wallet.gm<cost},
+     !enabled?t('comingSoon'):!next?t('maxLevel'):wallet.gm<cost?t('notEnough'):t('buyUpgrade'))),
+   e('div',{className:'gm-upgrade-catalog gm-premium-card'},
+    e('label',{htmlFor:'gm-upgrade-preview'},'Все уровни — 1–200'),
+    e('select',{id:'gm-upgrade-preview',value:preview,onChange:(ev:any)=>setUpgradePreview(Number(ev.target.value))},
+     Array.from({length:200},(_,i)=>e('option',{key:i+1,value:i+1},
+      'LV. '+(i+1)+(i+1===level?' · ✓':'')))),
+    e('div',{className:'gm-upgrade-catalog-info'},
+     e('span',null,t('upgradeCost')),
+     e('b',null,nf(gmUpgradeCost(preview),0)+' GM')),
+    e('div',{className:'gm-upgrade-catalog-info'},
+     e('span',null,t('bonus')),
+     e('b',null,'+'+gmUpgradeBonus(preview)+'%'))),
+   e('div',{className:'gm-upgrade-milestones'},
+    e('h3',null,'GM · MILESTONES'),
+    milestones.map((milestone:number)=>e('div',{className:'gm-milestone gm-premium-card '+(level>=milestone?'complete':'locked'),key:milestone},
+      icon(milestone===200?'crown':'trophy',25,true),
+      e('span',null,e('b',null,'LV. '+milestone),
+       e('small',null,milestone===200?'GM Immortal · скин монеты':'Косметическая награда · эскиз')),
+      icon(level>=milestone?'check':'lock',17)))),
+   e('p',{className:'gm-mining-footnote'},enabled?
+    'Каждый уровень покупается отдельно. Цена и списание подтверждаются сервером, бонусы не суммируются. Косметические награды пока в разработке.':
+    'Экономика из 200 уровней подготовлена; покупки включатся после проверки новой серверной версии.'));
+  return e('div',{className:'gm-mining-v8 gm-mining-premium'},
+   top(t('mining'),true,'info'),intro,
+   e('div',{className:'gm-mining-tabs','role':'tablist'},
+    tabButton('mine',t('mine')),tabButton('upgrades',t('upgrades'))),
+   isUpgrade?upgradeView:mineView);
  }
-
  function Vault(){
   const e=React.createElement;
   return e(React.Fragment,null,
