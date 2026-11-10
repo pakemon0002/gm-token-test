@@ -25,4 +25,13 @@ Status: DEVELOPMENT BRANCH ONLY. No live-bot deployment, no Supabase migrations,
 8. Visual acceptance: screenshot each screen at matching viewport, compare against both reference sketches, and document mismatches.
 
 ## Current commit scope
-Only deterministic proposed 200-level upgrade table and 10 XP league thresholds with tests. Not active in game. Existing routes, balances, mining pool, referrals, and external wallets are unchanged.
+Implemented in this branch:
+- Server stores the independent mining upgrade level in `mining_upgrades` (default 1; existing XP levels untouched).
+- Atomic GM upgrade purchases with server-derived costs, strict sequential progression, request-id idempotency, transaction journal and Treasury accounting.
+- Bonus applied only to future mining accrual after settlement of previous rate; global mining pool limits remain in place.
+- `GET /api/mining/upgrades` returns all 200 levels; `POST /api/mining/upgrade` performs the upgrade; game status exposes current tier.
+- Mini App Mining screen contains upgrade summary, purchase button and browsable 200-level progression; light/dark styling.
+- Generic success toast removed, targeted feedback retained for collecting GM and upgrading.
+- Regression suite includes the existing tests, new math/league tests, API funds/idempotency tests, compiled JavaScript syntax and TypeScript build.
+Not yet implemented: dedicated visual redesign of all other screens, league ranking UI, wallet proof flow, ambassador workflow, cosmetics, and the removal of legacy Vault after migration.
+**Do not publish to the existing Render service yet:** its `render.yaml` sets `DB_PATH=/tmp/gm-token-test.sqlite` and Render free services use ephemeral filesystems. A new deploy/restart can discard SQLite account and balance data. A verified preservation/migration plan is required before deployment. No new Render service is needed.
