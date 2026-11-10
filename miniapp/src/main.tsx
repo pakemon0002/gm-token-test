@@ -261,6 +261,10 @@ function App(){
  const [adminTeam,setAdminTeam]=React.useState([]);
  const [adminFunds,setAdminFunds]=React.useState([]);
  const [adminAmount,setAdminAmount]=React.useState('1000');
+ const [adminPointsTarget,setAdminPointsTarget]=React.useState('');
+ const [adminPointsAmount,setAdminPointsAmount]=React.useState('100');
+ const [adminPointsReason,setAdminPointsReason]=React.useState('Награда за подтверждённую игровую активность');
+ const [adminPointsCode,setAdminPointsCode]=React.useState('');
  const [adminFrom,setAdminFrom]=React.useState('TREASURY');
  const [adminTo,setAdminTo]=React.useState('MINING');
  const [adminReason,setAdminReason]=React.useState('Пополнение игрового фонда по решению владельца');
@@ -352,6 +356,7 @@ function App(){
  const adminChangeRole=()=>adminRequest('/api/admin/moderators',{telegramId:adminId,code:adminCode,action:adminAction}).then(()=>adminRequest('/api/admin/team').then(x=>x&&setAdminTeam(x.team||[])));
  const adminTransfer=()=>adminRequest('/api/admin/transfer',{source:adminFrom,target:adminTo,amount:adminAmount,code:adminCode,reason:adminReason,operationId:cryptoId()}).then(()=>adminRequest('/api/admin/pools').then(x=>x&&setAdminFunds(x.pools||[])));
  const adminCorrection=()=>adminRequest('/api/admin/correction',{userId:adminId,sourcePool:adminCorrectionPool,currency:adminCorrectionCurrency,amount:adminAmount,direction:'credit',ticket:adminTicket,code:adminCode,reason:adminReason,operationId:cryptoId()});
+ const adminGrantPoints=async()=>{const x=await adminRequest('/api/admin/points',{userId:adminPointsTarget,points:Number(adminPointsAmount),reason:adminPointsReason,code:adminPointsCode,operationId:cryptoId()});if(x?.success){setAdminPointsCode('');flash('+'+x.points+' POINTS · игрок '+x.userId)}};
  const testGrant=async()=>{if(testBusy)return;setTestBusy(true);
   try{const out=await adminRequest('/api/admin/test-grant',{recipient:testRecipient,userId:testRecipient==='id'?testUserId:undefined,currency:testCurrency,amount:testAmount,reason:testReason,code:testCode,operationId:cryptoId()});
    if(out?.ok){setTestCode('');flash('Начислено '+testAmount+' '+testCurrency+' игроку '+out.userId);await refreshLive();}
@@ -1137,6 +1142,19 @@ function Support(){
  return <>{top('Admin Panel',true,'settings')}<div className="admin-banner pearl-card">{icon('crown',49,true)}<div><b>{liveRole.toUpperCase()}</b><small>Вход подтверждён Telegram; критические операции требуют TOTP</small></div></div>
  <div className="admin-numbers">{[['Users',adminStats?.users??'—'],['Orders',adminStats?.orders??'—'],['Trades (24h)',adminStats?.trades_24h??'—'],['Open tickets',adminStats?.open_tickets??'—']].map(([a,b])=><div className="pearl-card" key={a}><small>{a}</small><b>{b}</b><small>Серверные данные</small></div>)}</div>
  {AdminTestGrants()}
+ <section className="gm-admin-points gm-premium-card">
+  <header>{icon('diamond',34,true)}<div><h3>POINTS · начисление</h3><p>Только Owner и Co-Owner · подтверждение 2FA и журнал операций</p></div></header>
+  <label>Telegram ID игрока</label>
+  <input value={adminPointsTarget} onChange={(e:any)=>setAdminPointsTarget(e.target.value)} placeholder="ID игрока" inputMode="numeric"/>
+  <label>Количество POINTS</label>
+  <input value={adminPointsAmount} onChange={(e:any)=>setAdminPointsAmount(e.target.value)} inputMode="numeric" type="number" min={1} max={10000}/>
+  <label>Причина начисления</label>
+  <textarea value={adminPointsReason} onChange={(e:any)=>setAdminPointsReason(e.target.value)} rows={2}/>
+  <label>Код 2FA владельца</label>
+  <input value={adminPointsCode} onChange={(e:any)=>setAdminPointsCode(e.target.value)} inputMode="numeric" maxLength={6} placeholder="Шесть цифр"/>
+  <button type="button" className="gm-upgrade-buy" disabled={demo||adminPointsCode.length!==6||!adminPointsTarget||!Number(adminPointsAmount)} onClick={adminGrantPoints}>Начислить POINTS</button>
+  <small>Лимит: 10 000 POINTS за операцию и 50 000 на игрока в UTC-день. Без фиктивных GM.</small>
+ </section>
  <h3 className="section-title">Управление</h3>
  <div className="admin-actions pearl-card"><button onClick={async()=>{const x=await adminRequest('/api/admin/team');if(x)setAdminTeam(x.team||[])}}>{icon('friends',21)} Обновить список ролей</button><button onClick={async()=>{const x=await adminRequest('/api/admin/pools');if(x)setAdminFunds(x.pools||[]);const st=await adminRequest('/api/admin/stats');if(st)setAdminStats(st)}}>{icon('database',21)} Остатки фондов</button></div>
  {adminTeam.length>0&&<div className="admin-records pearl-card">{adminTeam.map((x:any)=><div key={x.id}><span>{x.username||x.id}</span><b>{x.role}</b></div>)}</div>}
