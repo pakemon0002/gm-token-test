@@ -14,17 +14,17 @@ test('Trade desk and order sheet are themed and warn before insufficient-funds s
   assert.ok(has(code,'TradeOrderModal()'),'new sheet must be actually rendered');
  }
  for(const phrase of ['.theme-light .trade-cta.buy','.theme-dark .trade-cta.buy','.trade-sheet-primary','.trade-open-row>button','.trade-form-alert']){
-  assert.ok(stylehas(s,phrase),'missing Trade CSS '+phrase);
+  assert.ok(has(styles,phrase),'missing Trade CSS '+phrase);
  }
  new Function(served);
 });
 test('Telegram reopening cannot collapse phone viewport and navbar to page top',()=>{
  const css=read('../miniapp/public/styles.css');
- assert.ok(cshas(s,'Telegram viewport recovery + trading desk v6.1'));
- assert.ok(cshas(s,'height:100dvh!important;min-height:100dvh!important;max-height:100dvh!important;'));
- assert.ok(cshas(s,'.application.is-telegram .bottom-nav{\n  position:fixed;'));
- assert.ok(cshas(s,'top:auto!important;'));
- assert.ok(cshas(s,'overscroll-behavior-y:contain'));
+ assert.ok(has(css,'Telegram viewport recovery + trading desk v6.1'));
+ assert.ok(has(css,'height:100dvh!important;min-height:100dvh!important;max-height:100dvh!important;'));
+ assert.ok(has(css,'.application.is-telegram .bottom-nav{\n  position:fixed;'));
+ assert.ok(has(css,'top:auto!important;'));
+ assert.ok(has(css,'overscroll-behavior-y:contain'));
 });
 test('one-time owner-only starter funds cannot increase monetary supply',()=>{
  const code=read('../server/index.mjs');
