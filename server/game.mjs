@@ -2,7 +2,7 @@
 // ECONOMY_PENDING settings are intentionally disabled until both co-owners approve them.
 import crypto from 'node:crypto';
 import {toCents} from './lib.mjs';
-import {MAX_MINING_UPGRADE_LEVEL,miningUpgradeCost,miningUpgradeBonusPct,miningUpgradeTotalCost,miningUpgradeTable,leagueForXp,GM_LEAGUES} from './mining-progression.mjs';
+import {MAX_MINING_UPGRADE_LEVEL,miningUpgradeCost,miningUpgradeBonusPct,miningUpgradeBonusBps,miningUpgradeTotalCost,miningUpgradeTable,leagueForXp,GM_LEAGUES} from './mining-progression.mjs';
 import {makeCandles,tradingSnapshot,indicativeAuction,INTERVALS} from './market-data.mjs';
 const DAY=86400, HOUR=3600, MICRO=1000000;
 const xpLevels=[0,100,250,450,750,1150,1700,2400,3300,4400];
@@ -18,7 +18,7 @@ const ceilDiv=(a,b)=>{if(!Number.isSafeInteger(a)||!Number.isSafeInteger(b)||b<=
 const quote=(amountGM,priceCR)=>safe(Number((BigInt(amountGM)*BigInt(priceCR)+99n)/100n));
 const requestId=(x)=>{const v=String(x||'');if(!/^[A-Za-z0-9_.:-]{8,100}$/.test(v))throw Error('operationId required (8..100 characters)');return v};
 const amount=(v)=>toCents(String(v??''));
-const rate=(u,w)=>{const base=bases[Math.min(9,Math.max(0,u.level-1))]*100;const legacy=mulDiv(base,(100+power(u.level))*(100+boost(w.vault)),10000);const upgrade=Math.min(MAX_MINING_UPGRADE_LEVEL,Math.max(1,Number(u.upgrade_level)||1));return mulDiv(legacy,100+miningUpgradeBonusPct(upgrade),100)};
+const rate=(u,w)=>{const base=bases[Math.min(9,Math.max(0,u.level-1))]*100;const legacy=mulDiv(base,(100+power(u.level))*(100+boost(w.vault)),10000);const upgrade=Math.min(MAX_MINING_UPGRADE_LEVEL,Math.max(1,Number(u.upgrade_level)||1));return mulDiv(legacy,10000+miningUpgradeBonusBps(upgrade),10000)};
 export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
  db.exec(`CREATE TABLE IF NOT EXISTS game_settings(k TEXT PRIMARY KEY,v TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS mining_state(user_id TEXT PRIMARY KEY REFERENCES users(id),last_at INTEGER NOT NULL,reg_micro INTEGER NOT NULL DEFAULT 0,overflow_micro INTEGER NOT NULL DEFAULT 0,processed_cents INTEGER NOT NULL DEFAULT 0,pending_cents INTEGER NOT NULL DEFAULT 0,last_xp_day TEXT NOT NULL DEFAULT '');
@@ -126,7 +126,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
 
  const upgradeState=(id)=>{
   const level=upgradeLevel(id),next=level<MAX_MINING_UPGRADE_LEVEL?level+1:null;
-  return {level,max_level:MAX_MINING_UPGRADE_LEVEL,bonus_pct:miningUpgradeBonusPct(level),total_spent_gm:miningUpgradeTotalCost(level),
+  return {level,max_level:MAX_MINING_UPGRADE_LEVEL,bonus_pct:miningUpgradeBonusPct(level),payment_mode:process.env.GM_UPGRADE_PAYMENT_MODE==='virtual_test'?'virtual_test':'wallet_pending',purchasable:process.env.GM_UPGRADE_PAYMENT_MODE==='virtual_test',total_spent_gm:miningUpgradeTotalCost(level),
    next_level:next,next_cost_gm:next?miningUpgradeCost(next):null,next_bonus_pct:next?miningUpgradeBonusPct(next):null};
  };
  const pool=(name,col='gm')=>stmt(`SELECT ${col} as balance FROM pools WHERE name=?`).get(name)?.balance??0;
@@ -319,6 +319,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
    ensure(id);settle();
    return once(op(),id,'mining_upgrade',()=>{
     const state=upgradeState(id);
+    if(process.env.GM_UPGRADE_PAYMENT_MODE!=='virtual_test')throw Error('wallet-backed upgrades await verified GM token contract; in-game GM cannot buy upgrades');
     if(state.level>=MAX_MINING_UPGRADE_LEVEL)throw Error('maximum mining upgrade level reached');
     if(!Number.isInteger(body.level)||body.level!==state.level+1)throw Error('upgrade levels must be purchased sequentially');
     const costCents=miningUpgradeCost(body.level)*100;
