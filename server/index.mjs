@@ -119,7 +119,14 @@ const routes=async(req,res)=>{
    const user=upsertUser(identity);game.ensure(id);const wallet=stmt('SELECT * FROM wallets WHERE user_id=?').get(id);
    return send(res,200,{user:{id:user.id,role:user.role,username:user.username,level:user.level,xp:user.xp},wallet,virtual:true});
   }
-  const current=stmt('SELECT * FROM users WHERE id=?').get(id);if(!current)throw Error('call /api/bootstrap first');
+  // Render's test disk is ephemeral: an instance restart can clear the test database.
+  // Authenticated requests must self-bootstrap after resets or races instead of
+  // failing support/admin actions. Telegram initData has already been verified above.
+  let current=stmt('SELECT * FROM users WHERE id=?').get(id);
+  if(!current){
+   current=upsertUser(identity);
+   game.ensure(id);
+  }
   if(p==='/api/me'&&verb==='GET'){const r=stmt('SELECT end_at,reason,issued_at FROM restrictions WHERE user_id=?').get(id);return send(res,200,{user:current,wallet:stmt('SELECT * FROM wallets WHERE user_id=?').get(id),restriction:r&&(!r.end_at||r.end_at>now())?r:null})}
   if(p==='/api/history'&&verb==='GET')return send(res,200,{events:stmt('SELECT * FROM journal WHERE info LIKE ? ORDER BY at DESC LIMIT 50').all(`%"user":"${id}"%`)});
   if(p==='/api/tickets'&&verb==='GET'){
