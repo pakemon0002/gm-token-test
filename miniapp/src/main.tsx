@@ -461,6 +461,7 @@ function App(){
  const [testRecipient,setTestRecipient]=React.useState('self');
  const [testUserId,setTestUserId]=React.useState('');
  const [testCurrency,setTestCurrency]=React.useState('GM');
+ const [selectedFrame,setSelectedFrame]=React.useState(store.getItem('gm_profile_frame')||'standard');
  const [testAmount,setTestAmount]=React.useState('1000');
  const [testReason,setTestReason]=React.useState('Начисление виртуальных GM/CR для проверки торговой системы');
  const [testCode,setTestCode]=React.useState('');
@@ -543,7 +544,7 @@ function App(){
  const adminTransfer=()=>adminRequest('/api/admin/transfer',{source:adminFrom,target:adminTo,amount:adminAmount,code:adminCode,reason:adminReason,operationId:cryptoId()}).then(()=>adminRequest('/api/admin/pools').then(x=>x&&setAdminFunds(x.pools||[])));
  const adminCorrection=()=>adminRequest('/api/admin/correction',{userId:adminId,sourcePool:adminCorrectionPool,currency:adminCorrectionCurrency,amount:adminAmount,direction:'credit',ticket:adminTicket,code:adminCode,reason:adminReason,operationId:cryptoId()});
  const testGrant=async()=>{if(testBusy)return;setTestBusy(true);
-  try{const out=await adminRequest('/api/admin/test-grant',{recipient:testRecipient,userId:testRecipient==='id'?testUserId:undefined,currency:testCurrency,amount:testAmount,reason:testReason,code:testCode,operationId:cryptoId()});
+  try{const out=await adminRequest(testCurrency==='POINTS'?'/api/admin/points-grant':'/api/admin/test-grant',{recipient:testRecipient,userId:testRecipient==='id'?testUserId:undefined,currency:testCurrency,amount:testAmount,reason:testReason,code:testCode,operationId:cryptoId()});
    if(out?.ok){setTestCode('');flash('Начислено '+testAmount+' '+testCurrency+' игроку '+out.userId);await refreshLive();}
   }finally{setTestBusy(false)}
  };
@@ -870,7 +871,50 @@ function Tasks(){
 }
 
  function Leaderboard(){const users=(liveRanks?.users||[]).filter((u:any)=>rankFilter==='Global'||(liveReferrals?.referred||[]).some((r:any)=>r.user_id===u.id));return <>{top(L('leaderboard'),true,'trophy')}<div className="rank-tabs"><button onClick={()=>setRankFilter('Global')} className={rankFilter==='Global'?'on':''}>Global</button><button onClick={()=>setRankFilter('Friends')} className={rankFilter==='Friends'?'on':''}>Friends</button></div><div className="leader-rows">{users.map((u:any,i:number)=><div className="leader-row" key={u.id}><b>{i+1}</b>{icon('profile',27)}<span>{clean(u.username||'Игрок')}</span><small>{nf(u.score_cents/100)} GM</small></div>)}</div>{users.length===0&&<p className="disclaimer">{liveRanks?.pending_rule?'Рейтинг ещё не включён: формула не утверждена. Фальшивых участников нет.':'Пока нет игроков в выбранном списке.'}</p>}</>}
- function Profile(){return <>{isLight?<header className="profile-top"><span></span><button className="header-icon" onClick={()=>goto('settings')}>{icon('settings',25)}</button></header>:<header className="dark-top"><b>GM TOKEN</b><button onClick={()=>goto('settings')}>{icon('more',20)} {icon('close',17)}</button></header>}<div className="profile-hero"><Brand theme={theme} size={isLight?103:98}/><h2>{webapp?.initDataUnsafe?.user?.username||webapp?.initDataUnsafe?.user?.first_name||'Игрок'}</h2><p>#{String(webapp?.initDataUnsafe?.user?.id||'')} <button className="inline-icon" onClick={()=>{navigator.clipboard?.writeText(String(webapp?.initDataUnsafe?.user?.id||''));flash('ID скопирован')}}>{icon('copy',15)}</button></p></div><div className="xp-area"><div className="xp-line"><b>Lv. {wallet.level}</b><small>{nf(wallet.xp,0)} / {nf(xpThreshold[Math.min(wallet.level,9)]||4400,0)} XP</small></div><div className="progress"><div style={{width:(Math.min(100,100*wallet.xp/(xpThreshold[Math.min(wallet.level,9)]||4400)))+'%'}}/></div></div><div className="stats-grid">{[['friends',String(liveReferrals?.referred?.length||0),L('friends')],['wallet',nf(wallet.gm,0),L('balance')],['lightning',String(wallet.streak),L('streak')]].map(([i,n,label])=><div className="stat-card" key={label}>{icon(i,23)}<b>{n}</b><small>{label}</small></div>)}</div><div className="profile-menu">{[['trophy',L('achievements'),'achievements'],['friends',L('referrals'),'referrals'],['clock',L('history'),'history'],['settings',L('customize'),'settings'],['info',L('support'),'support']].map(([i,t,s])=><button key={t} onClick={()=>goto(s as Route)}>{icon(i,21)}<span>{t}</span>{icon('chevron-right',18)}</button>)}</div>{isLight&&<button className="logout" onClick={()=>flash('Закрой Mini App в Telegram для выхода')}>{icon('logout',20)} {L('logout')}</button>}</>}
+ function Profile(){
+  const e=React.createElement;
+  const cosmetics=liveState?.cosmetics||{founder_slot:null,frames:[]};
+  const frames=[{id:'standard',title:'GM Classic',claimed:true},...(cosmetics.frames||[])];
+  const chosen=frames.find((f:any)=>f.id===selectedFrame&&f.claimed)?selectedFrame:'standard';
+  const league=liveState?.league||{name:'Bronze',min_xp:0};
+  const leagues=liveState?.leagues||[];
+  const nextLeague=leagues.find((x:any)=>wallet.xp<x.min_xp);
+  const previousXp=Number(league.min_xp)||0;
+  const nextXp=nextLeague?.min_xp??previousXp;
+  const progress=nextLeague?Math.min(100,Math.max(0,(wallet.xp-previousXp)/Math.max(1,nextXp-previousXp)*100)):100;
+  const user=webapp?.initDataUnsafe?.user;
+  return e(React.Fragment,null,
+   top(L('profile'),false,'settings'),
+   e('div',{className:'profile-hero gm-profile-v2'},
+    e('div',{className:'gm-profile-avatar '+(chosen==='standard'?'': 'gm-profile-avatar-special')},
+     e(Brand,{theme,size:100})),
+    e('h2',null,user?.username||user?.first_name||'GM PLAYER'),
+    e('p',null,'#'+String(user?.id||'')),
+    cosmetics.founder_slot?e('span',{className:'gm-founders-medal'},icon('crown',18),' FOUNDERS #'+cosmetics.founder_slot):null),
+   e('div',{className:'gm-league-card gm-premium-card'},e('div',{className:'gm-league-head'},
+    e('div',null,e('small',null,'GM LEAGUE'),e('h3',null,league.name)),
+    e('b',null,nf(wallet.xp,0)+' XP')),
+    e('div',{className:'gm-upgrades-progress'},e('span',{style:{width:progress+'%'}})),
+    e('small',null,nextLeague?'→ '+nextLeague.name+' · '+nf(Math.max(0,nextXp-wallet.xp),0)+' XP': 'GM IMMORTAL · MAX')),
+   e('div',{className:'stats-grid'},
+    [['friends',String(liveReferrals?.referred?.length||0),L('friends')],['wallet',nf(wallet.gm,0),L('balance')],['lightning',String(wallet.streak),L('streak')]].map(([i,n,label])=>e('div',{className:'stat-card',key:label},icon(i,23),e('b',null,n),e('small',null,label)))),
+   e('section',{className:'gm-frames-section gm-premium-card'},
+    e('h3',null,L('frames')),
+    e('p',null,L('achievementsLocked')),
+    e('div',{className:'gm-frame-grid'},
+     frames.map((f:any)=>e('button',{key:f.id,type:'button',
+      className:'gm-frame-card '+(f.claimed?'unlocked':'locked')+(chosen===f.id?' active':''),
+      disabled:!f.claimed,'aria-pressed':chosen===f.id,
+      onClick:()=>{setSelectedFrame(f.id);store.setItem('gm_profile_frame',f.id)}},
+      icon(f.category==='founder'?'crown':f.category==='milestone'?'diamond':'profile',27,true),
+      e('span',null,f.title),f.claimed?icon('check',16):icon('minus',16))))),
+   e('div',{className:'profile-menu'},
+    [['trophy',L('achievements'),'achievements'],['friends',L('referrals'),'referrals'],['clock',L('history'),'history'],['settings',L('customize'),'settings'],['info',L('support'),'support']].map(([i,t,route])=>
+     e('button',{key:route,onClick:()=>goto(route)},icon(i,21),e('span',null,t),icon('chevron-right',18)))),
+   e('button',{type:'button',className:'gm-settings-onboard gm-premium-card',onClick:()=>openGuide('profile')},icon('info',22),L('startTour'),icon('chevron-right',18))
+  );
+ }
+
  
  
 function Reward(){
@@ -1074,7 +1118,8 @@ function Referrals(){
  function History(){return <>{top(L('history'),true,'clock')}{!serverHistory.length&&<div className="empty-state">{icon('clock',62,true)}<h3>История операций пока пуста</h3><button onClick={loadHistory}>Загрузить с сервера</button></div>}{serverHistory.map((x:any)=><div key={x.id} className="pearl-card form-surface"><b>{x.kind}</b><small>{new Date(x.at*1000).toLocaleString('ru-RU')}</small><p>{x.info}</p></div>)}</>}
  function Achievements(){const items=liveAchievements;
  const planned=[['origin','trophy','Первопроходец','Один из первых 20 игроков — уникальная рамка'],['first_claim','lightning','Искра GM','Первый сбор майнинга'],['mining_25','gm-coin-orbit','Стальной майнер','25 улучшений майнинга'],['mining_50','diamond','Серебряная легенда','50 улучшений майнинга'],['collector','gift','Хранитель артефактов','Собери серию игровых наград'],['community','friends','Сила сообщества','Пригласи друзей'],['immortal','crown','GM Immortal','Достигни максимальной лиги']];
- return <>{top(L('achievements'),true,'trophy')}<div className="achievement-list">{items.map((t:any)=><div className="earn-item pearl-card" key={t.id}>{icon(t.icon||'trophy',45,true)}<span><b>{t.title||t.id}</b><small>{t.description||''}{!demo?` · ${t.xp||0} XP`:''}</small></span>{!demo&&<button disabled={t.claimed||!t.available} onClick={async()=>{const x=await gameAction('/api/achievements/claim',{id:t.id});if(x)await refreshLive()}}>{t.claimed?'Получено':t.available?'Получить':'Не выполнено'}</button>}</div>)}</div><div className="gm-achievement-planned"><h3>{L('achievements')} · {L('locked')}</h3><p>{L('achievementsLocked')}. {L('later')}.</p>{planned.map(([id,ic,title,desc])=><div className="gm-achievement-locked" key={id}>{icon(ic,35,true)}<span><b>{title}</b><small>{desc}</small></span>{icon('minus',16)}</div>)}</div></>}
+ return <>{top(L('achievements'),true,'trophy')}<div className="achievement-list">{items.map((t:any)=><div className="earn-item pearl-card" key={t.id}>{icon(t.icon||'trophy',45,true)}<span><b>{t.title||t.id}</b><small>{t.description||''}{!demo?` · ${t.xp||0} XP`:''}</small></span>{!demo&&<button disabled={t.claimed||!t.available} onClick={async()=>{const x=await gameAction('/api/achievements/claim',{id:t.id});if(x)await refreshLive()}}>{t.claimed?'Получено':t.available?'Получить':'Не выполнено'}</button>}</div>)}</div><div className="gm-achievement-planned"><h3>{L('achievements')} · {L('locked')}</h3>
+  {(liveState?.cosmetics?.frames||[]).map((f:any)=><div className={'gm-achievement-locked '+(f.claimed?'claimed':'')} key={f.id}>{icon(f.category==='founder'?'crown':'diamond',35,true)}<span><b>{f.title}</b><small>{f.limited?'LIMITED · 1 / 20':'MINING MILESTONE'}</small></span>{icon(f.claimed?'check':'minus',17)}</div>)}<p>{L('achievementsLocked')}. {L('later')}.</p>{planned.map(([id,ic,title,desc])=><div className="gm-achievement-locked" key={id}>{icon(ic,35,true)}<span><b>{title}</b><small>{desc}</small></span>{icon('minus',16)}</div>)}</div></>}
  
 function Settings(){
  const e=React.createElement;
@@ -1152,8 +1197,8 @@ function Support(){
   const e=React.createElement;
   return e('section',{className:'test-grants form-surface pearl-card','aria-label':'Тестовые начисления GM и CR'},
    e('div',{className:'test-grants-heading'},icon('coins',40,true),
-    e('div',null,e('strong',null,'Тестовые начисления'),e('small',null,'GM/CR для проверки Trading · только Owner / Co-Owner'))),
-   e('p',{className:'test-grants-note'},'Средства переводятся из Treasury (GM) или Shop Reserve (CR), а не создаются заново. Каждое начисление проверяется 2FA и записывается в журнал.'),
+    e('div',null,e('strong',null,'Тестовые начисления'),e('small',null,'GM / CR / POINTS · только Owner / Co-Owner'))),
+   e('p',{className:'test-grants-note'},testCurrency==='POINTS'?'POINTS — игровые очки, не токен. Выдача ограничена, требует 2FA и фиксируется в журнале.':'GM/CR берутся из существующих резервов. Все начисления проходят 2FA и фиксируются в журнале.'),
    e('label',null,'Кому начислить'),
    e('div',{className:'test-grants-options',role:'group','aria-label':'Получатель'},
     [['self','Себе'],['other-owner','Совладельцу'],['id','Игроку']].map(([id,title])=>
@@ -1161,14 +1206,14 @@ function Support(){
    testRecipient==='id'?e('input',{value:testUserId,placeholder:'Telegram ID зарегистрированного игрока',inputMode:'numeric',onChange:event=>setTestUserId(event.target.value),'aria-label':'Telegram ID игрока'}):null,
    e('label',null,'Игровая валюта'),
    e('div',{className:'test-grants-options',role:'group','aria-label':'Валюта'},
-    ['GM','CR'].map(currency=>e('button',{key:currency,type:'button',className:testCurrency===currency?'selected':'',onClick:()=>{setTestCurrency(currency);setTestAmount(currency==='GM'?'1000':'10000')},'aria-pressed':testCurrency===currency},
-      icon(currency==='GM'?'gm-coin-orbit':'coins',23),currency))),
+    ['GM','CR','POINTS'].map(currency=>e('button',{key:currency,type:'button',className:testCurrency===currency?'selected':'',onClick:()=>{setTestCurrency(currency);setTestAmount(currency==='POINTS'?'300':currency==='GM'?'1000':'10000')},'aria-pressed':testCurrency===currency},
+      icon(currency==='GM'?'gm-coin-orbit':currency==='POINTS'?'trophy':'coins',23),currency))),
    e('label',null,'Сумма '+testCurrency),
    e('input',{value:testAmount,inputMode:'decimal',placeholder:'Например, 1000',onChange:event=>setTestAmount(event.target.value),'aria-label':'Сумма тестового начисления'}),
    e('div',{className:'test-grants-presets'},
-    (testCurrency==='GM'?['1000','5000','10000']:['10000','50000','100000']).map(n=>
+    (testCurrency==='POINTS'?['100','300','1000']:testCurrency==='GM'?['1000','5000','10000']:['10000','50000','100000']).map(n=>
      e('button',{key:n,type:'button',onClick:()=>setTestAmount(n)},n))),
-   e('small',{className:'test-grants-limit'},testCurrency==='GM'?'До 10 000 GM за операцию и 50 000 GM в UTC-день на игрока.':'До 100 000 CR за операцию и 500 000 CR в UTC-день на игрока.'),
+   e('small',{className:'test-grants-limit'},testCurrency==='POINTS'?'До 1 000 POINTS за операцию и 5 000 POINTS в UTC-день на игрока.':testCurrency==='GM'?'До 10 000 GM за операцию и 50 000 GM в UTC-день на игрока.':'До 100 000 CR за операцию и 500 000 CR в UTC-день на игрока.'),
    e('label',null,'Зачем выдаём'),
    e('textarea',{rows:2,value:testReason,onChange:event=>setTestReason(event.target.value),'aria-label':'Причина начисления'}),
    e('label',null,'Код 2FA владельца'),
