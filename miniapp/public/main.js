@@ -870,7 +870,7 @@ function Reward(){
        e('span',{className:'gm-upgrade-row-copy'},e('b',null,row.level===200?'GM Immortal':'Уровень '+row.level),
         e('small',null,row.level===1?'Начальный':nf(row.cost_gm,0)+' GM')),
        e('strong',null,'+'+row.bonus_pct+'%'),
-       row.level<=upgrade.level?icon('check',17):icon('lock',17)))),
+       row.level<=upgrade.level?icon('check',17):icon('minus',17)))),
     e('button',{type:'button',className:'gm-upgrades-toggle',onClick:()=>setShowAllUpgrades(!showAllUpgrades)},
      showAllUpgrades?'Свернуть список':'Все 200 уровней',icon(showAllUpgrades?'chevron-up':'chevron-down',16))),
    e('p',{className:'gm-mining-footnote'},'GM — виртуальная валюта игры. Улучшения покупаются по порядку. Цена списывается сервером, бонус заменяет предыдущий. Mining Pool ограничен — фактические начисления могут отличаться от расчётных.'));
