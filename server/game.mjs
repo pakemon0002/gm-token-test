@@ -321,8 +321,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
     current_rate_pct:application?.status==='approved'?application.rate_pct:25,
     application,tiers:AMBASSADOR_TIERS});
   }
-  if(p==='/api/ambassador/apply'&&verb==='POST')return response(200,tx(()=>{
-   const data=await read();
+  if(p==='/api/ambassador/apply'&&verb==='POST'){const data=await read();return response(200,tx(()=>{
    const opId=requestId(data.operationId);
    return once(opId,id,'ambassador_apply',()=>{
     const referrals=stmt('SELECT COUNT(*) AS n FROM referrals WHERE referrer_id=?').get(id).n;
@@ -340,7 +339,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
     log(id,'ambassador_application',{user:id,channel,claimed_followers:claimed});
     return {submitted:true,channel,review:'pending'};
    });
-  }));
+  }));}
   if(p==='/api/mining/upgrade'&&verb==='POST')return response(200,tx(()=>{
    ensure(id);if(!miningV2)throw Error('mining upgrades are not enabled on this server');
    // Settle at the *old* rate before charging, to avoid retroactive higher earnings.
