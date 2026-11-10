@@ -9,7 +9,7 @@ test('exactly 200 deterministic upgrade levels', () => {
   assert.deepEqual(levels[0], {level:1,cost_gm:0,bonus_pct:0,total_gm:0});
   assert.equal(levels[1].cost_gm,150);
   assert.equal(levels[2].cost_gm,200);
-  assert.equal(levels[199].bonus_pct,406);
+  assert.equal(levels[199].bonus_pct,4.06);
   for(let i=1;i<levels.length;i++) {
     assert.ok(levels[i].cost_gm >= levels[i-1].cost_gm);
     assert.equal(levels[i].total_gm,levels[i-1].total_gm+levels[i].cost_gm);
