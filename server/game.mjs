@@ -45,6 +45,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
  CREATE TABLE IF NOT EXISTS genesis_badges(slot INTEGER PRIMARY KEY CHECK(slot BETWEEN 1 AND 20),user_id TEXT NOT NULL UNIQUE REFERENCES users(id),awarded_at INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS cosmetic_state(user_id TEXT PRIMARY KEY REFERENCES users(id),coin_skin TEXT NOT NULL DEFAULT 'default' CHECK(coin_skin IN ('default','genesis_silver')));
  CREATE TABLE IF NOT EXISTS ambassador_applications(user_id TEXT PRIMARY KEY REFERENCES users(id),channel_url TEXT NOT NULL,claimed_followers INTEGER NOT NULL,verified_followers INTEGER NOT NULL DEFAULT 0,rate_pct INTEGER NOT NULL DEFAULT 25,status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected')),created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL,reviewed_by TEXT,review_note TEXT);
+ CREATE TABLE IF NOT EXISTS referral_mining_day(user_id TEXT NOT NULL,day TEXT NOT NULL,paid_cents INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(user_id,day));
  CREATE TABLE IF NOT EXISTS balance_ledger(id TEXT NOT NULL,account TEXT NOT NULL,currency TEXT NOT NULL,delta_cents INTEGER NOT NULL,created_at INTEGER NOT NULL,PRIMARY KEY(id,account,currency));`);
  // Existing test databases created before this audit have no quote_remainder.
  if(!stmt('PRAGMA table_info(orders)').all().some(x=>x.name==='quote_remainder'))db.exec('ALTER TABLE orders ADD COLUMN quote_remainder INTEGER NOT NULL DEFAULT 0');
@@ -114,6 +115,23 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
   }
  }
  function genesisStatus(id){return {slot:stmt('SELECT slot FROM genesis_badges WHERE user_id=?').get(id)?.slot||null,claimed_slots:stmt('SELECT COUNT(*) n FROM genesis_badges').get().n,max_slots:20,coin_skin:stmt('SELECT coin_skin FROM cosmetic_state WHERE user_id=?').get(id)?.coin_skin||'default'};}
+ function payMiningReferral(id,amountCents){
+  if(!miningV2||process.env.GM_REFERRAL_MINING_V2!=='1')return 0;
+  const ref=stmt('SELECT referrer_id FROM referrals WHERE user_id=?').get(id);
+  if(!ref||ref.referrer_id===id)return 0;
+  const approved=stmt("SELECT rate_pct FROM ambassador_applications WHERE user_id=? AND status='approved'").get(ref.referrer_id);
+  const pct=approved?.rate_pct||25;
+  const desired=mulDiv(amountCents,pct,100);
+  const today=day(now()),paid=stmt('SELECT paid_cents FROM referral_mining_day WHERE user_id=? AND day=?').get(ref.referrer_id,today)?.paid_cents||0;
+  const cap=Math.round(Math.min(1000,Math.max(0,Number(process.env.GM_REFERRAL_DAILY_CAP_GM||250))))*100;
+  const reward=Math.max(0,Math.min(desired,cap-paid,pool('COMMUNITY')));
+  if(reward>0){
+   takePool('COMMUNITY','gm',reward);walletChange(ref.referrer_id,'gm',reward);
+   stmt('INSERT INTO referral_mining_day(user_id,day,paid_cents) VALUES(?,?,?) ON CONFLICT(user_id,day) DO UPDATE SET paid_cents=paid_cents+excluded.paid_cents').run(ref.referrer_id,today,reward);
+   log('system','referral_mining_reward',{user:ref.referrer_id,from:id,gm_cents:reward,rate_pct:pct,day:today});
+  }
+  return reward;
+ }
  function awardGenesis(id){
   if(!miningV2)return null; // Legacy miners should not consume V2 Genesis slots.
   // Exactly 20 global slots. Invoked inside an IMMEDIATE transaction, on first claim.
@@ -319,6 +337,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
    const application=stmt('SELECT user_id,channel_url,claimed_followers,verified_followers,rate_pct,status,created_at,updated_at,review_note FROM ambassador_applications WHERE user_id=?').get(id)||null;
    return response(200,{referrals,required_referrals:AMBASSADOR_MIN_REFERRALS,
     current_rate_pct:application?.status==='approved'?application.rate_pct:25,
+    mining_rewards_enabled:miningV2&&process.env.GM_REFERRAL_MINING_V2==='1',referral_daily_cap_gm:250,
     application,tiers:AMBASSADOR_TIERS});
   }
   if(p==='/api/ambassador/apply'&&verb==='POST'){const data=await read();return response(200,tx(()=>{
@@ -367,7 +386,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
     return {equipped:skin,cosmetics:genesisStatus(id)};
    });
   }));
-  if(p==='/api/mining/claim'&&verb==='POST')return response(200,tx(()=>{ensure(id);settle();return once(op(),id,'mining_claim',()=>{const m=stmt('SELECT * FROM mining_state WHERE user_id=?').get(id),n=m.pending_cents;if(n<100)throw Error('minimum mining Claim is 1 GM');walletChange(id,'gm',n);const d=day(now()),xp=m.last_xp_day===d?0:20;if(xp)awardXp(id,xp);stmt('UPDATE mining_state SET pending_cents=0,reg_micro=0,overflow_micro=0,processed_cents=0,last_at=?,last_xp_day=? WHERE user_id=?').run(now(),d,id);const genesis_slot=awardGenesis(id);log(id,'mining_claim',{user:id,gm_cents:n,xp,genesis_slot});return {gm_cents:n,xp,genesis_slot,wallet:wal(id)}})}));
+  if(p==='/api/mining/claim'&&verb==='POST')return response(200,tx(()=>{ensure(id);settle();return once(op(),id,'mining_claim',()=>{const m=stmt('SELECT * FROM mining_state WHERE user_id=?').get(id),n=m.pending_cents;if(n<100)throw Error('minimum mining Claim is 1 GM');walletChange(id,'gm',n);const d=day(now()),xp=m.last_xp_day===d?0:20;if(xp)awardXp(id,xp);stmt('UPDATE mining_state SET pending_cents=0,reg_micro=0,overflow_micro=0,processed_cents=0,last_at=?,last_xp_day=? WHERE user_id=?').run(now(),d,id);const genesis_slot=awardGenesis(id);const referral_paid_cents=payMiningReferral(id,n);log(id,'mining_claim',{user:id,gm_cents:n,xp,genesis_slot,referral_paid_cents});return {gm_cents:n,xp,genesis_slot,referral_paid_cents,wallet:wal(id)}})}));
   if(p==='/api/vault/deposit'&&verb==='POST')return response(200,tx(()=>{if(miningV2)throw Error('new Vault deposits are closed; existing funds may still be withdrawn');ensure(id);settle();return once(op(),id,'vault_deposit',()=>{const n=amount(body.amount);accrueHoldingPosition(id);walletChange(id,'gm',-n);stmt('UPDATE wallets SET vault=vault+? WHERE user_id=?').run(n,id);stmt('INSERT INTO holding_peak(user_id,peak_cents) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET peak_cents=MAX(peak_cents,excluded.peak_cents)').run(id,wal(id).vault);log(id,'vault_deposit',{user:id,gm_cents:n});return {vault_cents:wal(id).vault,wallet:wal(id)}})}));
   if(p==='/api/vault/withdraw'&&verb==='POST')return response(200,tx(()=>{ensure(id);settle();return once(op(),id,'vault_withdraw',()=>{const n=amount(body.amount),w=wal(id),d=day(now()),h=stmt('SELECT * FROM holding_state WHERE user_id=?').get(id);if(h.last_withdraw_day===d)throw Error('only one vault withdrawal per UTC day');if(n>w.vault||(n<100000&&n!==w.vault))throw Error('partial withdrawal minimum 1000 GM; full balance may be smaller');const fee=mulDiv(n,5,100);accrueHoldingPosition(id);stmt('UPDATE wallets SET vault=vault-? WHERE user_id=?').run(n,id);walletChange(id,'gm',n-fee);addPool('HOLDING_FEES','gm',fee);stmt('UPDATE holding_state SET last_withdraw_day=? WHERE user_id=?').run(d,id);log(id,'vault_withdraw',{user:id,gm_cents:n,fee_cents:fee});return {received_cents:n-fee,fee_cents:fee,wallet:wal(id)}})}));
   if(p==='/api/vault/claim'&&verb==='POST')return response(200,tx(()=>{ensure(id);settle();return once(op(),id,'holding_claim',()=>{const h=stmt('SELECT * FROM holding_state WHERE user_id=?').get(id);if(!h.pending_cents)throw Error('no holding rewards pending');walletChange(id,'gm',h.pending_cents);stmt('UPDATE holding_state SET pending_cents=0 WHERE user_id=?').run(id);const ref=stmt('SELECT referrer_id FROM referrals WHERE user_id=?').get(id);let refPaid=0;
