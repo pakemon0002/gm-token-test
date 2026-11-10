@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feature/design-v2-onboarding-i18n
+      - fix/bootstrap-guides-trading-v2-20261111
   workflow_dispatch:
 permissions:
   contents: write
