@@ -1374,9 +1374,18 @@ function Intro(){
  const step=steps[Math.max(0,Math.min(steps.length-1,introStep))];
  const complete=()=>{store.setItem('gm_onboarding_complete','1');navStack.current=[];setScreen('home')};
  const ticks=steps.map((_,i)=>e('i',{key:i,className:i<=introStep?'current':''}));
- const languages=gmLanguages.map(([value,name])=>e('option',{key:value,value},name));
- const languagePicker=introStep===0?e('div',{className:'gm-intro-language'},e('label',null,lang('language')),
-  e('select',{value:locale,onChange:event=>{setLocale(event.target.value);store.setItem('gm_lang',event.target.value)}},languages)):null;
+ const displayedLanguages=gmLanguages.filter(([code,label])=>(label.toLowerCase().includes(languageSearch.toLowerCase())||code.includes(languageSearch.toLowerCase())));
+ const chosenLanguage=gmLanguages.find(([code])=>code===locale)?.[1]||gmLanguages[0][1];
+ const chooseLanguage=(code:string)=>{setLocale(code);store.setItem('gm_lang',code);setLanguageOpen(false);setLanguageSearch('')};
+ const languagePicker=introStep===0?e('div',{className:'gm-intro-language gm-premium-card'},
+  e('label',{className:'gm-intro-language-label'},L('interfaceLanguage')),
+  e('button',{type:'button',className:'gm-intro-lang-trigger',onClick:()=>setLanguageOpen(!languageOpen),'aria-expanded':languageOpen},
+   e('span',null,chosenLanguage),icon(languageOpen?'chevron-up':'chevron-down',18)),
+  languageOpen?e('div',{className:'gm-intro-lang-panel',role:'group','aria-label':L('interfaceLanguage')},
+   e('input',{type:'search',placeholder:'Search / Поиск / Pesquisar',value:languageSearch,onChange:(ev:any)=>setLanguageSearch(ev.target.value),'aria-label':'Search languages'}),
+   e('div',{className:'gm-intro-lang-results'},displayedLanguages.map(([code,label])=>
+     e('button',{key:code,type:'button',className:'gm-intro-lang-option '+(locale===code?'selected':''),onClick:()=>chooseLanguage(code)},
+      e('span',null,label),locale===code?icon('check',18):null)))):null):null;
  const back=introStep>0?e('button',{type:'button',className:'gm-intro-prev',onClick:()=>setIntroStep(introStep-1)},L('back')):null;
  return e('div',{className:'gm-intro-v8'},
   e('header',{className:'gm-intro-header'},e(Brand,{theme,size:34}),e('b',null,'GM TOKEN'),
@@ -1396,15 +1405,40 @@ function Intro(){
  );
 }
 
-function GuideOverlay(){if(!guideScreen||!guideCatalog[guideScreen])return null;
- const steps=guideCatalog[guideScreen],step=steps[Math.min(guideStep,steps.length-1)];
+function GuideOverlay(){
+ if(!guideScreen||!guideCatalog[guideScreen])return null;
+ const steps=guideCatalog[guideScreen];
+ const step=steps[Math.min(guideStep,steps.length-1)];
+ const copy=guideText[step[3]];
+ const description=copy?.[actualLang]||copy?.en||L(step[3]);
+ const next=()=>{setGuideSpot(null);if(guideStep+1>=steps.length)closeGuide();else setGuideStep(guideStep+1)};
+ const dimensions=guideSpot;
+ const viewportWidth=window.innerWidth,viewportHeight=window.visualViewport?.height||window.innerHeight;
  return <div className="gm-tour-backdrop" role="dialog" aria-modal="true" aria-label={L('instruction')}>
-  <div className="gm-tour-card">
-   <div className="gm-tour-head"><Brand theme={theme} size={35}/><span>{L('tutorialStep')} {guideStep+1} / {steps.length}</span><button type="button" onClick={closeGuide} aria-label={L('skip')}>{icon('close',19)}</button></div>
-   <div className="gm-tour-art">{icon(step[0],80,true)}</div>
-   <h2>{L(step[1])}</h2><p>{L(step[2])}</p>
+  {dimensions?<React.Fragment>
+    <div className="gm-tour-shade" style={{left:0,top:0,width:'100%',height:dimensions.top}}/>
+    <div className="gm-tour-shade" style={{left:0,top:dimensions.top,width:dimensions.left,height:dimensions.height}}/>
+    <div className="gm-tour-shade" style={{left:dimensions.left+dimensions.width,top:dimensions.top,width:Math.max(0,viewportWidth-dimensions.left-dimensions.width),height:dimensions.height}}/>
+    <div className="gm-tour-shade" style={{left:0,top:dimensions.top+dimensions.height,width:'100%',height:Math.max(0,viewportHeight-dimensions.top-dimensions.height)}}/>
+    <div className="gm-tour-spotlight" style={{left:dimensions.left,top:dimensions.top,width:dimensions.width,height:dimensions.height}} onClick={next}>
+      <span className="gm-tour-pointer">↓</span>
+    </div>
+   </React.Fragment>:<div className="gm-tour-shade gm-tour-shade-full"/>}
+  <div className="gm-tour-card" style={dimensions?{top:dimensions.cardTop}:undefined}>
+   <div className="gm-tour-head">
+    <Brand theme={theme} size={37}/>
+    <span className="gm-tour-step-counter">{L('tutorialStep')} {guideStep+1} / {steps.length}</span>
+    <button type="button" onClick={closeGuide} aria-label={L('skip')}>{icon('close',19)}</button>
+   </div>
+   <div className="gm-tour-guide-name">{L('instruction')} · GM TOKEN</div>
+   <h2>{L(step[1])}</h2>
+   <p>{description}</p>
+   <div className="gm-tour-hint">{icon('info',16)} {actualLang==='ru'?'Выделена нужная кнопка или область экрана.':actualLang==='uk'?'Підсвічено потрібну кнопку або ділянку.':actualLang==='pt'?'O botão ou a área relevante está destacado.':'The relevant button or area is highlighted.'}</div>
    <div className="gm-tour-track">{steps.map((_:any,i:number)=><i className={i<=guideStep?'active':''} key={i}/>)}</div>
-   <div className="gm-tour-actions"><button onClick={closeGuide}>{L('skip')}</button><button className="gm-tour-primary" onClick={()=>guideStep+1>=steps.length?closeGuide():setGuideStep(guideStep+1)}>{guideStep+1>=steps.length?L('finish'):L('next')} {icon('chevron-right',18)}</button></div>
+   <div className="gm-tour-actions">
+    <button type="button" onClick={closeGuide}>{L('skip')}</button>
+    <button type="button" className="gm-tour-primary" onClick={next}>{guideStep+1>=steps.length?L('finish'):L('next')}{icon('chevron-right',18)}</button>
+   </div>
   </div>
  </div>;
 }
