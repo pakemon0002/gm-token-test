@@ -405,7 +405,7 @@ function App(){
   more:[['settings','customize','.gm-more-list','more.menu']],
   achievements:[['trophy','achievements','.gm-achievement-planned','achievements.locked']],
   settings:[['settings','theme','.gm-theme-list','settings.theme'],['globe','interfaceLanguage','.gm-language-grid','settings.language']],
-  support:[['shield-check','support','.gm-support-v8','support.ticket']]
+  support:[['shield-check','support','.gm-support-form','support.ticket']]
  };
  const guideText:Record<string,Record<string,string>>={
   'home.balance':{ru:'Здесь отображаются твои игровые GM и CR. Нажми на соответствующую кнопку, чтобы перейти к основным возможностям; это не криптовалютный кошелёк.',uk:'Тут показано твої ігрові GM і CR. Натисни потрібну кнопку, щоб перейти до функцій — це не криптогаманець.',pt:'Veja seus GM e CR do jogo. Os saldos aqui não são uma carteira cripto.',en:'Your in-game GM and CR balances live here. These are not on-chain wallet balances.'},
@@ -613,7 +613,7 @@ function App(){
  const nav=(s:any)=>goto(s);
  const adminRequest=async(path:string,payload?:any)=>{
    if(demo||!webapp?.initData){flash('Только после Telegram-авторизации владельца');return;}
-   try{const response=await fetch(path,{method:payload?'POST':'GET',headers:{Authorization:'tma '+webapp.initData,'Content-Type':'application/json'},body:payload?JSON.stringify(payload):undefined});const x=await response.json();if(!response.ok)throw Error(x.error||'Сервер отказал');flash('Операция выполнена');return x}catch(e:any){flash('Ошибка: '+String(e.message||e));return null}
+   try{const response=await fetch(path,{method:payload?'POST':'GET',headers:{Authorization:'tma '+webapp.initData,'Content-Type':'application/json'},body:payload?JSON.stringify(payload):undefined});const x=await response.json();if(!response.ok)throw Error(x.error||'Сервер отказал');return x}catch(e:any){flash('Ошибка: '+String(e.message||e));return null}
  };
  const adminChangeRole=()=>adminRequest('/api/admin/moderators',{telegramId:adminId,code:adminCode,action:adminAction}).then(()=>adminRequest('/api/admin/team').then(x=>x&&setAdminTeam(x.team||[])));
  const adminTransfer=()=>adminRequest('/api/admin/transfer',{source:adminFrom,target:adminTo,amount:adminAmount,code:adminCode,reason:adminReason,operationId:cryptoId()}).then(()=>adminRequest('/api/admin/pools').then(x=>x&&setAdminFunds(x.pools||[])));
@@ -689,12 +689,13 @@ function App(){
  const loadTickets=async()=>{
   try{const r=await fetch('/api/tickets',{headers:{Authorization:'tma '+webapp?.initData}});const x=await r.json();if(!r.ok)throw Error(x.error);setSupportTickets(x.tickets||[])}catch(e:any){flash('Ошибка получения тикетов: '+e.message)}
  };
+ React.useEffect(()=>{if(!demo&&screen==='support')void loadTickets()},[screen,demo]);
  const ticketAction=async(id:string,action:string,payload:any={})=>{
   const x=await adminRequest(`/api/tickets/${id}/${action}`,payload);if(x)loadTickets();
  };
  const createTicket=async()=>{
   if(supportText.trim().length<10){flash('Опиши проблему минимум в 10 символах');return;}
-  const x=await adminRequest('/api/tickets',{category:supportCategory,body:supportText});if(x){setSupportText('');await loadTickets()}
+  const x=await adminRequest('/api/tickets',{category:supportCategory,body:supportText});if(x){setSupportText('');flash('Обращение создано');await loadTickets()}
  };
  const icon=(n:string,size=23,tile=false)=> <Icon name={n} theme={theme} size={size} tile={tile}/>;
  const isLight=theme==='light';
@@ -1297,18 +1298,21 @@ function Support(){
    e('div',{className:'gm-support-actions'},actions));
  });
  return e(React.Fragment,null,
-  top('Поддержка',true,'shield-check'),
+  top(L('support'),true,'info'),
   e('div',{className:'gm-support-hero gm-premium-card'},icon('shield-check',43,true),
    e('div',null,e('b',null,'Центр поддержки GM TOKEN'),
     e('p',null,'Поможем разобраться с Mining, бокcами, сделками, балансом и входом в Telegram.'))),
   e('section',{className:'gm-support-form gm-premium-card'},
-   e('label',{htmlFor:'gm-support-topic'},'Тема обращения'),
-   e('select',{id:'gm-support-topic',value:supportCategory,onChange:event=>setSupportCategory(event.target.value)},
-    categories.map(x=>e('option',{key:x},x))),
+   e('div',{className:'gm-support-form-head'},icon('info',29),e('span',null,e('b',null,'Новое обращение'),e('small',null,'Ответы и статус сохраняются на сервере'))),
+   e('label',null,'Тема обращения'),
+   e('div',{className:'gm-support-category-grid',role:'group','aria-label':'Тема обращения'},
+    categories.map((x,i)=>e('button',{type:'button',key:x,className:'gm-support-category '+(supportCategory===x?'selected':''),'aria-pressed':supportCategory===x,onClick:()=>setSupportCategory(x)},
+     icon(['info','lightning','wallet','candlesticks','coins','shield-check','friends'][i],18),x))),
    e('label',{htmlFor:'gm-support-message'},'Опиши проблему'),
    e('textarea',{id:'gm-support-message',rows:5,value:supportText,
     placeholder:'Например: после открытия Mini App пропал баланс…',
     onChange:event=>setSupportText(event.target.value)}),
+   e('small',{className:'gm-support-length'},supportText.trim().length+' / 3000 · минимум 10 символов'),
    e('button',{type:'button',className:'gm-support-submit',disabled:demo||supportText.trim().length<10,onClick:createTicket},
     icon('send',20),' Создать обращение')),
   e('div',{className:'gm-support-section-label'},e('b',null,'Мои обращения'),
