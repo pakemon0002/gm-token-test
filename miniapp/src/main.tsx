@@ -681,7 +681,7 @@ function App(){
    )
   );
  }
- function Earn(){return <>{!isLight?<header className="dark-top"><b>GM TOKEN</b><button onClick={()=>goto('settings')}>{icon('more',22)} {icon('close',17)}</button></header>:top('Earn',true,'gift')}<div className={'earn-total '+(isLight?'pearl-card':'metallic-card')}><div><small>Текущий баланс GM</small><div className="earned-number">{nf(wallet.gm,0)} <span>GM</span></div></div>{icon('trending-up',48)}</div><h3 className="section-title">Earn Methods</h3><div className="earn-methods">{[['gift','Daily Reward','Get free GM tokens every day','reward'],['coins','Hold & Earn','Earn game rewards for holding','vault'],['tasks','Tasks','Complete tasks and earn more','tasks'],['friends','Invite Friends','Get bonuses for referrals','referrals'],['lightning','Mining','Play to earn virtual GM','mining'],['swap','GM Shop','Exchange virtual GM into CR','shop']].map(([i,title,description,s])=><button key={title} className={'earn-item '+(isLight?'pearl-card':'metallic-card')} onClick={()=>goto(s as Route)}>{icon(i,48,true)}<span><b>{title}</b><small>{description}</small></span>{icon('chevron-right',19)}</button>)}</div></>}
+ function Earn(){return <>{!isLight?<header className="dark-top"><b>GM TOKEN</b><button onClick={()=>goto('settings')}>{icon('more',22)} {icon('close',17)}</button></header>:top('Earn',true,'gift')}<div className={'earn-total '+(isLight?'pearl-card':'metallic-card')}><div><small>Текущий баланс GM</small><div className="earned-number">{nf(wallet.gm,0)} <span>GM</span></div></div>{icon('trending-up',48)}</div><h3 className="section-title">Earn Methods</h3><div className="earn-methods">{[['gift','Daily Reward','Get free GM tokens every day','reward'],['wallet','Кошелёк','Проверка внешних GM и холдинг','wallet'],['tasks','Tasks','Complete tasks and earn more','tasks'],['friends','Invite Friends','Get bonuses for referrals','referrals'],['lightning','Mining','Play to earn virtual GM','mining'],['swap','GM Shop','Exchange virtual GM into CR','shop']].map(([i,title,description,s])=><button key={title} className={'earn-item '+(isLight?'pearl-card':'metallic-card')} onClick={()=>goto(s as Route)}>{icon(i,48,true)}<span><b>{title}</b><small>{description}</small></span>{icon('chevron-right',19)}</button>)}</div></>}
  
 function Tasks(){
  const e=React.createElement;
@@ -806,7 +806,7 @@ function Reward(){
   return e('div',{className:'gm-mining-v8'},
    top('Майнинг',true,'info'),
    e('div',{className:'gm-mining-title'},e('span',null,'Добывай GM'),e('small',null,'Майнинг '+upgrade.level+'/200 · '+nf(rate,0)+' GM / сутки')),
-   e('button',{type:'button',className:'gm-mining-coin-wrap',onClick:mineClick,'aria-label':'Собрать накопленные GM'},
+   e('button',{type:'button',className:'gm-mining-coin-wrap'+(liveState?.user?.pioneer_rank?' gm-founder-coin':''),onClick:mineClick,'aria-label':'Собрать накопленные GM'},
     e('span',{className:'gm-mining-coin-rim'},e(Brand,{theme,size:198})),
     e('span',{className:'gm-mining-coin-glint'})),
    e('div',{className:'gm-mining-total'},icon('lightning',28),e('strong',null,nf(stored)),e('span',null,'GM накоплено')),
@@ -818,6 +818,7 @@ function Reward(){
      e('small',null,nf(rate/24,2)+' GM/час'))),
    e('button',{type:'button',className:'gm-mining-claim',disabled:demo||stored<1,onClick:miningClaim},
     icon('diamond',23),e('span',null,'Забрать GM'),icon('chevron-right',19)),
+   e('button',{type:'button',className:'gm-mining-help',onClick:()=>setTour({route:'mining',step:0})},icon('info',17),'Как работает майнинг — показать шаги'),
    e('section',{className:'gm-mining-benefits gm-premium-card'},
     e('b',null,'Уровень и ускорения'),
     e('div',null,e('span',null,icon('lightning',21),' Мощность'),e('strong',null,'+'+powerBonus(wallet.level)+'%')),
@@ -833,8 +834,8 @@ function Reward(){
      e('div',{className:'gm-upgrade-next'},
       e('span',null,'Следующий уровень '+upgrade.next_level),
       e('strong',null,nf(upgrade.next_cost_gm,0)+' GM · +'+upgrade.next_bonus_pct+'%'),
-      e('button',{type:'button',className:'gm-upgrades-purchase',disabled:demo||upgradeBusy||wallet.gm<upgrade.next_cost_gm||!upgradeData?.upgrade,onClick:buyMiningUpgrade},
-       upgradeBusy?'Проверяем покупку…':wallet.gm<upgrade.next_cost_gm?'Недостаточно GM':'Улучшить майнинг',icon('chevron-right',17)))
+      e('button',{type:'button',className:'gm-upgrades-purchase',onClick:()=>goto('wallet')},
+       icon('wallet',18),'Уровни через кошелёк',icon('chevron-right',17)))
      :e('div',{className:'gm-upgrades-max'},icon('crown',21),'Максимальный уровень открыт'),
     e('div',{className:'gm-upgrade-preview'},
      ...visibleUpgrades.map((row:any)=>
@@ -846,7 +847,7 @@ function Reward(){
        row.level<=upgrade.level?icon('check',17):icon('minus',17)))),
     e('button',{type:'button',className:'gm-upgrades-toggle',onClick:()=>setShowAllUpgrades(!showAllUpgrades)},
      showAllUpgrades?'Свернуть список':'Все 200 уровней',icon(showAllUpgrades?'chevron-up':'chevron-down',16))),
-   e('p',{className:'gm-mining-footnote'},'GM — виртуальная валюта игры. Улучшения покупаются по порядку. Цена списывается сервером, бонус заменяет предыдущий. Mining Pool ограничен — фактические начисления могут отличаться от расчётных.'));
+   e('p',{className:'gm-mining-footnote'},'Текущая таблица уровней — предварительная. Игровые GM больше не списываются за улучшения. Новые уровни будут доступны после проверки GM на внешнем кошельке. Старые покупки сохраняются. Проценты и правила холдинга ещё требуют утверждения.'));
  }
 
 
@@ -1021,8 +1022,35 @@ function Referrals(){
  );
 }
 
- function History(){return <>{top('Transaction History',true,'clock')}{!serverHistory.length&&<div className="empty-state">{icon('clock',62,true)}<h3>История операций пока пуста</h3><button onClick={loadHistory}>Загрузить с сервера</button></div>}{serverHistory.map((x:any)=><div key={x.id} className="pearl-card form-surface"><b>{x.kind}</b><small>{new Date(x.at*1000).toLocaleString('ru-RU')}</small><p>{x.info}</p></div>)}</>}
- function Achievements(){const items=liveAchievements;return <>{top('Achievements',true,'trophy')}<div className="achievement-list">{items.map((t:any)=><div className="earn-item pearl-card" key={t.id}>{icon(t.icon||'trophy',45,true)}<span><b>{t.title||t.id}</b><small>{t.description||''}{!demo?` · ${t.xp||0} XP`:''}</small></span>{!demo&&<button disabled={t.claimed||!t.available} onClick={async()=>{const x=await gameAction('/api/achievements/claim',{id:t.id});if(x)await refreshLive()}}>{t.claimed?'Получено':t.available?'Получить':'Не выполнено'}</button>}</div>)}</div>{!items.length&&<p className="disclaimer">Достижения ещё не утверждены владельцами. Скрытые награды не начисляются.</p>}</>}
+ function History(){return <div className="gm-history-v2">{top('История операций',true,'clock')}{!serverHistory.length&&<div className="gm-history-empty gm-premium-card">{icon('clock',62,true)}<h3>История операций пока пуста</h3><p>Подтверждённые действия появятся здесь после первой операции.</p><button className="gm-history-refresh" onClick={loadHistory}>{icon('refresh',18)} Загрузить с сервера</button></div>}{serverHistory.map((x:any)=><div key={x.id} className="gm-history-event gm-premium-card"><div>{icon('clock',29,true)}<span><b>{x.kind}</b><small>{new Date(x.at*1000).toLocaleString(actualLang==='uk'?'uk-UA':actualLang==='pt'?'pt-PT':'ru-RU')}</small></span></div><p>{x.info}</p></div>)}</div>}
+ function Achievements(){
+ const e=React.createElement;
+ const code=gmTourLanguage(actualLang);
+ const real=liveAchievements||[];
+ const pioneer=liveState?.user?.pioneer_rank;
+ const special=[{"id":"founder","title":{"ru":"Первооткрыватель","uk":"Першовідкривач","pt":"Pioneiro","en":"Pioneer"},"description":{"ru":"Первый 20 зарегистрированных игроков","uk":"Перші 20 зареєстрованих","pt":"Primeiros 20 jogadores","en":"Первый 20 зарегистрированных игроков"}},{"id":"firstClaim","title":{"ru":"Первая искра","uk":"Перша іскра","pt":"Primeira faísca","en":"First spark"},"description":{"ru":"Первый сбор GM","uk":"Перший збір GM","pt":"Primeira coleta GM","en":"Первый сбор GM"}},{"id":"claim10","title":{"ru":"Коллекционер искр","uk":"Колекціонер іскор","pt":"Colecionador de faíscas","en":"Spark collector"},"description":{"ru":"10 сборов майнинга","uk":"10 зборів майнінгу","pt":"10 coletas de mineração","en":"10 сборов майнинга"}},{"id":"claim100","title":{"ru":"Серебряная шахта","uk":"Срібна шахта","pt":"Mina prateada","en":"Silver mine"},"description":{"ru":"100 сборов майнинга","uk":"100 зборів майнінгу","pt":"100 coletas de mineração","en":"100 сборов майнинга"}},{"id":"sevenDays","title":{"ru":"Ритм недели","uk":"Ритм тижня","pt":"Ritmo da semana","en":"Weekly rhythm"},"description":{"ru":"Серия из 7 дней","uk":"Серія з 7 днів","pt":"Sequência de 7 dias","en":"Серия из 7 дней"}},{"id":"thirtyDays","title":{"ru":"Стальной характер","uk":"Сталевий характер","pt":"Disciplina de aço","en":"Steel discipline"},"description":{"ru":"Серия из 30 дней","uk":"Серія з 30 днів","pt":"Sequência de 30 dias","en":"Серия из 30 дней"}},{"id":"firstFriend","title":{"ru":"Рука помощи","uk":"Рука допомоги","pt":"Mão amiga","en":"Helping hand"},"description":{"ru":"Первый приглашённый игрок","uk":"Перший запрошений","pt":"Primeiro amigo convidado","en":"Первый приглашённый игрок"}},{"id":"tenFriends","title":{"ru":"Серебряный круг","uk":"Срібне коло","pt":"Círculo de prata","en":"Silver circle"},"description":{"ru":"10 приглашённых игроков","uk":"10 запрошених","pt":"10 amigos convidados","en":"10 приглашённых игроков"}},{"id":"hundredFriends","title":{"ru":"Строитель сообщества","uk":"Будівничий спільноти","pt":"Construtor da comunidade","en":"Community builder"},"description":{"ru":"100 приглашённых игроков","uk":"100 запрошених","pt":"100 amigos convidados","en":"100 приглашённых игроков"}},{"id":"firstBox","title":{"ru":"Тайна металла","uk":"Таємниця металу","pt":"Segredo do metal","en":"Metal secret"},"description":{"ru":"Первый открытый бокс","uk":"Перший відкритий бокс","pt":"Primeira caixa aberta","en":"Первый открытый бокс"}},{"id":"allBoxes","title":{"ru":"Хранитель сундуков","uk":"Охоронець скринь","pt":"Guardião das caixas","en":"Box keeper"},"description":{"ru":"Открыть каждый тип бокса","uk":"Відкрити всі типи","pt":"Abrir todos os tipos","en":"Открыть каждый тип бокса"}},{"id":"firstTrade","title":{"ru":"Первый сигнал","uk":"Перший сигнал","pt":"Primeiro sinal","en":"First signal"},"description":{"ru":"Первая сделка GM/CR","uk":"Перша угода GM/CR","pt":"Primeira operação GM/CR","en":"Первая сделка GM/CR"}},{"id":"tenTrades","title":{"ru":"Точный расчёт","uk":"Точний розрахунок","pt":"Cálculo exato","en":"Exact calculation"},"description":{"ru":"10 подтверждённых сделок","uk":"10 підтверджених угод","pt":"10 operações confirmadas","en":"10 подтверждённых сделок"}},{"id":"leagueGold","title":{"ru":"Золотой маршрут","uk":"Золотий маршрут","pt":"Caminho dourado","en":"Golden path"},"description":{"ru":"Достигнуть лиги Gold","uk":"Досягнути ліги Gold","pt":"Alcançar a liga Gold","en":"Достигнуть лиги Gold"}},{"id":"leagueMaster","title":{"ru":"Мастер стали","uk":"Майстер сталі","pt":"Mestre do aço","en":"Steel master"},"description":{"ru":"Достигнуть лиги Master","uk":"Досягнути ліги Master","pt":"Alcançar a liga Master","en":"Достигнуть лиги Master"}},{"id":"leagueImmortal","title":{"ru":"Бессмертный GM","uk":"Безсмертний GM","pt":"GM imortal","en":"GM Immortal"},"description":{"ru":"Достигнуть лиги GM Immortal","uk":"Досягнути ліги GM Immortal","pt":"Alcançar a liga GM Immortal","en":"Достигнуть лиги GM Immortal"}},{"id":"level25","title":{"ru":"Хромированная искра","uk":"Хромована іскра","pt":"Faísca cromada","en":"Chrome spark"},"description":{"ru":"25-й уровень улучшений","uk":"25-й рівень покращень","pt":"Nível de melhoria 25","en":"25-й уровень улучшений"}},{"id":"level50","title":{"ru":"Платиновый рост","uk":"Платиновий ріст","pt":"Crescimento platina","en":"Platinum ascent"},"description":{"ru":"50-й уровень улучшений","uk":"50-й рівень покращень","pt":"Nível de melhoria 50","en":"50-й уровень улучшений"}},{"id":"level100","title":{"ru":"Архитектор энергии","uk":"Архітектор енергії","pt":"Arquiteto de energia","en":"Energy architect"},"description":{"ru":"100-й уровень улучшений","uk":"100-й рівень покращень","pt":"Nível de melhoria 100","en":"100-й уровень улучшений"}},{"id":"level200","title":{"ru":"Абсолютный GM","uk":"Абсолютний GM","pt":"GM absoluto","en":"Absolute GM"},"description":{"ru":"200-й уровень улучшений","uk":"200-й рівень покращень","pt":"Nível de melhoria 200","en":"200-й уровень улучшений"}},{"id":"walletProof","title":{"ru":"Владелец GM","uk":"Власник GM","pt":"Detentor de GM","en":"GM holder"},"description":{"ru":"Подтвердить внешний кошелёк","uk":"Підтвердити гаманець","pt":"Verificar carteira externa","en":"Подтвердить внешний кошелёк"}},{"id":"holding100","title":{"ru":"Холодный металл","uk":"Холодний метал","pt":"Metal frio","en":"Cold metal"},"description":{"ru":"100 GM на подтверждённом кошельке","uk":"100 GM у підтвердженому гаманці","pt":"100 GM na carteira verificada","en":"100 GM на подтверждённом кошельке"}},{"id":"holding1000","title":{"ru":"Хранитель резерва","uk":"Охоронець резерву","pt":"Guardião da reserva","en":"Reserve keeper"},"description":{"ru":"1000 GM на подтверждённом кошельке","uk":"1000 GM у підтвердженому гаманці","pt":"1000 GM na carteira verificada","en":"1000 GM на подтверждённом кошельке"}},{"id":"firstWithdrawal","title":{"ru":"Первый вывод","uk":"Перший вивід","pt":"Primeira retirada","en":"First withdrawal"},"description":{"ru":"Первый подтверждённый вывод","uk":"Перший підтверджений вивід","pt":"Primeira retirada verificada","en":"Первый подтверждённый вывод"}}];
+ const unlocked=e('section',{className:'gm-achievements-hero gm-premium-card'},
+  icon('trophy',56,true),e('div',null,e('h2',null,'Коллекция GM TOKEN'),
+   e('p',null,'Зарабатывай косметические награды за игровые достижения. Неоткрытые карточки показаны серыми.')));
+ return e('div',{className:'gm-achievements-v2'},
+  top('Достижения',true,'trophy'),unlocked,
+  pioneer?e('section',{className:'gm-achievement-founder gm-premium-card'},icon('crown',47,true),
+   e('span',null,e('b',null,'Pioneer #'+pioneer+' / 20'),e('small',null,'Коллекционная рамка и серебряная монета открыты'))):null,
+  e('div',{className:'achievement-list gm-achievement-gallery'},
+    ...real.map((t:any)=>e('div',{className:'gm-achievement-tile '+(t.claimed?'earned':t.available?'available':'locked'),key:t.id},
+      icon(t.icon||'trophy',39,true),e('span',null,e('b',null,t.title||t.id),e('small',null,t.description||'')),
+      e('button',{type:'button',disabled:demo||t.claimed||!t.available,onClick:async()=>{const x=await gameAction('/api/achievements/claim',{id:t.id});if(x)await refreshLive()}},
+      t.claimed?'✓':t.available?'Получить':'🔒'))),
+    ...special.filter((t:any)=>!real.some((row:any)=>row.id===t.id)).map((t:any)=>{
+      const earned=t.id==='founder'&&!!pioneer;
+      return e('div',{className:'gm-achievement-tile '+(earned?'earned':'locked'),key:t.id},
+       icon(earned?'crown':'trophy',39,true),
+       e('span',null,e('b',null,t.title[code]||t.title.ru),e('small',null,t.description[code]||t.description.ru)),
+       e('span',{className:'gm-achievement-state'},earned?'✓':'🔒'));
+    })),
+   e('p',{className:'gm-achievements-disclaimer'},'Серые достижения — запланированная коллекция. Награды за них пока не начисляются. Первые 20 Pioneer определяются сервером.')
+ );
+}
  
 function Settings(){
  const e=React.createElement;
@@ -1150,8 +1178,8 @@ function More(){
  const e=React.createElement;
  const groups:[string,string[][]][]=[
   ['АККАУНТ',[['profile','profile','Профиль','Баланс и уровень'],['achievements','trophy','Достижения','Награды и прогресс'],['history','clock','История','Подтверждённые операции']]],
-  ['ИГРА',[['reward','gift','Daily Reward','Ежедневный бонус'],['tasks','tasks','Задания','Выполняй игровые цели'],['referrals','friends','Пригласить друзей','Реферальная программа'],['vault','coins','Holding Vault','Внутриигровой кошелёк']]],
-  ['ПОМОЩЬ',[['support','shield-check','Поддержка','Обращения и ответы'],['settings','settings','Настройки','Оформление и язык'],['intro','info','Инструкция','Как играть в GM TOKEN']]]
+  ['ИГРА',[['reward','gift','Daily Reward','Ежедневный бонус'],['tasks','tasks','Задания','Выполняй игровые цели'],['referrals','friends','Пригласить друзей','Реферальная программа'],['wallet','wallet','Кошелёк','Подтверждённые GM на внешнем кошельке']]],
+  ['ПОМОЩЬ',[['support','shield-check','Поддержка','Обращения и ответы'],['ambassador','star','Амбассадор','Звания и сообщество'],['leagues','trophy','Лиги','10 рангов по XP'],['settings','settings','Настройки','Оформление и язык'],['intro','info','Инструкция','Как играть в GM TOKEN']]]
  ];
  if(['owner','coowner'].includes(liveRole))groups.push(['АДМИНИСТРИРОВАНИЕ',[['admin','crown','Admin Panel','Только Owner и Co-Owner']]]);
  const sections=groups.map(([title,rows])=>{
