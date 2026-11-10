@@ -682,7 +682,7 @@ function Tasks(){
    e('div',{className:'gm-league-list'},leagues.map((item:any,i:number)=>e('div',{
     key:item.id,className:'gm-league-row gm-premium-card '+(item.id===current?'active':'')},
      e('span',{className:'gm-league-number'},String(i+1).padStart(2,'0')),
-     icon(i>=8?'crown':i>=3?'diamond':'shield',27,true),
+     icon(i>=8?'crown':i>=3?'diamond':'shield-check',27,true),
      e('div',null,e('b',null,item.name),e('small',null,nf(item.xp,0)+' XP')),
      item.id===current?icon('check',18):null))),
    e('div',{className:'rank-tabs'},e('button',{type:'button',onClick:()=>setRankFilter('Global'),className:rankFilter==='Global'?'on':''},'Global'),
@@ -1009,7 +1009,7 @@ function Referrals(){
    e('div',{className:'achievement-list'},future.map(([title,desc,ico],i)=>e('div',{
     className:'earn-item pearl-card gm-achievement-locked',key:'future-'+i},
     icon(ico,39,true),e('span',null,e('b',null,title),e('small',null,desc)),
-    e('span',{className:'gm-locked-tag'},icon('lock',17)))),
+    e('span',{className:'gm-locked-tag'},icon('verified-user',17)))),
    e('p',{className:'disclaimer'},'Серые значки — ещё не заработанные достижения. Предпросмотр не начисляет XP, GM или скины.'));
  }
 
@@ -1035,7 +1035,7 @@ function Settings(){
   e('section',{className:'gm-settings-block gm-premium-card gm-language-section'},
    e('h3',null,t('selectLanguage')),
    e('p',null,isUk?'Мова меню змінюється відразу. Повний переклад окремих екранів ще допрацьовується.':isEn?'The navigation language changes instantly; remaining screens are being localized.':'Язык меню меняется сразу. Перевод остальных экранов ещё дорабатывается.'),
-   e('label',{className:'gm-language-search'},icon('search',19),
+   e('label',{className:'gm-language-search'},icon('info',19),
     e('input',{type:'search',value:langSearch,placeholder:t('searchLanguage'),
      onChange:(event:any)=>setLangSearch(event.target.value),'aria-label':t('searchLanguage')})),
    e('div',{className:'gm-language-list','role':'listbox','aria-label':t('selectLanguage')},
