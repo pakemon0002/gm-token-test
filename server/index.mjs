@@ -276,6 +276,33 @@ const routes=async(req,res)=>{
    sendTelegram(target,`GM TOKEN: тестовое начисление +${(amount/100).toFixed(2)} ${currency}. Виртуальная валюта; причина: ${reason}`);
    return send(res,200,{ok:true,userId:target,currency,amount_cents:amount,sourcePool:pool,operationId:op,test:true});
   }
+  if(p==='/api/admin/points'&&verb==='POST'){
+   roleCheck({id},['owner','coowner']);const body=await readBody(req);require2FA({id},body);
+   const target=String(body.userId||'').trim(),points=Number(body.points);
+   const reason=String(body.reason||'').trim(),op=String(body.operationId||'');
+   if(!/^\\d{5,20}$/.test(target))throw Error('valid registered Telegram ID required');
+   if(!Number.isSafeInteger(points)||points<1||points>10000)throw Error('POINTS grant must be 1..10000');
+   if(reason.length<15||reason.length>200)throw Error('reason must be 15..200 characters');
+   if(!/^[A-Za-z0-9_.:-]{8,100}$/.test(op))throw Error('operationId required');
+   let balance;
+   tx(()=>{
+    if(stmt('SELECT id FROM journal WHERE id=?').get(op))throw Error('duplicate operation');
+    if(!stmt('SELECT id FROM users WHERE id=?').get(target))throw Error('player has not opened GM TOKEN');
+    const account=stmt('SELECT points FROM points_account WHERE user_id=?').get(target);
+    if(!account)throw Error('player POINTS account is missing');
+    const today=Math.floor(now()/86400)*86400;
+    const todayGrants=stmt("SELECT info FROM journal WHERE kind='admin_points_grant' AND at>=?").all(today);
+    let daily=0;
+    for(const item of todayGrants){try{const grant=JSON.parse(item.info);if(grant.user===target)daily+=grant.points||0}catch{}}
+    if(daily+points>50000)throw Error('50,000 POINTS daily administrative cap reached');
+    stmt('UPDATE points_account SET points=points+? WHERE user_id=?').run(points,target);
+    balance=stmt('SELECT points FROM points_account WHERE user_id=?').get(target).points;
+    stmt('INSERT INTO journal(id,at,actor,kind,info) VALUES(?,?,?,?,?)').run(op,now(),id,
+     'admin_points_grant',JSON.stringify({user:target,points,reason,balance}));
+   });
+   sendTelegram(target,'GM TOKEN: администратор начислил '+points+' игровых POINTS. Причина: '+reason);
+   return send(res,200,{success:true,userId:target,points,balance,operationId:op});
+  }
   if(p==='/api/admin/correction'&&verb==='POST'){
    roleCheck({id},['owner','coowner']);const body=await readBody(req);require2FA({id},body);
    const target=String(body.userId||''),pool=String(body.sourcePool||''),currency=String(body.currency||''),direction=body.direction==='debit'?'debit':'credit';
