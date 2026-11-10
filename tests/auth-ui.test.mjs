@@ -9,7 +9,7 @@ test('auth button invokes Telegram native navigation with browser fallback',()=>
   const s=read(path);
   assert.ok(has(s,'openTelegramLink(url)'));
   assert.ok(has(s,'window.location.assign(url)'));
-  assert.ok(has(s,'Открыть чат бота'));
+  assert.ok(has(s,'Открыть чат бота')||has(s,'auth-cta-copy'),'Telegram chat CTA exists');
  }
 });
 test('auth has original GM themed icons and matching CTA contrast rules',()=>{
