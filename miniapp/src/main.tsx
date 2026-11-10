@@ -1164,6 +1164,22 @@ function Support(){
  return <>{top('Admin Panel',true,'settings')}<div className="admin-banner pearl-card">{icon('crown',49,true)}<div><b>{liveRole.toUpperCase()}</b><small>Вход подтверждён Telegram; критические операции требуют TOTP</small></div></div>
  <div className="admin-numbers">{[['Users',adminStats?.users??'—'],['Orders',adminStats?.orders??'—'],['Trades (24h)',adminStats?.trades_24h??'—'],['Open tickets',adminStats?.open_tickets??'—']].map(([a,b])=><div className="pearl-card" key={a}><small>{a}</small><b>{b}</b><small>Серверные данные</small></div>)}</div>
  {AdminTestGrants()}
+ <section className="gm-admin-points gm-premium-card">
+  <div className="gm-admin-points-title">{icon('gift',40,true)}<div><b>Тестовые POINTS</b><small>Начисления для тестирования боксов. Только Owner и Co-Owner · 2FA.</small></div></div>
+  <label htmlFor="gm-points-to">Telegram ID получателя</label>
+  <input id="gm-points-to" inputMode="numeric" placeholder="Пусто = начислить себе" value={pointsUserId} onChange={(e:any)=>setPointsUserId(e.target.value)}/>
+  <label htmlFor="gm-points-qty">Количество POINTS</label>
+  <input id="gm-points-qty" inputMode="numeric" value={pointsAmount} onChange={(e:any)=>setPointsAmount(e.target.value)}/>
+  <div className="gm-admin-points-presets">{[500,1000,3000,10000].map(n=><button type="button" key={n} onClick={()=>setPointsAmount(String(n))}>{nf(n,0)} POINTS</button>)}</div>
+  <label htmlFor="gm-points-reason">Причина начисления</label>
+  <textarea id="gm-points-reason" rows={2} value={pointsReason} onChange={(e:any)=>setPointsReason(e.target.value)}/>
+  <label htmlFor="gm-points-2fa">Код владельца 2FA</label>
+  <input id="gm-points-2fa" type="text" inputMode="numeric" maxLength={6} autoComplete="one-time-code" placeholder="6 цифр" value={pointsCode} onChange={(e:any)=>setPointsCode(e.target.value)}/>
+  <button type="button" className="gm-admin-points-submit" disabled={demo||pointsBusy||pointsCode.length!==6||!/^\d+$/.test(pointsAmount)||Number(pointsAmount)<1||Number(pointsAmount)>25000} onClick={grantTestPoints}>
+   {icon('shield-check',20)} {pointsBusy?'Проверяем…':'Выдать тестовые POINTS'}
+  </button>
+  <small>Лимит 25 000 POINTS за операцию; 100 000 в день на игрока. Каждое начисление записывается сервером.</small>
+ </section>
  <h3 className="section-title">Управление</h3>
  <div className="admin-actions pearl-card"><button onClick={async()=>{const x=await adminRequest('/api/admin/team');if(x)setAdminTeam(x.team||[])}}>{icon('friends',21)} Обновить список ролей</button><button onClick={async()=>{const x=await adminRequest('/api/admin/pools');if(x)setAdminFunds(x.pools||[]);const st=await adminRequest('/api/admin/stats');if(st)setAdminStats(st)}}>{icon('database',21)} Остатки фондов</button></div>
  {adminTeam.length>0&&<div className="admin-records pearl-card">{adminTeam.map((x:any)=><div key={x.id}><span>{x.username||x.id}</span><b>{x.role}</b></div>)}</div>}
