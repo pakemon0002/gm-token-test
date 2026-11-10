@@ -1015,32 +1015,46 @@ function Referrals(){
 
 function Settings(){
  const e=React.createElement;
+ const isUk=actualLang==='uk';
+ const isEn=actualLang!=='ru'&&!isUk;
  const themes=[['light','Premium Silver'],['dark','Premium Graphite']];
  const themeButtons=themes.map(([value,label])=>e('button',{type:'button',key:value,
-  className:theme===value?'active':'',onClick:()=>setTheme(value)},
+  className:theme===value?'active':'',onClick:()=>setTheme(value),'aria-pressed':theme===value},
   e('i',{className:'gm-theme-swatch '+value}),e('b',null,label),theme===value?icon('check',18):null));
- const languageOptions=gmLanguages.map(([value,name])=>e('option',{key:value,value},name));
+ const available=gmLanguages.filter(([code,name])=>
+  !langSearch.trim()||(code+' '+name).toLocaleLowerCase().includes(langSearch.toLocaleLowerCase().trim()));
  return e(React.Fragment,null,
   top(lang('settings'),true,'settings'),
   e('div',{className:'gm-settings-summary gm-premium-card'},icon('settings',39,true),
-   e('span',null,e('b',null,'Персонализация'),e('small',null,'Оригинальный премиальный стиль GM TOKEN'))),
+   e('span',null,e('b',null,isUk?'Персоналізація':isEn?'Personalization':'Персонализация'),
+    e('small',null,'GM TOKEN · Premium Silver / Graphite'))),
   e('section',{className:'gm-settings-block gm-premium-card'},
-   e('h3',null,'Тема оформления'),
-   e('p',null,'Платиновый светлый вариант и графитовый тёмный вариант с тем же логотипом GM.'),
+   e('h3',null,isUk?'Тема оформлення':isEn?'Appearance':'Тема оформления'),
+   e('p',null,isUk?'Світла й темна версії відповідно до ескізу.':isEn?'Two official themes inspired by the approved layouts.':'Светлая и тёмная версии по утверждённому эскизу.'),
    e('div',{className:'gm-theme-list'},themeButtons)),
-  e('section',{className:'gm-settings-block gm-premium-card'},
-   e('label',{htmlFor:'gm-lang-select'},lang('language')+' интерфейса'),
-   e('p',null,'По умолчанию используется язык Telegram. Пока основной перевод доступен для меню и знакомства с игрой; остальные экраны постепенно переводятся.'),
-   e('select',{id:'gm-lang-select',value:locale,onChange:event=>{
-    const next=event.target.value;setLocale(next);store.setItem('gm_lang',next);
-   }},languageOptions)),
-  e('button',{type:'button',className:'gm-settings-onboard gm-premium-card',onClick:()=>goto('intro')},
-   icon('info',26),e('span',null,'Пройти инструкцию'),icon('chevron-right',20)),
-  e('p',{className:'gm-settings-note'},'GM TOKEN Premium · светлая и тёмная темы без цветного неона')
+  e('section',{className:'gm-settings-block gm-premium-card gm-language-section'},
+   e('h3',null,t('selectLanguage')),
+   e('p',null,isUk?'Мова меню змінюється відразу. Повний переклад окремих екранів ще допрацьовується.':isEn?'The navigation language changes instantly; remaining screens are being localized.':'Язык меню меняется сразу. Перевод остальных экранов ещё дорабатывается.'),
+   e('label',{className:'gm-language-search'},icon('search',19),
+    e('input',{type:'search',value:langSearch,placeholder:t('searchLanguage'),
+     onChange:(event:any)=>setLangSearch(event.target.value),'aria-label':t('searchLanguage')})),
+   e('div',{className:'gm-language-list','role':'listbox','aria-label':t('selectLanguage')},
+    available.map(([code,name])=>e('button',{type:'button',key:code,'role':'option','aria-selected':locale===code,
+     className:'gm-language-option '+(locale===code?'active':''),
+     onClick:()=>{setLocale(code);store.setItem('gm_lang',code)}},
+     e('span',null,name),
+     locale===code?icon('check',18):null))),
+   !available.length&&e('p',{className:'gm-language-empty'},isUk?'Не знайдено':isEn?'No languages found':'Язык не найден')),
+  e('button',{type:'button',className:'gm-settings-onboard gm-premium-card',onClick:()=>{setIntroStep(0);goto('intro')}},
+   icon('info',26),e('span',null,isUk?'Пройти інструкцію':isEn?'Replay onboarding':'Пройти инструкцию'),icon('chevron-right',20)),
+  e('button',{type:'button',className:'gm-settings-onboard gm-premium-card',onClick:()=>{
+   for(const key of Object.keys(gmGuides))try{window.localStorage.removeItem('gm_guide_'+key)}catch{}
+   flash(isUk?'Підказки оновлено':isEn?'Guides reset':'Подсказки сброшены');
+  }},icon('info',24),e('span',null,isUk?'Повторити навчання за розділами':'Повторить обучение по разделам'),icon('chevron-right',20)),
+  e('p',{className:'gm-settings-note'},'GM TOKEN · Premium Silver / Graphite')
  );
 }
 
- 
 function Support(){
  const e=React.createElement;
  const categories=['Общий вопрос','Mining','Holding','Биржа GM/CR','Баланс GM/CR','Апелляция','Рефералы'];
@@ -1192,6 +1206,13 @@ function Intro(){
 }
 
 function Streak(){return <>{top('Daily Streak',true,'flame')}<div className="referral-hero pearl-card">{icon('flame',90,true)}<h1>{wallet.streak} дней</h1><p>Серия ежедневных посещений. Повторное получение награды в один день запрещено.</p></div><GButton theme={theme} onClick={()=>goto('reward')}>Ежедневная награда</GButton></>}
+ if(booting){return <main className={'application theme-'+theme+' gm-boot-app'} aria-live="polite">
+  <section className="gm-boot-screen"><div className="gm-boot-metal-line" aria-hidden="true"/>
+   <img src={BRAND+'gm-lettermark-metallic-transparent.png'} alt="GM TOKEN"/>
+   <h1>GM TOKEN</h1><p>{t('opening')}</p>
+   <div className="gm-boot-progress"><span/></div>
+  </section>
+ </main>}
  if(demo){return <main className={'application auth-page theme-'+theme}>
   <div className="auth-ambient" aria-hidden="true"/>
   <section className="auth-gate pearl-card" aria-labelledby="auth-title">
@@ -1214,7 +1235,19 @@ function Streak(){return <>{top('Daily Streak',true,'flame')}<div className="ref
  switch(screen){case 'home':view=Home();break;case 'trade':view=Trading();break;case 'earn':view=Earn();break;case 'tasks':view=Tasks();break;case 'leaderboard':view=Leaderboard();break;case 'profile':view=Profile();break;case 'reward':view=Reward();break;case 'splash':view=Splash();break;case 'intro':view=Intro();break;case 'mining':view=Mining();break;case 'vault':view=Vault();break;case 'shop':view=Shop();break;case 'boxes':view=Boxes();break;case 'referrals':view=Referrals();break;case 'history':view=History();break;case 'settings':view=Settings();break;case 'support':view=Support();break;case 'admin':view=['owner','coowner'].includes(liveRole)?Admin():Home();break;case 'achievements':view=Achievements();break;case 'more':view=More();break;case 'streak':view=Streak();break;default:view=Home();}
  return <div className={'application theme-'+theme+(webapp?.initData?' is-telegram':'')}>
  <aside className="desktop-toolbar"><div className="toolbar-logo"><Brand theme={theme} size={42}/><span><b>GM TOKEN</b><small>Оригинальные эскизы · интерактивная сборка</small></span></div><div className="toolbar-tabs"><button onClick={()=>setTheme('light')} className={isLight?'chosen':''}>Light</button><button onClick={()=>setTheme('dark')} className={!isLight?'chosen':''}>Dark</button></div><div className="toolbar-links">{(['home','trade','earn','tasks','leaderboard','profile','mining','vault','shop','support','admin'] as Route[]).map(s=><button key={s} className={screen===s?'chosen':''} onClick={()=>goto(s)}>{s}</button>)}</div><p>Оригинальные PNG · 54 иконки × 4 варианта · без подмены сторонними пиктограммами</p></aside>
- <div className="device-stage"><div className="phone-frame"><div className={'phone-scroll '+((screen==='splash')?'no-scroll':'')}>{view}</div>{!['reward','splash','intro'].includes(screen)&&bottom()}<div className="home-indicator"/></div><div className="underphone"><span className="demo-pill">{'Серверная авторизация · виртуальные GM/CR'}</span><button onClick={()=>goto('splash')}>Заставка</button><button onClick={()=>goto('home')}>Home</button><button onClick={()=>setTheme(isLight?'dark':'light')}>Сменить тему</button></div><small className="status-note">{backendStatus}</small></div>
+ <div className="device-stage"><div className="phone-frame"><div className={'phone-scroll '+((screen==='splash')?'no-scroll':'')}>{view}</div>{!['reward','splash','intro'].includes(screen)&&bottom()}
+ {guideScreen&&gmGuides[guideScreen]&&<div className="gm-guide-layer" role="dialog" aria-modal="true" aria-label={gmGuides[guideScreen][guideStep]?.[0]}>
+  <div className="gm-guide-dim"/>
+  <div className="gm-guide-card">
+   <div className="gm-guide-top"><span>GM GUIDE · {guideStep+1}/{gmGuides[guideScreen].length}</span><button type="button" onClick={()=>{store.setItem('gm_guide_'+guideScreen,'done');setGuideScreen('')}} aria-label={t('guideSkip')}>×</button></div>
+   <h2>{gmGuides[guideScreen][guideStep]?.[0]}</h2><p>{gmGuides[guideScreen][guideStep]?.[1]}</p>
+   <div className="gm-guide-actions">
+    <button type="button" className="gm-guide-skip" onClick={()=>{store.setItem('gm_guide_'+guideScreen,'done');setGuideScreen('')}}>{t('guideSkip')}</button>
+    <button type="button" className="gm-guide-next" onClick={()=>{if(guideStep+1>=gmGuides[guideScreen].length){store.setItem('gm_guide_'+guideScreen,'done');setGuideScreen('')}else{setGuideStep(guideStep+1);if(guideScreen==='mining'&&guideStep===1)setMiningTab('upgrades')}}}>{guideStep+1===gmGuides[guideScreen].length?t('guideDone'):t('guideNext')} →</button>
+   </div>
+  </div>
+ </div>}
+ <div className="home-indicator"/></div><div className="underphone"><span className="demo-pill">{'Серверная авторизация · виртуальные GM/CR'}</span><button onClick={()=>goto('splash')}>Заставка</button><button onClick={()=>goto('home')}>Home</button><button onClick={()=>setTheme(isLight?'dark':'light')}>Сменить тему</button></div><small className="status-note">{backendStatus}</small></div>
  {toast&&<div className="toast-message" role="status" onClick={()=>setToast('')}>{toast}<button onClick={()=>setToast('')}>×</button></div>}
  {modal==='boxReveal'?BoxRevealModal():modal&&TradeOrderModal()}
  </div>;
