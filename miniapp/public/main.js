@@ -389,7 +389,7 @@ function App() {
         more: [['settings', 'customize', '.gm-more-list', 'more.menu']],
         achievements: [['trophy', 'achievements', '.gm-achievement-planned', 'achievements.locked']],
         settings: [['settings', 'theme', '.gm-theme-list', 'settings.theme'], ['globe', 'interfaceLanguage', '.gm-language-grid', 'settings.language']],
-        support: [['shield-check', 'support', '.gm-support-v8', 'support.ticket']]
+        support: [['shield-check', 'support', '.gm-support-form', 'support.ticket']]
     };
     const guideText = {
         'home.balance': { ru: 'Здесь отображаются твои игровые GM и CR. Нажми на соответствующую кнопку, чтобы перейти к основным возможностям; это не криптовалютный кошелёк.', uk: 'Тут показано твої ігрові GM і CR. Натисни потрібну кнопку, щоб перейти до функцій — це не криптогаманець.', pt: 'Veja seus GM e CR do jogo. Os saldos aqui não são uma carteira cripto.', en: 'Your in-game GM and CR balances live here. These are not on-chain wallet balances.' },
@@ -695,7 +695,6 @@ function App() {
             const x = await response.json();
             if (!response.ok)
                 throw Error(x.error || 'Сервер отказал');
-            flash('Операция выполнена');
             return x;
         }
         catch (e) {
@@ -845,6 +844,8 @@ function App() {
             flash('Ошибка получения тикетов: ' + e.message);
         }
     };
+    React.useEffect(() => { if (!demo && screen === 'support')
+        void loadTickets(); }, [screen, demo]);
     const ticketAction = async (id, action, payload = {}) => {
         const x = await adminRequest(`/api/tickets/${id}/${action}`, payload);
         if (x)
@@ -858,6 +859,7 @@ function App() {
         const x = await adminRequest('/api/tickets', { category: supportCategory, body: supportText });
         if (x) {
             setSupportText('');
+            flash('Обращение создано');
             await loadTickets();
         }
     };
@@ -1223,9 +1225,9 @@ function App() {
                     onClick: () => ticketAction(t.id, 'reopen') }, 'Открыть повторно'));
             return e('section', { className: 'gm-support-ticket gm-premium-card', key: t.id }, e('div', null, e('b', null, '#' + String(t.id).slice(0, 8)), e('span', null, t.category)), e('p', null, clean(t.body || t.text || '')), e('small', null, 'Статус: ' + t.status + ' · ' + (t.priority || 'P3')), e('div', { className: 'gm-support-actions' }, actions));
         });
-        return e(React.Fragment, null, top('Поддержка', true, 'shield-check'), e('div', { className: 'gm-support-hero gm-premium-card' }, icon('shield-check', 43, true), e('div', null, e('b', null, 'Центр поддержки GM TOKEN'), e('p', null, 'Поможем разобраться с Mining, бокcами, сделками, балансом и входом в Telegram.'))), e('section', { className: 'gm-support-form gm-premium-card' }, e('label', { htmlFor: 'gm-support-topic' }, 'Тема обращения'), e('select', { id: 'gm-support-topic', value: supportCategory, onChange: event => setSupportCategory(event.target.value) }, categories.map(x => e('option', { key: x }, x))), e('label', { htmlFor: 'gm-support-message' }, 'Опиши проблему'), e('textarea', { id: 'gm-support-message', rows: 5, value: supportText,
+        return e(React.Fragment, null, top(L('support'), true, 'info'), e('div', { className: 'gm-support-hero gm-premium-card' }, icon('shield-check', 43, true), e('div', null, e('b', null, 'Центр поддержки GM TOKEN'), e('p', null, 'Поможем разобраться с Mining, бокcами, сделками, балансом и входом в Telegram.'))), e('section', { className: 'gm-support-form gm-premium-card' }, e('div', { className: 'gm-support-form-head' }, icon('info', 29), e('span', null, e('b', null, 'Новое обращение'), e('small', null, 'Ответы и статус сохраняются на сервере'))), e('label', null, 'Тема обращения'), e('div', { className: 'gm-support-category-grid', role: 'group', 'aria-label': 'Тема обращения' }, categories.map((x, i) => e('button', { type: 'button', key: x, className: 'gm-support-category ' + (supportCategory === x ? 'selected' : ''), 'aria-pressed': supportCategory === x, onClick: () => setSupportCategory(x) }, icon(['info', 'lightning', 'wallet', 'candlesticks', 'coins', 'shield-check', 'friends'][i], 18), x))), e('label', { htmlFor: 'gm-support-message' }, 'Опиши проблему'), e('textarea', { id: 'gm-support-message', rows: 5, value: supportText,
             placeholder: 'Например: после открытия Mini App пропал баланс…',
-            onChange: event => setSupportText(event.target.value) }), e('button', { type: 'button', className: 'gm-support-submit', disabled: demo || supportText.trim().length < 10, onClick: createTicket }, icon('send', 20), ' Создать обращение')), e('div', { className: 'gm-support-section-label' }, e('b', null, 'Мои обращения'), e('button', { type: 'button', onClick: loadTickets }, icon('refresh', 17), ' Обновить')), rows.length ? rows : e('p', { className: 'gm-support-empty' }, 'Пока нет обращений. Создай обращение через форму выше.'), e('p', { className: 'gm-support-foot' }, 'При серьёзной ошибке баланса выбери «Баланс GM/CR». Не сообщай коды 2FA и секреты бота.'));
+            onChange: event => setSupportText(event.target.value) }), e('small', { className: 'gm-support-length' }, supportText.trim().length + ' / 3000 · минимум 10 символов'), e('button', { type: 'button', className: 'gm-support-submit', disabled: demo || supportText.trim().length < 10, onClick: createTicket }, icon('send', 20), ' Создать обращение')), e('div', { className: 'gm-support-section-label' }, e('b', null, 'Мои обращения'), e('button', { type: 'button', onClick: loadTickets }, icon('refresh', 17), ' Обновить')), rows.length ? rows : e('p', { className: 'gm-support-empty' }, 'Пока нет обращений. Создай обращение через форму выше.'), e('p', { className: 'gm-support-foot' }, 'При серьёзной ошибке баланса выбери «Баланс GM/CR». Не сообщай коды 2FA и секреты бота.'));
     }
     function AdminTestGrants() {
         const e = React.createElement;
