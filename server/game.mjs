@@ -2,7 +2,7 @@
 // ECONOMY_PENDING settings are intentionally disabled until both co-owners approve them.
 import crypto from 'node:crypto';
 import {toCents} from './lib.mjs';
-import {MAX_MINING_UPGRADE_LEVEL,miningUpgradeCost,miningUpgradeBonusPct,miningUpgradeTotalCost,miningUpgradeTable} from './mining-progression.mjs';
+import {MAX_MINING_UPGRADE_LEVEL,miningUpgradeCost,miningUpgradeBonusPct,miningUpgradeTotalCost,miningUpgradeTable,leagueForXp,GM_LEAGUES} from './mining-progression.mjs';
 import {makeCandles,tradingSnapshot,indicativeAuction,INTERVALS} from './market-data.mjs';
 const DAY=86400, HOUR=3600, MICRO=1000000;
 const xpLevels=[0,100,250,450,750,1150,1700,2400,3300,4400];
@@ -23,6 +23,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
  db.exec(`CREATE TABLE IF NOT EXISTS game_settings(k TEXT PRIMARY KEY,v TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS mining_state(user_id TEXT PRIMARY KEY REFERENCES users(id),last_at INTEGER NOT NULL,reg_micro INTEGER NOT NULL DEFAULT 0,overflow_micro INTEGER NOT NULL DEFAULT 0,processed_cents INTEGER NOT NULL DEFAULT 0,pending_cents INTEGER NOT NULL DEFAULT 0,last_xp_day TEXT NOT NULL DEFAULT '');
  CREATE TABLE IF NOT EXISTS mining_upgrades(user_id TEXT PRIMARY KEY REFERENCES users(id),level INTEGER NOT NULL DEFAULT 1 CHECK(level BETWEEN 1 AND 200),updated_at INTEGER NOT NULL DEFAULT 0);
+ CREATE TABLE IF NOT EXISTS early_player_awards(slot INTEGER PRIMARY KEY CHECK(slot BETWEEN 1 AND 20),user_id TEXT NOT NULL UNIQUE REFERENCES users(id),awarded_at INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS holding_state(user_id TEXT PRIMARY KEY REFERENCES users(id),pending_cents INTEGER NOT NULL DEFAULT 0,last_withdraw_day TEXT NOT NULL DEFAULT '',carry_micro INTEGER NOT NULL DEFAULT 0,partial_micro INTEGER NOT NULL DEFAULT 0,last_checkpoint INTEGER NOT NULL DEFAULT 0);
  CREATE TABLE IF NOT EXISTS holding_peak(user_id TEXT PRIMARY KEY REFERENCES users(id),peak_cents INTEGER NOT NULL DEFAULT 0);
  CREATE TABLE IF NOT EXISTS points_account(user_id TEXT PRIMARY KEY REFERENCES users(id),points INTEGER NOT NULL DEFAULT 0,day TEXT NOT NULL DEFAULT '',daily_volume_cents INTEGER NOT NULL DEFAULT 0,daily_points INTEGER NOT NULL DEFAULT 0);
@@ -106,10 +107,23 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
    log('system','private_test_premarket_shortened',{at:now()});
   }
  }
- function ensure(id){const t=now();stmt('INSERT OR IGNORE INTO mining_upgrades(user_id,level,updated_at) VALUES(?,1,?)').run(id,t);stmt('INSERT OR IGNORE INTO mining_state(user_id,last_at) VALUES(?,?)').run(id,t);stmt('INSERT OR IGNORE INTO holding_state(user_id,last_checkpoint) VALUES(?,?)').run(id,t);stmt('INSERT OR IGNORE INTO points_account(user_id) VALUES(?)').run(id);stmt('INSERT OR IGNORE INTO holding_peak(user_id,peak_cents) SELECT user_id,vault FROM wallets WHERE user_id=?').run(id)}
+ function ensure(id){const t=now();
+  // Historical registration order is respected; no paid/repeatable claim can take a founder slot.
+  const pioneers=stmt('SELECT id FROM users ORDER BY created_at,id LIMIT 20').all();
+  for(let i=0;i<pioneers.length;i++)stmt('INSERT OR IGNORE INTO early_player_awards(slot,user_id,awarded_at) VALUES(?,?,?)').run(i+1,pioneers[i].id,t);
+  stmt('INSERT OR IGNORE INTO mining_upgrades(user_id,level,updated_at) VALUES(?,1,?)').run(id,t);stmt('INSERT OR IGNORE INTO mining_state(user_id,last_at) VALUES(?,?)').run(id,t);stmt('INSERT OR IGNORE INTO holding_state(user_id,last_checkpoint) VALUES(?,?)').run(id,t);stmt('INSERT OR IGNORE INTO points_account(user_id) VALUES(?)').run(id);stmt('INSERT OR IGNORE INTO holding_peak(user_id,peak_cents) SELECT user_id,vault FROM wallets WHERE user_id=?').run(id)}
  function once(id,actor,kind,callback){const existing=stmt('SELECT actor,kind,response FROM request_ids WHERE id=?').get(id);if(existing){if(existing.actor!==actor||existing.kind!==kind)throw Error('operationId already used for another operation');return JSON.parse(existing.response)}const response=callback();stmt('INSERT INTO request_ids(id,actor,kind,created_at,response) VALUES(?,?,?,?,?)').run(id,actor,kind,now(),JSON.stringify(response));return response}
  const wal=(id)=>stmt('SELECT * FROM wallets WHERE user_id=?').get(id);
  const upgradeLevel=(id)=>stmt('SELECT level FROM mining_upgrades WHERE user_id=?').get(id)?.level??1;
+ const earlyNames=['Первый свет','Искра GM','Серебряный основатель','Алмазный исток','Первый хранитель','Полярная звезда','Стальной первопроходец','GM Genesis','Серебряное крыло','Код создателя','Рождение легенды','Северное сияние','Проводник GM','Первый импульс','Графитовая корона','Сердце токена','Хранитель эпохи','Лунный металл','Звёздный майнер','Вечный основатель'];
+ const cosmetics=(id)=>{
+  const slot=stmt('SELECT slot FROM early_player_awards WHERE user_id=?').get(id)?.slot||null;
+  const upgrade=upgradeLevel(id);
+  const frames=Array.from({length:20},(_,i)=>({id:'founder_'+(i+1),title:earlyNames[i],category:'founder',claimed:slot===i+1,locked:slot!==i+1,limited:true}));
+  for(const level of [25,50,75,100,125,150,175,200])frames.push({id:'mining_'+level,title:'GM Mining · '+level,category:'milestone',claimed:upgrade>=level,locked:upgrade<level,limited:false});
+  return {founder_slot:slot,frames};
+ };
+
  const upgradeState=(id)=>{
   const level=upgradeLevel(id),next=level<MAX_MINING_UPGRADE_LEVEL?level+1:null;
   return {level,max_level:MAX_MINING_UPGRADE_LEVEL,bonus_pct:miningUpgradeBonusPct(level),total_spent_gm:miningUpgradeTotalCost(level),
@@ -298,7 +312,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
   if(p==='/api/achievements'&&verb==='GET')return response(200,{achievements:catalogStatus(id,'achievements')});
   if(p==='/api/tasks/claim'&&verb==='POST')return response(200,claimCatalog(id,'tasks',await read()));
   if(p==='/api/achievements/claim'&&verb==='POST')return response(200,claimCatalog(id,'achievements',await read()));
-  if(p==='/api/game/status'&&verb==='GET')return response(200,tx(()=>{ensure(id);settle();const m=stmt('SELECT * FROM mining_state WHERE user_id=?').get(id),h=stmt('SELECT * FROM holding_state WHERE user_id=?').get(id);return {user:stmt('SELECT level,xp,username FROM users WHERE id=?').get(id),wallet:wal(id),mining:{...m,rate_cents_day:rate({...stmt('SELECT level FROM users WHERE id=?').get(id),upgrade_level:upgradeLevel(id)},wal(id)),upgrade:upgradeState(id)},holding:h,points:stmt('SELECT * FROM points_account WHERE user_id=?').get(id),daily:dailyProfile(id),auction:{end_at:Number(v('auction_end')),done:v('auction_done')==='1'},config:{test_economy:testEconomy,holding_enabled:Number(v('holding_daily_bps'))>0,daily_enabled:Number(v('daily_gm_cents'))>0,shop_enabled:v('shop_rate_mode')!=='disabled',boxes_enabled:Object.keys(JSON.parse(v('box_rewards_json'))).length===3,box_rewards:JSON.parse(v('box_rewards_json')),daily_reward_gm:Number(v('daily_gm_cents'))/100}}}));
+  if(p==='/api/game/status'&&verb==='GET')return response(200,tx(()=>{ensure(id);settle();const m=stmt('SELECT * FROM mining_state WHERE user_id=?').get(id),h=stmt('SELECT * FROM holding_state WHERE user_id=?').get(id);return {user:stmt('SELECT level,xp,username FROM users WHERE id=?').get(id),wallet:wal(id),mining:{...m,rate_cents_day:rate({...stmt('SELECT level FROM users WHERE id=?').get(id),upgrade_level:upgradeLevel(id)},wal(id)),upgrade:upgradeState(id)},league:leagueForXp(stmt('SELECT xp FROM users WHERE id=?').get(id).xp),leagues:GM_LEAGUES,cosmetics:cosmetics(id),holding:h,points:stmt('SELECT * FROM points_account WHERE user_id=?').get(id),daily:dailyProfile(id),auction:{end_at:Number(v('auction_end')),done:v('auction_done')==='1'},config:{test_economy:testEconomy,holding_enabled:Number(v('holding_daily_bps'))>0,daily_enabled:Number(v('daily_gm_cents'))>0,shop_enabled:v('shop_rate_mode')!=='disabled',boxes_enabled:Object.keys(JSON.parse(v('box_rewards_json'))).length===3,box_rewards:JSON.parse(v('box_rewards_json')),daily_reward_gm:Number(v('daily_gm_cents'))/100}}}));
   const body=verb==='POST'?await read():{};
   const op=()=>requestId(body.operationId);
   if(p==='/api/mining/upgrade'&&verb==='POST')return response(200,tx(()=>{
