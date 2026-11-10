@@ -225,6 +225,15 @@ function App() {
     const [liveTasks, setLiveTasks] = React.useState([]);
     const [liveAchievements, setLiveAchievements] = React.useState([]);
     const [liveReferrals, setLiveReferrals] = React.useState(null);
+    const [liveAmbassador, setLiveAmbassador] = React.useState(null);
+    const [ambChannel, setAmbChannel] = React.useState('');
+    const [ambFollowers, setAmbFollowers] = React.useState('2000');
+    const [ambPending, setAmbPending] = React.useState(false);
+    const [adminAmbassadors, setAdminAmbassadors] = React.useState([]);
+    const [adminAmbVerified, setAdminAmbVerified] = React.useState('2000');
+    const [adminAmbNote, setAdminAmbNote] = React.useState('Канал и аудитория проверены администратором');
+    const [adminAmbCode, setAdminAmbCode] = React.useState('');
+    const [adminAmbTarget, setAdminAmbTarget] = React.useState('');
     const [liveRanks, setLiveRanks] = React.useState(null);
     const [shopQuote, setShopQuote] = React.useState(null);
     const [orderType, setOrderType] = React.useState('limit');
@@ -294,7 +303,7 @@ function App() {
     React.useEffect(() => {
         const onPop = () => {
             const prev = navStack.current.pop() || 'home', route = location.hash.slice(1);
-            const allowed = ['home', 'trade', 'earn', 'tasks', 'leaderboard', 'profile', 'reward', 'splash', 'intro', 'mining', 'vault', 'shop', 'referrals', 'history', 'settings', 'support', 'admin', 'achievements', 'more', 'streak', 'boxes'];
+            const allowed = ['home', 'trade', 'earn', 'tasks', 'leaderboard', 'profile', 'reward', 'splash', 'intro', 'mining', 'vault', 'shop', 'referrals', 'history', 'settings', 'support', 'admin', 'achievements', 'more', 'streak', 'boxes', 'ambassador'];
             setScreen(allowed.includes(route) ? route : prev);
             setModal('');
             document.querySelector('.phone-scroll')?.scrollTo(0, 0);
@@ -391,6 +400,9 @@ function App() {
     } return result; };
     React.useEffect(() => { if (demo)
         return; refreshLive(); const timer = setInterval(() => { refreshLive(); }, 12000); return () => clearInterval(timer); }, [demo, period]);
+    React.useEffect(() => { if (demo || screen !== 'ambassador')
+        return; api('/api/ambassador/me', undefined, true).then(d => { if (d)
+        setLiveAmbassador(d); }); }, [screen, demo]);
     const nav = (s) => goto(s);
     const adminRequest = async (path, payload) => {
         if (demo || !webapp?.initData) {
@@ -417,6 +429,32 @@ function App() {
         setAdminPointsCode('');
         flash('+' + x.points + ' POINTS · игрок ' + x.userId);
     } };
+    const adminLoadAmbassadors = async () => { const data = await adminRequest('/api/admin/ambassadors'); if (data)
+        setAdminAmbassadors(data.applications || []); };
+    const adminReviewAmbassador = async (decision) => {
+        const data = await adminRequest('/api/admin/ambassadors/review', { userId: adminAmbTarget, decision, verifiedFollowers: Number(adminAmbVerified), note: adminAmbNote, code: adminAmbCode, operationId: cryptoId() });
+        if (data?.success) {
+            setAdminAmbCode('');
+            await adminLoadAmbassadors();
+        }
+    };
+    const applyAmbassador = async () => {
+        if (ambPending)
+            return;
+        setAmbPending(true);
+        try {
+            const out = await gameAction('/api/ambassador/apply', { channel: ambChannel, followers: Number(ambFollowers) });
+            if (out?.submitted) {
+                flash('Заявка отправлена на проверку');
+                const status = await api('/api/ambassador/me', undefined, true);
+                if (status)
+                    setLiveAmbassador(status);
+            }
+        }
+        finally {
+            setAmbPending(false);
+        }
+    };
     const testGrant = async () => {
         if (testBusy)
             return;
@@ -666,7 +704,7 @@ function App() {
         const xpPrev = xpThreshold[Math.max(0, wallet.level - 1)] || 0;
         const xpPct = xpNext == null ? 100 : Math.max(0, Math.min(100, (wallet.xp - xpPrev) * 100 / (xpNext - xpPrev)));
         const menu = [['trophy', t('achievements'), 'achievements'], ['friends', t('referrals'), 'referrals'],
-            ['clock', t('history'), 'history'], ['settings', lang('settings'), 'settings'], ['info', t('support'), 'support']];
+            ['clock', t('history'), 'history'], ['ambassador', 'crown', 'GM Ambassador'], ['settings', lang('settings'), 'settings'], ['info', t('support'), 'support']];
         const milestones = [25, 50, 75, 100, 125, 150, 175, 200];
         const unlockLevel = Number(liveState?.mining?.upgrade_level || 1);
         return e(React.Fragment, null, top(t('profile'), true, 'settings'), e('div', { className: 'profile-hero gm-profile-hero' }, e('div', { className: 'gm-profile-avatar' }, e(Brand, { theme, size: 94 })), e('h2', null, clean(webapp?.initDataUnsafe?.user?.first_name || webapp?.initDataUnsafe?.user?.username || 'Player')), e('p', null, '#' + String(webapp?.initDataUnsafe?.user?.id || ''))), e('div', { className: 'xp-area gm-premium-card gm-profile-level' }, e('div', { className: 'xp-line' }, e('b', null, t('level') + ' ' + wallet.level), e('small', null, nf(wallet.xp, 0) + ' / ' + (xpNext == null ? 'MAX' : nf(xpNext, 0)) + ' XP')), e('div', { className: 'progress' }, e('div', { style: { width: xpPct + '%' } })), e('div', { className: 'gm-profile-next' }, xpNext == null ? 'MAX XP' : t('nextLeague') + ': ' + nf(league?.remaining_xp ?? 0, 0) + ' XP')), e('button', { type: 'button', className: 'gm-profile-league gm-premium-card', onClick: () => goto('leaderboard') }, icon('trophy', 32, true), e('span', null, e('b', null, t('league') + ': ' + (league?.current?.name || 'Bronze')), e('small', null, (league?.next?.name || 'GM Immortal') + ' · ' + Math.floor(league?.progress_pct || 0) + '%')), icon('chevron-right', 20)), e('div', { className: 'stats-grid' }, [
@@ -948,6 +986,36 @@ function App() {
                 React.createElement("b", null, b),
                 React.createElement("small", null, "\u0421\u0435\u0440\u0432\u0435\u0440\u043D\u044B\u0435 \u0434\u0430\u043D\u043D\u044B\u0435")))),
             AdminTestGrants(),
+            React.createElement("section", { className: "gm-admin-ambassadors gm-premium-card" },
+                React.createElement("header", null,
+                    icon('crown', 31, true),
+                    React.createElement("div", null,
+                        React.createElement("b", null, "GM AMBASSADORS"),
+                        React.createElement("small", null, "\u041F\u0440\u043E\u0432\u0435\u0440\u043A\u0430 \u043A\u0430\u043D\u0430\u043B\u043E\u0432, \u0437\u0430\u044F\u0432\u043E\u043A \u0438 \u0440\u0435\u0439\u0442\u0438\u043D\u0433\u043E\u0432 \u00B7 2FA"))),
+                React.createElement("button", { type: "button", className: "gm-amb-load", onClick: adminLoadAmbassadors }, "\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C \u0437\u0430\u044F\u0432\u043A\u0438"),
+                React.createElement("div", { className: "gm-admin-amb-list" }, adminAmbassadors.map((app) => React.createElement("button", { type: "button", key: app.user_id, className: 'gm-amb-admin-row ' + (adminAmbTarget === app.user_id ? 'selected' : ''), onClick: () => { setAdminAmbTarget(app.user_id); setAdminAmbVerified(String(app.claimed_followers || 2000)); } },
+                    React.createElement("span", null,
+                        React.createElement("b", null, app.username || app.user_id),
+                        React.createElement("small", null, app.channel_url)),
+                    React.createElement("span", null,
+                        React.createElement("b", null, app.status),
+                        React.createElement("small", null,
+                            app.referrals,
+                            " \u0434\u0440\u0443\u0437\u0435\u0439 \u00B7 ",
+                            app.claimed_followers,
+                            " \u043F\u043E\u0434\u043F\u0438\u0441\u0447\u0438\u043A\u043E\u0432"))))),
+                adminAmbTarget && React.createElement(React.Fragment, null,
+                    React.createElement("label", null, "ID \u0437\u0430\u044F\u0432\u043A\u0438"),
+                    React.createElement("input", { value: adminAmbTarget, readOnly: true }),
+                    React.createElement("label", null, "\u041F\u0440\u043E\u0432\u0435\u0440\u0435\u043D\u043D\u044B\u0435 \u043F\u043E\u0434\u043F\u0438\u0441\u0447\u0438\u043A\u0438"),
+                    React.createElement("input", { type: "number", value: adminAmbVerified, onChange: (e) => setAdminAmbVerified(e.target.value), min: 0, max: 100000000 }),
+                    React.createElement("label", null, "\u041F\u0440\u0438\u0447\u0438\u043D\u0430 \u0440\u0435\u0448\u0435\u043D\u0438\u044F (15+ \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432)"),
+                    React.createElement("textarea", { rows: 2, value: adminAmbNote, onChange: (e) => setAdminAmbNote(e.target.value) }),
+                    React.createElement("label", null, "6-\u0437\u043D\u0430\u0447\u043D\u044B\u0439 \u043A\u043E\u0434 2FA"),
+                    React.createElement("input", { inputMode: "numeric", value: adminAmbCode, maxLength: 6, onChange: (e) => setAdminAmbCode(e.target.value), placeholder: "000000" }),
+                    React.createElement("div", { className: "gm-amb-admin-actions" },
+                        React.createElement("button", { type: "button", disabled: adminAmbCode.length !== 6, onClick: () => adminReviewAmbassador('approved') }, "\u041E\u0434\u043E\u0431\u0440\u0438\u0442\u044C"),
+                        React.createElement("button", { type: "button", disabled: adminAmbCode.length !== 6, onClick: () => adminReviewAmbassador('rejected') }, "\u041E\u0442\u043A\u043B\u043E\u043D\u0438\u0442\u044C")))),
             React.createElement("section", { className: "gm-admin-points gm-premium-card" },
                 React.createElement("header", null,
                     icon('diamond', 34, true),
@@ -1026,11 +1094,25 @@ function App() {
                 React.createElement(GButton, { theme: theme, onClick: adminCorrection, disabled: demo }, "\u0418\u0441\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u0447\u0435\u0440\u0435\u0437 \u0440\u0435\u0437\u0435\u0440\u0432 + 2FA")),
             React.createElement("p", { className: "disclaimer" }, "\u0412 \u0434\u0435\u043C\u043E \u0432\u0441\u0435 \u0430\u0434\u043C\u0438\u043D\u0438\u0441\u0442\u0440\u0430\u0442\u0438\u0432\u043D\u044B\u0435 \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u044F \u043E\u0442\u043A\u043B\u044E\u0447\u0435\u043D\u044B. \u0423 \u0434\u0432\u0443\u0445 \u0432\u043B\u0430\u0434\u0435\u043B\u044C\u0446\u0435\u0432 \u043E\u0434\u0438\u043D\u0430\u043A\u043E\u0432\u044B\u0435 \u0437\u0430\u0449\u0438\u0449\u0451\u043D\u043D\u044B\u0435 \u043F\u0440\u0430\u0432\u0430; \u0432\u043B\u0430\u0434\u0435\u043B\u0435\u0446 \u043D\u0435 \u043C\u043E\u0436\u0435\u0442 \u0443\u0434\u0430\u043B\u0438\u0442\u044C \u0434\u0440\u0443\u0433\u043E\u0433\u043E \u0432\u043B\u0430\u0434\u0435\u043B\u044C\u0446\u0430 \u0447\u0435\u0440\u0435\u0437 UI."));
     }
+    function Ambassador() {
+        const e = React.createElement;
+        const status = liveAmbassador || {};
+        const referrals = Number(status.referrals ?? liveReferrals?.referred?.length ?? 0);
+        const eligible = referrals >= 100;
+        const app = status.application;
+        const tiers = [['GM Player', 0, '25%'], ['GM Scout', 2000, '32%'], ['GM Partner', 10000, '35%'], ['GM Elite', 50000, '40%'], ['GM Ambassador', 100000, '50%']];
+        const subtitle = actualLang === 'uk' ? 'Заявка на амбасадорську програму' : 'Заявка в амбассадорскую программу';
+        return e(React.Fragment, null, top('GM Ambassador', true, 'crown'), e('section', { className: 'gm-amb-hero gm-premium-card' }, icon('crown', 68, true), e('div', null, e('small', null, 'GM TOKEN · AMBASSADORS'), e('h2', null, 'От 25% до 50%'), e('p', null, subtitle))), e('section', { className: 'gm-amb-progress gm-premium-card' }, e('div', null, e('span', null, 'Подтверждённые друзья'), e('b', null, referrals + ' / 100')), e('div', { className: 'gm-upgrade-progress' }, e('span', { style: { width: Math.min(100, referrals) + '%' } })), e('small', null, eligible ? '✓ Условие приглашений выполнено' : 'Для подачи заявки нужно пригласить 100 пользователей.')), e('h3', { className: 'gm-amb-subhead' }, 'Статусы и бонусы'), e('div', { className: 'gm-amb-tiers' }, tiers.map(([name, followers, rate]) => e('div', {
+            className: 'gm-amb-tier gm-premium-card', key: name
+        }, icon('crown', 25, true), e('span', null, e('b', null, name), e('small', null, followers ? nf(Number(followers), 0) + ' подписчиков' : 'Без канала')), e('strong', null, rate)))), e('section', { className: 'gm-amb-form gm-premium-card' }, e('h3', null, 'Подать заявку'), app && e('p', { className: 'gm-amb-status' }, 'Статус: ' + (app.status === 'approved' ? '✓ Одобрена · ' + app.rate_pct + '%' : app.status === 'pending' ? 'На проверке' : 'Отклонена · ' + (app.review_note || ''))), e('label', null, 'Публичный Telegram-канал'), e('input', { value: ambChannel, onChange: (event) => setAmbChannel(event.target.value),
+            placeholder: 'https://t.me/your_channel', autoComplete: 'off' }), e('label', null, 'Подписчиков в канале'), e('input', { value: ambFollowers, onChange: (event) => setAmbFollowers(event.target.value),
+            type: 'number', inputMode: 'numeric', min: 2000, max: 100000000 }), e('button', { type: 'button', className: 'gm-upgrade-buy', disabled: demo || !eligible || !ambChannel || ambPending || app?.status === 'approved' || app?.status === 'pending', onClick: applyAmbassador }, app?.status === 'approved' ? 'Участие подтверждено' : app?.status === 'pending' ? 'Заявка на проверке' : ambPending ? 'Отправляем…' : 'Отправить заявку'), e('small', null, 'Владение каналом, охваты и количество подписчиков проверяются администраторами. Простой ввод ссылки не даёт повышенный процент.'), e('small', null, status.mining_rewards_enabled ? 'Игровые бонусы начисляются из ограниченного фонда COMMUNITY.' : 'Начисление бонусов за майнинг будет включено только после проверки экономики.')));
+    }
     function More() {
         const e = React.createElement;
         const groups = [
             ['АККАУНТ', [['profile', 'profile', 'Профиль', 'Баланс и уровень'], ['achievements', 'trophy', 'Достижения', 'Награды и прогресс'], ['history', 'clock', 'История', 'Подтверждённые операции']]],
-            ['ИГРА', [['reward', 'gift', 'Daily Reward', 'Ежедневный бонус'], ['tasks', 'tasks', 'Задания', 'Выполняй игровые цели'], ['referrals', 'friends', 'Пригласить друзей', 'Реферальная программа'], ['leaderboard', 'trophy', 'Лиги и рейтинг', '10 лиг · XP и лидеры']]],
+            ['ИГРА', [['reward', 'gift', 'Daily Reward', 'Ежедневный бонус'], ['tasks', 'tasks', 'Задания', 'Выполняй игровые цели'], ['referrals', 'friends', 'Пригласить друзей', 'Реферальная программа'], ['leaderboard', 'trophy', 'Лиги и рейтинг', '10 лиг · XP и лидеры'], ['ambassador', 'crown', 'GM Ambassador', 'Заявки и реферальный бонус']]],
             ['ПОМОЩЬ', [['support', 'shield-check', 'Поддержка', 'Обращения и ответы'], ['settings', 'settings', 'Настройки', 'Оформление и язык'], ['intro', 'info', 'Инструкция', 'Как играть в GM TOKEN']]]
         ];
         if (['owner', 'coowner'].includes(liveRole))
@@ -1173,6 +1255,9 @@ function App() {
             break;
         case 'more':
             view = More();
+            break;
+        case 'ambassador':
+            view = Ambassador();
             break;
         case 'streak':
             view = Streak();
