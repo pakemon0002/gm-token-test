@@ -285,6 +285,13 @@ const routes=async(req,res)=>{
    if(!/^\d{5,20}$/.test(target)||!Number.isSafeInteger(qty)||qty<1||qty>25000)throw Error('recipient or POINTS amount invalid (1..25000)');
    if(reason.length<15||reason.length>200)throw Error('reason must be 15..200 chars');
    if(!/^[A-Za-z0-9_.:-]{8,100}$/.test(operationId))throw Error('operationId required');
+   const previous=stmt('SELECT actor,kind,info FROM journal WHERE id=?').get(operationId);
+   if(previous){
+    if(previous.actor!==id||previous.kind!=='admin_test_points')throw Error('operationId already used');
+    const prior=JSON.parse(previous.info);
+    if(prior.user!==target||prior.points!==qty)throw Error('idempotency payload mismatch');
+    return send(res,200,{ok:true,userId:target,points:qty,duplicate:true});
+   }
    require2FA({id},body);
    const result=tx(()=>{
     const prior=stmt('SELECT actor,kind,info FROM journal WHERE id=?').get(operationId);
@@ -301,9 +308,8 @@ const routes=async(req,res)=>{
     if(already+qty>100000)throw Error('daily POINTS grant limit exceeded');
     stmt('INSERT OR IGNORE INTO points_account(user_id,points) VALUES(?,0)').run(target);
     if(!stmt('UPDATE points_account SET points=points+? WHERE user_id=? AND points<=?').run(qty,target,Number.MAX_SAFE_INTEGER-qty).changes)throw Error('POINTS accounting limit');
-    log(id,'admin_test_points',{user:target,points:qty,reason,test:true,operationId});
-    // Keep the request id as the journal primary key for one-time audit.
-    stmt('UPDATE journal SET id=? WHERE id=(SELECT id FROM journal WHERE actor=? AND kind=? ORDER BY rowid DESC LIMIT 1)').run(operationId,id,'admin_test_points');
+    stmt('INSERT INTO journal(id,at,actor,kind,info) VALUES(?,?,?,?,?)')
+     .run(operationId,now(),id,'admin_test_points',JSON.stringify({user:target,points:qty,reason,test:true,operationId}));
     return {ok:true,userId:target,points:qty};
    });
    return send(res,200,result);
