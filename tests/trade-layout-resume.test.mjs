@@ -5,10 +5,11 @@ const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 test('Trade desk and order sheet are themed and warn before insufficient-funds submissions',()=>{
  const source=read('../miniapp/src/main.tsx'),served=read('../miniapp/public/main.js'),styles=read('../miniapp/public/styles.css');
  for(const code of [source,served]){
+  const compact=code.replace(/\s+/g,'');
   for(const phrase of ['function Trading()','function TradeOrderModal()','const tradeIssue=()=>','Недостаточно GM','Недостаточно CR','trade-wallet-balances','trade-cta-row','trade-review','trade-sheet-primary','TEST SPOT','Доступно для торговли']){
-   assert.ok(code.includes(phrase),'missing '+phrase);
+   assert.ok(compact.includes(phrase.replace(/\s+/g,'')),'missing '+phrase);
   }
-  assert.ok(code.includes('tradeIssue();if(issue)'), 'submit and confirmation must validate balances');
+  assert.ok(compact.includes('tradeIssue();if(issue)'), 'submit and confirmation must validate balances');
   assert.ok(code.includes('TradeOrderModal()'),'new sheet must be actually rendered');
  }
  for(const phrase of ['.theme-light .trade-cta.buy','.theme-dark .trade-cta.buy','.trade-sheet-primary','.trade-open-row>button','.trade-form-alert']){
