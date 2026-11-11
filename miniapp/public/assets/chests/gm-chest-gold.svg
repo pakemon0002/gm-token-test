@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="560" viewBox="0 0 700 560" role="img" aria-label="GM gold chest">
+<defs>
+<linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff5ad"/><stop offset=".22" stop-color="#d99a28"/><stop offset=".45" stop-color="#74401a"/><stop offset=".72" stop-color="#fff5ad"/><stop offset="1" stop-color="#d99a28"/></linearGradient>
+<linearGradient id="wood" x1="0" y1="0" x2="1" y2=".8"><stop stop-color="#3d2738"/><stop offset=".55" stop-color="#1c1b31"/><stop offset="1" stop-color="#0c0e20"/></linearGradient>
+<radialGradient id="shine"><stop stop-color="#b54dff" stop-opacity=".45"/><stop offset="1" stop-color="#b54dff" stop-opacity="0"/></radialGradient>
+<linearGradient id="top" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff5ad"/><stop offset=".25" stop-color="#74401a"/><stop offset=".72" stop-color="#d99a28"/><stop offset="1" stop-color="#74401a"/></linearGradient>
+<filter id="shadow"><feGaussianBlur stdDeviation="18"/></filter>
+<filter id="flare"><feGaussianBlur stdDeviation="5"/></filter>
+</defs>
+<ellipse cx="352" cy="492" rx="265" ry="35" fill="#000" opacity=".45" filter="url(#shadow)"/>
+<ellipse cx="346" cy="444" rx="280" ry="88" fill="url(#shine)"/>
+<path d="M110 264 L193 223 L558 238 L610 282 L590 457 Q588 475 565 486 L155 483 Q132 478 124 457Z" fill="url(#wood)" stroke="#74401a" stroke-width="18" stroke-linejoin="round"/>
+<path d="M133 290 L187 270 L561 277 L584 303 L572 442 L146 443Z" fill="#0a0a17" stroke="#d99a28" stroke-width="7"/>
+<path d="M170 297 L548 302 L536 423 L166 421Z" fill="url(#wood)" stroke="#fff5ad" stroke-opacity=".3" stroke-width="3"/>
+<path d="M207 278 L203 449 M504 291 L505 448" fill="none" stroke="url(#metal)" stroke-width="26"/>
+<path d="M140 330 L581 341 M147 421 L575 424" stroke="#d99a28" stroke-width="12" opacity=".85"/>
+<path d="M105 267 Q108 176 157 127 Q204 71 350 68 Q511 70 559 124 Q607 173 606 275 L561 290 Q556 204 524 170 Q475 129 353 129 Q222 122 180 173 Q154 210 148 288Z" fill="url(#top)" stroke="#74401a" stroke-width="12" stroke-linejoin="round"/>
+<path d="M144 242 Q158 124 333 107 Q522 103 574 242" fill="none" stroke="#fff5ad" stroke-width="18" opacity=".85"/>
+<path d="M194 264 Q194 171 255 126 M505 268 Q505 177 455 124" fill="none" stroke="url(#metal)" stroke-width="32"/>
+<path d="M153 268 L564 274" fill="none" stroke="#d99a28" stroke-width="28"/>
+<path d="M160 268 L555 274" fill="none" stroke="#fff5ad" stroke-opacity=".5" stroke-width="4"/>
+<path d="M202 129 Q359 87 494 143" fill="none" stroke="#f9fcff" stroke-opacity=".22" stroke-width="6"/>
+<path d="M153 284 L153 459 Q153 474 174 473 M570 291 L569 456 Q566 473 540 477" fill="none" stroke="#fff5ad" stroke-width="9" opacity=".7"/>
+<path d="M298 243 L402 244 L412 365 L290 361Z" fill="url(#metal)" stroke="#74401a" stroke-width="9" stroke-linejoin="round"/>
+<circle cx="350" cy="308" r="66" fill="#74401a" stroke="#fff5ad" stroke-width="12"/>
+<circle cx="350" cy="308" r="53" fill="#151522" stroke="#d99a28" stroke-width="8"/>
+<text x="350" y="326" font-size="47" text-anchor="middle" font-weight="900" font-family="Arial,Helvetica,sans-serif" fill="url(#metal)">GM</text>
+<path d="M334 120 L350 96 L366 120 L350 144Z" fill="#c169ff" stroke="#fff5ad" stroke-width="5"/>
+<path d="M114 274 L144 274 L141 311 L111 307Z M566 280 L605 276 L598 310 L571 310Z" fill="url(#metal)"/>
+<circle cx="168" cy="420" r="7" fill="#fff5ad"/><circle cx="534" cy="422" r="7" fill="#fff5ad"/>
+<path d="M274 160 L312 153 M398 155 L431 165" stroke="#fff" stroke-width="5" opacity=".28" stroke-linecap="round"/>
+<path d="M98 372 L112 367 M613 359 L626 352 M344 64 L349 41 M210 98 L201 87 M492 101 L505 87" stroke="#b54dff" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+</svg>

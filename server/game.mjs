@@ -364,10 +364,32 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
    log(id,'holding_claim',{user:id,gm_cents:h.pending_cents,referral_gm_cents:refPaid});return {gm_cents:h.pending_cents,referral_paid_cents:refPaid,wallet:wal(id)}})}));
   if(p==='/api/referrals/me'&&verb==='GET')return response(200,{referred:stmt('SELECT user_id,created_at FROM referrals WHERE referrer_id=?').all(id),my_referrer:stmt('SELECT referrer_id FROM referrals WHERE user_id=?').get(id)?.referrer_id||null,received_gm_cents:stmt("SELECT info FROM journal WHERE kind='referral_reward' AND info LIKE ?").all('%\"user\":\"'+id+'\"%').reduce((sum,r)=>sum+(JSON.parse(r.info).gm_cents||0),0)});
   if(p==='/api/daily/claim'&&verb==='POST')return response(200,tx(()=>once(op(),id,'daily_claim',()=>{const d=day(now()),n=Number(v('daily_gm_cents'));if(!n)throw Error('daily reward rate awaiting owners approval');if(stmt('SELECT 1 FROM daily_claim WHERE user_id=? AND day=?').get(id,d))throw Error('daily reward already claimed');takePool('DAILY','gm',n);walletChange(id,'gm',n);stmt('INSERT INTO daily_claim(user_id,day) VALUES(?,?)').run(id,d);log(id,'daily_claim',{user:id,gm_cents:n});return {gm_cents:n,wallet:wal(id)}})));
-  if(p==='/api/boxes/open'&&verb==='POST')return response(200,tx(()=>{ensure(id);return once(op(),id,'box_open',()=>{const table=JSON.parse(v('box_rewards_json')),kind=String(body.kind||'').toLowerCase(),cost={bronze:300,silver:750,gold:1500}[kind];if(!cost)throw Error('invalid GM Box type');if(!['bronze','silver','gold'].every(x=>Number.isSafeInteger(table[x])&&table[x]>0))throw Error('box rewards awaiting owners approval');const n=table[kind]*100;
-   const today=day(now()),cap=Math.max(0,Number(process.env.BOX_DAILY_GM_CAP||1000))*100,used=stmt('SELECT gm_cents FROM box_day WHERE day=? AND user_id=?').get(today,id)?.gm_cents||0;
-   if(used+n>cap)throw Error('GM Boxes daily payout limit reached; try tomorrow');
-   if(!stmt('UPDATE points_account SET points=points-? WHERE user_id=? AND points>=?').run(cost,id,cost).changes)throw Error('not enough POINTS');takePool('BOXES','gm',n);walletChange(id,'gm',n);stmt('INSERT INTO box_day(day,user_id,gm_cents) VALUES(?,?,?) ON CONFLICT(day,user_id) DO UPDATE SET gm_cents=gm_cents+excluded.gm_cents').run(today,id,n);log(id,'gm_box_open',{user:id,kind,spent_points:cost,gm_cents:n});return {kind,spent_points:cost,gm_cents:n,wallet:wal(id)}})}));
+  if(p==='/api/boxes/open'&&verb==='POST')return response(200,tx(()=>{
+   ensure(id);
+   return once(op(),id,'box_open',()=>{
+    const table=JSON.parse(v('box_rewards_json'));
+    const kind=String(body.kind||'').toLowerCase();
+    const unitCost={bronze:300,silver:750,gold:1500}[kind];
+    if(!unitCost)throw Error('invalid GM Box type');
+    const count=body.count===undefined?1:body.count;
+    if(!Number.isInteger(count)||![1,3,5,10].includes(count))throw Error('invalid GM Box opening count');
+    if(!['bronze','silver','gold'].every(x=>Number.isSafeInteger(table[x])&&table[x]>0))
+     throw Error('box rewards awaiting owners approval');
+    const cost=unitCost*count;
+    const n=table[kind]*100*count;
+    if(!Number.isSafeInteger(cost)||!Number.isSafeInteger(n))throw Error('box quantity overflow');
+    const today=day(now()),cap=Math.max(0,Number(process.env.BOX_DAILY_GM_CAP||1000))*100;
+    const used=stmt('SELECT gm_cents FROM box_day WHERE day=? AND user_id=?').get(today,id)?.gm_cents||0;
+    if(used+n>cap)throw Error('GM Boxes daily payout limit reached; try tomorrow');
+    if(!stmt('UPDATE points_account SET points=points-? WHERE user_id=? AND points>=?').run(cost,id,cost).changes)
+     throw Error('not enough POINTS');
+    takePool('BOXES','gm',n);
+    walletChange(id,'gm',n);
+    stmt('INSERT INTO box_day(day,user_id,gm_cents) VALUES(?,?,?) ON CONFLICT(day,user_id) DO UPDATE SET gm_cents=gm_cents+excluded.gm_cents').run(today,id,n);
+    log(id,'gm_box_open',{user:id,kind,count,spent_points:cost,gm_cents:n});
+    return {kind,count,spent_points:cost,gm_cents:n,unit_reward_gm:table[kind],wallet:wal(id)};
+   });
+  }));
   if(p==='/api/exchange/book'&&verb==='GET')return response(200,tx(()=>{doAuction();expireOrders();const pre=v('auction_done')!=='1',a=pre?1:0,orders=pre?stmt("SELECT * FROM orders WHERE status='open' AND auction=1").all():[];return {bids:stmt("SELECT limit_price,SUM(remaining_cents) as gm_cents FROM orders WHERE status='open' AND auction=? AND side='buy' AND (expires_at IS NULL OR expires_at>?) GROUP BY limit_price ORDER BY limit_price DESC LIMIT 25").all(a,now()),asks:stmt("SELECT limit_price,SUM(remaining_cents) as gm_cents FROM orders WHERE status='open' AND auction=? AND side='sell' AND (expires_at IS NULL OR expires_at>?) GROUP BY limit_price ORDER BY limit_price ASC LIMIT 25").all(a,now()),auction_end_at:Number(v('auction_end')),auction_done:!pre,indicative:pre?indicativeAuction(orders):null,last_price:Number(v('last_trade_price'))||null}}));
   if(p==='/api/exchange/orders'&&verb==='GET')return response(200,{orders:stmt('SELECT * FROM orders WHERE user_id=? ORDER BY created_at DESC LIMIT 100').all(id)});
   if(p==='/api/exchange/trades'&&verb==='GET')return response(200,{trades:stmt('SELECT price,amount_cents,quote_cents,at,auction,suspect FROM trades ORDER BY at DESC,rowid DESC LIMIT 100').all()});
