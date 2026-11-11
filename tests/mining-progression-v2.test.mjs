@@ -6,12 +6,15 @@ test('exactly 200 deterministic upgrade levels', () => {
   const levels = miningUpgradeTable();
   assert.equal(levels.length, 200);
   assert.equal(MAX_MINING_UPGRADE_LEVEL, 200);
-  assert.deepEqual(levels[0], {level:1,cost_gm:0,bonus_pct:0,total_gm:0});
+  assert.deepEqual(levels[0], {level:1,cost_gm:0,bonus_pct:5,total_gm:0});
   assert.equal(levels[1].cost_gm,150);
+  assert.equal(levels[1].bonus_pct,10);
+  assert.equal(levels[99].bonus_pct,500);
   assert.equal(levels[2].cost_gm,200);
-  assert.equal(levels[199].bonus_pct,4.06);
+  assert.equal(levels[199].bonus_pct,1000);
   for(let i=1;i<levels.length;i++) {
     assert.ok(levels[i].cost_gm >= levels[i-1].cost_gm);
+    assert.equal(levels[i].bonus_pct-levels[i-1].bonus_pct,5);
     assert.equal(levels[i].total_gm,levels[i-1].total_gm+levels[i].cost_gm);
   }
 });
