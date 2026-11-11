@@ -1535,7 +1535,10 @@ function Splash(){return <div className="splash-view gm-splash-v3" role="status"
   const boxImage=kind=>'./assets/chests/gm-chest-'+kind+'.svg';
   return e('div',{className:'gm-boxes-v9'},
    top('Боксы',true,'info'),
-   e('button',{type:'button',className:'gm-chests-tutorial',onClick:()=>openGuide('boxes')},icon('info',17),'Инструкция по сундукам'),
+   e('div',{className:'gm-chests-tutorial-row'},
+    e('button',{type:'button',className:'gm-chests-tutorial',onClick:()=>openGuide('boxes')},icon('info',17),'Сундуки'),
+    e('button',{type:'button',className:'gm-chests-tutorial gm-chests-points-tour',onClick:()=>{
+     setPointsGuideOpen(true);openGuide('points')}},icon('info',17),'Как получить POINTS')),
    e('div',{className:'gm-chests-title'},
     e('h2',null,'Сундуки GM'),
     e('p',null,'Выбери сундук и количество открытий. Награды фиксированные, без случайного выпадения.')),
