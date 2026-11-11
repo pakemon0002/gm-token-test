@@ -22,6 +22,13 @@ test('responsive trading corrections ship in the served stylesheet',()=>{
   '.application .gm-trade-quick-presets', '.application .gm-trade-quick-continue'])assert.ok(served.includes(term),term);
 });
 
+test('mining uses a high-resolution vector emblem served with SVG MIME',()=>{
+ const css=read('miniapp/public/styles.css'),svg=read('miniapp/public/assets/brand-original-reference/gm-mining-coin-hd.svg'),server=read('server/index.mjs');
+ assert.ok(css.includes('gm-mining-coin-hd.svg'));
+ assert.ok(svg.includes('viewBox="0 0 1024 1024"'));
+ assert.ok(server.includes("'.svg':'image/svg+xml'"));
+});
+
 test('Telegram long-press avoids native asset links without breaking inputs',()=>{
  const css=read('miniapp/public/styles.css'),html=read('miniapp/public/preview.html');
  assert.ok(css.includes('-webkit-touch-callout:none'));
