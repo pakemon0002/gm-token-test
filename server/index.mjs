@@ -157,9 +157,13 @@ const routes=async(req,res)=>{
   if(p==='/api/holders/refresh'&&verb==='POST')return send(res,200,await holders.refresh(id));
   if(p==='/api/me'&&verb==='GET'){const r=stmt('SELECT end_at,reason,issued_at FROM restrictions WHERE user_id=?').get(id);return send(res,200,{user:current,wallet:stmt('SELECT * FROM wallets WHERE user_id=?').get(id),restriction:r&&(!r.end_at||r.end_at>now())?r:null})}
   if(p==='/api/history'&&verb==='GET')return send(res,200,{events:stmt('SELECT * FROM journal WHERE info LIKE ? ORDER BY at DESC LIMIT 50').all(`%"user":"${id}"%`)});
+  if(p==='/api/tickets/my'&&verb==='GET'){
+   const rows=stmt('SELECT id,category,body,status,priority,created_at,updated_at,resolved_at FROM tickets WHERE user_id=? ORDER BY created_at DESC LIMIT 100').all(id);
+   return send(res,200,{tickets:rows});
+  }
   if(p==='/api/tickets'&&verb==='GET'){
    cleanTickets();const mod=['owner','coowner','moderator'].includes(current.role);
-   const rows=mod?stmt('SELECT * FROM tickets WHERE status!=\'auto_support\' ORDER BY CASE priority WHEN \'P1\' THEN 1 WHEN \'P2\' THEN 2 ELSE 3 END,created_at ASC LIMIT 100').all():stmt('SELECT * FROM tickets WHERE user_id=? ORDER BY created_at DESC LIMIT 100').all(id);
+   const rows=['owner','coowner'].includes(current.role)&&url.searchParams.get('all')==='1'?stmt('SELECT * FROM tickets ORDER BY CASE priority WHEN \'P1\' THEN 1 WHEN \'P2\' THEN 2 ELSE 3 END,created_at ASC LIMIT 100').all():mod?stmt('SELECT * FROM tickets WHERE status!=\'auto_support\' ORDER BY CASE priority WHEN \'P1\' THEN 1 WHEN \'P2\' THEN 2 ELSE 3 END,created_at ASC LIMIT 100').all():stmt('SELECT * FROM tickets WHERE user_id=? ORDER BY created_at DESC LIMIT 100').all(id);
    return send(res,200,{tickets:rows});
   }
   if(p==='/api/tickets'&&verb==='POST'){
@@ -172,6 +176,11 @@ const routes=async(req,res)=>{
    const isUrgent=priority!=='P3';
    if(dailyCount>=(isUrgent?20:10)||openCount>=10)throw Error('too many support tickets; use an existing ticket or wait');
    tx(()=>{stmt('INSERT INTO tickets(id,user_id,category,body,status,priority,updated_at,created_at) VALUES(?,?,?,?,?,?,?,?)').run(ticket,id,category,body,priority==='P3'?'auto_support':'open',priority,t,t);log(id,'ticket_created',{user:id,ticket,category})});
+   // The two owners are notified by the existing Telegram bot and can reply in the Mini App.
+   for(const ownerId of new Set(ownerIds)){
+    if(ownerId===id)continue;
+    sendTelegram(ownerId,'GM TOKEN · новое обращение #'+ticket.slice(0,8)+'\nКатегория: '+category+'\nПриоритет: '+priority+'\n'+body.slice(0,300)+'\nОткройте GM TOKEN → Поддержка для ответа.');
+   }
    return send(res,201,{ticket,priority,autoSupport:priority==='P3'?'2 attempts maximum':'manual review immediately'});
   }
   const match=p.match(/^\/api\/tickets\/([a-f0-9-]+)\/(auto|claim|reply|resolve|reopen)$/);
@@ -198,6 +207,7 @@ const routes=async(req,res)=>{
     if(isMod&&ticket.assigned_to!==id&&current.role!=='owner'&&current.role!=='coowner')throw Error('ticket is not assigned to you');
     tx(()=>{stmt('INSERT INTO ticket_messages(id,ticket_id,author,body,created_at) VALUES(?,?,?,?,?)').run(crypto.randomUUID(),ticketId,id,body,t);stmt('UPDATE tickets SET first_reply_at=COALESCE(first_reply_at,?),updated_at=?,status=? WHERE id=?').run(isMod?t:null,t,isMod?'in_review':'open',ticketId)});
     if(isMod)sendTelegram(ticket.user_id,'GM TOKEN Support: новый ответ в обращении '+ticketId);
+    else for(const ownerId of new Set(ownerIds)){if(ownerId!==id)sendTelegram(ownerId,'GM TOKEN Support: игрок ответил в обращении #'+ticketId.slice(0,8)+'\n'+body.slice(0,300));}
     return send(res,200,{sent:true});
    }
    if(action==='resolve'){
@@ -208,7 +218,9 @@ const routes=async(req,res)=>{
    }
    if(action==='reopen'){
     if(!isOwner)throw Error('only ticket author can reopen');
-    stmt('UPDATE tickets SET status=\'open\',resolved_at=NULL,assigned_to=NULL,claimed_at=NULL,first_reply_at=NULL,updated_at=? WHERE id=?').run(t,ticketId);return send(res,200,{reopened:true});
+    stmt('UPDATE tickets SET status=\'open\',resolved_at=NULL,assigned_to=NULL,claimed_at=NULL,first_reply_at=NULL,updated_at=? WHERE id=?').run(t,ticketId);
+    for(const ownerId of new Set(ownerIds)){if(ownerId!==id)sendTelegram(ownerId,'GM TOKEN Support: обращение #'+ticketId.slice(0,8)+' открыто повторно.');}
+    return send(res,200,{reopened:true});
    }
   }
   if(p==='/api/admin/stats'&&verb==='GET'){
@@ -216,6 +228,52 @@ const routes=async(req,res)=>{
   }
   if(p==='/api/admin/team'&&verb==='GET'){
    roleCheck({id},['owner','coowner']);return send(res,200,{team:stmt('SELECT id,username,role,created_at FROM users WHERE role!=\'player\'').all()});
+  }
+  if(p==='/api/admin/task-catalog'&&verb==='GET'){
+   roleCheck({id},['owner','coowner']);
+   const raw=stmt("SELECT v FROM game_settings WHERE k='tasks_json'").get()?.v||'[]';
+   return send(res,200,{tasks:JSON.parse(raw)});
+  }
+  if(p==='/api/admin/task-catalog'&&verb==='POST'){
+   roleCheck({id},['owner','coowner']);
+   const body=await readBody(req),action=String(body.action||'');
+   if(!['create','update','delete'].includes(action))throw Error('invalid catalog action');
+   const taskId=String(body.id||'').trim();
+   if(!/^[a-z][a-z0-9_:-]{2,59}$/.test(taskId))throw Error('invalid task ID');
+   let parsed=null;
+   if(action!=='delete'){
+    const title=String(body.title||'').trim(),description=String(body.description||'').trim();
+    const icon=String(body.icon||'tasks');
+    const category=String(body.category||'Other');
+    const type=String(body.condition?.type||'');
+    const threshold=Number(body.condition?.gte);
+    const xp=Number(body.xp||0),gm=Number(body.gm||0);
+    const daily=body.daily===true;
+    if(title.length<4||title.length>70||description.length<12||description.length>210)throw Error('task title must be 4..70 and description 12..210');
+    if(!['Social','Other'].includes(category)||!['tasks','lightning','candlesticks','friends','gift','trophy','crown','clock','diamond','coins','star'].includes(icon))throw Error('invalid task category or icon');
+    if(!['mining_claim_count','trade_count','referrals_count','mining_level','daily_claim','founder_slot'].includes(type))throw Error('only server-verifiable task conditions are allowed');
+    if(!Number.isSafeInteger(threshold)||threshold<1||threshold>10000||(type==='daily_claim'&&threshold!==1)||(type==='founder_slot'&&threshold!==1))throw Error('invalid task threshold');
+    if(!Number.isSafeInteger(xp)||xp<0||xp>1000||!Number.isSafeInteger(gm)||gm<0||gm>100)throw Error('task reward exceeds protected virtual test limits');
+    if(daily&&type!=='daily_claim')throw Error('daily tasks must use same-day daily_claim verification');
+    parsed={id:taskId,title,description,category,icon,xp,gm,daily,condition:{type,gte:threshold}};
+   }
+   require2FA({id},body);
+   const result=tx(()=>{
+    const previous=stmt("SELECT v FROM game_settings WHERE k='tasks_json'").get();
+    const list=JSON.parse(previous?.v||'[]');
+    if(!Array.isArray(list)||list.length>100)throw Error('invalid task catalog');
+    const index=list.findIndex(row=>row.id===taskId);
+    if(action==='create'&&index>=0)throw Error('task ID already exists');
+    if(action!=='create'&&index<0)throw Error('task not found');
+    if(action==='create'){if(list.length>=100)throw Error('task limit 100');list.push(parsed);}
+    else if(action==='update')list[index]=parsed;
+    else list.splice(index,1);
+    const updated=stmt("UPDATE game_settings SET v=? WHERE k='tasks_json'").run(JSON.stringify(list));
+    if(!updated.changes)throw Error('game task settings unavailable');
+    log(id,'admin_task_catalog',{taskId,action,task:parsed});
+    return list;
+   });
+   return send(res,200,{ok:true,tasks:result,action,taskId});
   }
   if(p==='/api/admin/moderators'&&verb==='POST'){
    roleCheck({id},['owner','coowner']);const body=await readBody(req);require2FA({id},body);

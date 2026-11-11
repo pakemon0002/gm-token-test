@@ -52,7 +52,20 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
   {id:'first_vault',title:'Первый вклад в Vault',description:'Положить минимум 1 GM в Holding',category:'Other',icon:'coins',xp:25,gm:0,condition:{type:'vault_balance_gm',gte:1}},
   {id:'first_trade',title:'Первая подтверждённая сделка',description:'Исполнить ордер с другим пользователем',category:'Other',icon:'candlesticks',xp:50,gm:0,condition:{type:'trade_count',gte:1}},
   {id:'first_friend',title:'Первый приглашённый игрок',description:'Пригласить друга, который зарегистрируется',category:'Social',icon:'friends',xp:30,gm:0,condition:{type:'referrals_count',gte:1}},
-  {id:'daily_claim',title:'Ежедневная активность',description:'Получить ежедневную награду',category:'Other',icon:'gift',xp:10,gm:0,daily:true,condition:{type:'daily_claim',gte:1}}
+  {id:'daily_claim',title:'Ежедневная активность',description:'Получить ежедневную награду',category:'Other',icon:'gift',xp:10,gm:0,daily:true,condition:{type:'daily_claim',gte:1}},
+  {id:'mining_3_claims',title:'Искра пробуждения',description:'Собрать виртуальные GM в майнинге 3 раза',category:'Other',icon:'lightning',xp:35,gm:0,condition:{type:'mining_claim_count',gte:3}},
+  {id:'mining_10_claims',title:'Серебряный добытчик',description:'Подтвердить 10 успешных сборов майнинга',category:'Other',icon:'diamond',xp:90,gm:0,condition:{type:'mining_claim_count',gte:10}},
+  {id:'mining_30_claims',title:'Ритм стали',description:'Собрать GM через майнинг 30 раз',category:'Other',icon:'lightning',xp:180,gm:0,condition:{type:'mining_claim_count',gte:30}},
+  {id:'mining_100_claims',title:'Мастер орбиты',description:'Подтвердить 100 сборов накопленных GM',category:'Other',icon:'gm-coin-orbit',xp:450,gm:0,condition:{type:'mining_claim_count',gte:100}},
+  {id:'trades_3_verified',title:'Первый график',description:'Совершить 3 подтверждённые виртуальные сделки GM/CR',category:'Other',icon:'candlesticks',xp:65,gm:0,condition:{type:'trade_count',gte:3}},
+  {id:'trades_10_verified',title:'Мастер рынка',description:'Совершить 10 подтверждённых игровых сделок',category:'Other',icon:'candlesticks',xp:180,gm:0,condition:{type:'trade_count',gte:10}},
+  {id:'trades_50_verified',title:'Графитовый аналитик',description:'Совершить 50 проверенных игровых сделок',category:'Other',icon:'trending-up',xp:550,gm:0,condition:{type:'trade_count',gte:50}},
+  {id:'friends_3_active',title:'Первая команда',description:'Пригласить 3 участников с зарегистрированными аккаунтами',category:'Social',icon:'friends',xp:80,gm:0,condition:{type:'referrals_count',gte:3}},
+  {id:'friends_10_active',title:'Посланник GM',description:'Пригласить 10 зарегистрированных игроков',category:'Social',icon:'community',xp:230,gm:0,condition:{type:'referrals_count',gte:10}},
+  {id:'friends_50_active',title:'Лидер сообщества',description:'Пригласить 50 зарегистрированных игроков',category:'Social',icon:'crown',xp:800,gm:0,condition:{type:'referrals_count',gte:50}},
+  {id:'profile_level_3',title:'Новый горизонт',description:'Достичь третьего уровня профиля GM TOKEN',category:'Other',icon:'trophy',xp:50,gm:0,condition:{type:'mining_level',gte:3}},
+  {id:'profile_level_7',title:'Серебряная эра',description:'Достичь седьмого уровня профиля GM TOKEN',category:'Other',icon:'star',xp:250,gm:0,condition:{type:'mining_level',gte:7}},
+  {id:'genesis_20',title:'GM GENESIS · Основатель',description:'Уникальное задание только для 20 первых игроков GM TOKEN',category:'Other',icon:'crown',xp:300,gm:0,condition:{type:'founder_slot',gte:1}}
  ];
  const testAchievements=[
   {id:'mine_1',title:'Первый Claim',description:'Один Mining Claim',icon:'lightning',xp:20,gm:0,condition:{type:'mining_claim_count',gte:1}},
@@ -77,6 +90,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
  config('trade_price_guard_bps',Math.min(3000,Math.max(500,Number(process.env.TRADE_PRICE_GUARD_BPS||1500))));
  config('tasks_json',process.env.GAME_TASKS_JSON||((testEconomy||process.env.GM_TASKS_ENABLED==='1')?JSON.stringify(testTasks):'[]'));
  config('achievements_json',process.env.GAME_ACHIEVEMENTS_JSON||(testEconomy?JSON.stringify(testAchievements):'[]'));
+ config('tasks_catalog_version','0');
  for(const name of ['HOLDING_FEES','TRADE_GM_REWARDS','TRADE_CR_REWARDS'])stmt('INSERT OR IGNORE INTO pools(name,gm,cr) VALUES(?,0,0)').run(name);
  function setting(k,n){stmt('UPDATE game_settings SET v=? WHERE k=?').run(String(n),k)}
  // Explicitly enabled virtual test rewards, preserving prior owner-defined values.
@@ -92,6 +106,16 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
   }
  }
  if(process.env.GM_TASKS_ENABLED==='1'&&v('tasks_json')==='[]')setting('tasks_json',JSON.stringify(testTasks));
+ if(process.env.GM_TASKS_ENABLED==='1'&&Number(v('tasks_catalog_version'))<2){
+  const rows=JSON.parse(v('tasks_json')||'[]');
+  if(Array.isArray(rows)){
+   const existing=new Set(rows.map(r=>r.id));
+   // Add only the new, server-verifiable goals. Keep all custom admin-made tasks.
+   const additions=testTasks.slice(5).filter(r=>!existing.has(r.id));
+   if(rows.length+additions.length<=100)setting('tasks_json',JSON.stringify([...rows,...additions]));
+  }
+  setting('tasks_catalog_version','2');
+ }
 
  // Private testing only: deliberately advance the existing auction without
  // granting GM, fabricating orders, trades, price history or POINTS.
@@ -202,6 +226,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
    case 'mining_claim_count':current=stmt("SELECT COUNT(*) n FROM journal WHERE kind='mining_claim' AND info LIKE ?").get(`%"user":"${userId}"%`).n;break;
    case 'holding_claim_count':current=stmt("SELECT COUNT(*) n FROM journal WHERE kind='holding_claim' AND info LIKE ?").get(`%"user":"${userId}"%`).n;break;
    case 'daily_claim':current=stmt('SELECT 1 n FROM daily_claim WHERE user_id=? AND day=?').get(userId,day(now()))?.n||0;break;
+   case 'founder_slot':current=stmt('SELECT slot FROM early_player_awards WHERE user_id=?').get(userId)?.slot?1:0;break;
    default:return false;
   }
   return current>=target;
