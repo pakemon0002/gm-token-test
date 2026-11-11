@@ -396,6 +396,10 @@ function App(){
  const [screen,setScreen]=React.useState('splash');
  const [locale,setLocale]=React.useState(store.getItem('gm_lang')||'auto');
  const [introStep,setIntroStep]=React.useState(0);
+ // Tutorial completion belongs to the authenticated Telegram account, not the device.
+ const [authenticatedUserId,setAuthenticatedUserId]=React.useState('');
+ const tutorialKey=(section:string)=>'gm_tour_v24_'+authenticatedUserId+'_'+section;
+ const onboardingKey=()=>authenticatedUserId?'gm_intro_v24_'+authenticatedUserId:'';
  const telegramLanguage=String(webapp?.initDataUnsafe?.user?.language_code||navigator.language||'en').toLowerCase().split(/[-_]/)[0];
  const actualLang=locale==='auto'?telegramLanguage:locale;
  gmActiveLocale=actualLang;
@@ -471,7 +475,8 @@ function App(){
   'support.send':{ru:'После ввода темы и описания нажми здесь. Обращение попадёт в серверный список поддержки, а его статус появится ниже. По возможности укажи раздел, время и текст ошибки.',uk:'Після опису натисни сюди. Звернення збережеться на сервері, а статус з’явиться нижче.',pt:'Depois de descrever o problema, toque aqui. O chamado será salvo e o status aparecerá abaixo.',en:'After entering the topic and description, tap here. The server stores your ticket and its status appears below.'},
   'support.ticket':{ru:'Выбери категорию и опиши проблему минимум десятью символами. Обращение создаётся на сервере и появляется в списке; можно просматривать ответы.',uk:'Оберіть категорію й опишіть проблему. Звернення збережеться на сервері.',pt:'Escolha a categoria e descreva o problema. O chamado será salvo no servidor.',en:'Choose a category and describe the issue. Your ticket is saved on the server.'}
  };
- const closeGuide=()=>{if(guideScreen)store.setItem(guideScreen==='boxes'?'gm_guide_chests_v3_boxes':'gm_guide_v21_'+guideScreen,'1');setGuideScreen('');setGuideStep(0);setGuideSpot(null)};
+ const resetGuide=()=>{setGuideScreen('');setGuideStep(0);setGuideSpot(null)};
+ const closeGuide=()=>{if(guideScreen&&authenticatedUserId)store.setItem(tutorialKey(guideScreen),'1');resetGuide()};
  const openGuide=(name:string)=>{if(guideCatalog[name]){setGuideScreen(name);setGuideStep(0);setGuideSpot(null)}};
  React.useEffect(()=>{
   if(!guideScreen)return;
@@ -548,10 +553,18 @@ function App(){
  const [serverHistory,setServerHistory]=React.useState([] as any[]);
  const [myTicketHistory,setMyTicketHistory]=React.useState([] as any[]);
  const [demo,setDemo]=React.useState(true);
- React.useEffect(()=>{if(screen!=='splash'||demo)return;const timeout=setTimeout(()=>{setScreen(store.getItem('gm_onboarding_v21_complete')?'home':'intro')},1350);return()=>clearTimeout(timeout)},[screen,demo]);
- React.useEffect(()=>{if(demo||['splash','intro','reward'].includes(screen)||!guideCatalog[screen]||guideScreen)return;
- if(!store.getItem(screen==='boxes'?'gm_guide_chests_v3_boxes':'gm_guide_v21_'+screen)){const timeout=setTimeout(()=>openGuide(screen),550);return()=>clearTimeout(timeout)}
- },[screen,demo,guideScreen]);
+ React.useEffect(()=>{
+  if(screen!=='splash'||demo||!authenticatedUserId)return;
+  const timeout=setTimeout(()=>setScreen(store.getItem(onboardingKey())?'home':'intro'),1350);
+  return()=>clearTimeout(timeout);
+ },[screen,demo,authenticatedUserId]);
+ React.useEffect(()=>{
+  if(demo||!authenticatedUserId||['splash','intro','reward'].includes(screen)||!guideCatalog[screen]||guideScreen)return;
+  if(!store.getItem(tutorialKey(screen))){
+   const timeout=setTimeout(()=>openGuide(screen),550);
+   return()=>clearTimeout(timeout);
+  }
+ },[screen,demo,guideScreen,authenticatedUserId]);
 
  const [liveRole,setLiveRole]=React.useState('player');
  const [adminId,setAdminId]=React.useState('');
@@ -732,7 +745,7 @@ function App(){
   setGmBalanceMenu(false);
   const route=String(s||'home');
   if(route!==screen){navStack.current.push(screen);if(navStack.current.length>30)navStack.current.shift();}
-  closeGuide();setScreen(route);setModal('');
+  resetGuide();setScreen(route);setModal('');
   try{history.pushState({gmScreen:route},'','#'+route)}catch{}
   document.querySelector('.phone-scroll')?.scrollTo(0,0);
  };
@@ -756,7 +769,7 @@ function App(){
   let valid=true;
   gmFetchJson('/api/bootstrap',{headers:{Authorization:'tma '+init}},2)
    .then(d=>{if(!valid)return;
-    setDemo(false);setScreen('splash');setLiveRole(d.user?.role||'player');
+    setAuthenticatedUserId(String(d.user?.id||''));setDemo(false);setScreen('splash');setLiveRole(d.user?.role||'player');
     setBackendStatus('Telegram аккаунт: '+(d.user?.id||'подтверждён'));
     if(d.wallet)setW(w=>({...w,gm:d.wallet.gm/100,cr:d.wallet.cr/100,vault:d.wallet.vault/100,level:d.user?.level||w.level,xp:d.user?.xp??w.xp}));
    })
@@ -1972,7 +1985,7 @@ function Intro(){
   ['friends','Приглашай друзей','Поделись персональной ссылкой. Награды появляются только после подтверждённых действий друзей.']
  ];
  const step=steps[Math.max(0,Math.min(steps.length-1,introStep))];
- const complete=()=>{store.setItem('gm_onboarding_v21_complete','1');navStack.current=[];setScreen('home')};
+ const complete=()=>{if(authenticatedUserId)store.setItem(onboardingKey(),'1');navStack.current=[];setScreen('home')};
  const ticks=steps.map((_,i)=>e('i',{key:i,className:i<=introStep?'current':''}));
  const displayedLanguages=gmLanguages.filter(([code,label])=>(label.toLowerCase().includes(languageSearch.toLowerCase())||code.includes(languageSearch.toLowerCase())));
  const chosenLanguage=gmLanguages.find(([code])=>code===locale)?.[1]||gmLanguages[0][1];
