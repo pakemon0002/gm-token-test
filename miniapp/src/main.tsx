@@ -712,17 +712,6 @@ function App(){
  const [boxKind,setBoxKind]=React.useState('bronze');
  const [boxCount,setBoxCount]=React.useState(1);
  const [boxBusy,setBoxBusy]=React.useState(false);
- // WebGL geometry is mounted only while the chests screen or reveal modal is visible.
- // Unsupported phones keep the existing vector artwork as a no-crash fallback.
- React.useEffect(()=>{
-  if(screen!=='boxes'&&modal!=='boxReveal')return;
-  let stop=()=>{};
-  const timer=window.setTimeout(()=>{
-   const renderer=(window as any).GMChest3D;
-   if(renderer&&typeof renderer.mountAll==='function')stop=renderer.mountAll();
-  },60);
-  return()=>{window.clearTimeout(timer);stop()};
- },[screen,modal,boxKind,boxReveal.kind]);
  const [upgradeData,setUpgradeData]=React.useState(null as any);
  const [upgradeBusy,setUpgradeBusy]=React.useState(false);
  const [showAllUpgrades,setShowAllUpgrades]=React.useState(false);
@@ -1531,105 +1520,91 @@ function Splash(){return <div className="splash-view gm-splash-v3" role="status"
  function Shop(){return <>{top('GM Shop',true,'swap')}<div className="shop-banner pearl-card">{icon('swap',54,true)}<div><h2>GM → CR</h2><p>Виртуальный обмен, без реальных денег</p></div></div><div className="form-surface pearl-card"><label>Отдаёте GM</label><input inputMode="decimal" value={shopAmount} onChange={(e:any)=>{setShopAmount(e.target.value);setShopQuote(null)}}/><div className="split-line"><span>Комиссия GM Shop</span><b>1%</b></div><div className="split-line"><span>После комиссии</span><b>{nf(Math.max(0,Number(shopAmount.replace(',','.')||0)*.99))} GM</b></div><div className="split-line"><span>Получите CR</span><b>{shopQuote?nf(shopQuote.cr_cents/100)+' CR':'Нужна котировка'}</b></div>{!demo&&<GButton theme={theme} disabled={!liveState?.config?.shop_enabled} onClick={async()=>{const x=await api('/api/shop/quote?amount='+encodeURIComponent(shopAmount.replace(',','.')));if(x)setShopQuote(x)}}>Проверить рыночный курс</GButton>}<GButton theme={theme} disabled={demo||!shopQuote||!liveState?.config?.shop_enabled} onClick={async()=>{const x=await gameAction('/api/shop/exchange',{amount:shopAmount.replace(',','.'),minCrCents:shopQuote.cr_cents,quoteExpiresAt:shopQuote.quote_expires_at});if(x)setShopQuote(null)}}>Подтвердить обмен GM → CR</GButton></div><p className="disclaimer">Лимит: 50 000 CR в сутки. Все потраченные GM поступают в Treasury, включая 1% комиссии. До утверждения формулы курса обмен заблокирован.</p></>}
  
 
- function Boxes(){
-  const e=React.createElement;
-  const points=Number(liveState?.points?.points||0);
-  const enabled=!!liveState?.config?.boxes_enabled;
-  const payouts=liveState?.config?.box_rewards||{};
-  const catalog=[
-   {kind:'bronze',name:'Бронзовый сундук',tag:'Базовые награды',cost:300},
-   {kind:'silver',name:'Серебряный сундук',tag:'Улучшенные награды',cost:750},
-   {kind:'gold',name:'Золотой сундук',tag:'Максимальные награды',cost:1500}
-  ];
-  const selected=catalog.find(x=>x.kind===boxKind)||catalog[0];
-  const reward=Number(payouts[selected.kind]||0);
-  const totalCost=selected.cost*boxCount;
-  const totalReward=reward*boxCount;
-  const boxImage=kind=>'./assets/chests/gm-chest-'+kind+'.svg';
-  return e('div',{className:'gm-boxes-v9'},
-   top('Боксы',true,'info'),
-   e('div',{className:'gm-chests-tutorial-row'},
-    e('button',{type:'button',className:'gm-chests-tutorial',onClick:()=>openGuide('boxes')},icon('info',17),'Сундуки'),
-    e('button',{type:'button',className:'gm-chests-tutorial gm-chests-points-tour',onClick:()=>{
-     setPointsGuideOpen(true);openGuide('points')}},icon('info',17),'Как получить POINTS')),
-   e('div',{className:'gm-chests-title'},
-    e('h2',null,'Сундуки GM'),
-    e('p',null,'Выбери сундук и количество открытий. Награды фиксированные, без случайного выпадения.')),
-   e('div',{className:'gm-boxes-points gm-premium-card'},
-    e('div',null,e('small',null,'Твои POINTS'),e('strong',null,nf(points,0))),
-    e('button',{type:'button',onClick:()=>setPointsGuideOpen(!pointsGuideOpen)},'Как получить ',icon(pointsGuideOpen?'chevron-up':'chevron-down',17))),
-   pointsGuideOpen?e('section',{className:'gm-points-guide gm-premium-card'},
-    e('b',null,'Как получить POINTS'),
-    e('p',null,'POINTS начисляются за подтверждённый игровой торговый объём с учётом лимитов и проверок.'),
-    e('button',{type:'button',className:'gm-points-tour-trigger',onClick:()=>{setPointsGuideOpen(true);openGuide('points')}},'Инструкция по POINTS',icon('info',17)),
-    e('button',{type:'button',className:'gm-points-guide-action',onClick:()=>goto('trade')},'Перейти на рынок',icon('chevron-right',18))):null,
-   e('div',{className:'gm-chests-list',role:'group','aria-label':'Выбор сундука'},
-    catalog.map(x=>e('button',{type:'button',key:x.kind,
-     className:'gm-chest-choice '+x.kind+(boxKind===x.kind?' selected':''),
-     'aria-pressed':boxKind===x.kind,onClick:()=>setBoxKind(x.kind)},
-     e('img',{src:boxImage(x.kind),alt:'',draggable:false,'aria-hidden':true}),
-     e('span',{className:'gm-chest-choice-info'},e('b',null,x.name),
-      e('small',null,x.tag),e('em',null,nf(Number(payouts[x.kind]||0),0)+' GM за открытие')),
-     icon('chevron-right',18)))),
-   e('section',{className:'gm-chest-stage gm-premium-card '+selected.kind,
-    'aria-label':'Выбран '+selected.name},
-    e('div',{className:'gm-chest-stage-meta'},e('span',null,'GM COLLECTION'),
-    e('b',null,'3D · ',selected.kind==='bronze'?'BRONZE':selected.kind==='silver'?'SILVER':'GOLD')),
-    e('h3',null,selected.name),
-    e('p',null,'Виртуальная награда · без случайного выпадения'),
-    e('div',{className:'gm-chest-stage-art gm-chest-3d'},
-     e('span',{className:'gm-chest-stage-halo','aria-hidden':true}),
-     e('img',{key:selected.kind,src:boxImage(selected.kind),alt:selected.name,draggable:false}),
-     e('canvas',{key:'webgl-'+selected.kind,className:'gm-chest-3d-canvas',
-       'data-gm-chest':selected.kind,'aria-hidden':'true'})),
-    e('p',{className:'gm-chest-3d-hint'},icon('move-horizontal',15),' Поверни сундук пальцем'),
-    e('div',{className:'gm-chest-payout'},
-     e('span',null,'За 1 сундук',e('strong',null,nf(reward,0)+' GM')),
-     e('span',null,'Стоимость',e('strong',null,nf(selected.cost,0)+' POINTS'))),
-    e('div',{className:'gm-chests-qty-label'},'Сколько открыть?'),
-    e('div',{className:'gm-chests-qty',role:'group','aria-label':'Количество открытий'},
-     [1,3,5,10].map(count=>e('button',{
-      key:count,type:'button','aria-pressed':boxCount===count,
-      className:boxCount===count?'active':'',
-      onClick:()=>setBoxCount(count)},'×'+count))),
-    e('div',{className:'gm-chests-subtotal'},
-     e('span',null,'Итого: ',e('b',null,'+'+nf(totalReward,0)+' GM')),
-     e('span',null,nf(totalCost,0)+' POINTS')),
-    e('div',{className:'gm-chests-actions'},
-     e('button',{type:'button',className:'gm-chests-open',
-      disabled:demo||!enabled||!reward||boxBusy||points<totalCost,
-      onClick:()=>openBox(selected.kind,boxCount)},
-      icon('gift',20),
-      boxBusy?'Подтверждаем...':!enabled?'Сундуки недоступны':points<totalCost?
-       'Не хватает '+nf(totalCost-points,0)+' POINTS':'Открыть ×'+boxCount),
-     !demo&&enabled&&reward&&points<totalCost?
-      e('button',{type:'button',className:'gm-chests-how-points',
-       onClick:()=>{setPointsGuideOpen(true);openGuide('points')}},
-       icon('info',16),'Как заработать POINTS',icon('chevron-right',16)):null)),
-   e('p',{className:'gm-boxes-honest'},
-    'Все результаты рассчитаны заранее: один сундук приносит фиксированное количество виртуальных GM. Массовое открытие списывает POINTS и начисляет награду одной серверной операцией.')
-  );
- }
 
+ function Boxes(){
+ const e=React.createElement;
+ const points=Number(liveState?.points?.points||0), enabled=!!liveState?.config?.boxes_enabled;
+ const payouts=liveState?.config?.box_rewards||{};
+ const catalog=[
+  {kind:'bronze',name:'Бронзовый сундук',tag:'Базовые награды',cost:300},
+  {kind:'silver',name:'Серебряный сундук',tag:'Улучшенные награды',cost:750},
+  {kind:'gold',name:'Золотой сундук',tag:'Максимальные награды',cost:1500}];
+ const selected=catalog.find(x=>x.kind===boxKind)||catalog[0];
+ const reward=Number(payouts[selected.kind]||0),totalCost=selected.cost*boxCount,totalReward=reward*boxCount;
+ const picture=(kind:string)=>'./assets/chests/gm-chest-badge-'+kind+'.svg';
+ return e('div',{className:'gm-boxes-v9 gm-flat-boxes'},
+  top('Боксы',true,'info'),
+  e('header',{className:'gm-flat-heading'},
+   e('span',{className:'gm-flat-stars','aria-hidden':true},'✦　✧　✦'),
+   e('h2',null,'Сундуки GM'),
+   e('p',null,'Выбирай сундуки и получай виртуальные GM. Награды фиксированные.')),
+  e('div',{className:'gm-boxes-points gm-flat-wallet'},
+   e('span',{className:'gm-flat-point-icon'},icon('diamond',26,true)),
+   e('div',{className:'gm-flat-wallet-balance'},e('small',null,'Ваши POINTS'),e('strong',null,nf(points,0)+' POINTS')),
+   e('button',{type:'button',className:'gm-flat-points-help',
+    onClick:()=>{setPointsGuideOpen(true);openGuide('points')}},
+    icon('book-open',18),'Как получить POINTS?',icon('chevron-right',16))),
+  e('div',{className:'gm-flat-tour-buttons'},
+   e('button',{type:'button',className:'gm-chests-tutorial',onClick:()=>openGuide('boxes')},
+    icon('info',15),'Инструкция по сундукам'),
+   e('button',{type:'button',className:'gm-chests-points-tour',onClick:()=>{
+    setPointsGuideOpen(true);openGuide('points')}},
+    icon('book-open',15),'Инструкция POINTS')),
+  pointsGuideOpen?e('section',{className:'gm-points-guide gm-flat-points-detail'},
+   e('p',null,'POINTS начисляются за подтверждённый игровой торговый объём с учётом лимитов и проверок.'),
+   e('button',{type:'button',className:'gm-points-guide-action',onClick:()=>goto('trade')},
+    'Перейти на рынок',icon('chevron-right',16))):null,
+  e('div',{className:'gm-chests-list gm-flat-catalog',role:'group','aria-label':'Выбор сундука'},
+   catalog.map(x=>{
+    const active=boxKind===x.kind;
+    return e('button',{key:x.kind,type:'button',
+     className:'gm-chest-choice gm-flat-card '+x.kind+(active?' selected':''),
+     'aria-pressed':active,onClick:()=>setBoxKind(x.kind)},
+     e('span',{className:'gm-flat-card-image'+(active?' gm-chest-stage-art':'')},
+      e('img',{src:picture(x.kind),alt:'',draggable:false,'aria-hidden':true})),
+     e('span',{className:'gm-chest-choice-info gm-flat-card-body'},
+      e('b',null,x.name),
+      e('small',null,x.tag),
+      e('span',{className:'gm-flat-card-stats'},
+       e('span',null,'Награда',e('strong',null,nf(Number(payouts[x.kind]||0),0)+' GM')),
+       e('span',null,'Стоимость',e('strong',null,nf(x.cost,0)+' POINTS')))),
+     active?e('span',{className:'gm-flat-card-check','aria-label':'Выбран'},icon('check',17)):null)
+   })),
+  e('section',{className:'gm-flat-opening'},
+   e('h3',null,'Сколько открыть?'),
+   e('div',{className:'gm-chests-qty',role:'group','aria-label':'Количество открытий'},
+    [1,3,5,10].map(count=>e('button',{type:'button',key:count,
+      'aria-pressed':boxCount===count,className:boxCount===count?'active':'',
+      onClick:()=>setBoxCount(count)},'×'+count))),
+   e('div',{className:'gm-chests-subtotal'},
+    e('span',null,'Итого: ',e('b',null,'+'+nf(totalReward,0)+' GM')),
+    e('span',null,nf(totalCost,0)+' POINTS')),
+   e('div',{className:'gm-chests-actions'},
+    e('button',{type:'button',className:'gm-chests-open',
+     disabled:demo||!enabled||!reward||boxBusy||points<totalCost,
+     onClick:()=>openBox(selected.kind,boxCount)},
+     icon('gift',20),
+     boxBusy?'Подтверждаем...':!enabled?'Сундуки недоступны':!reward?'Награды недоступны':
+     points<totalCost?'Не хватает '+nf(totalCost-points,0)+' POINTS':'Открыть сундук ×'+boxCount),
+    !demo&&enabled&&reward>0&&points<totalCost?
+     e('button',{type:'button',className:'gm-chests-how-points',
+      onClick:()=>{setPointsGuideOpen(true);openGuide('points')}},
+      icon('info',16),'Как заработать POINTS',icon('chevron-right',16)):null)),
+  e('p',{className:'gm-boxes-honest'},
+   'POINTS списываются и GM начисляются одной проверенной серверной операцией. Дневные лимиты сохранены.'));
+ }
  function BoxRevealModal(){
   const e=React.createElement;
   const kind=boxReveal.kind||'bronze',count=boxReveal.count||1;
   const reward=Number(boxReveal.unit||((boxReveal.gm||0)/count));
-  return e('div',{className:'gm-box-overlay gm-chests-overlay',role:'presentation',onClick:()=>setModal('')},
-   e('div',{className:'gm-chests-result gm-premium-card '+kind,role:'dialog','aria-modal':true,
-    'aria-label':'Получены награды за сундуки',onClick:event=>event.stopPropagation()},
-    e('div',{className:'gm-chests-animation','aria-hidden':true},
+  return e('div',{className:'gm-box-overlay gm-chests-overlay',role:'presentation',
+   onClick:()=>setModal('')},
+   e('div',{className:'gm-chests-result gm-flat-result gm-premium-card '+kind,
+    role:'dialog','aria-modal':true,'aria-label':'Получены награды за сундуки',
+    onClick:event=>event.stopPropagation()},
+    e('div',{className:'gm-flat-result-image','aria-hidden':true},
      e('div',{className:'gm-chests-burst'}),
-     e('img',{className:'gm-chests-animation-chest',
-      src:'./assets/chests/gm-chest-'+kind+'.svg',alt:'',draggable:false}),
-     e('img',{className:'gm-chests-animation-lid',
-      src:'./assets/chests/gm-chest-'+kind+'.svg',alt:'',draggable:false}),
-     e('canvas',{className:'gm-chest-3d-canvas gm-chest-3d-modal',
-      'data-gm-chest':kind,'data-gm-chest-open':'true','aria-hidden':'true'}),
-     e('div',{className:'gm-chests-flash'}),
-     e('span',{className:'gm-chests-spark s1'},'✦'),
-     e('span',{className:'gm-chests-spark s2'},'✧'),
-     e('span',{className:'gm-chests-spark s3'},'✦')),
+     e('img',{src:'./assets/chests/gm-chest-badge-'+kind+'.svg',alt:'',draggable:false})),
     e('div',{className:'gm-chests-result-copy'},
      e('span',{className:'gm-chests-finished-tag'},'Открыто '+count+' '+(count===1?'сундук':count===3?'сундука':'сундуков')),
      e('h2',null,'Полученные награды'),
@@ -1638,14 +1613,12 @@ function Splash(){return <div className="splash-view gm-splash-v3" role="status"
        icon('coins',24,true),e('b',null,'+'+nf(reward,0)+' GM'),
        e('small',null,'Сундук '+(i+1))))),
      e('div',{className:'gm-chests-reward-total'},
-      e('span',null,'Итого начислено'),
-      e('strong',null,'+'+nf(boxReveal.gm||0,0)+' GM')),
-     e('p',null,'POINTS списаны, виртуальные GM начислены сервером.'),
+      e('span',null,'Итого начислено'),e('strong',null,'+'+nf(boxReveal.gm||0,0)+' GM')),
+     e('p',null,'Виртуальные GM начислены сервером, POINTS списаны.'),
      e('button',{type:'button',className:'gm-chests-close',onClick:()=>setModal('')},
       'Отлично!',icon('check',20)))));
  }
-
-function Referrals(){
+ function Referrals(){
  const e=React.createElement;
  const id=String(webapp?.initDataUnsafe?.user?.id||'');
  const link=id?'https://t.me/gm_token_test_bot?startapp=ref_'+id:'';
