@@ -427,7 +427,7 @@ function staticFile(path,res){
  if(loc.includes('..')||loc.includes('\\')||loc.includes('\0'))return res.writeHead(403).end('Forbidden');
  const full=resolve(staticRoot,'.'+loc);if(!full.startsWith(staticRoot+'/'))return res.writeHead(403).end('Forbidden');
  if(!existsSync(full))return res.writeHead(404).end('Not found');
- const ext=extname(full),mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.json':'application/json','.jpg':'image/jpeg'}[ext]||'application/octet-stream';
+ const ext=extname(full),mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.svg':'image/svg+xml','.json':'application/json','.jpg':'image/jpeg'}[ext]||'application/octet-stream';
  res.writeHead(200,{'Content-Type':mime,'X-Content-Type-Options':'nosniff',...(loc==='/tonconnect-manifest.json'?{'Access-Control-Allow-Origin':'*','Cache-Control':'public, max-age=300'}:{})});res.end(readFileSync(full));
 }
 // Automated housekeeping runs even when no moderators are online.
