@@ -134,7 +134,7 @@ const routes=async(req,res)=>{
   if(p==='/api/holders/status'&&verb==='GET')return send(res,200,holders.status(id));
   if(p==='/api/holders'&&verb==='GET'){
    const off=Number(url.searchParams.get('offset')||0),lim=Number(url.searchParams.get('limit')||30);
-   if(!Number.isSafeInteger(off)||off<0||off>1000000||!Number.isSafeInteger(lim)||lim<1||lim>100)throw Error('invalid ranking pagination');
+   if(!Number.isSafeInteger(off)||off<0||!Number.isSafeInteger(lim)||lim<1||lim>100)throw Error('invalid ranking pagination');
    return send(res,200,holders.ranking(id,{offset:off,limit:lim}));
   }
   if(p==='/api/holders/challenge'&&verb==='POST'){
