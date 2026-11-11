@@ -24,8 +24,20 @@ const clean = (s) => String(s).replace(/[<>]/g, '');
 // No local sample accounts, fictional prices, charts, tasks, or podium entries.
 const timeNow = () => new Date().toISOString().slice(0, 10);
 const todayUTC = () => new Date().toISOString().slice(0, 10);
+const ICON_ALIASES = { search: 'scanner', send: 'telegram', globe: 'info' };
 function Icon({ name, theme, size = 24, tile = false, alt = '', className = '' }) {
-    return React.createElement("img", { className: 'gm-icon ' + className, src: `${A}${theme}/${tile ? 'tiles' : 'transparent'}/${name}.png`, width: size, height: size, alt: alt, draggable: "false", loading: "lazy" });
+    const asset = ICON_ALIASES[name] || name;
+    return React.createElement("img", { className: 'gm-icon ' + className, src: `${A}${theme}/${tile ? 'tiles' : 'transparent'}/${asset}.png`, width: size, height: size, alt: alt, draggable: "false", loading: "lazy", onError: (event) => { const img = event.currentTarget; if (img.dataset.iconFallback)
+            return; img.dataset.iconFallback = '1'; img.src = `${A}${theme}/transparent/info.png`; } });
+}
+function PlayerAvatar({ name = '', photoUrl = '', size = 'medium', rank = 0 }) {
+    const label = String(name || 'GM').trim();
+    const initials = label.replace(/^@/, '').split(/[ _-]+/).filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('') || 'GM';
+    const allowedPhoto = typeof photoUrl === 'string' && /^https:\/\//.test(photoUrl) && photoUrl.length < 1024;
+    return React.createElement("span", { className: 'gm-player-avatar gm-player-avatar-' + size + ' gm-player-rank-' + rank, "aria-label": 'Аватар ' + label },
+        allowedPhoto ? React.createElement("img", { src: photoUrl, alt: "", referrerPolicy: "no-referrer", loading: "lazy", onError: (ev) => { ev.currentTarget.style.display = 'none'; } }) : null,
+        React.createElement("span", { className: "gm-player-initials" }, initials),
+        React.createElement("span", { className: "gm-player-avatar-spark", "aria-hidden": "true" }, "\u2726"));
 }
 function Brand({ theme, size = 50 }) { return React.createElement("img", { className: "brand-coin", src: BRAND + (theme === 'light' ? 'gm-coin-light-original.png' : 'gm-coin-dark-original.png'), width: size, height: size, alt: "\u041B\u043E\u0433\u043E\u0442\u0438\u043F GM TOKEN", draggable: "false" }); }
 function GButton({ children, onClick, light = false, disabled = false, icon, theme }) { return React.createElement("button", { type: "button", className: 'capsule ' + (light ? 'pale' : 'dark-cap'), onClick: onClick, disabled: disabled },
@@ -460,6 +472,9 @@ function App() {
     }, [guideScreen, guideStep]);
     const [wallet, setWallet] = React.useState(firstWallet);
     const [toast, setToast] = React.useState('');
+    const [gmBalanceMenu, setGmBalanceMenu] = React.useState(false);
+    const [pointsGuideOpen, setPointsGuideOpen] = React.useState(false);
+    const [framePreview, setFramePreview] = React.useState('standard');
     const [period, setPeriod] = React.useState('1h');
     const [selectedCandle, setSelectedCandle] = React.useState(null);
     const [tradeTab, setTradeTab] = React.useState('book');
@@ -733,6 +748,12 @@ function App() {
     const [modalText, setModalText] = React.useState('');
     const toastRef = React.useRef(0);
     const flash = (msg) => { setToast(msg); toastRef.current++; };
+    React.useEffect(() => {
+        if (!toast)
+            return;
+        const timeout = window.setTimeout(() => setToast(''), 3000);
+        return () => window.clearTimeout(timeout);
+    }, [toast]);
     const setW = (patch) => setWallet((w) => ({ ...w, ...(typeof patch === 'function' ? patch(w) : patch) }));
     const navStack = React.useRef([]);
     const goBack = () => {
@@ -746,6 +767,7 @@ function App() {
         document.querySelector('.phone-scroll')?.scrollTo(0, 0);
     };
     const goto = s => {
+        setGmBalanceMenu(false);
         const route = String(s || 'home');
         if (route !== screen) {
             navStack.current.push(screen);
@@ -979,12 +1001,14 @@ function App() {
         if (x) {
             setModal('');
             setTradeReady(false);
-            flash(x.auction ? 'Заявка Limit принята на аукцион' : 'Заявка GM/CR принята сервером');
+            flash(x.auction ? 'Заявка на аукционе · проверь «Мои ордера»' : 'Заявка размещена · проверь «Мои ордера»');
         }
     };
     const cancelLiveOrder = async (id) => { await gameAction('/api/exchange/cancel', { orderId: id }); };
     const loadHistory = async () => { const x = await api('/api/history'); if (x)
         setServerHistory(x.events || []); };
+    React.useEffect(() => { if (!demo && screen === 'history')
+        void loadHistory(); }, [screen, demo]);
     const tradePreview = () => {
         const issue = tradeIssue();
         if (issue) {
@@ -1051,7 +1075,7 @@ function App() {
             fill: 'none', stroke: theme === 'light' ? '#485465' : '#c3cedc', strokeWidth: 2.5, strokeLinecap: 'round', strokeLinejoin: 'round' }))
             : e('div', { className: 'gm-home-market-empty' }, icon('candlesticks', 21), e('span', null, 'График появится после нескольких сделок'));
         const quick = [['lightning', 'Майнинг', 'mining'], ['gift', 'Боксы', 'boxes'], ['tasks', 'Задания', 'tasks'], ['friends', 'Друзья', 'referrals']];
-        return e('div', { className: 'gm-home-v8' }, e('header', { className: 'gm-home-topline' }, e('div', { className: 'gm-home-brand' }, e(Brand, { theme, size: 37 }), e('div', null, e('b', null, 'GM TOKEN'), e('small', null, 'PREMIUM EDITION'))), e('button', { className: 'gm-home-settings', type: 'button', onClick: () => goto('settings'), 'aria-label': 'Настройки' }, icon('settings', 23))), e('div', { className: 'gm-home-level' }, e('div', null, e('span', null, 'Твой прогресс'), e('b', null, 'Уровень ' + level)), e('div', { className: 'gm-home-level-right' }, nf(wallet.xp, 0) + ' / ' + nf(nextLevel, 0) + ' XP'), e('div', { className: 'gm-home-level-track' }, e('span', { style: { width: progress + '%' } }))), e('section', { className: 'gm-home-wallet gm-premium-card' }, e('div', { className: 'gm-home-wallet-head' }, e('span', null, 'МОЙ БАЛАНС'), e('span', null, icon('shield-check', 16), ' Подтверждён')), e('div', { className: 'gm-home-balance-row' }, e('span', { className: 'gm-home-balance-icon' }, e(Brand, { theme, size: 33 })), e('div', null, e('small', null, 'GM'), e('strong', null, nf(wallet.gm))), e('button', { type: 'button', onClick: () => goto('mining'), 'aria-label': 'Перейти в Mining' }, icon('plus', 21))), e('div', { className: 'gm-home-balance-row' }, e('span', { className: 'gm-home-balance-icon' }, icon('coins', 31)), e('div', null, e('small', null, 'CR'), e('strong', null, nf(wallet.cr))), e('button', { type: 'button', onClick: () => goto('trade'), 'aria-label': 'Перейти на рынок' }, icon('chevron-right', 21)))), e('button', { type: 'button', className: 'gm-home-chart gm-premium-card', onClick: () => goto('trade') }, e('div', { className: 'gm-home-chart-top' }, e('div', null, e('small', null, 'РЫНОК · ТЕСТОВЫЙ GM/CR'), e('b', null, liveTicker?.last_price ? nf(liveTicker.last_price / 100) + ' CR' : 'Нет цены')), icon('chevron-right', 21)), spark, e('small', { className: 'gm-home-chart-note' }, 'Только реальные игровые сделки · без искусственного графика')), e('div', { className: 'gm-home-shortcuts' }, quick.map(([img, label, route]) => e('button', { type: 'button', key: route, onClick: () => goto(route), className: 'gm-home-shortcut' }, e('span', null, icon(img, 30, true)), e('b', null, label)))), e('button', { type: 'button', className: 'gm-home-offer gm-premium-card', onClick: () => goto('mining') }, e('span', { className: 'gm-home-offer-coin' }, e(Brand, { theme, size: 51 })), e('span', null, e('b', null, 'Майнинг работает'), e('small', null, nf(miningRate, 0) + ' GM/сутки · накоплено ' + nf(wallet.storage) + ' GM')), icon('chevron-right', 21)), e('button', { type: 'button', className: 'gm-home-offer gm-premium-card', onClick: () => goto('boxes') }, e('span', { className: 'gm-home-offer-coin' }, icon('gift', 45, true)), e('span', null, e('b', null, 'Открывай боксы за POINTS'), e('small', null, 'Твои POINTS: ' + nf(points, 0) + ' · гарантированные награды')), icon('chevron-right', 21)), e('div', { className: 'gm-home-lower' }, e('button', { type: 'button', onClick: () => goto('reward') }, icon('flame', 19), ' Daily Reward', icon('chevron-right', 15)), e('button', { type: 'button', onClick: () => goto('more') }, icon('info', 19), ' Как играть', icon('chevron-right', 15))));
+        return e('div', { className: 'gm-home-v8' }, e('header', { className: 'gm-home-topline' }, e('div', { className: 'gm-home-brand' }, e(Brand, { theme, size: 37 }), e('div', null, e('b', null, 'GM TOKEN'), e('small', null, 'PREMIUM EDITION'))), e('button', { className: 'gm-home-settings', type: 'button', onClick: () => goto('settings'), 'aria-label': 'Настройки' }, icon('settings', 23))), e('div', { className: 'gm-home-level' }, e('div', null, e('span', null, 'Твой прогресс'), e('b', null, 'Уровень ' + level)), e('div', { className: 'gm-home-level-right' }, nf(wallet.xp, 0) + ' / ' + nf(nextLevel, 0) + ' XP'), e('div', { className: 'gm-home-level-track' }, e('span', { style: { width: progress + '%' } }))), e('section', { className: 'gm-home-wallet gm-premium-card' }, e('div', { className: 'gm-home-wallet-head' }, e('span', null, 'МОЙ БАЛАНС'), e('span', null, icon('shield-check', 16), ' Подтверждён')), e('div', { className: 'gm-home-balance-row' }, e('span', { className: 'gm-home-balance-icon' }, e(Brand, { theme, size: 33 })), e('div', null, e('small', null, 'GM'), e('strong', null, nf(wallet.gm))), e('button', { type: 'button', onClick: () => setGmBalanceMenu(true), 'aria-label': 'Варианты получения GM' }, icon('plus', 21))), e('div', { className: 'gm-home-balance-row' }, e('span', { className: 'gm-home-balance-icon' }, icon('coins', 31)), e('div', null, e('small', null, 'CR'), e('strong', null, nf(wallet.cr))), e('button', { type: 'button', onClick: () => goto('trade'), 'aria-label': 'Перейти на рынок' }, icon('chevron-right', 21)))), e('button', { type: 'button', className: 'gm-home-chart gm-premium-card', onClick: () => goto('trade') }, e('div', { className: 'gm-home-chart-top' }, e('div', null, e('small', null, 'РЫНОК · ТЕСТОВЫЙ GM/CR'), e('b', null, liveTicker?.last_price ? nf(liveTicker.last_price / 100) + ' CR' : 'Нет цены')), icon('chevron-right', 21)), spark, e('small', { className: 'gm-home-chart-note' }, 'Только реальные игровые сделки · без искусственного графика')), e('div', { className: 'gm-home-shortcuts' }, quick.map(([img, label, route]) => e('button', { type: 'button', key: route, onClick: () => goto(route), className: 'gm-home-shortcut' }, e('span', null, icon(img, 30, true)), e('b', null, label)))), e('button', { type: 'button', className: 'gm-home-offer gm-premium-card', onClick: () => goto('mining') }, e('span', { className: 'gm-home-offer-coin' }, e(Brand, { theme, size: 51 })), e('span', null, e('b', null, 'Майнинг работает'), e('small', null, nf(miningRate, 0) + ' GM/сутки · накоплено ' + nf(wallet.storage) + ' GM')), icon('chevron-right', 21)), e('button', { type: 'button', className: 'gm-home-offer gm-premium-card', onClick: () => goto('boxes') }, e('span', { className: 'gm-home-offer-coin' }, icon('gift', 45, true)), e('span', null, e('b', null, 'Открывай боксы за POINTS'), e('small', null, 'Твои POINTS: ' + nf(points, 0) + ' · гарантированные награды')), icon('chevron-right', 21)), e('div', { className: 'gm-home-lower' }, e('button', { type: 'button', onClick: () => goto('reward') }, icon('flame', 19), ' Daily Reward', icon('chevron-right', 15)), e('button', { type: 'button', onClick: () => goto('more') }, icon('info', 19), ' Как играть', icon('chevron-right', 15))));
     }
     function Trading() {
         const e = React.createElement;
@@ -1182,7 +1206,7 @@ function App() {
                     const person = podium.find((p) => p.rank === place);
                     return React.createElement("div", { className: 'gm-holder-podium-slot gm-holder-place-' + place + (person ? ' is-filled' : ' is-empty'), key: place },
                         React.createElement("div", { className: "gm-holder-podium-crown" }, icon(place === 1 ? 'crown' : 'shield-check', place === 1 ? 32 : 25, true)),
-                        React.createElement("div", { className: "gm-holder-podium-avatar" }, person ? String(person.username).slice(0, 1).toUpperCase() : icon('profile', 25)),
+                        React.createElement("div", { className: "gm-holder-podium-avatar" }, person ? React.createElement(PlayerAvatar, { name: person.username, size: place === 1 ? 'large' : 'medium', rank: place, photoUrl: data?.my_rank === place ? (webapp?.initDataUnsafe?.user?.photo_url || '') : '' }) : React.createElement(PlayerAvatar, { name: "GM", size: place === 1 ? 'large' : 'medium', rank: place })),
                         React.createElement("div", { className: "gm-holder-podium-alias", title: person?.username || '' }, person ? person.username : '—'),
                         React.createElement("div", { className: "gm-holder-podium-amount" }, person ? person.gm + ' GM' : '—'),
                         React.createElement("div", { className: "gm-holder-podium-pillar" },
@@ -1208,7 +1232,8 @@ function App() {
                     walletLanguage('Conecte e verifique sua carteira, permita aparecer no ranking e atualize o saldo.', 'Підтвердь гаманець, дозволь участь у рейтингу та онови баланс.', 'Verify your wallet, opt in and refresh your GM balance to participate.', 'Подтверди кошелёк, разреши участие и обнови баланс GM, чтобы попасть в рейтинг.')) : null,
                 React.createElement("div", { className: "gm-holder-rows" }, entrants.filter((u) => u.rank >= 4).map((u) => React.createElement("div", { className: "gm-holder-row", key: u.rank },
                     React.createElement("div", { className: "gm-holder-row-rank" }, u.rank),
-                    React.createElement("div", { className: "gm-holder-row-avatar" }, icon('profile', 24)),
+                    React.createElement("div", { className: "gm-holder-row-avatar" },
+                        React.createElement(PlayerAvatar, { name: u.username, size: "small", photoUrl: data?.my_rank === u.rank ? (webapp?.initDataUnsafe?.user?.photo_url || '') : '' })),
                     React.createElement("div", { className: "gm-holder-row-user" },
                         React.createElement("b", null, u.username),
                         React.createElement("small", null, walletLanguage('Saldo verificado', 'Баланс перевірено', 'Verified holdings', 'Баланс проверен'))),
@@ -1241,10 +1266,13 @@ function App() {
         const nextXp = nextLeague?.min_xp ?? previousXp;
         const progress = nextLeague ? Math.min(100, Math.max(0, (wallet.xp - previousXp) / Math.max(1, nextXp - previousXp) * 100)) : 100;
         const user = webapp?.initDataUnsafe?.user;
-        return e(React.Fragment, null, top(L('profile'), false, 'settings'), e('div', { className: 'profile-hero gm-profile-v2' }, e('div', { className: 'gm-profile-avatar ' + (chosen === 'standard' ? '' : 'gm-profile-avatar-special') }, e(Brand, { theme, size: 100 })), e('h2', null, user?.username || user?.first_name || 'GM PLAYER'), e('p', null, '#' + String(user?.id || '')), cosmetics.founder_slot ? e('span', { className: 'gm-founders-medal' }, icon('crown', 18), ' FOUNDERS #' + cosmetics.founder_slot) : null), e('div', { className: 'gm-league-card gm-premium-card' }, e('div', { className: 'gm-league-head' }, e('div', null, e('small', null, 'GM LEAGUE'), e('h3', null, league.name)), e('b', null, nf(wallet.xp, 0) + ' XP')), e('div', { className: 'gm-upgrades-progress' }, e('span', { style: { width: progress + '%' } })), e('small', null, nextLeague ? '→ ' + nextLeague.name + ' · ' + nf(Math.max(0, nextXp - wallet.xp), 0) + ' XP' : 'GM IMMORTAL · MAX')), e('div', { className: 'stats-grid' }, [['friends', String(liveReferrals?.referred?.length || 0), L('friends')], ['wallet', nf(wallet.gm, 0), L('balance')], ['lightning', String(wallet.streak), L('streak')]].map(([i, n, label]) => e('div', { className: 'stat-card', key: label }, icon(i, 23), e('b', null, n), e('small', null, label)))), e('section', { className: 'gm-frames-section gm-premium-card' }, e('h3', null, L('frames')), e('p', null, L('achievementsLocked')), e('div', { className: 'gm-frame-grid' }, frames.map((f) => e('button', { key: f.id, type: 'button',
-            className: 'gm-frame-card ' + (f.claimed ? 'unlocked' : 'locked') + (chosen === f.id ? ' active' : ''),
-            disabled: !f.claimed, 'aria-pressed': chosen === f.id,
-            onClick: () => { setSelectedFrame(f.id); store.setItem('gm_profile_frame', f.id); } }, icon(f.category === 'founder' ? 'crown' : f.category === 'milestone' ? 'diamond' : 'profile', 27, true), e('span', null, f.title), f.claimed ? icon('check', 16) : icon('minus', 16))))), e('div', { className: 'profile-menu' }, [['trophy', L('achievements'), 'achievements'], ['friends', L('referrals'), 'referrals'], ['clock', L('history'), 'history'], ['wallet', L('wallet'), 'wallet'], ['settings', L('customize'), 'settings'], ['info', L('support'), 'support']].map(([i, t, route]) => e('button', { key: route, onClick: () => goto(route) }, icon(i, 21), e('span', null, t), icon('chevron-right', 18)))), e('button', { type: 'button', className: 'gm-settings-onboard gm-premium-card', onClick: () => openGuide('profile') }, icon('info', 22), L('startTour'), icon('chevron-right', 18)));
+        return e(React.Fragment, null, top(L('profile'), false, 'settings'), e('div', { className: 'profile-hero gm-profile-v2' }, e('div', { className: 'gm-profile-avatar ' + (chosen === 'standard' ? '' : 'gm-profile-avatar-special') }, e(PlayerAvatar, { name: user?.username || user?.first_name || 'GM PLAYER', photoUrl: user?.photo_url || '', size: 'large' })), e('h2', null, user?.username || user?.first_name || 'GM PLAYER'), e('p', null, '#' + String(user?.id || '')), cosmetics.founder_slot ? e('span', { className: 'gm-founders-medal' }, icon('crown', 18), ' FOUNDERS #' + cosmetics.founder_slot) : null), e('div', { className: 'gm-league-card gm-premium-card' }, e('div', { className: 'gm-league-head' }, e('div', null, e('small', null, 'GM LEAGUE'), e('h3', null, league.name)), e('b', null, nf(wallet.xp, 0) + ' XP')), e('div', { className: 'gm-upgrades-progress' }, e('span', { style: { width: progress + '%' } })), e('small', null, nextLeague ? '→ ' + nextLeague.name + ' · ' + nf(Math.max(0, nextXp - wallet.xp), 0) + ' XP' : 'GM IMMORTAL · MAX')), e('div', { className: 'stats-grid' }, [['friends', String(liveReferrals?.referred?.length || 0), L('friends')], ['wallet', nf(wallet.gm, 0), L('balance')], ['lightning', String(wallet.streak), L('streak')]].map(([i, n, label]) => e('div', { className: 'stat-card', key: label }, icon(i, 23), e('b', null, n), e('small', null, label)))), e('section', { className: 'gm-frames-section gm-premium-card' }, e('h3', null, L('frames')), e('p', null, L('achievementsLocked')), e('div', { className: 'gm-frame-preview-detail' }, e('div', { className: 'gm-frame-preview-showcase' }, e('span', { className: 'gm-frame-art gm-frame-art-big ' + (framePreview === 'standard' ? 'gm-frame-standard' : framePreview.startsWith('founder') ? 'gm-frame-founder' : 'gm-frame-milestone'),
+            style: { '--frame-hue': String(String(framePreview).split('').reduce((n, c) => n + c.charCodeAt(0), 0) % 360) + 'deg' } }, e('span', { className: 'gm-frame-inner' }, e(PlayerAvatar, { name: user?.username || user?.first_name || 'GM PLAYER', photoUrl: user?.photo_url || '', size: 'large' })))), e('div', { className: 'gm-frame-preview-copy' }, e('b', null, frames.find((f) => f.id === framePreview)?.title || 'GM Classic'), e('small', null, frames.find((f) => f.id === framePreview)?.claimed ? 'Рамка открыта · можно использовать' : 'Рамка пока закрыта · предпросмотр'), e('button', { type: 'button', disabled: !frames.find((f) => f.id === framePreview)?.claimed,
+            onClick: () => { setSelectedFrame(framePreview); store.setItem('gm_profile_frame', framePreview); } }, framePreview === chosen ? 'Используется' : 'Применить рамку'))), e('div', { className: 'gm-frame-grid' }, frames.map((f) => e('button', { key: f.id, type: 'button',
+            className: 'gm-frame-card ' + (f.claimed ? 'unlocked' : 'locked') + (framePreview === f.id ? ' active' : ''),
+            'aria-pressed': framePreview === f.id,
+            onClick: () => setFramePreview(f.id) }, e('span', { className: 'gm-frame-art gm-frame-thumb ' + (f.category === 'founder' ? 'gm-frame-founder' : f.category === 'milestone' ? 'gm-frame-milestone' : 'gm-frame-standard'),
+            style: { '--frame-hue': String(String(f.id).split('').reduce((n, c) => n + c.charCodeAt(0), 0) % 360) + 'deg' } }, e('span', { className: 'gm-frame-inner' }, e(PlayerAvatar, { name: user?.username || 'GM', size: 'small' }))), e('span', null, f.title), f.claimed ? icon('check', 16) : icon('minus', 16))))), e('div', { className: 'profile-menu' }, [['trophy', L('achievements'), 'achievements'], ['friends', L('referrals'), 'referrals'], ['clock', L('history'), 'history'], ['wallet', L('wallet'), 'wallet'], ['settings', L('customize'), 'settings'], ['info', L('support'), 'support']].map(([i, t, route]) => e('button', { key: route, onClick: () => goto(route) }, icon(i, 21), e('span', null, t), icon('chevron-right', 18)))), e('button', { type: 'button', className: 'gm-settings-onboard gm-premium-card', onClick: () => openGuide('profile') }, icon('info', 22), L('startTour'), icon('chevron-right', 18)));
     }
     function Reward() {
         const e = React.createElement;
@@ -1267,7 +1295,10 @@ function App() {
     function Mining() {
         const e = React.createElement;
         const rate = liveState?.mining?.rate_cents_day != null ? liveState.mining.rate_cents_day / 100 : gmRate(wallet);
-        const upgrade = upgradeData?.upgrade || liveState?.mining?.upgrade || { level: 1, max_level: 200, bonus_pct: 0, next_level: 2, next_cost_gm: 150, next_bonus_pct: 10 };
+        const upgrade = upgradeData?.upgrade || liveState?.mining?.upgrade || { level: 1, max_level: 200, bonus_pct: 0, next_level: 2, next_cost_gm: 150, next_bonus_pct: 0.10 };
+        const bonusValue = Math.max(0, Number(upgrade.bonus_pct) || 0);
+        const baseRate = rate / (1 + bonusValue / 100);
+        const projectedRate = (bonus) => baseRate * (1 + Math.max(0, bonus) / 100);
         const upgradeList = upgradeData?.levels || Array.from({ length: 200 }, (_, i) => { const level = i + 1; return { level, cost_gm: level === 1 ? 0 : level === 2 ? 150 : Math.round(200 * Math.pow(1.04, level - 3) / 10) * 10, bonus_pct: level === 1 ? 0 : (10 + 2 * (level - 2)) / 100 }; });
         const visibleUpgrades = showAllUpgrades ? upgradeList : upgradeList.filter((row) => row.level >= Math.max(1, upgrade.level - 1) && row.level <= Math.min(200, upgrade.level + 5));
         const stored = wallet.storage;
@@ -1281,9 +1312,9 @@ function App() {
                 return flash('Монета активна: GM добываются автоматически. Сбор доступен от 1 GM.');
             miningClaim();
         };
-        return e('div', { className: 'gm-mining-v8' }, top(L('mining'), true, 'info'), e('div', { className: 'gm-mining-title' }, e('span', null, 'Добывай GM'), e('small', null, 'Майнинг ' + upgrade.level + '/200 · ' + nf(rate, 0) + ' GM / сутки')), e('button', { type: 'button', className: 'gm-mining-coin-wrap', onClick: mineClick, 'aria-label': 'Собрать накопленные GM' }, e('span', { className: 'gm-mining-coin-rim' }, e(Brand, { theme, size: 198 })), e('span', { className: 'gm-mining-coin-glint' })), e('div', { className: 'gm-mining-total' }, icon('lightning', 28), e('strong', null, nf(stored)), e('span', null, 'GM накоплено')), e('p', { className: 'gm-mining-tap-guide' }, 'Нажми на монету, чтобы забрать накопленные GM (от 1 GM). Добыча идёт автоматически.'), e('div', { className: 'gm-mining-energy gm-premium-card' }, e('div', { className: 'gm-mining-energy-head' }, e('b', null, 'Хранилище'), e('span', null, nf(stored) + ' / ' + nf(cap) + ' GM')), e('div', { className: 'gm-mining-energy-track' }, e('span', { style: { width: pct + '%' } })), e('div', { className: 'gm-mining-energy-foot' }, e('small', null, 'Вместимость: ' + hours + ' ч'), e('small', null, nf(rate / 24, 2) + ' GM/час'))), e('button', { type: 'button', className: 'gm-mining-claim', disabled: demo || stored < 1, onClick: miningClaim }, icon('diamond', 23), e('span', null, 'Забрать GM'), icon('chevron-right', 19)), e('section', { className: 'gm-mining-benefits gm-premium-card' }, e('b', null, 'Уровень и ускорения'), e('div', null, e('span', null, icon('lightning', 21), ' Мощность'), e('strong', null, '+' + powerBonus(wallet.level) + '%')), e('div', null, e('span', null, icon('clock', 21), ' Хранилище'), e('strong', null, hours + ' часов')), e('div', null, e('span', null, icon('database', 21), ' Резерв'), e('strong', null, '45 млн GM'))), e('section', { className: 'gm-mining-upgrades gm-premium-card' }, e('div', { className: 'gm-upgrades-head' }, e('div', null, e('small', null, 'MINING UPGRADES'), e('h3', null, L('miningUpgrades'))), icon('lightning', 28)), e('div', { className: 'gm-upgrades-summary' }, e('div', null, e('small', null, L('level')), e('strong', null, upgrade.level + ' / 200')), e('div', null, e('small', null, L('speed')), e('strong', null, '+' + nf(Number(upgrade.bonus_pct), 2) + '%'))), e('div', { className: 'gm-upgrades-progress' }, e('span', { style: { width: upgrade.level / 200 * 100 + '%' } })), upgrade.next_level ?
-            e('div', { className: 'gm-upgrade-next' }, e('span', null, L('nextLevel') + ' ' + upgrade.next_level), e('strong', null, nf(upgrade.next_cost_gm, 0) + ' GM · +' + nf(Number(upgrade.next_bonus_pct), 2) + '%'), e('button', { type: 'button', className: 'gm-upgrades-purchase', disabled: demo || upgradeBusy || (!upgrade.purchasable && upgrade.purchasable !== undefined) || (upgrade.purchasable && wallet.gm < upgrade.next_cost_gm) || !upgradeData?.upgrade, onClick: buyMiningUpgrade }, upgradeBusy ? 'Проверяем покупку…' : !upgrade.purchasable ? 'Привязка GM к кошельку ещё не настроена' : wallet.gm < upgrade.next_cost_gm ? L('insufficient') : L('upgrade'), icon('chevron-right', 17)))
-            : e('div', { className: 'gm-upgrades-max' }, icon('crown', 21), 'Максимальный уровень открыт'), e('div', { className: 'gm-upgrade-preview' }, ...visibleUpgrades.map((row) => e('div', { key: row.level, className: 'gm-upgrade-row ' + (row.level <= upgrade.level ? 'gm-upgrade-unlocked' : row.level === upgrade.next_level ? 'gm-upgrade-available' : 'gm-upgrade-locked') }, e('span', { className: 'gm-upgrade-number' }, row.level), e('span', { className: 'gm-upgrade-row-copy' }, e('b', null, row.level === 200 ? 'GM Immortal' : 'Уровень ' + row.level), e('small', null, row.level === 1 ? 'Начальный' : nf(row.cost_gm, 0) + ' GM')), e('strong', null, '+' + nf(Number(row.bonus_pct), 2) + '%'), row.level <= upgrade.level ? icon('check', 17) : icon('minus', 17)))), e('button', { type: 'button', className: 'gm-upgrades-toggle', onClick: () => setShowAllUpgrades(!showAllUpgrades) }, showAllUpgrades ? L('collapse') : L('allLevels'), icon(showAllUpgrades ? 'chevron-up' : 'chevron-down', 16))), e('p', { className: 'gm-mining-footnote' }, 'GM — виртуальная валюта игры. Улучшения покупаются по порядку. Цена списывается сервером, бонус заменяет предыдущий. Mining Pool ограничен — фактические начисления могут отличаться от расчётных.'));
+        return e('div', { className: 'gm-mining-v8' }, top(L('mining'), true, 'info'), e('div', { className: 'gm-mining-title' }, e('span', null, 'Добывай GM'), e('small', null, 'Майнинг ' + upgrade.level + '/200 · ' + nf(rate, 0) + ' GM / сутки')), e('button', { type: 'button', className: 'gm-mining-coin-wrap', onClick: mineClick, 'aria-label': 'Собрать накопленные GM' }, e('span', { className: 'gm-mining-coin-rim' }, e('span', { className: 'gm-mining-coin-face' }, e(Brand, { theme, size: 198 })), e('span', { className: 'gm-mining-metal-inscription' }, 'GM')), e('span', { className: 'gm-mining-coin-outer-ring' }), e('span', { className: 'gm-mining-coin-glint' })), e('div', { className: 'gm-mining-total' }, icon('lightning', 28), e('strong', null, nf(stored)), e('span', null, 'GM накоплено')), e('div', { className: 'gm-mining-speed-cards gm-premium-card' }, e('div', null, e('small', null, 'ЗА ЧАС'), e('strong', null, nf(rate / 24, 3) + ' GM')), e('div', null, e('small', null, 'ЗА СУТКИ'), e('strong', null, nf(rate, 2) + ' GM'))), e('p', { className: 'gm-mining-tap-guide' }, 'Нажми на монету, чтобы забрать накопленные GM (от 1 GM). Добыча идёт автоматически.'), e('div', { className: 'gm-mining-energy gm-premium-card' }, e('div', { className: 'gm-mining-energy-head' }, e('b', null, 'Хранилище'), e('span', null, nf(stored) + ' / ' + nf(cap) + ' GM')), e('div', { className: 'gm-mining-energy-track' }, e('span', { style: { width: pct + '%' } })), e('div', { className: 'gm-mining-energy-foot' }, e('small', null, 'Вместимость: ' + hours + ' ч'), e('small', null, nf(rate / 24, 2) + ' GM/час'))), e('button', { type: 'button', className: 'gm-mining-claim', disabled: demo || stored < 1, onClick: miningClaim }, icon('diamond', 23), e('span', null, 'Забрать GM'), icon('chevron-right', 19)), e('section', { className: 'gm-mining-benefits gm-premium-card' }, e('b', null, 'Уровень и ускорения'), e('div', null, e('span', null, icon('lightning', 21), ' Мощность'), e('strong', null, '+' + powerBonus(wallet.level) + '%')), e('div', null, e('span', null, icon('clock', 21), ' Хранилище'), e('strong', null, hours + ' часов')), e('div', null, e('span', null, icon('database', 21), ' Резерв'), e('strong', null, '45 млн GM'))), e('section', { className: 'gm-mining-upgrades gm-premium-card' }, e('div', { className: 'gm-upgrades-head' }, e('div', null, e('small', null, 'MINING UPGRADES'), e('h3', null, L('miningUpgrades'))), icon('lightning', 28)), e('div', { className: 'gm-upgrades-summary' }, e('div', null, e('small', null, L('level')), e('strong', null, upgrade.level + ' / 200')), e('div', null, e('small', null, L('speed')), e('strong', null, '+' + nf(Number(upgrade.bonus_pct), 2) + '%'))), e('div', { className: 'gm-upgrades-progress' }, e('span', { style: { width: upgrade.level / 200 * 100 + '%' } })), upgrade.next_level ?
+            e('div', { className: 'gm-upgrade-next' }, e('span', null, L('nextLevel') + ' ' + upgrade.next_level), e('strong', null, nf(upgrade.next_cost_gm, 0) + ' GM · +' + nf(Number(upgrade.next_bonus_pct), 2) + '%'), e('div', { className: 'gm-upgrade-rate-preview' }, e('small', null, 'При новом уровне (расчётно):'), e('b', null, nf(projectedRate(Number(upgrade.next_bonus_pct)) / 24, 3) + ' GM/ч'), e('b', null, nf(projectedRate(Number(upgrade.next_bonus_pct)), 2) + ' GM/сутки')), e('button', { type: 'button', className: 'gm-upgrades-purchase', disabled: demo || upgradeBusy || (!upgrade.purchasable && upgrade.purchasable !== undefined) || (upgrade.purchasable && wallet.gm < upgrade.next_cost_gm) || !upgradeData?.upgrade, onClick: buyMiningUpgrade }, upgradeBusy ? 'Проверяем покупку…' : !upgrade.purchasable ? 'Привязка GM к кошельку ещё не настроена' : wallet.gm < upgrade.next_cost_gm ? L('insufficient') : L('upgrade'), icon('chevron-right', 17)))
+            : e('div', { className: 'gm-upgrades-max' }, icon('crown', 21), 'Максимальный уровень открыт'), e('div', { className: 'gm-upgrade-preview' }, ...visibleUpgrades.map((row) => e('div', { key: row.level, className: 'gm-upgrade-row ' + (row.level <= upgrade.level ? 'gm-upgrade-unlocked' : row.level === upgrade.next_level ? 'gm-upgrade-available' : 'gm-upgrade-locked') }, e('span', { className: 'gm-upgrade-number' }, row.level), e('span', { className: 'gm-upgrade-row-copy' }, e('b', null, row.level === 200 ? 'GM Immortal' : 'Уровень ' + row.level), e('small', null, row.level === 1 ? 'Начальный' : nf(row.cost_gm, 0) + ' GM')), e('strong', null, '+' + nf(Number(row.bonus_pct), 2) + '%'), e('span', { className: 'gm-upgrade-row-rate' }, e('small', null, nf(projectedRate(Number(row.bonus_pct)) / 24, 3) + ' GM/ч'), e('small', null, nf(projectedRate(Number(row.bonus_pct)), 2) + ' GM/сутки')), row.level <= upgrade.level ? icon('check', 17) : icon('minus', 17)))), e('button', { type: 'button', className: 'gm-upgrades-toggle', onClick: () => setShowAllUpgrades(!showAllUpgrades) }, showAllUpgrades ? L('collapse') : L('allLevels'), icon(showAllUpgrades ? 'chevron-up' : 'chevron-down', 16))), e('p', { className: 'gm-mining-footnote' }, 'Скорости в списке расчётные, без учёта ограничений Mining Pool. Улучшения за реальные GM на внешнем кошельке пока отключены до проверки официального контракта. Игровые GM не списываются.'));
     }
     function WalletConnection() {
         const e = React.createElement;
@@ -1335,7 +1366,7 @@ function App() {
         const enabled = !!liveState?.config?.boxes_enabled;
         const payouts = liveState?.config?.box_rewards || {};
         const catalog = [['bronze', 'СТАНДАРТ', 300, 'silver'], ['silver', 'ПРЕМИУМ', 750, 'platinum'], ['gold', 'ЭЛИТНЫЙ', 1500, 'chrome']];
-        return e('div', { className: 'gm-boxes-v8' }, top('Боксы', true, 'info'), e('div', { className: 'gm-boxes-intro' }, e('span', null, 'GM BOXES'), e('h2', null, 'Твоя награда внутри'), e('p', null, 'Накапливай POINTS за подтверждённую игровую активность и обменивай их на гарантированные GM.')), e('div', { className: 'gm-boxes-points gm-premium-card' }, e('div', null, e('small', null, 'Твои POINTS'), e('strong', null, nf(points, 0))), e('button', { type: 'button', onClick: () => goto('trade') }, 'Как заработать ', icon('chevron-right', 17))), e('div', { className: 'gm-boxes-gallery' }, catalog.map(([kind, name, cost, finish]) => e('section', { key: kind, className: 'gm-box-card gm-premium-card ' + kind }, e('div', { className: 'gm-box-visual' }, e('div', { className: 'gm-crate' }, e('div', { className: 'gm-crate-lid' }), e('div', { className: 'gm-crate-lock' }, e(Brand, { theme, size: 38 })), e('div', { className: 'gm-crate-body' }))), e('div', { className: 'gm-box-copy' }, e('b', null, name), e('span', null, nf(Number(payouts[kind] || 0), 0) + ' GM · гарантированно'), e('small', null, nf(Number(cost), 0) + ' POINTS')), e('button', { type: 'button', disabled: demo || !enabled || points < cost || boxBusy, onClick: () => openBox(kind),
+        return e('div', { className: 'gm-boxes-v8' }, top('Боксы', true, 'info'), e('div', { className: 'gm-boxes-intro' }, e('span', null, 'GM BOXES'), e('h2', null, 'Твоя награда внутри'), e('p', null, 'Накапливай POINTS за подтверждённую игровую активность и обменивай их на гарантированные GM.')), e('div', { className: 'gm-boxes-points gm-premium-card' }, e('div', null, e('small', null, 'Твои POINTS'), e('strong', null, nf(points, 0))), e('button', { type: 'button', onClick: () => setPointsGuideOpen(!pointsGuideOpen) }, 'Как заработать ', icon(pointsGuideOpen ? 'chevron-up' : 'chevron-down', 17))), pointsGuideOpen ? e('section', { className: 'gm-points-guide gm-premium-card' }, e('div', { className: 'gm-points-guide-title' }, icon('info', 26, true), e('div', null, e('b', null, 'Как получить POINTS'), e('small', null, 'За подтверждённую активность в виртуальной торговле'))), e('div', { className: 'gm-points-guide-step' }, e('span', null, '01'), e('div', null, e('b', null, 'Открой рынок GM / CR'), e('small', null, 'Исполни игровую заявку с другим участником. Простая отправка заявки POINTS не даёт.'))), e('div', { className: 'gm-points-guide-step' }, e('span', null, '02'), e('div', null, e('b', null, 'Получай 10 POINTS за каждые 10 000 GM объёма'), e('small', null, 'Учитывается проверенный суточный объём исполненных сделок. Действуют ограничения на сделки с одним контрагентом и защита от накрутки.'))), e('div', { className: 'gm-points-guide-step' }, e('span', null, '03'), e('div', null, e('b', null, 'Открой бокс за POINTS'), e('small', null, 'Не более 1 000 POINTS из торгового объёма за день. Награда бокса фиксированная и игровая.'))), e('button', { type: 'button', className: 'gm-points-guide-action', onClick: () => goto('trade') }, 'Посмотреть виртуальный рынок', icon('chevron-right', 18))) : null, e('div', { className: 'gm-boxes-gallery' }, catalog.map(([kind, name, cost, finish]) => e('section', { key: kind, className: 'gm-box-card gm-premium-card ' + kind }, e('div', { className: 'gm-box-visual' }, e('div', { className: 'gm-crate' }, e('div', { className: 'gm-crate-lid' }), e('div', { className: 'gm-crate-lock' }, e(Brand, { theme, size: 38 })), e('div', { className: 'gm-crate-body' }))), e('div', { className: 'gm-box-copy' }, e('b', null, name), e('span', null, nf(Number(payouts[kind] || 0), 0) + ' GM · гарантированно'), e('small', null, nf(Number(cost), 0) + ' POINTS')), e('button', { type: 'button', disabled: demo || !enabled || points < cost || boxBusy, onClick: () => openBox(kind),
             className: 'gm-box-open' }, !enabled ? 'Пока недоступно' : points < cost ? 'Не хватает POINTS' : 'Открыть бокс', icon('chevron-right', 18))))), e('p', { className: 'gm-boxes-honest' }, 'Анимация открытия — только оформление. Награда фиксирована и выдаётся сервером из фонда BOXES. Случайных призов и платных ставок нет.'));
     }
     function BoxRevealModal() {
@@ -1396,10 +1427,10 @@ function App() {
     }
     function History() { return React.createElement(React.Fragment, null,
         top(L('history'), true, 'clock'),
-        !serverHistory.length && React.createElement("div", { className: "empty-state" },
+        !serverHistory.length && React.createElement("div", { className: "empty-state gm-history-empty" },
             icon('clock', 62, true),
             React.createElement("h3", null, "\u0418\u0441\u0442\u043E\u0440\u0438\u044F \u043E\u043F\u0435\u0440\u0430\u0446\u0438\u0439 \u043F\u043E\u043A\u0430 \u043F\u0443\u0441\u0442\u0430"),
-            React.createElement("button", { onClick: loadHistory }, "\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C \u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u0430")),
+            React.createElement("p", null, "\u041D\u043E\u0432\u044B\u0435 \u043E\u043F\u0435\u0440\u0430\u0446\u0438\u0438 \u043F\u043E\u044F\u0432\u044F\u0442\u0441\u044F \u0437\u0434\u0435\u0441\u044C \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438 \u043F\u043E\u0441\u043B\u0435 \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043D\u0438\u044F \u0441\u0435\u0440\u0432\u0435\u0440\u043E\u043C.")),
         serverHistory.map((x) => React.createElement("div", { key: x.id, className: "pearl-card form-surface" },
             React.createElement("b", null, x.kind),
             React.createElement("small", null, new Date(x.at * 1000).toLocaleString('ru-RU')),
@@ -1605,7 +1636,7 @@ function App() {
         const step = steps[Math.min(guideStep, steps.length - 1)];
         const copy = guideText[step[3]];
         const description = copy?.[actualLang] || copy?.en || L(step[3]);
-        const next = () => { setGuideSpot(null); if (guideStep + 1 >= steps.length)
+        const next = () => { if (guideStep + 1 >= steps.length)
             closeGuide();
         else
             setGuideStep(guideStep + 1); };
@@ -1620,30 +1651,31 @@ function App() {
                 React.createElement("div", { className: "gm-tour-spotlight", style: { left: dimensions.left, top: dimensions.top, width: dimensions.width, height: dimensions.height }, onClick: next },
                     React.createElement("span", { className: "gm-tour-pointer" }, "\u2193"))) : React.createElement("div", { className: "gm-tour-shade gm-tour-shade-full" }),
             React.createElement("div", { className: "gm-tour-card", style: dimensions ? { top: dimensions.cardTop } : undefined },
-                React.createElement("div", { className: "gm-tour-head" },
-                    React.createElement(Brand, { theme: theme, size: 37 }),
-                    React.createElement("span", { className: "gm-tour-step-counter" },
-                        L('tutorialStep'),
+                React.createElement("div", { className: "gm-tour-step-content", key: guideStep },
+                    React.createElement("div", { className: "gm-tour-head" },
+                        React.createElement(Brand, { theme: theme, size: 37 }),
+                        React.createElement("span", { className: "gm-tour-step-counter" },
+                            L('tutorialStep'),
+                            " ",
+                            guideStep + 1,
+                            " / ",
+                            steps.length),
+                        React.createElement("button", { type: "button", onClick: closeGuide, "aria-label": L('skip') }, icon('close', 19))),
+                    React.createElement("div", { className: "gm-tour-guide-name" },
+                        L('instruction'),
+                        " \u00B7 GM TOKEN"),
+                    React.createElement("h2", null, L(step[1])),
+                    React.createElement("p", null, description),
+                    React.createElement("div", { className: "gm-tour-hint" },
+                        icon('info', 16),
                         " ",
-                        guideStep + 1,
-                        " / ",
-                        steps.length),
-                    React.createElement("button", { type: "button", onClick: closeGuide, "aria-label": L('skip') }, icon('close', 19))),
-                React.createElement("div", { className: "gm-tour-guide-name" },
-                    L('instruction'),
-                    " \u00B7 GM TOKEN"),
-                React.createElement("h2", null, L(step[1])),
-                React.createElement("p", null, description),
-                React.createElement("div", { className: "gm-tour-hint" },
-                    icon('info', 16),
-                    " ",
-                    actualLang === 'ru' ? 'Выделена нужная кнопка или область экрана.' : actualLang === 'uk' ? 'Підсвічено потрібну кнопку або ділянку.' : actualLang === 'pt' ? 'O botão ou a área relevante está destacado.' : 'The relevant button or area is highlighted.'),
-                React.createElement("div", { className: "gm-tour-track" }, steps.map((_, i) => React.createElement("i", { className: i <= guideStep ? 'active' : '', key: i }))),
-                React.createElement("div", { className: "gm-tour-actions" },
-                    React.createElement("button", { type: "button", onClick: closeGuide }, L('skip')),
-                    React.createElement("button", { type: "button", className: "gm-tour-primary", onClick: next },
-                        guideStep + 1 >= steps.length ? L('finish') : L('next'),
-                        icon('chevron-right', 18)))));
+                        actualLang === 'ru' ? 'Выделена нужная кнопка или область экрана.' : actualLang === 'uk' ? 'Підсвічено потрібну кнопку або ділянку.' : actualLang === 'pt' ? 'O botão ou a área relevante está destacado.' : 'The relevant button or area is highlighted.'),
+                    React.createElement("div", { className: "gm-tour-track" }, steps.map((_, i) => React.createElement("i", { className: i <= guideStep ? 'active' : '', key: i }))),
+                    React.createElement("div", { className: "gm-tour-actions" },
+                        React.createElement("button", { type: "button", onClick: closeGuide }, L('skip')),
+                        React.createElement("button", { type: "button", className: "gm-tour-primary", onClick: next },
+                            guideStep + 1 >= steps.length ? L('finish') : L('next'),
+                            icon('chevron-right', 18))))));
     }
     function Streak() { return React.createElement(React.Fragment, null,
         top('Daily Streak', true, 'flame'),
@@ -1782,9 +1814,31 @@ function App() {
                 React.createElement("button", { onClick: () => goto('home') }, "Home"),
                 React.createElement("button", { onClick: () => setTheme(isLight ? 'dark' : 'light') }, "\u0421\u043C\u0435\u043D\u0438\u0442\u044C \u0442\u0435\u043C\u0443")),
             React.createElement("small", { className: "status-note" }, backendStatus)),
-        toast && React.createElement("div", { className: "toast-message", role: "status", onClick: () => setToast('') },
-            toast,
-            React.createElement("button", { onClick: () => setToast('') }, "\u00D7")),
+        toast && React.createElement("div", { className: 'toast-message ' + (/ошиб|недоступ|error|отмен/i.test(toast) ? 'toast-error' : 'toast-info'), role: "status", "aria-live": "polite" },
+            React.createElement("span", { className: "gm-toast-icon" }, icon(/ошиб|недоступ|error|отмен/i.test(toast) ? 'info' : 'check', 21, true)),
+            React.createElement("span", { className: "gm-toast-copy" }, toast),
+            React.createElement("button", { type: "button", "aria-label": "\u0417\u0430\u043A\u0440\u044B\u0442\u044C \u0443\u0432\u0435\u0434\u043E\u043C\u043B\u0435\u043D\u0438\u0435", onClick: () => setToast('') }, icon('close', 18)),
+            React.createElement("span", { className: "gm-toast-progress", "aria-hidden": "true" })),
+        gmBalanceMenu && React.createElement("div", { className: "gm-balance-overlay", role: "presentation", onClick: () => setGmBalanceMenu(false) },
+            React.createElement("div", { className: "gm-balance-sheet gm-premium-card", role: "dialog", "aria-modal": "true", "aria-label": "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C GM", onClick: (ev) => ev.stopPropagation() },
+                React.createElement("div", { className: "gm-balance-sheet-head" },
+                    icon('gm-coin-orbit', 39, true),
+                    React.createElement("div", null,
+                        React.createElement("b", null, "\u041A\u0430\u043A \u043F\u043E\u043B\u0443\u0447\u0438\u0442\u044C GM?"),
+                        React.createElement("small", null, "\u0412\u044B\u0431\u0435\u0440\u0438 \u0443\u0434\u043E\u0431\u043D\u044B\u0439 \u0432\u0430\u0440\u0438\u0430\u043D\u0442")),
+                    React.createElement("button", { type: "button", onClick: () => setGmBalanceMenu(false), "aria-label": "\u0417\u0430\u043A\u0440\u044B\u0442\u044C" }, icon('close', 20))),
+                React.createElement("button", { type: "button", className: "gm-balance-option", onClick: () => goto('mining') },
+                    icon('lightning', 28, true),
+                    React.createElement("span", null,
+                        React.createElement("b", null, "\u041C\u0430\u0439\u043D\u0438\u043D\u0433 GM"),
+                        React.createElement("small", null, "\u041D\u0430\u043A\u0430\u043F\u043B\u0438\u0432\u0430\u0439 \u0438\u0433\u0440\u043E\u0432\u044B\u0435 GM \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438")),
+                    icon('chevron-right', 20)),
+                React.createElement("div", { className: "gm-balance-option gm-balance-option-unavailable" },
+                    icon('external-link', 28, true),
+                    React.createElement("span", null,
+                        React.createElement("b", null, "\u0412\u043D\u0435\u0448\u043D\u0438\u0439 \u0440\u044B\u043D\u043E\u043A GM"),
+                        React.createElement("small", null, "\u041F\u043E\u043A\u0443\u043F\u043A\u0430 \u043F\u043E\u043A\u0430 \u043D\u0435 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u0430: \u043E\u0444\u0438\u0446\u0438\u0430\u043B\u044C\u043D\u044B\u0439 \u043A\u043E\u043D\u0442\u0440\u0430\u043A\u0442 \u0438 \u0442\u043E\u0440\u0433\u043E\u0432\u0430\u044F \u043F\u043B\u043E\u0449\u0430\u0434\u043A\u0430 \u043D\u0435 \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043D\u044B")),
+                    icon('minus', 19)))),
         modal === 'boxReveal' ? BoxRevealModal() : modal && TradeOrderModal(),
         guideScreen && GuideOverlay());
 }
