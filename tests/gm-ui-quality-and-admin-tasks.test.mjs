@@ -68,7 +68,7 @@ test('Owner can create, update and delete only checkable tasks with TOTP, users 
  assert.equal(created.status,200,JSON.stringify(created.body));
  assert.ok(created.body.tasks.some(t=>t.id===baseTask.id));
  const replay=await api(910001,'/api/admin/task-catalog','POST',{...baseTask,action:'update',xp:75,code:totp(TOTP)});
- assert.equal(replay.status,400,'TOTP replay blocked');
+ assert.equal(replay.status,403,'TOTP replay blocked as unauthorized');
  const update=await api(910001,'/api/admin/task-catalog','POST',{...baseTask,action:'update',xp:75,code:totp(TOTP,Date.now()+30000)});
  assert.equal(update.status,200,JSON.stringify(update.body));
  assert.equal(update.body.tasks.find(x=>x.id===baseTask.id).xp,75);
