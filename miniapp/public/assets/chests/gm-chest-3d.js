@@ -138,17 +138,18 @@ function scene(canvas){
  let active=true,visible=true,frame=0,last=0,drag=null,yaw=-.25,openAt=performance.now();
  let resizeObserver=null,intersection=null;
  const isOpen=canvas.dataset.gmChestOpen==="true";
+ const reducedMotion=!!window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  function draw(t){
   if(!active)return;
   frame=requestAnimationFrame(draw);
-  if(t-last<32||!visible)return;
+  if(t-last<32||!visible||document.hidden)return;
   last=t;const dpr=Math.min(window.devicePixelRatio||1,1.75);
   const w=Math.max(1,Math.floor(canvas.clientWidth*dpr)),h=Math.max(1,Math.floor(canvas.clientHeight*dpr));
   if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}
   gl.viewport(0,0,w,h);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
-  gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);
-  const orbit=yaw+(drag?0:Math.sin(t*.00039)*.13);
-  const lid=isOpen?-1.78*Math.min(1,Math.pow(Math.min(1,(t-openAt)/1350),.78)):0;
+  gl.enable(gl.DEPTH_TEST);gl.disable(gl.CULL_FACE);
+  const orbit=yaw+(drag||reducedMotion?0:Math.sin(t*.00039)*.13);
+  const lid=isOpen?(reducedMotion?-1.78:-1.78*Math.min(1,Math.pow(Math.min(1,(t-openAt)/1350),.78))):0;
   gl.uniform1f(uniforms.uYaw,orbit);gl.uniform1f(uniforms.uPitch,-.12);
   gl.uniform1f(uniforms.uLid,lid);gl.uniform1f(uniforms.uSize,Math.min(1,canvas.clientHeight/210));
   for(const item of uploaded){
