@@ -83,7 +83,8 @@ function require2FA(user,body){
  const privateSecret=ownerTotps[user.id];const code=String(body.code||'');
  const cutoff=now()-900;
  if(stmt('SELECT COUNT(*) AS n FROM admin_2fa_failures WHERE owner_id=? AND at>?').get(user.id,cutoff).n>=5)throw Error('TOTP attempts temporarily limited (15 minutes)');
- if(!privateSecret||!checkTotp(privateSecret,code)){stmt('INSERT INTO admin_2fa_failures(owner_id,at) VALUES(?,?)').run(user.id,now());throw Error('valid TOTP required')}
+ if(!privateSecret)throw Error('2FA owner secret missing in Render configuration');
+  if(!checkTotp(privateSecret,code)){stmt('INSERT INTO admin_2fa_failures(owner_id,at) VALUES(?,?)').run(user.id,now());throw Error('2FA code invalid or expired; check authenticator setup and device time')}
  stmt('DELETE FROM admin_2fa_failures WHERE owner_id=?').run(user.id);
  const t=Date.now();let matched=null;
  for(const shift of [-1,0,1])if(totp(privateSecret,t+shift*30000)===code){matched=Math.floor((t+shift*30000)/30000);break}
@@ -419,7 +420,7 @@ const routes=async(req,res)=>{
   }
   if(['/api/market','/api/exchange','/api/shop','/api/mining','/api/vault','/api/game','/api/boxes','/api/daily','/api/referrals','/api/tasks','/api/achievements','/api/leaderboard'].some(prefix=>p.startsWith(prefix)))return await game.handle(p,verb,id,req,res);
   return fail(res,404,'endpoint not found');
- }catch(e){const message=e instanceof Error?e.message:String(e);return fail(res,message.match(/permission|role|TOTP|protected|assigned/i)?403:400,message)}
+ }catch(e){const message=e instanceof Error?e.message:String(e);return fail(res,message.match(/permission|role|TOTP|2FA|protected|assigned/i)?403:400,message)}
 };
 function staticFile(path,res){
  let loc=decodeURIComponent(path==='/'?'/preview.html':path);
