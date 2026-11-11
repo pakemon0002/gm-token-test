@@ -1634,3 +1634,43 @@ html,body,.application,.application button,.application input,.application texta
 @media(prefers-reduced-motion:reduce){
  .gm-frame-art-big:before,.gm-toast-progress,.gm-tour-step-content,.gm-balance-overlay,.toast-message{animation:none!important}
  .gm-tour-spotlight,.gm-tour-card{transition:none!important}}
+
+
+/* GM TOKEN v2.3 Owner task editor */
+.gm-admin-task-editor{padding:14px 12px!important;margin:14px 0!important;display:grid;gap:12px;border-radius:19px!important}
+.gm-admin-task-head{display:flex;align-items:center;gap:11px}
+.gm-admin-task-head>div{display:grid;gap:5px;flex:1}
+.gm-admin-task-head h3{font:700 13px 'Unbounded',system-ui,sans-serif;color:var(--gm-v2-ink);margin:0;letter-spacing:-.045em}
+.gm-admin-task-head p{font-size:10px;color:var(--muted);line-height:1.5;margin:0}
+.gm-admin-task-summary{display:flex;justify-content:space-between;align-items:center;gap:11px}
+.gm-admin-task-summary b{font-size:11px;color:var(--gm-v2-ink)}
+.gm-admin-task-summary button{display:flex;align-items:center;gap:6px;padding:8px 9px;border:1px solid var(--gm-v2-rail);border-radius:12px;background:var(--gm-v2-surface);color:var(--gm-v2-ink);font-size:10px;font-weight:850}
+.gm-admin-task-list{display:grid;gap:6px;max-height:245px;overflow-y:auto;scrollbar-width:thin;border:1px solid var(--gm-v2-rail);padding:8px;border-radius:13px;background:#8e9fb418}
+.gm-admin-task-row{display:flex;align-items:center;gap:9px;border:1px solid var(--gm-v2-rail);border-radius:11px;padding:8px;
+ background:linear-gradient(155deg,var(--gm-v2-top),var(--gm-v2-surface));color:var(--gm-v2-ink);text-align:left;min-height:48px}
+.gm-admin-task-row.selected{border-color:#869ab7;box-shadow:0 0 0 2px #a9bedc99}
+.gm-admin-task-text{display:grid;gap:4px;flex:1;min-width:0}
+.gm-admin-task-text>b{font-size:10px;line-height:1.35}
+.gm-admin-task-text>small{font-size:9px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gm-admin-task-controls{display:flex}
+.gm-admin-task-new{display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #a6b7ce;border-radius:12px;
+ min-height:42px;padding:8px 12px;background:linear-gradient(135deg,#f8faff,#aebed2);color:#192538;font-size:11px;font-weight:850;width:100%}
+.theme-dark .gm-admin-task-new{background:linear-gradient(135deg,#f2f6fb,#a3b3c8)}
+.gm-admin-task-form{display:grid;gap:10px;padding:14px 11px;border:1px solid var(--gm-v2-rail);border-radius:14px;background:#7d93b419}
+.gm-admin-task-form h4{font:750 11px 'Unbounded',system-ui,sans-serif;margin:0 0 5px;color:var(--gm-v2-ink);overflow-wrap:anywhere}
+.gm-admin-task-form label{font-size:10px;font-weight:850;color:var(--gm-v2-ink);display:grid;gap:6px}
+.gm-admin-task-form input:not([type=checkbox]),.gm-admin-task-form select,.gm-admin-task-form textarea{min-height:43px;width:100%;padding:10px;
+ background:var(--gm-v2-surface);color:var(--gm-v2-ink);border:1px solid var(--gm-v2-rail);border-radius:11px;font:700 12px 'Manrope',system-ui,sans-serif}
+.gm-admin-task-form textarea{min-height:80px;resize:vertical}
+.gm-admin-task-form input:disabled{opacity:.6}
+.gm-admin-task-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.gm-admin-task-check{display:flex!important;align-items:flex-start!important;gap:9px!important}
+.gm-admin-task-check input{width:18px;height:18px;flex:0 0 18px;accent-color:#627d9f}
+.gm-admin-task-check span{flex:1;line-height:1.5}
+.gm-admin-task-buttons{display:grid;gap:7px}
+.gm-admin-task-buttons button{min-height:46px;display:flex;align-items:center;justify-content:center;gap:9px;padding:10px;border-radius:12px;border:1px solid #a1b5cf;
+ font-size:10px;font-weight:850;color:#172436;background:linear-gradient(130deg,#f9fcff,#adbfd6)}
+.gm-admin-task-buttons button:disabled{opacity:.5}
+.gm-admin-task-buttons .gm-admin-task-delete{background:transparent;color:var(--gm-v2-ink);border-color:#c6929e}
+.gm-admin-task-foot{font-size:9px;line-height:1.55;color:var(--muted)}
+@media(max-width:350px){.gm-admin-task-fields{grid-template-columns:1fr}}

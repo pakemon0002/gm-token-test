@@ -475,6 +475,7 @@ function App() {
     const [gmBalanceMenu, setGmBalanceMenu] = React.useState(false);
     const [pointsGuideOpen, setPointsGuideOpen] = React.useState(false);
     const [framePreview, setFramePreview] = React.useState('standard');
+    const [showFounderCollection, setShowFounderCollection] = React.useState(false);
     const [period, setPeriod] = React.useState('1h');
     const [selectedCandle, setSelectedCandle] = React.useState(null);
     const [tradeTab, setTradeTab] = React.useState('book');
@@ -512,6 +513,7 @@ function App() {
     const [orderDuration, setOrderDuration] = React.useState('24h');
     const [tradeReady, setTradeReady] = React.useState(false);
     const [serverHistory, setServerHistory] = React.useState([]);
+    const [myTicketHistory, setMyTicketHistory] = React.useState([]);
     const [demo, setDemo] = React.useState(true);
     React.useEffect(() => { if (screen !== 'splash' || demo)
         return; const timeout = setTimeout(() => { setScreen(store.getItem('gm_onboarding_v21_complete') ? 'home' : 'intro'); }, 1350); return () => clearTimeout(timeout); }, [screen, demo]);
@@ -1050,8 +1052,13 @@ function App() {
         }
     };
     const cancelLiveOrder = async (id) => { await gameAction('/api/exchange/cancel', { orderId: id }); };
-    const loadHistory = async () => { const x = await api('/api/history'); if (x)
-        setServerHistory(x.events || []); };
+    const loadHistory = async () => {
+        const [x, y] = await Promise.all([api('/api/history', undefined, true), api('/api/tickets/my', undefined, true)]);
+        if (x)
+            setServerHistory(x.events || []);
+        if (y)
+            setMyTicketHistory(y.tickets || []);
+    };
     React.useEffect(() => { if (!demo && screen === 'history')
         void loadHistory(); }, [screen, demo]);
     const tradePreview = () => {
@@ -1470,52 +1477,114 @@ function App() {
         const stats = e('div', { className: 'gm-referral-stats' }, e('div', { className: 'gm-premium-card' }, e('strong', null, String(liveReferrals?.referred?.length || 0)), e('small', null, 'Приглашено игроков')), e('div', { className: 'gm-premium-card' }, e('strong', null, nf((liveReferrals?.received_gm_cents || 0) / 100)), e('small', null, 'Получено GM')));
         return e(React.Fragment, null, top('Приглашай друзей', true, 'friends'), e('div', { className: 'gm-referral-hero' }, icon('friends', 110, true), e('h2', null, 'Играйте вместе'), e('p', null, 'Отправь другу свою ссылку, чтобы он присоединился к GM TOKEN.')), e('div', { className: 'gm-referral-link gm-premium-card' }, e('small', null, 'ТВОЯ ПЕРСОНАЛЬНАЯ ССЫЛКА'), e('div', null, e('span', null, link || 'Доступна после входа в Telegram'), e('button', { type: 'button', onClick: copy, 'aria-label': 'Скопировать' }, icon('copy', 23)))), e('button', { type: 'button', className: 'gm-referral-share', onClick: share }, icon('friends', 23), ' Поделиться в Telegram ', icon('chevron-right', 18)), stats, e('div', { className: 'gm-referral-rule gm-premium-card' }, icon('shield-check', 29), e('div', null, e('b', null, 'Как начисляется бонус'), e('p', null, '25% от подтверждённых Holding Rewards приглашённого друга. За простую отправку ссылки GM не начисляются.'))));
     }
-    function History() { return React.createElement(React.Fragment, null,
-        top(L('history'), true, 'clock'),
-        !serverHistory.length && React.createElement("div", { className: "empty-state gm-history-empty" },
-            icon('clock', 62, true),
-            React.createElement("h3", null, "\u0418\u0441\u0442\u043E\u0440\u0438\u044F \u043E\u043F\u0435\u0440\u0430\u0446\u0438\u0439 \u043F\u043E\u043A\u0430 \u043F\u0443\u0441\u0442\u0430"),
-            React.createElement("p", null, "\u041D\u043E\u0432\u044B\u0435 \u043E\u043F\u0435\u0440\u0430\u0446\u0438\u0438 \u043F\u043E\u044F\u0432\u044F\u0442\u0441\u044F \u0437\u0434\u0435\u0441\u044C \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438 \u043F\u043E\u0441\u043B\u0435 \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043D\u0438\u044F \u0441\u0435\u0440\u0432\u0435\u0440\u043E\u043C.")),
-        serverHistory.map((x) => React.createElement("div", { key: x.id, className: "pearl-card form-surface" },
-            React.createElement("b", null, x.kind),
-            React.createElement("small", null, new Date(x.at * 1000).toLocaleString('ru-RU')),
-            React.createElement("p", null, x.info)))); }
+    function History() {
+        const labels = {
+            mining_claim: 'Сбор GM', daily_claim: 'Ежедневная награда',
+            ticket_created: 'Обращение в поддержку', admin_test_grant: 'Тестовое начисление',
+            admin_points_grant: 'Начисление POINTS', task_claimed: 'Задание выполнено',
+            achievement_claimed: 'Достижение открыто', box_open: 'Открытие бокса',
+            mining_upgrade: 'Улучшение майнинга', trade: 'Игровая сделка',
+            order_placed: 'Торговая заявка'
+        };
+        const statusLabels = { open: 'Открыто', auto_support: 'Автопомощь', in_review: 'На рассмотрении', resolved: 'Решено', closed: 'Закрыто' };
+        return React.createElement(React.Fragment, null,
+            top(L('history'), true, 'clock'),
+            React.createElement("section", { className: "gm-history-section gm-premium-card" },
+                React.createElement("div", { className: "gm-history-section-head" },
+                    icon('clock', 26, true),
+                    React.createElement("div", null,
+                        React.createElement("b", null, "\u0418\u0441\u0442\u043E\u0440\u0438\u044F \u043E\u043F\u0435\u0440\u0430\u0446\u0438\u0439"),
+                        React.createElement("small", null, "\u041F\u0440\u043E\u0432\u0435\u0440\u0435\u043D\u043D\u044B\u0435 \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u044F \u0432 \u0438\u0433\u0440\u0435"))),
+                !serverHistory.length ? React.createElement("div", { className: "gm-history-placeholder" },
+                    icon('clock', 29),
+                    React.createElement("p", null, "\u041E\u043F\u0435\u0440\u0430\u0446\u0438\u0439 \u043F\u043E\u043A\u0430 \u043D\u0435\u0442. \u041D\u043E\u0432\u044B\u0435 \u0437\u0430\u043F\u0438\u0441\u0438 \u043F\u043E\u044F\u0432\u044F\u0442\u0441\u044F \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438.")) : null,
+                serverHistory.map((x) => React.createElement("div", { className: "gm-history-entry", key: x.id },
+                    React.createElement("span", { className: "gm-history-entry-icon" }, icon(x.kind === 'mining_claim' ? 'lightning' : x.kind?.includes('ticket') ? 'shield-check' : x.kind?.includes('trade') ? 'candlesticks' : 'check', 24, true)),
+                    React.createElement("span", null,
+                        React.createElement("b", null, labels[x.kind] || String(x.kind || 'Операция').replace(/_/g, ' ')),
+                        React.createElement("small", null, new Date(Number(x.at) * 1000).toLocaleString(actualLang === 'uk' ? 'uk-UA' : 'ru-RU'))),
+                    icon('check', 17)))),
+            React.createElement("section", { className: "gm-history-section gm-premium-card" },
+                React.createElement("div", { className: "gm-history-section-head" },
+                    icon('shield-check', 26, true),
+                    React.createElement("div", null,
+                        React.createElement("b", null, "\u0418\u0441\u0442\u043E\u0440\u0438\u044F \u043E\u0431\u0440\u0430\u0449\u0435\u043D\u0438\u0439"),
+                        React.createElement("small", null, "\u0417\u0430\u043F\u0440\u043E\u0441\u044B \u0432 \u043F\u043E\u0434\u0434\u0435\u0440\u0436\u043A\u0443 \u0438 \u0438\u0445 \u0441\u0442\u0430\u0442\u0443\u0441\u044B"))),
+                !myTicketHistory.length ? React.createElement("p", { className: "gm-history-support-empty" }, "\u0423 \u0442\u0435\u0431\u044F \u043F\u043E\u043A\u0430 \u043D\u0435\u0442 \u043E\u0431\u0440\u0430\u0449\u0435\u043D\u0438\u0439 \u0432 \u043F\u043E\u0434\u0434\u0435\u0440\u0436\u043A\u0443.") : null,
+                myTicketHistory.map((ticket) => React.createElement("button", { type: "button", className: "gm-history-ticket", key: ticket.id, onClick: () => goto('support') },
+                    React.createElement("span", { className: "gm-history-ticket-avatar" }, icon('info', 22)),
+                    React.createElement("span", null,
+                        React.createElement("b", null, ticket.category),
+                        React.createElement("small", null,
+                            new Date(Number(ticket.created_at) * 1000).toLocaleDateString(actualLang === 'uk' ? 'uk-UA' : 'ru-RU'),
+                            " \u00B7 ",
+                            String(ticket.body || '').slice(0, 90))),
+                    React.createElement("strong", { className: 'gm-history-ticket-status ' + ticket.status }, statusLabels[ticket.status] || ticket.status))),
+                React.createElement("button", { type: "button", className: "gm-history-support-button", onClick: () => goto('support') },
+                    icon('shield-check', 19),
+                    " \u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u043E\u0434\u0434\u0435\u0440\u0436\u043A\u0443 ",
+                    icon('chevron-right', 17))));
+    }
     function Achievements() {
-        const items = liveAchievements;
-        const planned = [['origin', 'trophy', 'Первопроходец', 'Один из первых 20 игроков — уникальная рамка'], ['first_claim', 'lightning', 'Искра GM', 'Первый сбор майнинга'], ['mining_25', 'gm-coin-orbit', 'Стальной майнер', '25 улучшений майнинга'], ['mining_50', 'diamond', 'Серебряная легенда', '50 улучшений майнинга'], ['collector', 'gift', 'Хранитель артефактов', 'Собери серию игровых наград'], ['community', 'friends', 'Сила сообщества', 'Пригласи друзей'], ['immortal', 'crown', 'GM Immortal', 'Достигни максимальной лиги']];
+        const all = (liveState?.cosmetics?.frames || []);
+        const everyone = all.filter((x) => x.category !== 'founder');
+        const founders = all.filter((x) => x.category === 'founder');
+        const future = [
+            ['first_claim', 'lightning', 'Искра GM', 'Первый сбор майнинга'],
+            ['collector', 'gift', 'Хранитель артефактов', 'Собери коллекцию игровых наград'],
+            ['community', 'friends', 'Сила сообщества', 'Пригласи друзей'],
+            ['immortal', 'crown', 'GM Immortal', 'Достигни максимальной лиги']
+        ];
         return React.createElement(React.Fragment, null,
             top(L('achievements'), true, 'info'),
-            React.createElement("div", { className: "achievement-list" }, items.map((t) => React.createElement("div", { className: "earn-item pearl-card", key: t.id },
-                icon(t.icon || 'trophy', 45, true),
-                React.createElement("span", null,
-                    React.createElement("b", null, t.title || t.id),
-                    React.createElement("small", null,
-                        t.description || '',
-                        !demo ? ` · ${t.xp || 0} XP` : '')),
-                !demo && React.createElement("button", { disabled: t.claimed || !t.available, onClick: async () => { const x = await gameAction('/api/achievements/claim', { id: t.id }); if (x)
-                        await refreshLive(); } }, t.claimed ? 'Получено' : t.available ? 'Получить' : 'Не выполнено')))),
-            React.createElement("div", { className: "gm-achievement-planned" },
-                React.createElement("h3", null,
-                    L('achievements'),
-                    " \u00B7 ",
-                    L('locked')),
-                (liveState?.cosmetics?.frames || []).map((f) => React.createElement("div", { className: 'gm-achievement-locked ' + (f.claimed ? 'claimed' : ''), key: f.id },
-                    icon(f.category === 'founder' ? 'crown' : 'diamond', 35, true),
+            React.createElement("section", { className: "gm-achievement-intro gm-premium-card" },
+                icon('trophy', 41, true),
+                React.createElement("div", null,
+                    React.createElement("h2", null, "\u0414\u043E\u0441\u0442\u0438\u0436\u0435\u043D\u0438\u044F GM"),
+                    React.createElement("p", null, "\u041E\u0431\u044B\u0447\u043D\u044B\u0435 \u0434\u043E\u0441\u0442\u0438\u0436\u0435\u043D\u0438\u044F \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u044B \u0432\u0441\u0435\u043C. \u041F\u0435\u0440\u0432\u044B\u0435 20 \u0438\u0433\u0440\u043E\u043A\u043E\u0432 \u043F\u043E\u043B\u0443\u0447\u0430\u044E\u0442 \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u0443\u044E \u043E\u0433\u0440\u0430\u043D\u0438\u0447\u0435\u043D\u043D\u0443\u044E \u043A\u043E\u043B\u043B\u0435\u043A\u0446\u0438\u044E \u0440\u0430\u043C\u043E\u043A."))),
+            React.createElement("section", { className: "gm-achievement-planned" },
+                React.createElement("h3", null, "\u041E\u0431\u044B\u0447\u043D\u044B\u0435 \u0434\u043E\u0441\u0442\u0438\u0436\u0435\u043D\u0438\u044F \u00B7 \u0434\u043B\u044F \u043A\u0430\u0436\u0434\u043E\u0433\u043E"),
+                liveAchievements.map((t) => React.createElement("div", { className: 'gm-achievement-locked ' + (t.claimed ? 'claimed' : ''), key: t.id },
+                    icon(t.icon || 'trophy', 34, true),
+                    React.createElement("span", null,
+                        React.createElement("b", null, t.title || t.id),
+                        React.createElement("small", null,
+                            t.description || '',
+                            " \u00B7 ",
+                            t.xp || 0,
+                            " XP \u00B7 \u0414\u041E\u0421\u0422\u0423\u041F\u041D\u041E \u041A\u0410\u0416\u0414\u041E\u041C\u0423")),
+                    !demo && t.available && !t.claimed ? React.createElement("button", { type: "button", onClick: async () => { const x = await gameAction('/api/achievements/claim', { id: t.id }); if (x)
+                            await refreshLive(); } }, "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C") : icon(t.claimed ? 'check' : 'minus', 17))),
+                everyone.map((f) => React.createElement("div", { className: 'gm-achievement-locked ' + (f.claimed ? 'claimed' : ''), key: f.id },
+                    icon('diamond', 34, true),
                     React.createElement("span", null,
                         React.createElement("b", null, f.title),
-                        React.createElement("small", null, f.limited ? 'LIMITED · 1 / 20' : 'MINING MILESTONE')),
+                        React.createElement("small", null, "\u041C\u0430\u0439\u043D\u0438\u043D\u0433 \u00B7 \u043D\u0430\u0433\u0440\u0430\u0434\u0430 \u0434\u043B\u044F \u0432\u0441\u0435\u0445 \u0438\u0433\u0440\u043E\u043A\u043E\u0432")),
                     icon(f.claimed ? 'check' : 'minus', 17))),
-                React.createElement("p", null,
-                    L('achievementsLocked'),
-                    ". ",
-                    L('later'),
-                    "."),
-                planned.map(([id, ic, title, desc]) => React.createElement("div", { className: "gm-achievement-locked", key: id },
-                    icon(ic, 35, true),
+                future.map(([id, ic, title, description]) => React.createElement("div", { className: "gm-achievement-locked", key: id },
+                    icon(ic, 34, true),
                     React.createElement("span", null,
                         React.createElement("b", null, title),
-                        React.createElement("small", null, desc)),
-                    icon('minus', 16)))));
+                        React.createElement("small", null,
+                            description,
+                            " \u00B7 \u0441\u043A\u043E\u0440\u043E")),
+                    icon('minus', 17)))),
+            React.createElement("section", { className: "gm-founder-achievements gm-premium-card" },
+                React.createElement("button", { type: "button", className: "gm-founder-collection-trigger", onClick: () => setShowFounderCollection(!showFounderCollection) },
+                    icon('crown', 33, true),
+                    React.createElement("span", null,
+                        React.createElement("b", null, "GM GENESIS \u00B7 20 \u043F\u0435\u0440\u0432\u044B\u0445 \u0438\u0433\u0440\u043E\u043A\u043E\u0432"),
+                        React.createElement("small", null, "\u0422\u043E\u043B\u044C\u043A\u043E 20 \u0443\u043D\u0438\u043A\u0430\u043B\u044C\u043D\u044B\u0445 \u0440\u0430\u043C\u043E\u043A \u00B7 \u043F\u043E \u043E\u0434\u043D\u043E\u0439 \u043D\u0430 \u0438\u0433\u0440\u043E\u043A\u0430")),
+                    icon(showFounderCollection ? 'chevron-up' : 'chevron-down', 19)),
+                showFounderCollection ? React.createElement("div", { className: "gm-founder-collection" }, founders.map((f) => React.createElement("div", { className: 'gm-achievement-locked ' + (f.claimed ? 'claimed' : ''), key: f.id },
+                    icon('crown', 31, true),
+                    React.createElement("span", null,
+                        React.createElement("b", null, f.title),
+                        React.createElement("small", null,
+                            "\u042D\u043A\u0441\u043A\u043B\u044E\u0437\u0438\u0432 #",
+                            f.id.replace('founder_', ''),
+                            " \u00B7 GM GENESIS")),
+                    icon(f.claimed ? 'check' : 'minus', 17)))) : null));
     }
     function Settings() {
         const e = React.createElement;
