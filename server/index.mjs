@@ -163,7 +163,7 @@ const routes=async(req,res)=>{
   }
   if(p==='/api/tickets'&&verb==='GET'){
    cleanTickets();const mod=['owner','coowner','moderator'].includes(current.role);
-   const rows=['owner','coowner'].includes(current.role)?stmt('SELECT * FROM tickets ORDER BY CASE priority WHEN \'P1\' THEN 1 WHEN \'P2\' THEN 2 ELSE 3 END,created_at ASC LIMIT 100').all():mod?stmt('SELECT * FROM tickets WHERE status!=\'auto_support\' ORDER BY CASE priority WHEN \'P1\' THEN 1 WHEN \'P2\' THEN 2 ELSE 3 END,created_at ASC LIMIT 100').all():stmt('SELECT * FROM tickets WHERE user_id=? ORDER BY created_at DESC LIMIT 100').all(id);
+   const rows=['owner','coowner'].includes(current.role)&&url.searchParams.get('all')==='1'?stmt('SELECT * FROM tickets ORDER BY CASE priority WHEN \'P1\' THEN 1 WHEN \'P2\' THEN 2 ELSE 3 END,created_at ASC LIMIT 100').all():mod?stmt('SELECT * FROM tickets WHERE status!=\'auto_support\' ORDER BY CASE priority WHEN \'P1\' THEN 1 WHEN \'P2\' THEN 2 ELSE 3 END,created_at ASC LIMIT 100').all():stmt('SELECT * FROM tickets WHERE user_id=? ORDER BY created_at DESC LIMIT 100').all(id);
    return send(res,200,{tickets:rows});
   }
   if(p==='/api/tickets'&&verb==='POST'){
@@ -240,7 +240,6 @@ const routes=async(req,res)=>{
    if(!['create','update','delete'].includes(action))throw Error('invalid catalog action');
    const taskId=String(body.id||'').trim();
    if(!/^[a-z][a-z0-9_:-]{2,59}$/.test(taskId))throw Error('invalid task ID');
-   require2FA({id},body);
    let parsed=null;
    if(action!=='delete'){
     const title=String(body.title||'').trim(),description=String(body.description||'').trim();
@@ -258,6 +257,7 @@ const routes=async(req,res)=>{
     if(daily&&type!=='daily_claim')throw Error('daily tasks must use same-day daily_claim verification');
     parsed={id:taskId,title,description,category,icon,xp,gm,daily,condition:{type,gte:threshold}};
    }
+   require2FA({id},body);
    const result=tx(()=>{
     const previous=stmt("SELECT v FROM game_settings WHERE k='tasks_json'").get();
     const list=JSON.parse(previous?.v||'[]');
