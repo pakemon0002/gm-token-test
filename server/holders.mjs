@@ -91,7 +91,7 @@ export function makeHolders({stmt,tx,now=()=>Math.floor(Date.now()/1000),master=
   const token=master(),own=wallet(id);
   if(!token)return {enabled:false,reason:'contract_pending',participants:0,podium:[],users:[],my_rank:null,next_offset:null,has_more:false,network:'ton-mainnet',wallet_verified:Boolean(own)};
   const freshAfter=now()-HOLDINGS_FRESH_SECONDS;
-  const clause=" FROM holder_wallets w JOIN holder_snapshots b ON b.user_id=w.user_id JOIN users u ON u.id=w.user_id WHERE w.public_opt_in=1 AND w.verified_at>0 AND b.master_address=? AND b.checked_at>=? AND b.amount_raw NOT GLOB '*[^0-9]*' AND length(b.amount_raw)>0 AND length(b.amount_raw)<=80";
+  const clause=" FROM holder_wallets w JOIN holder_snapshots b ON b.user_id=w.user_id JOIN users u ON u.id=w.user_id WHERE w.public_opt_in=1 AND w.verified_at>0 AND b.master_address=? AND b.checked_at>=? AND b.amount_raw<>'0' AND b.amount_raw NOT GLOB '*[^0-9]*' AND length(b.amount_raw)>0 AND length(b.amount_raw)<=80";
   const order=" ORDER BY length(b.amount_raw) DESC,b.amount_raw DESC,w.user_id ASC";
   const count=stmt('SELECT COUNT(*) n'+clause).get(token,freshAfter).n;
   const rows=stmt('SELECT w.user_id AS id,u.username,b.amount_raw,b.decimals,b.checked_at'+clause+order+' LIMIT ? OFFSET ?').all(token,freshAfter,limit,offset);
