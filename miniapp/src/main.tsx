@@ -1612,7 +1612,81 @@ function Support(){
  );
 }
 
- function AdminTestGrants(){
+ function AdminTaskCatalog(){
+ const f=taskForm;
+ const setField=(field:string,val:any)=>setTaskForm((old:any)=>({...old,[field]:val}));
+ const examples=[
+  ['mining_claim_count','Сборы GM'],['trade_count','Исполненные сделки'],['referrals_count','Приглашённые игроки'],
+  ['mining_level','Уровень профиля'],['daily_claim','Ежедневная награда'],['founder_slot','Первые 20 игроков']
+ ];
+ return <section className="gm-admin-task-editor gm-premium-card">
+  <div className="gm-admin-task-head">
+   {icon('tasks',39,true)}
+   <div><h3>Конструктор заданий</h3><p>Создание, изменение и удаление заданий с серверной проверкой и 2FA. Поддельные награды не начисляются.</p></div>
+  </div>
+  <div className="gm-admin-task-summary"><b>{adminTasks.length} заданий</b><button type="button" onClick={()=>void loadAdminTasks()}>{icon('refresh',17)} Обновить</button></div>
+  <div className="gm-admin-task-list">
+   {adminTasks.map((item:any)=><button type="button" className={'gm-admin-task-row '+(taskEditingId===item.id?'selected':'')} key={item.id} onClick={()=>beginTaskEdit(item)}>
+    <span>{icon(item.icon||'tasks',25,true)}</span>
+    <span className="gm-admin-task-text"><b>{item.title}</b><small>{item.id} · +{item.xp||0} XP{item.gm?' · +'+item.gm+' GM':''}</small></span>
+    {icon('chevron-right',18)}
+   </button>)}
+  </div>
+  <div className="gm-admin-task-controls">
+   <button type="button" className="gm-admin-task-new" onClick={()=>{
+    setTaskEditingId('');setTaskDeleteArmed('');
+    setTaskForm({id:'',title:'',description:'',category:'Other',icon:'tasks',type:'mining_claim_count',gte:'1',xp:'25',gm:'0',daily:false});
+   }}>{icon('plus',19)} Новое задание</button>
+  </div>
+  <div className="gm-admin-task-form">
+   <h4>{taskEditingId?'Редактирование: '+taskEditingId:'Создать задание'}</h4>
+   <label htmlFor="gm-task-id">ID (латиница, без пробелов)</label>
+   <input id="gm-task-id" value={f.id} disabled={Boolean(taskEditingId)} maxLength={60}
+    placeholder="my_unique_task" onChange={(e:any)=>setField('id',e.target.value)}/>
+   <label htmlFor="gm-task-title">Название</label>
+   <input id="gm-task-title" value={f.title} maxLength={70} placeholder="Стальная легенда"
+    onChange={(e:any)=>setField('title',e.target.value)}/>
+   <label htmlFor="gm-task-description">Условие для игрока</label>
+   <textarea id="gm-task-description" rows={3} maxLength={210} value={f.description}
+    placeholder="Например: собери GM 5 раз"
+    onChange={(e:any)=>setField('description',e.target.value)}/>
+   <div className="gm-admin-task-fields">
+    <label>Категория<select value={f.category} onChange={(e:any)=>setField('category',e.target.value)}>
+      <option value="Other">Игровые</option><option value="Social">Социальные</option>
+     </select></label>
+    <label>Иконка<select value={f.icon} onChange={(e:any)=>setField('icon',e.target.value)}>
+      {['tasks','lightning','candlesticks','friends','gift','trophy','crown','clock','diamond','coins','star'].map(x=><option key={x} value={x}>{x}</option>)}
+     </select></label>
+   </div>
+   <label>Проверяемое условие</label>
+   <select value={f.type} onChange={(e:any)=>{setField('type',e.target.value);if(e.target.value==='daily_claim'||e.target.value==='founder_slot')setField('gte','1')}}>
+    {examples.map(([type,label])=><option key={type} value={type}>{label}</option>)}
+   </select>
+   <div className="gm-admin-task-fields">
+    <label>Сколько нужно<input inputMode="numeric" type="number" min={1} max={10000} value={f.gte}
+       disabled={f.type==='daily_claim'||f.type==='founder_slot'}
+       onChange={(e:any)=>setField('gte',e.target.value)}/></label>
+    <label>Награда XP<input inputMode="numeric" type="number" min={0} max={1000} value={f.xp} onChange={(e:any)=>setField('xp',e.target.value)}/></label>
+   </div>
+   <label>Награда виртуальных GM (0–100)<input inputMode="numeric" type="number" min={0} max={100} value={f.gm} onChange={(e:any)=>setField('gm',e.target.value)}/></label>
+   <label className="gm-admin-task-check"><input type="checkbox" checked={f.daily} disabled={f.type!=='daily_claim'}
+      onChange={(e:any)=>setField('daily',e.target.checked)}/><span>Повторять ежедневно (только за ежедневную награду)</span></label>
+   <label>Код 2FA владельца</label>
+   <input value={task2fa} maxLength={6} inputMode="numeric" autoComplete="one-time-code"
+    placeholder="6 цифр" onChange={(e:any)=>setTask2fa(e.target.value)}/>
+   <div className="gm-admin-task-buttons">
+    <button type="button" className="gm-admin-task-save" disabled={demo||taskSaving||task2fa.length!==6||!f.id||!f.title||!f.description}
+     onClick={()=>void saveAdminTask()}>{icon('check',19)} {taskSaving?'Сохранение…':'Сохранить задание'}</button>
+    {taskEditingId?<button type="button" className="gm-admin-task-delete" disabled={demo||taskSaving||task2fa.length!==6}
+     onClick={()=>taskDeleteArmed===f.id?void saveAdminTask('delete'):setTaskDeleteArmed(f.id)}>
+     {icon('minus',18)} {taskDeleteArmed===f.id?'Подтвердить удаление':'Удалить'}
+    </button>:null}
+   </div>
+   <small className="gm-admin-task-foot">Для операций нужен свежий код 2FA. GM берутся из игрового фонда DAILY. Условия проверяются сервером — задания по подписке без проверки создать нельзя.</small>
+  </div>
+ </section>;
+}
+function AdminTestGrants(){
   const e=React.createElement;
   return e('section',{className:'test-grants form-surface pearl-card','aria-label':'Тестовые начисления GM и CR'},
    e('div',{className:'test-grants-heading'},icon('coins',40,true),
@@ -1648,6 +1722,7 @@ function Support(){
  return <>{top('Admin Panel',true,'settings')}<div className="admin-banner pearl-card">{icon('crown',49,true)}<div><b>{liveRole.toUpperCase()}</b><small>Вход подтверждён Telegram; критические операции требуют TOTP</small></div></div>
  <div className="admin-numbers">{[['Users',adminStats?.users??'—'],['Orders',adminStats?.orders??'—'],['Trades (24h)',adminStats?.trades_24h??'—'],['Open tickets',adminStats?.open_tickets??'—']].map(([a,b])=><div className="pearl-card" key={a}><small>{a}</small><b>{b}</b><small>Серверные данные</small></div>)}</div>
  {AdminTestGrants()}
+ {AdminTaskCatalog()}
  <h3 className="section-title">Управление</h3>
  <div className="admin-actions pearl-card"><button onClick={async()=>{const x=await adminRequest('/api/admin/team');if(x)setAdminTeam(x.team||[])}}>{icon('friends',21)} Обновить список ролей</button><button onClick={async()=>{const x=await adminRequest('/api/admin/pools');if(x)setAdminFunds(x.pools||[]);const st=await adminRequest('/api/admin/stats');if(st)setAdminStats(st)}}>{icon('database',21)} Остатки фондов</button></div>
  {adminTeam.length>0&&<div className="admin-records pearl-card">{adminTeam.map((x:any)=><div key={x.id}><span>{x.username||x.id}</span><b>{x.role}</b></div>)}</div>}
