@@ -1674,3 +1674,54 @@ html,body,.application,.application button,.application input,.application texta
 .gm-admin-task-buttons .gm-admin-task-delete{background:transparent;color:var(--gm-v2-ink);border-color:#c6929e}
 .gm-admin-task-foot{font-size:9px;line-height:1.55;color:var(--muted)}
 @media(max-width:350px){.gm-admin-task-fields{grid-template-columns:1fr}}
+
+
+/* GM TOKEN v2.3: timeline, support history, universal vs Founder achievements */
+.gm-history-section{display:grid;gap:11px;padding:15px 12px!important;margin:13px 0;border-radius:20px!important}
+.gm-history-section-head{display:flex;align-items:center;gap:10px}
+.gm-history-section-head>div{display:grid;gap:5px}
+.gm-history-section-head b{font:750 12px 'Unbounded',system-ui,sans-serif;color:var(--gm-v2-ink)}
+.gm-history-section-head small{font-size:9px;color:var(--muted)}
+.gm-history-entry{display:flex;align-items:center;gap:9px;padding:11px 9px;border:1px solid var(--gm-v2-rail);
+ background:#9daec524;border-radius:12px}
+.gm-history-entry-icon{display:grid;place-items:center;width:36px;height:36px;flex:0 0 36px}
+.gm-history-entry>span:nth-child(2){display:grid;gap:6px;min-width:0;flex:1}
+.gm-history-entry b{font-size:10px;line-height:1.35;color:var(--gm-v2-ink)}
+.gm-history-entry small{font-size:9px;color:var(--muted)}
+.gm-history-placeholder{display:flex;align-items:center;gap:10px;padding:14px 10px;border:1px dashed var(--gm-v2-rail);border-radius:13px}
+.gm-history-placeholder p{font-size:10px;line-height:1.5;color:var(--muted);margin:0}
+.gm-history-ticket{width:100%;display:flex;align-items:center;gap:9px;padding:11px 9px;border:1px solid var(--gm-v2-rail);border-radius:12px;
+ background:#a9b6c81b;text-align:left;color:var(--gm-v2-ink)}
+.gm-history-ticket-avatar{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;
+ border:1px solid var(--gm-v2-rail);border-radius:11px;background:linear-gradient(135deg,#f6f8fc,#a9b7cc)}
+.theme-dark .gm-history-ticket-avatar{background:linear-gradient(135deg,#435266,#242b38)}
+.gm-history-ticket>span:nth-child(2){display:grid;gap:5px;flex:1;min-width:0}
+.gm-history-ticket b{font-size:10px}
+.gm-history-ticket small{font-size:9px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;color:var(--muted)}
+.gm-history-ticket-status{flex:0 0 auto;border:1px solid var(--gm-v2-rail);padding:6px;border-radius:8px;font-size:8px;font-weight:850}
+.gm-history-ticket-status.resolved,.gm-history-ticket-status.closed{color:#246a4e;border-color:#74baa2;background:#bfe6d34d}
+.theme-dark .gm-history-ticket-status.resolved,.theme-dark .gm-history-ticket-status.closed{color:#98dec0}
+.gm-history-ticket-status.in_review{color:#455d92;border-color:#91addc;background:#a9bfe640}
+.theme-dark .gm-history-ticket-status.in_review{color:#b8cafa}
+.gm-history-support-empty{font-size:10px;line-height:1.5;color:var(--muted)}
+.gm-history-support-button{min-height:44px;display:flex;align-items:center;justify-content:center;gap:9px;
+ border:1px solid var(--gm-v2-rail);border-radius:13px;background:linear-gradient(135deg,#f7faff,#b5c2d3);
+ color:#1a283b;font-size:10px;font-weight:850}
+.theme-dark .gm-history-support-button{background:linear-gradient(135deg,#f0f5fc,#a7b6ca)}
+.gm-achievement-intro{display:flex;align-items:center;gap:12px;padding:15px!important;margin:12px 0;border-radius:19px!important}
+.gm-achievement-intro>div{display:grid;gap:8px}
+.gm-achievement-intro h2{font:700 13px 'Unbounded',system-ui,sans-serif;color:var(--gm-v2-ink);margin:0}
+.gm-achievement-intro p{font-size:10px;line-height:1.5;color:var(--muted);margin:0}
+.gm-achievement-planned{margin-top:13px}
+.gm-achievement-planned>h3{font:700 12px 'Unbounded',system-ui,sans-serif;letter-spacing:-.03em;color:var(--gm-v2-ink)}
+.gm-achievement-locked{min-height:66px}
+.gm-achievement-locked>button{flex:0 0 auto;min-height:33px;padding:8px;border:1px solid #8ea4bf;
+ border-radius:10px;background:linear-gradient(135deg,#f8faff,#b2c3d8);font-size:9px;font-weight:850;color:#19283b}
+.gm-founder-achievements{padding:10px 11px!important;margin:15px 0;border-radius:18px!important}
+.gm-founder-collection-trigger{width:100%;display:flex;align-items:center;gap:9px;
+ padding:8px 4px;border:0;background:transparent;text-align:left;color:var(--gm-v2-ink)}
+.gm-founder-collection-trigger>span{display:grid;gap:5px;min-width:0;flex:1}
+.gm-founder-collection-trigger b{font-size:11px;line-height:1.4}
+.gm-founder-collection-trigger small{font-size:9px;color:var(--muted);line-height:1.5}
+.gm-founder-collection{display:grid;gap:8px;padding-top:11px;border-top:1px solid var(--gm-v2-rail);margin-top:6px}
+@media(max-width:360px){.gm-history-ticket-status{font-size:7px}.gm-history-entry small{font-size:8px}}
