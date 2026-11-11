@@ -459,7 +459,7 @@ function App(){
   'support.send':{ru:'После ввода темы и описания нажми здесь. Обращение попадёт в серверный список поддержки, а его статус появится ниже. По возможности укажи раздел, время и текст ошибки.',uk:'Після опису натисни сюди. Звернення збережеться на сервері, а статус з’явиться нижче.',pt:'Depois de descrever o problema, toque aqui. O chamado será salvo e o status aparecerá abaixo.',en:'After entering the topic and description, tap here. The server stores your ticket and its status appears below.'},
   'support.ticket':{ru:'Выбери категорию и опиши проблему минимум десятью символами. Обращение создаётся на сервере и появляется в списке; можно просматривать ответы.',uk:'Оберіть категорію й опишіть проблему. Звернення збережеться на сервері.',pt:'Escolha a categoria e descreva o problema. O chamado será salvo no servidor.',en:'Choose a category and describe the issue. Your ticket is saved on the server.'}
  };
- const closeGuide=()=>{if(guideScreen)store.setItem('gm_guide_v22_'+guideScreen,'1');setGuideScreen('');setGuideStep(0);setGuideSpot(null)};
+ const closeGuide=()=>{if(guideScreen)store.setItem(guideScreen==='boxes'?'gm_guide_chests_v3_boxes':'gm_guide_v21_'+guideScreen,'1');setGuideScreen('');setGuideStep(0);setGuideSpot(null)};
  const openGuide=(name:string)=>{if(guideCatalog[name]){setGuideScreen(name);setGuideStep(0);setGuideSpot(null)}};
  React.useEffect(()=>{
   if(!guideScreen)return;
@@ -538,7 +538,7 @@ function App(){
  const [demo,setDemo]=React.useState(true);
  React.useEffect(()=>{if(screen!=='splash'||demo)return;const timeout=setTimeout(()=>{setScreen(store.getItem('gm_onboarding_v21_complete')?'home':'intro')},1350);return()=>clearTimeout(timeout)},[screen,demo]);
  React.useEffect(()=>{if(demo||['splash','intro','reward'].includes(screen)||!guideCatalog[screen]||guideScreen)return;
- if(!store.getItem('gm_guide_v22_'+screen)){const timeout=setTimeout(()=>openGuide(screen),550);return()=>clearTimeout(timeout)}
+ if(!store.getItem(screen==='boxes'?'gm_guide_chests_v3_boxes':'gm_guide_v21_'+screen)){const timeout=setTimeout(()=>openGuide(screen),550);return()=>clearTimeout(timeout)}
  },[screen,demo,guideScreen]);
 
  const [liveRole,setLiveRole]=React.useState('player');
