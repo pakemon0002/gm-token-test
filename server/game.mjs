@@ -210,7 +210,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
  // Persistent UTC streak history comes from committed, unique daily_claim rows.
  // No client-provided timestamps or local-storage progress can affect payouts.
  const DAILY_MILESTONES=Object.freeze({5:25,10:50,15:75,20:100,25:150,30:200});
- const milestoneTestEnabled=process.env.GM_DAILY_MILESTONE_TEST==='1';
+ const milestoneTestEnabled=testEconomy&&process.env.GM_DAILY_MILESTONE_TEST==='1';
  const dailyCycle=(streak)=>((streak-1)%30)+1;
  function dailyRewardCents(base,streak){
   if(!milestoneTestEnabled||base<=0)return base;
