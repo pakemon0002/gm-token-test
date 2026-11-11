@@ -126,11 +126,11 @@ varying vec3 vNormal;varying vec3 vPos;
 void main(){
  vec3 p=aPos,n=aNormal;
  if(uIsLid>0.5){
-   p-=vec3(0.0,0.88,-0.71);
+   p-=vec3(0.0,0.99,-0.78);
    float a=uLid;float c=cos(a),s=sin(a);
    p=vec3(p.x,c*p.y-s*p.z,s*p.y+c*p.z);
    n=vec3(n.x,c*n.y-s*n.z,s*n.y+c*n.z);
-   p+=vec3(0.0,0.88,-0.71);
+   p+=vec3(0.0,0.99,-0.78);
  }
  float cy=cos(uYaw),sy=sin(uYaw),cp=cos(uPitch),sp=sin(uPitch);
  p=vec3(cy*p.x+sy*p.z,p.y,-sy*p.x+cy*p.z);
@@ -212,6 +212,12 @@ function scene(canvas){
    gl.drawArrays(gl.TRIANGLES,0,item.n);
   }
  }
+ // GPU resource loss must restore the reliable SVG artwork immediately.
+ const contextLost=e=>{e.preventDefault();active=false;cancelAnimationFrame(frame);
+  canvas.parentElement&&canvas.parentElement.classList.remove("gm-chest-rendered");
+  delete canvas.dataset.gm3dReady;
+ };
+ canvas.addEventListener("webglcontextlost",contextLost,false);
  const down=e=>{drag={x:e.clientX,yaw};try{canvas.setPointerCapture(e.pointerId)}catch{}};
  const move=e=>{if(drag)yaw=Math.max(-1.2,Math.min(1.2,drag.yaw+(e.clientX-drag.x)/140))};
  const up=()=>drag=null;
@@ -222,6 +228,7 @@ function scene(canvas){
  return ()=>{active=false;cancelAnimationFrame(frame);intersection&&intersection.disconnect();
   canvas.removeEventListener("pointerdown",down);canvas.removeEventListener("pointermove",move);
   canvas.removeEventListener("pointerup",up);canvas.removeEventListener("pointercancel",up);
+  canvas.removeEventListener("webglcontextlost",contextLost);
   for(const item of uploaded)gl.deleteBuffer(item.buf);
   gl.deleteProgram(program);delete canvas.dataset.gm3dReady;canvas.parentElement&&canvas.parentElement.classList.remove("gm-chest-rendered");
  };
