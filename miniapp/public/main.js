@@ -1143,19 +1143,90 @@ function App() {
         return e(React.Fragment, null, top(L('tasks'), true, 'info'), e('div', { className: 'gm-task-header gm-premium-card' }, icon('tasks', 44, true), e('div', null, e('b', null, 'Выполняй цели'), e('small', null, 'Игровые задания с проверяемыми условиями. Награды начисляет только сервер.'))), e('div', { className: 'gm-task-filters' }, tabs.map(([value, label]) => e('button', { type: 'button', key: value,
             className: taskFilter === value ? 'active' : '', onClick: () => setTaskFilter(value) }, label))), e('div', { className: 'gm-task-list' }, rows), e('p', { className: 'gm-task-note' }, 'Задания за подписки появятся после настройки безопасной проверки членства через Telegram. Сейчас доступны только проверяемые игровые действия.'));
     }
-    function Leaderboard() { const users = (liveRanks?.users || []).filter((u) => rankFilter === 'Global' || (liveReferrals?.referred || []).some((r) => r.user_id === u.id)); return React.createElement(React.Fragment, null,
-        top(L('leaderboard'), true, 'trophy'),
-        React.createElement("div", { className: "rank-tabs" },
-            React.createElement("button", { onClick: () => setRankFilter('Global'), className: rankFilter === 'Global' ? 'on' : '' }, "Global"),
-            React.createElement("button", { onClick: () => setRankFilter('Friends'), className: rankFilter === 'Friends' ? 'on' : '' }, "Friends")),
-        React.createElement("div", { className: "leader-rows" }, users.map((u, i) => React.createElement("div", { className: "leader-row", key: u.id },
-            React.createElement("b", null, i + 1),
-            icon('profile', 27),
-            React.createElement("span", null, clean(u.username || 'Игрок')),
-            React.createElement("small", null,
-                nf(u.score_cents / 100),
-                " GM")))),
-        users.length === 0 && React.createElement("p", { className: "disclaimer" }, liveRanks?.pending_rule ? 'Рейтинг ещё не включён: формула не утверждена. Фальшивых участников нет.' : 'Пока нет игроков в выбранном списке.')); }
+    function Leaderboard() {
+        const data = holderRanks;
+        const podium = data?.podium || [];
+        const entrants = data?.users || [];
+        const verified = data?.enabled === true;
+        const statusMessage = !data ? walletLanguage('Verificando dados…', 'Перевіряємо дані…', 'Checking verified holders…', 'Проверяем подтверждённых держателей…') :
+            !verified ? walletLanguage('Aguardando contrato oficial do GM Jetton. Nenhum saldo fictício é exibido.', 'Очікуємо офіційний контракт GM Jetton. Вигадані баланси не показуються.', 'Waiting for the official GM Jetton contract. No fictional balances are displayed.', 'Ожидаем официальный контракт GM Jetton. Вымышленные балансы и участники не отображаются.') :
+                !data.participants ? walletLanguage('Ainda não há detentores com saldo e carteira verificados.', 'Наразі немає власників із перевіреними гаманцями та балансами.', 'No opted-in players have a fresh verified wallet balance yet.', 'Пока нет игроков с подтверждёнными кошельками и свежим проверенным балансом.') : null;
+        const slots = [3, 1, 2];
+        return React.createElement(React.Fragment, null,
+            top(L('holdings'), true, 'trophy'),
+            React.createElement("section", { className: "gm-holders-header gm-premium-card" },
+                React.createElement("div", { className: "gm-holders-header-label" },
+                    icon('shield-check', 20, true),
+                    " ",
+                    React.createElement("span", null, "TON MAINNET \u00B7 VERIFIED HOLDERS")),
+                React.createElement("h2", null, walletLanguage('Ranking de detentores GM', 'Рейтинг власників GM', 'GM holders ranking', 'Рейтинг держателей GM')),
+                React.createElement("p", null, walletLanguage('Somente GM verificado na blockchain entra no ranking. GM do jogo não conta.', 'Враховуються лише перевірені GM у блокчейні. Ігрові GM не враховуються.', 'Only independently verified on-chain GM counts. In-game GM is excluded.', 'Учитываются только GM, проверенные в блокчейне. Игровые GM не влияют на рейтинг.')),
+                React.createElement("div", { className: "gm-holders-stats" },
+                    React.createElement("div", null,
+                        React.createElement("small", null, walletLanguage('Participantes', 'Учасники', 'Participants', 'Участников')),
+                        React.createElement("strong", null, verified ? data.participants : '—')),
+                    React.createElement("div", null,
+                        React.createElement("small", null, walletLanguage('Rede', 'Мережа', 'Network', 'Сеть')),
+                        React.createElement("strong", null, "TON")),
+                    React.createElement("div", null,
+                        React.createElement("small", null, walletLanguage('Verificação', 'Перевірка', 'Verification', 'Проверка')),
+                        React.createElement("strong", null, verified ? 'ON-CHAIN' : '—')))),
+            React.createElement("section", { className: "gm-holder-podium-wrap gm-premium-card" },
+                React.createElement("div", { className: "gm-holder-section-title" },
+                    icon('crown', 21),
+                    " ",
+                    React.createElement("b", null, "TOP 3 \u00B7 GM TOKEN")),
+                React.createElement("div", { className: "gm-holder-podium", "aria-label": "Verified Top 3" }, slots.map(place => {
+                    const person = podium.find((p) => p.rank === place);
+                    return React.createElement("div", { className: 'gm-holder-podium-slot gm-holder-place-' + place + (person ? ' is-filled' : ' is-empty'), key: place },
+                        React.createElement("div", { className: "gm-holder-podium-crown" }, icon(place === 1 ? 'crown' : 'shield-check', place === 1 ? 32 : 25, true)),
+                        React.createElement("div", { className: "gm-holder-podium-avatar" }, person ? String(person.username).slice(0, 1).toUpperCase() : icon('profile', 25)),
+                        React.createElement("div", { className: "gm-holder-podium-alias", title: person?.username || '' }, person ? person.username : '—'),
+                        React.createElement("div", { className: "gm-holder-podium-amount" }, person ? person.gm + ' GM' : '—'),
+                        React.createElement("div", { className: "gm-holder-podium-pillar" },
+                            React.createElement("b", null, place),
+                            React.createElement("span", null, place === 1 ? 'CHAMPION' : place === 2 ? 'SILVER' : 'BRONZE')));
+                })),
+                statusMessage ? React.createElement("p", { className: "gm-holder-pending" },
+                    icon('info', 18),
+                    " ",
+                    statusMessage) : null),
+            React.createElement("section", { className: "gm-holders-list gm-premium-card" },
+                React.createElement("div", { className: "gm-holder-list-head" },
+                    React.createElement("div", null,
+                        React.createElement("small", null, "GM TOKEN"),
+                        React.createElement("h3", null, walletLanguage('Todos os participantes', 'Усі учасники', 'All participants', 'Все участники'))),
+                    React.createElement("button", { type: "button", className: "gm-holder-refresh", disabled: holderLoading, onClick: () => void fetchHolders(), "aria-label": L('refresh') }, icon('refresh', 19))),
+                React.createElement("button", { type: "button", className: "gm-holder-my-position", onClick: () => setHolderShowPosition(!holderShowPosition) },
+                    icon('search', 18),
+                    React.createElement("span", null, walletLanguage('Minha posição', 'Моє місце', 'My position', 'Моё место')),
+                    React.createElement("strong", null, data?.my_rank ? '#' + data.my_rank : '—'),
+                    icon(holderShowPosition ? 'chevron-up' : 'chevron-down', 16)),
+                holderShowPosition ? React.createElement("div", { className: "gm-holder-me-note" }, data?.my_rank ? walletLanguage('Sua posição foi calculada usando GM confirmado on-chain.', 'Твоє місце визначене за підтвердженим балансом GM.', 'Your rank uses a recent verified on-chain GM balance.', 'Твоё место рассчитано по свежему подтверждённому балансу GM.') :
+                    walletLanguage('Conecte e verifique sua carteira, permita aparecer no ranking e atualize o saldo.', 'Підтвердь гаманець, дозволь участь у рейтингу та онови баланс.', 'Verify your wallet, opt in and refresh your GM balance to participate.', 'Подтверди кошелёк, разреши участие и обнови баланс GM, чтобы попасть в рейтинг.')) : null,
+                React.createElement("div", { className: "gm-holder-rows" }, entrants.filter((u) => u.rank >= 4).map((u) => React.createElement("div", { className: "gm-holder-row", key: u.rank },
+                    React.createElement("div", { className: "gm-holder-row-rank" }, u.rank),
+                    React.createElement("div", { className: "gm-holder-row-avatar" }, icon('profile', 24)),
+                    React.createElement("div", { className: "gm-holder-row-user" },
+                        React.createElement("b", null, u.username),
+                        React.createElement("small", null, walletLanguage('Saldo verificado', 'Баланс перевірено', 'Verified holdings', 'Баланс проверен'))),
+                    React.createElement("strong", null,
+                        u.gm,
+                        " ",
+                        React.createElement("small", null, "GM"))))),
+                verified && data?.participants > 0 && data?.participants <= 3 ? React.createElement("p", { className: "gm-holder-list-note" }, walletLanguage('Todos os participantes estão no pódio.', 'Усі учасники на п’єдесталі.', 'All current participants are on the podium.', 'Все участники сейчас на пьедестале.')) : null,
+                verified && data?.has_more ? React.createElement("button", { type: "button", className: "gm-holders-load-more", disabled: holderMoreBusy, onClick: () => void fetchHolders(data.next_offset || 30, true) },
+                    holderMoreBusy ? '…' : walletLanguage('Carregar mais', 'Завантажити ще', 'Load more', 'Показать ещё'),
+                    icon('chevron-down', 18)) : null,
+                !verified ? React.createElement("div", { className: "gm-holder-privacy-foot" },
+                    icon('shield-check', 18),
+                    " ",
+                    walletLanguage('Nenhum saldo não verificado é publicado.', 'Непідтверджені баланси не публікуються.', 'Unverified amounts are never published.', 'Неподтверждённые суммы не публикуются.')) : null),
+            React.createElement("button", { type: "button", className: "gm-holders-wallet-link", onClick: () => goto('wallet') },
+                icon('wallet', 23),
+                walletLanguage('Verificar carteira', 'Перевірити гаманець', 'Verify my wallet', 'Проверить мой кошелёк'),
+                icon('chevron-right', 19)));
+    }
     function Profile() {
         const e = React.createElement;
         const cosmetics = liveState?.cosmetics || { founder_slot: null, frames: [] };
