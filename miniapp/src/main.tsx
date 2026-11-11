@@ -485,6 +485,7 @@ function App(){
  const [wallet,setWallet]=React.useState(firstWallet);
  const [toast,setToast]=React.useState('');
  const [gmBalanceMenu,setGmBalanceMenu]=React.useState(false);
+ const [pointsGuideOpen,setPointsGuideOpen]=React.useState(false);
  const [framePreview,setFramePreview]=React.useState('standard');
  const [period,setPeriod]=React.useState('1h');
  const [selectedCandle,setSelectedCandle]=React.useState(null as number|null);
@@ -800,10 +801,11 @@ function App(){
   const issue=tradeIssue();if(issue){flash(issue);setModal('tradeForm');return;}
   const request={type:orderType,side,amount:amount.replace(',','.'),price:orderPrice.replace(',','.'),duration:orderDuration};
   const x=await gameAction('/api/exchange/order',request);
-  if(x){setModal('');setTradeReady(false);flash(x.auction?'Заявка Limit принята на аукцион':'Заявка GM/CR принята сервером');}
+  if(x){setModal('');setTradeReady(false);flash(x.auction?'Заявка на аукционе · проверь «Мои ордера»':'Заявка размещена · проверь «Мои ордера»');}
  };
  const cancelLiveOrder=async(id:string)=>{await gameAction('/api/exchange/cancel',{orderId:id})};
  const loadHistory=async()=>{const x=await api('/api/history');if(x)setServerHistory(x.events||[])};
+ React.useEffect(()=>{if(!demo&&screen==='history')void loadHistory()},[screen,demo]);
  const tradePreview=()=>{
   const issue=tradeIssue();if(issue){flash(issue);return;}
   const n=Number(amount.replace(',','.'));
@@ -1259,7 +1261,10 @@ function Reward(){
  function Mining(){
   const e=React.createElement;
   const rate=liveState?.mining?.rate_cents_day!=null?liveState.mining.rate_cents_day/100:gmRate(wallet);
-  const upgrade=upgradeData?.upgrade||liveState?.mining?.upgrade||{level:1,max_level:200,bonus_pct:0,next_level:2,next_cost_gm:150,next_bonus_pct:10};
+  const upgrade=upgradeData?.upgrade||liveState?.mining?.upgrade||{level:1,max_level:200,bonus_pct:0,next_level:2,next_cost_gm:150,next_bonus_pct:0.10};
+  const bonusValue=Math.max(0,Number(upgrade.bonus_pct)||0);
+  const baseRate=rate/(1+bonusValue/100);
+  const projectedRate=(bonus:number)=>baseRate*(1+Math.max(0,bonus)/100);
   const upgradeList=upgradeData?.levels||Array.from({length:200},(_,i)=>{const level=i+1;return {level,cost_gm:level===1?0:level===2?150:Math.round(200*Math.pow(1.04,level-3)/10)*10,bonus_pct:level===1?0:(10+2*(level-2))/100}});
   const visibleUpgrades=showAllUpgrades?upgradeList:upgradeList.filter((row:any)=>row.level>=Math.max(1,upgrade.level-1)&&row.level<=Math.min(200,upgrade.level+5));
   const stored=wallet.storage;
@@ -1274,9 +1279,13 @@ function Reward(){
    top(L('mining'),true,'info'),
    e('div',{className:'gm-mining-title'},e('span',null,'Добывай GM'),e('small',null,'Майнинг '+upgrade.level+'/200 · '+nf(rate,0)+' GM / сутки')),
    e('button',{type:'button',className:'gm-mining-coin-wrap',onClick:mineClick,'aria-label':'Собрать накопленные GM'},
-    e('span',{className:'gm-mining-coin-rim'},e(Brand,{theme,size:198})),
+    e('span',{className:'gm-mining-coin-rim'},e('span',{className:'gm-mining-coin-face'},e(Brand,{theme,size:198})),e('span',{className:'gm-mining-metal-inscription'},'GM')),
+    e('span',{className:'gm-mining-coin-outer-ring'}),
     e('span',{className:'gm-mining-coin-glint'})),
    e('div',{className:'gm-mining-total'},icon('lightning',28),e('strong',null,nf(stored)),e('span',null,'GM накоплено')),
+   e('div',{className:'gm-mining-speed-cards gm-premium-card'},
+    e('div',null,e('small',null,'ЗА ЧАС'),e('strong',null,nf(rate/24,3)+' GM')),
+    e('div',null,e('small',null,'ЗА СУТКИ'),e('strong',null,nf(rate,2)+' GM'))),
    e('p',{className:'gm-mining-tap-guide'},'Нажми на монету, чтобы забрать накопленные GM (от 1 GM). Добыча идёт автоматически.'),
    e('div',{className:'gm-mining-energy gm-premium-card'},
     e('div',{className:'gm-mining-energy-head'},e('b',null,'Хранилище'),e('span',null,nf(stored)+' / '+nf(cap)+' GM')),
@@ -1300,6 +1309,9 @@ function Reward(){
      e('div',{className:'gm-upgrade-next'},
       e('span',null,L('nextLevel')+' '+upgrade.next_level),
       e('strong',null,nf(upgrade.next_cost_gm,0)+' GM · +'+nf(Number(upgrade.next_bonus_pct),2)+'%'),
+      e('div',{className:'gm-upgrade-rate-preview'},e('small',null,'При новом уровне (расчётно):'),
+       e('b',null,nf(projectedRate(Number(upgrade.next_bonus_pct))/24,3)+' GM/ч'),
+       e('b',null,nf(projectedRate(Number(upgrade.next_bonus_pct)),2)+' GM/сутки')),
       e('button',{type:'button',className:'gm-upgrades-purchase',disabled:demo||upgradeBusy||(!upgrade.purchasable&&upgrade.purchasable!==undefined)||(upgrade.purchasable&&wallet.gm<upgrade.next_cost_gm)||!upgradeData?.upgrade,onClick:buyMiningUpgrade},
        upgradeBusy?'Проверяем покупку…':!upgrade.purchasable?'Привязка GM к кошельку ещё не настроена':wallet.gm<upgrade.next_cost_gm?L('insufficient'):L('upgrade'),icon('chevron-right',17)))
      :e('div',{className:'gm-upgrades-max'},icon('crown',21),'Максимальный уровень открыт'),
@@ -1310,10 +1322,13 @@ function Reward(){
        e('span',{className:'gm-upgrade-row-copy'},e('b',null,row.level===200?'GM Immortal':'Уровень '+row.level),
         e('small',null,row.level===1?'Начальный':nf(row.cost_gm,0)+' GM')),
        e('strong',null,'+'+nf(Number(row.bonus_pct),2)+'%'),
+       e('span',{className:'gm-upgrade-row-rate'},
+        e('small',null,nf(projectedRate(Number(row.bonus_pct))/24,3)+' GM/ч'),
+        e('small',null,nf(projectedRate(Number(row.bonus_pct)),2)+' GM/сутки')),
        row.level<=upgrade.level?icon('check',17):icon('minus',17)))),
     e('button',{type:'button',className:'gm-upgrades-toggle',onClick:()=>setShowAllUpgrades(!showAllUpgrades)},
      showAllUpgrades?L('collapse'):L('allLevels'),icon(showAllUpgrades?'chevron-up':'chevron-down',16))),
-   e('p',{className:'gm-mining-footnote'},'GM — виртуальная валюта игры. Улучшения покупаются по порядку. Цена списывается сервером, бонус заменяет предыдущий. Mining Pool ограничен — фактические начисления могут отличаться от расчётных.'));
+   e('p',{className:'gm-mining-footnote'},'Скорости в списке расчётные, без учёта ограничений Mining Pool. Улучшения за реальные GM на внешнем кошельке пока отключены до проверки официального контракта. Игровые GM не списываются.'));
  }
 
  function WalletConnection(){
@@ -1401,7 +1416,18 @@ function Reward(){
     e('p',null,'Накапливай POINTS за подтверждённую игровую активность и обменивай их на гарантированные GM.')),
    e('div',{className:'gm-boxes-points gm-premium-card'},
     e('div',null,e('small',null,'Твои POINTS'),e('strong',null,nf(points,0))),
-    e('button',{type:'button',onClick:()=>goto('trade')},'Как заработать ',icon('chevron-right',17))),
+    e('button',{type:'button',onClick:()=>setPointsGuideOpen(!pointsGuideOpen)},'Как заработать ',icon(pointsGuideOpen?'chevron-up':'chevron-down',17))),
+   pointsGuideOpen?e('section',{className:'gm-points-guide gm-premium-card'},
+    e('div',{className:'gm-points-guide-title'},icon('info',26,true),
+     e('div',null,e('b',null,'Как получить POINTS'),e('small',null,'За подтверждённую активность в виртуальной торговле'))),
+    e('div',{className:'gm-points-guide-step'},e('span',null,'01'),
+      e('div',null,e('b',null,'Открой рынок GM / CR'),e('small',null,'Исполни игровую заявку с другим участником. Простая отправка заявки POINTS не даёт.'))),
+    e('div',{className:'gm-points-guide-step'},e('span',null,'02'),
+      e('div',null,e('b',null,'Получай 10 POINTS за каждые 10 000 GM объёма'),
+       e('small',null,'Учитывается проверенный суточный объём исполненных сделок. Действуют ограничения на сделки с одним контрагентом и защита от накрутки.'))),
+    e('div',{className:'gm-points-guide-step'},e('span',null,'03'),
+      e('div',null,e('b',null,'Открой бокс за POINTS'),e('small',null,'Не более 1 000 POINTS из торгового объёма за день. Награда бокса фиксированная и игровая.'))),
+    e('button',{type:'button',className:'gm-points-guide-action',onClick:()=>goto('trade')},'Посмотреть виртуальный рынок',icon('chevron-right',18))):null,
    e('div',{className:'gm-boxes-gallery'},catalog.map(([kind,name,cost,finish])=>
     e('section',{key:kind,className:'gm-box-card gm-premium-card '+kind},
      e('div',{className:'gm-box-visual'},
@@ -1469,7 +1495,7 @@ function Referrals(){
  );
 }
 
- function History(){return <>{top(L('history'),true,'clock')}{!serverHistory.length&&<div className="empty-state">{icon('clock',62,true)}<h3>История операций пока пуста</h3><button onClick={loadHistory}>Загрузить с сервера</button></div>}{serverHistory.map((x:any)=><div key={x.id} className="pearl-card form-surface"><b>{x.kind}</b><small>{new Date(x.at*1000).toLocaleString('ru-RU')}</small><p>{x.info}</p></div>)}</>}
+ function History(){return <>{top(L('history'),true,'clock')}{!serverHistory.length&&<div className="empty-state gm-history-empty">{icon('clock',62,true)}<h3>История операций пока пуста</h3><p>Новые операции появятся здесь автоматически после подтверждения сервером.</p></div>}{serverHistory.map((x:any)=><div key={x.id} className="pearl-card form-surface"><b>{x.kind}</b><small>{new Date(x.at*1000).toLocaleString('ru-RU')}</small><p>{x.info}</p></div>)}</>}
  function Achievements(){const items=liveAchievements;
  const planned=[['origin','trophy','Первопроходец','Один из первых 20 игроков — уникальная рамка'],['first_claim','lightning','Искра GM','Первый сбор майнинга'],['mining_25','gm-coin-orbit','Стальной майнер','25 улучшений майнинга'],['mining_50','diamond','Серебряная легенда','50 улучшений майнинга'],['collector','gift','Хранитель артефактов','Собери серию игровых наград'],['community','friends','Сила сообщества','Пригласи друзей'],['immortal','crown','GM Immortal','Достигни максимальной лиги']];
  return <>{top(L('achievements'),true,'info')}<div className="achievement-list">{items.map((t:any)=><div className="earn-item pearl-card" key={t.id}>{icon(t.icon||'trophy',45,true)}<span><b>{t.title||t.id}</b><small>{t.description||''}{!demo?` · ${t.xp||0} XP`:''}</small></span>{!demo&&<button disabled={t.claimed||!t.available} onClick={async()=>{const x=await gameAction('/api/achievements/claim',{id:t.id});if(x)await refreshLive()}}>{t.claimed?'Получено':t.available?'Получить':'Не выполнено'}</button>}</div>)}</div><div className="gm-achievement-planned"><h3>{L('achievements')} · {L('locked')}</h3>
@@ -1671,7 +1697,7 @@ function GuideOverlay(){
  const step=steps[Math.min(guideStep,steps.length-1)];
  const copy=guideText[step[3]];
  const description=copy?.[actualLang]||copy?.en||L(step[3]);
- const next=()=>{setGuideSpot(null);if(guideStep+1>=steps.length)closeGuide();else setGuideStep(guideStep+1)};
+ const next=()=>{if(guideStep+1>=steps.length)closeGuide();else setGuideStep(guideStep+1)};
  const dimensions=guideSpot;
  const viewportWidth=window.innerWidth,viewportHeight=window.visualViewport?.height||window.innerHeight;
  return <div className="gm-tour-backdrop" role="dialog" aria-modal="true" aria-label={L('instruction')}>
@@ -1684,7 +1710,7 @@ function GuideOverlay(){
       <span className="gm-tour-pointer">↓</span>
     </div>
    </React.Fragment>:<div className="gm-tour-shade gm-tour-shade-full"/>}
-  <div className="gm-tour-card" style={dimensions?{top:dimensions.cardTop}:undefined}>
+  <div className="gm-tour-card" style={dimensions?{top:dimensions.cardTop}:undefined}><div className="gm-tour-step-content" key={guideStep}>
    <div className="gm-tour-head">
     <Brand theme={theme} size={37}/>
     <span className="gm-tour-step-counter">{L('tutorialStep')} {guideStep+1} / {steps.length}</span>
@@ -1699,7 +1725,7 @@ function GuideOverlay(){
     <button type="button" onClick={closeGuide}>{L('skip')}</button>
     <button type="button" className="gm-tour-primary" onClick={next}>{guideStep+1>=steps.length?L('finish'):L('next')}{icon('chevron-right',18)}</button>
    </div>
-  </div>
+  </div></div>
  </div>;
 }
 function Streak(){return <>{top('Daily Streak',true,'flame')}<div className="referral-hero pearl-card">{icon('flame',90,true)}<h1>{wallet.streak} дней</h1><p>Серия ежедневных посещений. Повторное получение награды в один день запрещено.</p></div><GButton theme={theme} onClick={()=>goto('reward')}>Ежедневная награда</GButton></>}
