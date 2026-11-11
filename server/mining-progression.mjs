@@ -1,7 +1,7 @@
-// GM TOKEN 2.0 — deterministic proposed upgrade schedule; token payment not active without verified contract.
+// GM TOKEN — 200 upgrade levels, +5% per level; token payment stays disabled without a verified contract.
 // Upgrades are separate from the account XP level. Do not replace legacy levels.
 export const MAX_MINING_UPGRADE_LEVEL = 200;
-export const MINING_UPGRADE_VERSION = 'v2-proposal-2026-11-10';
+export const MINING_UPGRADE_VERSION = 'v3-5pct-per-level-2026-11-11';
 export function miningUpgradeCost(level) {
   if (!Number.isInteger(level) || level < 1 || level > MAX_MINING_UPGRADE_LEVEL) throw new RangeError('invalid mining upgrade level');
   if (level === 1) return 0;
@@ -10,7 +10,7 @@ export function miningUpgradeCost(level) {
 }
 export function miningUpgradeBonusBps(level) {
   if (!Number.isInteger(level) || level < 1 || level > MAX_MINING_UPGRADE_LEVEL) throw new RangeError('invalid mining upgrade level');
-  return level === 1 ? 0 : 10 + 2 * (level - 2);
+  return level * 500; // 500 bps = 5%; level 200 = 100000 bps = 1000%
 }
 export function miningUpgradeBonusPct(level) { return miningUpgradeBonusBps(level) / 100; }
 export function miningUpgradeTotalCost(level) {
