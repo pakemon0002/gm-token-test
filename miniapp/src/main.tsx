@@ -535,6 +535,15 @@ function App(){
  const [adminCode,setAdminCode]=React.useState('');
  const [adminAction,setAdminAction]=React.useState('grant');
  const [adminTeam,setAdminTeam]=React.useState([]);
+ const [adminTasks,setAdminTasks]=React.useState([] as any[]);
+ const [taskEditingId,setTaskEditingId]=React.useState('');
+ const [taskDeleteArmed,setTaskDeleteArmed]=React.useState('');
+ const [taskForm,setTaskForm]=React.useState({
+  id:'',title:'',description:'',category:'Other',icon:'tasks',
+  type:'mining_claim_count',gte:'1',xp:'25',gm:'0',daily:false
+ });
+ const [task2fa,setTask2fa]=React.useState('');
+ const [taskSaving,setTaskSaving]=React.useState(false);
  const [adminFunds,setAdminFunds]=React.useState([]);
  const [adminAmount,setAdminAmount]=React.useState('1000');
  const [adminFrom,setAdminFrom]=React.useState('TREASURY');
@@ -740,6 +749,31 @@ function App(){
  const adminRequest=async(path:string,payload?:any)=>{
    if(demo||!webapp?.initData){flash('Только после Telegram-авторизации владельца');return;}
    try{const response=await fetch(path,{method:payload?'POST':'GET',headers:{Authorization:'tma '+webapp.initData,'Content-Type':'application/json'},body:payload?JSON.stringify(payload):undefined});const x=await response.json();if(!response.ok)throw Error(x.error||'Сервер отказал');return x}catch(e:any){flash('Ошибка: '+String(e.message||e));return null}
+ };
+ const loadAdminTasks=async()=>{const data=await adminRequest('/api/admin/task-catalog');if(data?.tasks)setAdminTasks(data.tasks)};
+ React.useEffect(()=>{if(!demo&&screen==='admin'&&['owner','coowner'].includes(liveRole))void loadAdminTasks()},[demo,screen,liveRole]);
+ const beginTaskEdit=(task:any)=>{
+  setTaskEditingId(task.id);setTaskDeleteArmed('');
+  setTaskForm({id:task.id,title:task.title,description:task.description,category:task.category||'Other',icon:task.icon||'tasks',
+   type:task.condition?.type||'mining_claim_count',gte:String(task.condition?.gte||1),
+   xp:String(task.xp||0),gm:String(task.gm||0),daily:Boolean(task.daily)});
+ };
+ const saveAdminTask=async(action='save')=>{
+  if(taskSaving||task2fa.length!==6)return;
+  setTaskSaving(true);
+  try{
+   const kind=action==='delete'?'delete':taskEditingId?'update':'create';
+   const data=await adminRequest('/api/admin/task-catalog',{
+    action:kind,id:taskForm.id,title:taskForm.title,description:taskForm.description,category:taskForm.category,
+    icon:taskForm.icon,condition:{type:taskForm.type,gte:Number(taskForm.gte)},xp:Number(taskForm.xp),
+    gm:Number(taskForm.gm),daily:taskForm.daily,code:task2fa
+   });
+   if(data?.ok){
+    setAdminTasks(data.tasks||[]);setTask2fa('');setTaskDeleteArmed('');setTaskEditingId('');
+    setTaskForm({id:'',title:'',description:'',category:'Other',icon:'tasks',type:'mining_claim_count',gte:'1',xp:'25',gm:'0',daily:false});
+    flash(kind==='delete'?'Задание удалено':'Задание сохранено');await refreshLive();
+   }
+  }finally{setTaskSaving(false)}
  };
  const adminChangeRole=()=>adminRequest('/api/admin/moderators',{telegramId:adminId,code:adminCode,action:adminAction}).then(()=>adminRequest('/api/admin/team').then(x=>x&&setAdminTeam(x.team||[])));
  const adminTransfer=()=>adminRequest('/api/admin/transfer',{source:adminFrom,target:adminTo,amount:adminAmount,code:adminCode,reason:adminReason,operationId:cryptoId()}).then(()=>adminRequest('/api/admin/pools').then(x=>x&&setAdminFunds(x.pools||[])));
