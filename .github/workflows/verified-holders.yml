@@ -1,7 +1,7 @@
 name: GM TOKEN verified-holder checks
 on:
   push:
-    branches: [feature/verified-holder-podium-20261111, fix/render-serial-tests-20261111]
+    branches: [feature/verified-holder-podium-20261111, fix/render-serial-tests-20261111, fix/render-ton-package-install-20261111]
   workflow_dispatch:
 permissions:
   contents: write
