@@ -229,6 +229,52 @@ const routes=async(req,res)=>{
   if(p==='/api/admin/team'&&verb==='GET'){
    roleCheck({id},['owner','coowner']);return send(res,200,{team:stmt('SELECT id,username,role,created_at FROM users WHERE role!=\'player\'').all()});
   }
+  if(p==='/api/admin/task-catalog'&&verb==='GET'){
+   roleCheck({id},['owner','coowner']);
+   const raw=stmt("SELECT v FROM game_settings WHERE k='tasks_json'").get()?.v||'[]';
+   return send(res,200,{tasks:JSON.parse(raw)});
+  }
+  if(p==='/api/admin/task-catalog'&&verb==='POST'){
+   roleCheck({id},['owner','coowner']);
+   const body=await readBody(req),action=String(body.action||'');
+   if(!['create','update','delete'].includes(action))throw Error('invalid catalog action');
+   const taskId=String(body.id||'').trim();
+   if(!/^[a-z][a-z0-9_:-]{2,59}$/.test(taskId))throw Error('invalid task ID');
+   require2FA({id},body);
+   let parsed=null;
+   if(action!=='delete'){
+    const title=String(body.title||'').trim(),description=String(body.description||'').trim();
+    const icon=String(body.icon||'tasks');
+    const category=String(body.category||'Other');
+    const type=String(body.condition?.type||'');
+    const threshold=Number(body.condition?.gte);
+    const xp=Number(body.xp||0),gm=Number(body.gm||0);
+    const daily=body.daily===true;
+    if(title.length<4||title.length>70||description.length<12||description.length>210)throw Error('task title must be 4..70 and description 12..210');
+    if(!['Social','Other'].includes(category)||!['tasks','lightning','candlesticks','friends','gift','trophy','crown','clock','diamond','coins','star'].includes(icon))throw Error('invalid task category or icon');
+    if(!['mining_claim_count','trade_count','referrals_count','mining_level','daily_claim','founder_slot'].includes(type))throw Error('only server-verifiable task conditions are allowed');
+    if(!Number.isSafeInteger(threshold)||threshold<1||threshold>10000||(type==='daily_claim'&&threshold!==1)||(type==='founder_slot'&&threshold!==1))throw Error('invalid task threshold');
+    if(!Number.isSafeInteger(xp)||xp<0||xp>1000||!Number.isSafeInteger(gm)||gm<0||gm>100)throw Error('task reward exceeds protected virtual test limits');
+    if(daily&&type!=='daily_claim')throw Error('daily tasks must use same-day daily_claim verification');
+    parsed={id:taskId,title,description,category,icon,xp,gm,daily,condition:{type,gte:threshold}};
+   }
+   const result=tx(()=>{
+    const previous=stmt("SELECT v FROM game_settings WHERE k='tasks_json'").get();
+    const list=JSON.parse(previous?.v||'[]');
+    if(!Array.isArray(list)||list.length>100)throw Error('invalid task catalog');
+    const index=list.findIndex(row=>row.id===taskId);
+    if(action==='create'&&index>=0)throw Error('task ID already exists');
+    if(action!=='create'&&index<0)throw Error('task not found');
+    if(action==='create'){if(list.length>=100)throw Error('task limit 100');list.push(parsed);}
+    else if(action==='update')list[index]=parsed;
+    else list.splice(index,1);
+    const updated=stmt("UPDATE game_settings SET v=? WHERE k='tasks_json'").run(JSON.stringify(list));
+    if(!updated.changes)throw Error('game task settings unavailable');
+    log(id,'admin_task_catalog',{taskId,action,task:parsed});
+    return list;
+   });
+   return send(res,200,{ok:true,tasks:result,action,taskId});
+  }
   if(p==='/api/admin/moderators'&&verb==='POST'){
    roleCheck({id},['owner','coowner']);const body=await readBody(req);require2FA({id},body);
    const target=String(body.telegramId||'').trim();if(!/^\d{5,20}$/.test(target))throw Error('invalid Telegram ID');
