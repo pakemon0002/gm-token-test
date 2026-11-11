@@ -25,8 +25,23 @@ const clean=(s:string)=>String(s).replace(/[<>]/g,'');
 const timeNow=()=>new Date().toISOString().slice(0,10);
 const todayUTC=()=>new Date().toISOString().slice(0,10);
 
+const ICON_ALIASES:Record<string,string>={search:'scanner',send:'telegram',globe:'info'};
 function Icon({name,theme,size=24,tile=false,alt='',className=''}:{name:string,theme:Theme,size?:number,tile?:boolean,alt?:string,className?:string}){
- return <img className={'gm-icon '+className} src={`${A}${theme}/${tile?'tiles':'transparent'}/${name}.png`} width={size} height={size} alt={alt} draggable="false" loading="lazy"/>;
+ const asset=ICON_ALIASES[name]||name;
+ return <img className={'gm-icon '+className} src={`${A}${theme}/${tile?'tiles':'transparent'}/${asset}.png`}
+  width={size} height={size} alt={alt} draggable="false" loading="lazy"
+  onError={(event:any)=>{const img=event.currentTarget as HTMLImageElement;if(img.dataset.iconFallback)return;img.dataset.iconFallback='1';img.src=`${A}${theme}/transparent/info.png`;}}/>;
+}
+function PlayerAvatar({name='',photoUrl='',size='medium',rank=0}:{name?:string,photoUrl?:string,size?:string,rank?:number}){
+ const label=String(name||'GM').trim();
+ const initials=label.replace(/^@/,'').split(/[ _-]+/).filter(Boolean).slice(0,2).map(p=>p[0].toUpperCase()).join('')||'GM';
+ const allowedPhoto=typeof photoUrl==='string'&&/^https:\/\//.test(photoUrl)&&photoUrl.length<1024;
+ return <span className={'gm-player-avatar gm-player-avatar-'+size+' gm-player-rank-'+rank} aria-label={'Аватар '+label}>
+  {allowedPhoto?<img src={photoUrl} alt="" referrerPolicy="no-referrer" loading="lazy"
+    onError={(ev:any)=>{ev.currentTarget.style.display='none'}}/>:null}
+  <span className="gm-player-initials">{initials}</span>
+  <span className="gm-player-avatar-spark" aria-hidden="true">✦</span>
+ </span>;
 }
 function Brand({theme,size=50}:{theme:Theme,size?:number}){return <img className="brand-coin" src={BRAND+(theme==='light'?'gm-coin-light-original.png':'gm-coin-dark-original.png')} width={size} height={size} alt="Логотип GM TOKEN" draggable="false"/>;}
 function GButton({children,onClick,light=false,disabled=false,icon,theme}:{children?:any,onClick?:any,light?:boolean,disabled?:boolean,icon?:string,theme:Theme}){return <button type="button" className={'capsule '+(light?'pale':'dark-cap')} onClick={onClick} disabled={disabled}>{icon&&<Icon name={icon} theme={theme} size={22}/>}<span>{children}</span></button>;}
@@ -469,6 +484,8 @@ function App(){
  
  const [wallet,setWallet]=React.useState(firstWallet);
  const [toast,setToast]=React.useState('');
+ const [gmBalanceMenu,setGmBalanceMenu]=React.useState(false);
+ const [framePreview,setFramePreview]=React.useState('standard');
  const [period,setPeriod]=React.useState('1h');
  const [selectedCandle,setSelectedCandle]=React.useState(null as number|null);
  const [tradeTab,setTradeTab]=React.useState('book');
@@ -653,6 +670,11 @@ function App(){
  const [modalText,setModalText]=React.useState('');
  const toastRef=React.useRef(0);
  const flash=(msg:string)=>{setToast(msg);toastRef.current++;};
+ React.useEffect(()=>{
+  if(!toast)return;
+  const timeout=window.setTimeout(()=>setToast(''),3000);
+  return()=>window.clearTimeout(timeout);
+ },[toast]);
  const setW=(patch:any)=>setWallet((w:Wallet)=>({...w,...(typeof patch==='function'?patch(w):patch)}));
  const navStack=React.useRef([]);
  const goBack=()=>{
@@ -661,6 +683,7 @@ function App(){
   document.querySelector('.phone-scroll')?.scrollTo(0,0);
  };
  const goto=s=>{
+  setGmBalanceMenu(false);
   const route=String(s||'home');
   if(route!==screen){navStack.current.push(screen);if(navStack.current.length>30)navStack.current.shift();}
   closeGuide();setScreen(route);setModal('');
@@ -838,7 +861,7 @@ function App(){
     e('div',{className:'gm-home-balance-row'},
      e('span',{className:'gm-home-balance-icon'},e(Brand,{theme,size:33})),
      e('div',null,e('small',null,'GM'),e('strong',null,nf(wallet.gm))),
-     e('button',{type:'button',onClick:()=>goto('mining'),'aria-label':'Перейти в Mining'},icon('plus',21))),
+     e('button',{type:'button',onClick:()=>setGmBalanceMenu(true),'aria-label':'Варианты получения GM'},icon('plus',21))),
     e('div',{className:'gm-home-balance-row'},
      e('span',{className:'gm-home-balance-icon'},icon('coins',31)),
      e('div',null,e('small',null,'CR'),e('strong',null,nf(wallet.cr))),
@@ -1690,7 +1713,21 @@ function Streak(){return <>{top('Daily Streak',true,'flame')}<div className="ref
  return <div className={'application theme-'+theme+(webapp?.initData?' is-telegram':'')}>
  <aside className="desktop-toolbar"><div className="toolbar-logo"><Brand theme={theme} size={42}/><span><b>GM TOKEN</b><small>Оригинальные эскизы · интерактивная сборка</small></span></div><div className="toolbar-tabs"><button onClick={()=>setTheme('light')} className={isLight?'chosen':''}>Light</button><button onClick={()=>setTheme('dark')} className={!isLight?'chosen':''}>Dark</button></div><div className="toolbar-links">{(['home','trade','earn','tasks','leaderboard','profile','mining','wallet','vault','shop','support','admin'] as Route[]).map(s=><button key={s} className={screen===s?'chosen':''} onClick={()=>goto(s)}>{s}</button>)}</div><p>Оригинальные PNG · 54 иконки × 4 варианта · без подмены сторонними пиктограммами</p></aside>
  <div className="device-stage"><div className="phone-frame"><div className={'phone-scroll '+((screen==='splash')?'no-scroll':'')}>{view}</div>{!['reward','splash','intro'].includes(screen)&&bottom()}<div className="home-indicator"/></div><div className="underphone"><span className="demo-pill">{'Серверная авторизация · виртуальные GM/CR'}</span><button onClick={()=>goto('splash')}>Заставка</button><button onClick={()=>goto('home')}>Home</button><button onClick={()=>setTheme(isLight?'dark':'light')}>Сменить тему</button></div><small className="status-note">{backendStatus}</small></div>
- {toast&&<div className="toast-message" role="status" onClick={()=>setToast('')}>{toast}<button onClick={()=>setToast('')}>×</button></div>}
+ {toast&&<div className={'toast-message '+(/ошиб|недоступ|error|отмен/i.test(toast)?'toast-error':'toast-info')} role="status" aria-live="polite">
+  <span className="gm-toast-icon">{icon(/ошиб|недоступ|error|отмен/i.test(toast)?'info':'check',21,true)}</span>
+  <span className="gm-toast-copy">{toast}</span>
+  <button type="button" aria-label="Закрыть уведомление" onClick={()=>setToast('')}>{icon('close',18)}</button>
+  <span className="gm-toast-progress" aria-hidden="true"/>
+ </div>}
+ {gmBalanceMenu&&<div className="gm-balance-overlay" role="presentation" onClick={()=>setGmBalanceMenu(false)}>
+  <div className="gm-balance-sheet gm-premium-card" role="dialog" aria-modal="true" aria-label="Получить GM" onClick={(ev:any)=>ev.stopPropagation()}>
+   <div className="gm-balance-sheet-head">{icon('gm-coin-orbit',39,true)}<div><b>Как получить GM?</b><small>Выбери удобный вариант</small></div>
+    <button type="button" onClick={()=>setGmBalanceMenu(false)} aria-label="Закрыть">{icon('close',20)}</button>
+   </div>
+   <button type="button" className="gm-balance-option" onClick={()=>goto('mining')}>{icon('lightning',28,true)}<span><b>Майнинг GM</b><small>Накапливай игровые GM автоматически</small></span>{icon('chevron-right',20)}</button>
+   <div className="gm-balance-option gm-balance-option-unavailable">{icon('external-link',28,true)}<span><b>Внешний рынок GM</b><small>Покупка пока не доступна: официальный контракт и торговая площадка не подтверждены</small></span>{icon('minus',19)}</div>
+  </div>
+ </div>}
  {modal==='boxReveal'?BoxRevealModal():modal&&TradeOrderModal()}
  {guideScreen&&GuideOverlay()}
  </div>;
