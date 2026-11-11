@@ -1303,7 +1303,7 @@ function Reward(){
  const streak=Math.max(0,Number(daily.streak??wallet.streak)||0);
  const best=Math.max(streak,Number(daily.best_streak||0));
  const nextStreak=Math.max(1,Number(daily.next_streak||streak+1));
- const reward=Number(daily.next_reward_gm??liveState?.config?.daily_reward_gm||0);
+ const reward=Number(daily.next_reward_gm??liveState?.config?.daily_reward_gm??0);
  const flameTier=streak>=30?5:streak>=20?4:streak>=10?3:streak>=5?2:1;
  const milestones=[5,10,15,20,25,30];
  const milestoneRewards=daily.milestone_rewards||{};
