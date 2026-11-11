@@ -163,7 +163,7 @@ const routes=async(req,res)=>{
   }
   if(p==='/api/tickets'&&verb==='GET'){
    cleanTickets();const mod=['owner','coowner','moderator'].includes(current.role);
-   const rows=mod?stmt('SELECT * FROM tickets WHERE status!=\'auto_support\' ORDER BY CASE priority WHEN \'P1\' THEN 1 WHEN \'P2\' THEN 2 ELSE 3 END,created_at ASC LIMIT 100').all():stmt('SELECT * FROM tickets WHERE user_id=? ORDER BY created_at DESC LIMIT 100').all(id);
+   const rows=['owner','coowner'].includes(current.role)?stmt('SELECT * FROM tickets ORDER BY CASE priority WHEN \'P1\' THEN 1 WHEN \'P2\' THEN 2 ELSE 3 END,created_at ASC LIMIT 100').all():mod?stmt('SELECT * FROM tickets WHERE status!=\'auto_support\' ORDER BY CASE priority WHEN \'P1\' THEN 1 WHEN \'P2\' THEN 2 ELSE 3 END,created_at ASC LIMIT 100').all():stmt('SELECT * FROM tickets WHERE user_id=? ORDER BY created_at DESC LIMIT 100').all(id);
    return send(res,200,{tickets:rows});
   }
   if(p==='/api/tickets'&&verb==='POST'){
