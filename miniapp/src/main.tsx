@@ -487,6 +487,7 @@ function App(){
  const [gmBalanceMenu,setGmBalanceMenu]=React.useState(false);
  const [pointsGuideOpen,setPointsGuideOpen]=React.useState(false);
  const [framePreview,setFramePreview]=React.useState('standard');
+ const [showFounderCollection,setShowFounderCollection]=React.useState(false);
  const [period,setPeriod]=React.useState('1h');
  const [selectedCandle,setSelectedCandle]=React.useState(null as number|null);
  const [tradeTab,setTradeTab]=React.useState('book');
@@ -1567,11 +1568,50 @@ function Referrals(){
    </section>
   </>;
  }
- function Achievements(){const items=liveAchievements;
- const planned=[['origin','trophy','Первопроходец','Один из первых 20 игроков — уникальная рамка'],['first_claim','lightning','Искра GM','Первый сбор майнинга'],['mining_25','gm-coin-orbit','Стальной майнер','25 улучшений майнинга'],['mining_50','diamond','Серебряная легенда','50 улучшений майнинга'],['collector','gift','Хранитель артефактов','Собери серию игровых наград'],['community','friends','Сила сообщества','Пригласи друзей'],['immortal','crown','GM Immortal','Достигни максимальной лиги']];
- return <>{top(L('achievements'),true,'info')}<div className="achievement-list">{items.map((t:any)=><div className="earn-item pearl-card" key={t.id}>{icon(t.icon||'trophy',45,true)}<span><b>{t.title||t.id}</b><small>{t.description||''}{!demo?` · ${t.xp||0} XP`:''}</small></span>{!demo&&<button disabled={t.claimed||!t.available} onClick={async()=>{const x=await gameAction('/api/achievements/claim',{id:t.id});if(x)await refreshLive()}}>{t.claimed?'Получено':t.available?'Получить':'Не выполнено'}</button>}</div>)}</div><div className="gm-achievement-planned"><h3>{L('achievements')} · {L('locked')}</h3>
-  {(liveState?.cosmetics?.frames||[]).map((f:any)=><div className={'gm-achievement-locked '+(f.claimed?'claimed':'')} key={f.id}>{icon(f.category==='founder'?'crown':'diamond',35,true)}<span><b>{f.title}</b><small>{f.limited?'LIMITED · 1 / 20':'MINING MILESTONE'}</small></span>{icon(f.claimed?'check':'minus',17)}</div>)}<p>{L('achievementsLocked')}. {L('later')}.</p>{planned.map(([id,ic,title,desc])=><div className="gm-achievement-locked" key={id}>{icon(ic,35,true)}<span><b>{title}</b><small>{desc}</small></span>{icon('minus',16)}</div>)}</div></>}
- 
+ function Achievements(){
+  const all=(liveState?.cosmetics?.frames||[]) as any[];
+  const everyone=all.filter((x:any)=>x.category!=='founder');
+  const founders=all.filter((x:any)=>x.category==='founder');
+  const future=[
+   ['first_claim','lightning','Искра GM','Первый сбор майнинга'],
+   ['collector','gift','Хранитель артефактов','Собери коллекцию игровых наград'],
+   ['community','friends','Сила сообщества','Пригласи друзей'],
+   ['immortal','crown','GM Immortal','Достигни максимальной лиги']
+  ];
+  return <>
+   {top(L('achievements'),true,'info')}
+   <section className="gm-achievement-intro gm-premium-card">
+    {icon('trophy',41,true)}
+    <div><h2>Достижения GM</h2><p>Обычные достижения доступны всем. Первые 20 игроков получают отдельную ограниченную коллекцию рамок.</p></div>
+   </section>
+   <section className="gm-achievement-planned">
+    <h3>Обычные достижения · для каждого</h3>
+    {liveAchievements.map((t:any)=><div className={'gm-achievement-locked '+(t.claimed?'claimed':'')} key={t.id}>
+      {icon(t.icon||'trophy',34,true)}
+      <span><b>{t.title||t.id}</b><small>{t.description||''} · {t.xp||0} XP · ДОСТУПНО КАЖДОМУ</small></span>
+      {!demo&&t.available&&!t.claimed?<button type="button" onClick={async()=>{const x=await gameAction('/api/achievements/claim',{id:t.id});if(x)await refreshLive()}}>Получить</button>:icon(t.claimed?'check':'minus',17)}
+     </div>)}
+    {everyone.map((f:any)=><div className={'gm-achievement-locked '+(f.claimed?'claimed':'')} key={f.id}>
+      {icon('diamond',34,true)}<span><b>{f.title}</b><small>Майнинг · награда для всех игроков</small></span>{icon(f.claimed?'check':'minus',17)}
+     </div>)}
+    {future.map(([id,ic,title,description])=><div className="gm-achievement-locked" key={id}>
+      {icon(ic,34,true)}<span><b>{title}</b><small>{description} · скоро</small></span>{icon('minus',17)}
+     </div>)}
+   </section>
+   <section className="gm-founder-achievements gm-premium-card">
+    <button type="button" className="gm-founder-collection-trigger" onClick={()=>setShowFounderCollection(!showFounderCollection)}>
+      {icon('crown',33,true)}<span><b>GM GENESIS · 20 первых игроков</b><small>Только 20 уникальных рамок · по одной на игрока</small></span>
+      {icon(showFounderCollection?'chevron-up':'chevron-down',19)}
+    </button>
+    {showFounderCollection?<div className="gm-founder-collection">
+     {founders.map((f:any)=><div className={'gm-achievement-locked '+(f.claimed?'claimed':'')} key={f.id}>
+       {icon('crown',31,true)}<span><b>{f.title}</b><small>Эксклюзив #{f.id.replace('founder_','')} · GM GENESIS</small></span>{icon(f.claimed?'check':'minus',17)}
+      </div>)}
+    </div>:null}
+   </section>
+  </>;
+ }
+
 function Settings(){
  const e=React.createElement;
  const themes=[['light','Premium Silver'],['dark','Premium Graphite']];
