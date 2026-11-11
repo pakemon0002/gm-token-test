@@ -9,6 +9,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {verifyInitData,checkTotp,totp,toCents,gmFunds,crFunds} from './lib.mjs';
 import {makeGame} from './game.mjs';
 import {makeTelegramWebhook} from './webhook.mjs';
+import {makeHolders,HOLDINGS_REFRESH_SECONDS} from './holders.mjs';
 const here=dirname(fileURLToPath(import.meta.url));
 const staticRoot=resolve(here,'../miniapp/public');
 const dbPath=resolve(process.env.DB_PATH||resolve(here,'../data/gm-token.sqlite'));
@@ -100,6 +101,7 @@ function cleanTickets(){
 function publicPools(){return stmt('SELECT name,gm,cr FROM pools ORDER BY name').all()}
 function sendTelegram(id,message){if(!secret)return;fetch(`https://api.telegram.org/bot${secret}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:id,text:message.slice(0,1000)})}).catch(()=>{})}
 const game=makeGame({db:database,stmt,tx,log,now,send,readBody,sendTelegram});
+const holders=makeHolders({stmt,tx,now});
 const routes=async(req,res)=>{
  const url=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`);const p=url.pathname;const verb=req.method||'GET';
  if(p==='/api/health')return send(res,200,{ok:true,mode:'GM TOKEN server / no real-money operations',time:new Date().toISOString()});
@@ -127,6 +129,32 @@ const routes=async(req,res)=>{
    current=upsertUser(identity);
    game.ensure(id);
   }
+  // All holder actions are bound to verified Telegram initData above.
+  // No client endpoint accepts a balance, rank, wallet public key or trusted-score flag.
+  if(p==='/api/holders/status'&&verb==='GET')return send(res,200,holders.status(id));
+  if(p==='/api/holders'&&verb==='GET'){
+   const off=Number(url.searchParams.get('offset')||0),lim=Number(url.searchParams.get('limit')||30);
+   if(!Number.isSafeInteger(off)||off<0||!Number.isSafeInteger(lim)||lim<1||lim>100)throw Error('invalid ranking pagination');
+   return send(res,200,holders.ranking(id,{offset:off,limit:lim}));
+  }
+  if(p==='/api/holders/challenge'&&verb==='POST'){
+   const expected=process.env.PUBLIC_APP_URL?new URL(process.env.PUBLIC_APP_URL).origin:null;
+   if(!expected)throw Error('public Mini App URL required for TON proof');
+   if(req.headers.origin&&req.headers.origin!==expected)throw Error('wrong Mini App origin');
+   return send(res,200,holders.challenge(id));
+  }
+  if(p==='/api/holders/verify'&&verb==='POST'){
+   const expected=process.env.PUBLIC_APP_URL?new URL(process.env.PUBLIC_APP_URL):null;
+   if(!expected)throw Error('public Mini App URL required for TON proof');
+   if(req.headers.origin&&req.headers.origin!==expected.origin)throw Error('wrong Mini App origin');
+   const result=holders.confirm(id,await readBody(req),expected.hostname);
+   return send(res,result.verified?200:400,result);
+  }
+  if(p==='/api/holders/consent'&&verb==='POST'){
+   const data=await readBody(req);return send(res,200,holders.consent(id,data.opt_in));
+  }
+  if(p==='/api/holders/disconnect'&&verb==='POST')return send(res,200,holders.disconnect(id));
+  if(p==='/api/holders/refresh'&&verb==='POST')return send(res,200,await holders.refresh(id));
   if(p==='/api/me'&&verb==='GET'){const r=stmt('SELECT end_at,reason,issued_at FROM restrictions WHERE user_id=?').get(id);return send(res,200,{user:current,wallet:stmt('SELECT * FROM wallets WHERE user_id=?').get(id),restriction:r&&(!r.end_at||r.end_at>now())?r:null})}
   if(p==='/api/history'&&verb==='GET')return send(res,200,{events:stmt('SELECT * FROM journal WHERE info LIKE ? ORDER BY at DESC LIMIT 50').all(`%"user":"${id}"%`)});
   if(p==='/api/tickets'&&verb==='GET'){
@@ -344,7 +372,19 @@ function staticFile(path,res){
  res.writeHead(200,{'Content-Type':mime,'X-Content-Type-Options':'nosniff',...(loc==='/tonconnect-manifest.json'?{'Access-Control-Allow-Origin':'*','Cache-Control':'public, max-age=300'}:{})});res.end(readFileSync(full));
 }
 // Automated housekeeping runs even when no moderators are online.
-const housekeeping=setInterval(()=>{try{tx(()=>{cleanTickets();game.settle();stmt('DELETE FROM order_activity WHERE at<?').run(now()-120);stmt('DELETE FROM admin_2fa_failures WHERE at<?').run(now()-3600)})}catch(e){console.error('housekeeping failed',e)}},60000);housekeeping.unref();
+const housekeeping=setInterval(()=>{try{tx(()=>{cleanTickets();game.settle();stmt('DELETE FROM order_activity WHERE at<?').run(now()-120);stmt('DELETE FROM admin_2fa_failures WHERE at<?').run(now()-3600);stmt('DELETE FROM holder_nonces WHERE expires_at<?').run(now())})}catch(e){console.error('housekeeping failed',e)}},60000);housekeeping.unref();
+// Refresh verified, explicitly opted-in holders from the chain. Never trust app-provided balances.
+let refreshingHolders=false;
+const holderRefreshTimer=setInterval(async()=>{
+ if(refreshingHolders||!process.env.GM_JETTON_MASTER_ADDRESS)return;
+ refreshingHolders=true;
+ try{
+  const due=stmt("SELECT w.user_id FROM holder_wallets w LEFT JOIN holder_snapshots b ON b.user_id=w.user_id WHERE w.public_opt_in=1 AND (b.checked_at IS NULL OR b.checked_at<=?) ORDER BY COALESCE(b.checked_at,0) LIMIT 4").all(now()-HOLDINGS_REFRESH_SECONDS);
+  await Promise.allSettled(due.map(row=>holders.refresh(row.user_id)));
+ }catch(error){console.error('holder balance refresh failed')}
+ finally{refreshingHolders=false}
+},60000);
+holderRefreshTimer.unref();
 const port=Number(process.env.PORT||8787);
 const app=createServer((req,res)=>{routes(req,res).catch(e=>{console.error('request failure',e);fail(res,500,'internal error')})});
 app.listen(port,'0.0.0.0',()=>{
@@ -352,4 +392,4 @@ app.listen(port,'0.0.0.0',()=>{
  if(telegramWebhook)void telegramWebhook.configure().catch(err=>console.error('Telegram webhook setup failed:',err?.message));
 });
 if(process.env.BOT_POLLING==='1'&&secret)import('./bot.mjs').catch(e=>console.error('bot startup failed',e));
-process.on('SIGTERM',()=>{clearInterval(housekeeping);app.close();database.close()});
+process.on('SIGTERM',()=>{clearInterval(housekeeping);clearInterval(holderRefreshTimer);app.close();database.close()});

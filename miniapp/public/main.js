@@ -485,6 +485,12 @@ function App() {
     const [liveAchievements, setLiveAchievements] = React.useState([]);
     const [liveReferrals, setLiveReferrals] = React.useState(null);
     const [liveRanks, setLiveRanks] = React.useState(null);
+    const [holderRanks, setHolderRanks] = React.useState(null);
+    const [holderStatus, setHolderStatus] = React.useState(null);
+    const [holderLoading, setHolderLoading] = React.useState(false);
+    const [holderMoreBusy, setHolderMoreBusy] = React.useState(false);
+    const [holderShowPosition, setHolderShowPosition] = React.useState(false);
+    const [holderConsentBusy, setHolderConsentBusy] = React.useState(false);
     const [shopQuote, setShopQuote] = React.useState(null);
     const [orderType, setOrderType] = React.useState('limit');
     const [orderPrice, setOrderPrice] = React.useState('');
@@ -526,6 +532,50 @@ function App() {
     const [testReason, setTestReason] = React.useState('Начисление виртуальных GM/CR для проверки торговой системы');
     const [testCode, setTestCode] = React.useState('');
     const [testBusy, setTestBusy] = React.useState(false);
+    const walletLanguage = (pt, uk, en, ru) => actualLang === 'pt' ? pt : actualLang === 'uk' ? uk : actualLang === 'ru' ? ru : en;
+    const holderAuthHeaders = () => ({ Authorization: 'tma ' + (webapp?.initData || ''), 'Content-Type': 'application/json' });
+    const fetchHolders = async (offset = 0, append = false) => {
+        if (demo || !webapp?.initData)
+            return null;
+        if (offset === 0)
+            setHolderLoading(true);
+        else
+            setHolderMoreBusy(true);
+        try {
+            const response = await fetch('/api/holders?limit=30&offset=' + offset, { headers: holderAuthHeaders(), cache: 'no-store' });
+            const data = await response.json();
+            if (!response.ok)
+                throw Error(data.error || 'Holders unavailable');
+            setHolderRanks((old) => append && old ? { ...data, users: [...(old.users || []), ...(data.users || [])] } : data);
+            return data;
+        }
+        catch (error) {
+            setTonError(String(error.message || error));
+            return null;
+        }
+        finally {
+            setHolderLoading(false);
+            setHolderMoreBusy(false);
+        }
+    };
+    const getHolderStatus = async () => {
+        if (!webapp?.initData)
+            return;
+        try {
+            const response = await fetch('/api/holders/status', { headers: holderAuthHeaders(), cache: 'no-store' });
+            if (response.ok) {
+                const d = await response.json();
+                setHolderStatus(d);
+                return d;
+            }
+        }
+        catch { }
+        return null;
+    };
+    React.useEffect(() => { if (demo || screen !== 'leaderboard')
+        return; void fetchHolders(); void getHolderStatus(); }, [screen, demo]);
+    React.useEffect(() => { if (demo || screen !== 'wallet')
+        return; void getHolderStatus(); }, [screen, demo]);
     React.useEffect(() => {
         if (demo || !webapp?.initData)
             return;
@@ -534,33 +584,145 @@ function App() {
             setTonError('TON Connect SDK unavailable');
             return;
         }
+        let disposed = false;
         try {
             const instance = new sdk.TonConnectUI({ manifestUrl: window.location.origin + '/tonconnect-manifest.json' });
             tonUi.current = instance;
-            const unsubscribe = instance.onStatusChange((connected) => { setTonAccount(connected?.account?.address || ''); setTonError(''); }, (error) => setTonError(String(error?.message || error)));
-            return () => { if (typeof unsubscribe === 'function')
+            const prepareProof = async () => {
+                if (disposed)
+                    return;
+                instance.setConnectRequestParameters({ state: 'loading' });
+                try {
+                    const response = await fetch('/api/holders/challenge', { method: 'POST', headers: holderAuthHeaders(), body: '{}' });
+                    const challenge = await response.json();
+                    if (!response.ok || !challenge.payload)
+                        throw Error(challenge.error || 'Could not prepare wallet proof');
+                    if (!disposed)
+                        instance.setConnectRequestParameters({ state: 'ready', value: { tonProof: challenge.payload } });
+                }
+                catch (error) {
+                    if (!disposed) {
+                        instance.setConnectRequestParameters(null);
+                        setTonError(String(error?.message || error));
+                    }
+                }
+            };
+            const unsubscribe = instance.onStatusChange(async (connected) => {
+                if (disposed)
+                    return;
+                const address = connected?.account?.address || '';
+                setTonAccount(address);
+                if (!address) {
+                    void getHolderStatus();
+                    void prepareProof();
+                    return;
+                }
+                const signed = connected?.connectItems?.tonProof;
+                if (!signed || !('proof' in signed)) {
+                    await getHolderStatus();
+                    return;
+                }
+                try {
+                    const proof = signed.proof;
+                    const response = await fetch('/api/holders/verify', {
+                        method: 'POST', headers: holderAuthHeaders(), body: JSON.stringify({
+                            address: connected.account.address, network: connected.account.chain,
+                            public_key: connected.account.publicKey,
+                            proof: { ...proof, state_init: connected.account.walletStateInit }
+                        })
+                    });
+                    const outcome = await response.json();
+                    if (!response.ok || !outcome.verified)
+                        throw Error(outcome.error || 'TON proof rejected');
+                    if (!disposed) {
+                        setTonError('');
+                        await getHolderStatus();
+                        void fetchHolders();
+                    }
+                }
+                catch (error) {
+                    if (!disposed)
+                        setTonError(String(error?.message || error));
+                }
+            }, (error) => { if (!disposed)
+                setTonError(String(error?.message || error)); });
+            void prepareProof();
+            void getHolderStatus();
+            return () => { disposed = true; if (typeof unsubscribe === 'function')
                 unsubscribe(); tonUi.current = null; };
         }
         catch (error) {
             setTonError(String(error?.message || error));
         }
     }, [demo]);
-    const walletLanguage = (pt, uk, en, ru) => actualLang === 'pt' ? pt : actualLang === 'uk' ? uk : actualLang === 'ru' ? ru : en;
-    const connectTonWallet = async () => { try {
-        if (!tonUi.current)
-            throw Error('TON Connect is not ready');
-        await tonUi.current.openModal();
-    }
-    catch (err) {
-        setTonError(String(err?.message || err));
-    } };
-    const disconnectTonWallet = async () => { try {
-        await tonUi.current?.disconnect();
-        setTonAccount('');
-    }
-    catch (err) {
-        setTonError(String(err?.message || err));
-    } };
+    const connectTonWallet = async () => {
+        try {
+            if (!tonUi.current)
+                throw Error('TON Connect is not ready');
+            if (tonUi.current.connected) {
+                await tonUi.current.disconnect();
+                setTonAccount('');
+            }
+            const response = await fetch('/api/holders/challenge', { method: 'POST', headers: holderAuthHeaders(), body: '{}' });
+            const data = await response.json();
+            if (!response.ok || !data.payload)
+                throw Error(data.error || 'TON proof challenge unavailable');
+            tonUi.current.setConnectRequestParameters({ state: 'ready', value: { tonProof: data.payload } });
+            await tonUi.current.openModal();
+        }
+        catch (error) {
+            setTonError(String(error?.message || error));
+        }
+    };
+    const disconnectTonWallet = async () => {
+        try {
+            const response = await fetch('/api/holders/disconnect', { method: 'POST', headers: holderAuthHeaders(), body: '{}' });
+            if (!response.ok)
+                throw Error('Unable to unlink verified wallet');
+            await tonUi.current?.disconnect();
+            setTonAccount('');
+            setTonError('');
+            await getHolderStatus();
+            void fetchHolders();
+        }
+        catch (error) {
+            setTonError(String(error?.message || error));
+        }
+    };
+    const setHolderOptIn = async (allowed) => {
+        setHolderConsentBusy(true);
+        try {
+            const response = await fetch('/api/holders/consent', { method: 'POST', headers: holderAuthHeaders(), body: JSON.stringify({ opt_in: allowed }) });
+            const data = await response.json();
+            if (!response.ok)
+                throw Error(data.error || 'Consent update failed');
+            setHolderStatus(data);
+            void fetchHolders();
+        }
+        catch (error) {
+            setTonError(String(error?.message || error));
+        }
+        finally {
+            setHolderConsentBusy(false);
+        }
+    };
+    const refreshHolderBalance = async () => {
+        setHolderLoading(true);
+        try {
+            const response = await fetch('/api/holders/refresh', { method: 'POST', headers: holderAuthHeaders(), body: '{}' });
+            const data = await response.json();
+            if (!response.ok)
+                throw Error(data.error || 'Blockchain balance not verified');
+            void fetchHolders();
+            void getHolderStatus();
+        }
+        catch (error) {
+            setTonError(String(error?.message || error));
+        }
+        finally {
+            setHolderLoading(false);
+        }
+    };
     const [backendStatus, setBackendStatus] = React.useState('Проверяем вход через Telegram…');
     const [modal, setModal] = React.useState('');
     const [boxReveal, setBoxReveal] = React.useState({ kind: 'bronze', gm: 0 });
@@ -983,19 +1145,90 @@ function App() {
         return e(React.Fragment, null, top(L('tasks'), true, 'info'), e('div', { className: 'gm-task-header gm-premium-card' }, icon('tasks', 44, true), e('div', null, e('b', null, 'Выполняй цели'), e('small', null, 'Игровые задания с проверяемыми условиями. Награды начисляет только сервер.'))), e('div', { className: 'gm-task-filters' }, tabs.map(([value, label]) => e('button', { type: 'button', key: value,
             className: taskFilter === value ? 'active' : '', onClick: () => setTaskFilter(value) }, label))), e('div', { className: 'gm-task-list' }, rows), e('p', { className: 'gm-task-note' }, 'Задания за подписки появятся после настройки безопасной проверки членства через Telegram. Сейчас доступны только проверяемые игровые действия.'));
     }
-    function Leaderboard() { const users = (liveRanks?.users || []).filter((u) => rankFilter === 'Global' || (liveReferrals?.referred || []).some((r) => r.user_id === u.id)); return React.createElement(React.Fragment, null,
-        top(L('leaderboard'), true, 'trophy'),
-        React.createElement("div", { className: "rank-tabs" },
-            React.createElement("button", { onClick: () => setRankFilter('Global'), className: rankFilter === 'Global' ? 'on' : '' }, "Global"),
-            React.createElement("button", { onClick: () => setRankFilter('Friends'), className: rankFilter === 'Friends' ? 'on' : '' }, "Friends")),
-        React.createElement("div", { className: "leader-rows" }, users.map((u, i) => React.createElement("div", { className: "leader-row", key: u.id },
-            React.createElement("b", null, i + 1),
-            icon('profile', 27),
-            React.createElement("span", null, clean(u.username || 'Игрок')),
-            React.createElement("small", null,
-                nf(u.score_cents / 100),
-                " GM")))),
-        users.length === 0 && React.createElement("p", { className: "disclaimer" }, liveRanks?.pending_rule ? 'Рейтинг ещё не включён: формула не утверждена. Фальшивых участников нет.' : 'Пока нет игроков в выбранном списке.')); }
+    function Leaderboard() {
+        const data = holderRanks;
+        const podium = data?.podium || [];
+        const entrants = data?.users || [];
+        const verified = data?.enabled === true;
+        const statusMessage = !data ? walletLanguage('Verificando dados…', 'Перевіряємо дані…', 'Checking verified holders…', 'Проверяем подтверждённых держателей…') :
+            !verified ? walletLanguage('Aguardando contrato oficial do GM Jetton. Nenhum saldo fictício é exibido.', 'Очікуємо офіційний контракт GM Jetton. Вигадані баланси не показуються.', 'Waiting for the official GM Jetton contract. No fictional balances are displayed.', 'Ожидаем официальный контракт GM Jetton. Вымышленные балансы и участники не отображаются.') :
+                !data.participants ? walletLanguage('Ainda não há detentores com saldo e carteira verificados.', 'Наразі немає власників із перевіреними гаманцями та балансами.', 'No opted-in players have a fresh verified wallet balance yet.', 'Пока нет игроков с подтверждёнными кошельками и свежим проверенным балансом.') : null;
+        const slots = [3, 1, 2];
+        return React.createElement(React.Fragment, null,
+            top(L('holdings'), true, 'trophy'),
+            React.createElement("section", { className: "gm-holders-header gm-premium-card" },
+                React.createElement("div", { className: "gm-holders-header-label" },
+                    icon('shield-check', 20, true),
+                    " ",
+                    React.createElement("span", null, "TON MAINNET \u00B7 VERIFIED HOLDERS")),
+                React.createElement("h2", null, walletLanguage('Ranking de detentores GM', 'Рейтинг власників GM', 'GM holders ranking', 'Рейтинг держателей GM')),
+                React.createElement("p", null, walletLanguage('Somente GM verificado na blockchain entra no ranking. GM do jogo não conta.', 'Враховуються лише перевірені GM у блокчейні. Ігрові GM не враховуються.', 'Only independently verified on-chain GM counts. In-game GM is excluded.', 'Учитываются только GM, проверенные в блокчейне. Игровые GM не влияют на рейтинг.')),
+                React.createElement("div", { className: "gm-holders-stats" },
+                    React.createElement("div", null,
+                        React.createElement("small", null, walletLanguage('Participantes', 'Учасники', 'Participants', 'Участников')),
+                        React.createElement("strong", null, verified ? data.participants : '—')),
+                    React.createElement("div", null,
+                        React.createElement("small", null, walletLanguage('Rede', 'Мережа', 'Network', 'Сеть')),
+                        React.createElement("strong", null, "TON")),
+                    React.createElement("div", null,
+                        React.createElement("small", null, walletLanguage('Verificação', 'Перевірка', 'Verification', 'Проверка')),
+                        React.createElement("strong", null, verified ? 'ON-CHAIN' : '—')))),
+            React.createElement("section", { className: "gm-holder-podium-wrap gm-premium-card" },
+                React.createElement("div", { className: "gm-holder-section-title" },
+                    icon('crown', 21),
+                    " ",
+                    React.createElement("b", null, "TOP 3 \u00B7 GM TOKEN")),
+                React.createElement("div", { className: "gm-holder-podium", "aria-label": "Verified Top 3" }, slots.map(place => {
+                    const person = podium.find((p) => p.rank === place);
+                    return React.createElement("div", { className: 'gm-holder-podium-slot gm-holder-place-' + place + (person ? ' is-filled' : ' is-empty'), key: place },
+                        React.createElement("div", { className: "gm-holder-podium-crown" }, icon(place === 1 ? 'crown' : 'shield-check', place === 1 ? 32 : 25, true)),
+                        React.createElement("div", { className: "gm-holder-podium-avatar" }, person ? String(person.username).slice(0, 1).toUpperCase() : icon('profile', 25)),
+                        React.createElement("div", { className: "gm-holder-podium-alias", title: person?.username || '' }, person ? person.username : '—'),
+                        React.createElement("div", { className: "gm-holder-podium-amount" }, person ? person.gm + ' GM' : '—'),
+                        React.createElement("div", { className: "gm-holder-podium-pillar" },
+                            React.createElement("b", null, place),
+                            React.createElement("span", null, place === 1 ? 'CHAMPION' : place === 2 ? 'SILVER' : 'BRONZE')));
+                })),
+                statusMessage ? React.createElement("p", { className: "gm-holder-pending" },
+                    icon('info', 18),
+                    " ",
+                    statusMessage) : null),
+            React.createElement("section", { className: "gm-holders-list gm-premium-card" },
+                React.createElement("div", { className: "gm-holder-list-head" },
+                    React.createElement("div", null,
+                        React.createElement("small", null, "GM TOKEN"),
+                        React.createElement("h3", null, walletLanguage('Todos os participantes', 'Усі учасники', 'All participants', 'Все участники'))),
+                    React.createElement("button", { type: "button", className: "gm-holder-refresh", disabled: holderLoading, onClick: () => void fetchHolders(), "aria-label": L('refresh') }, icon('refresh', 19))),
+                React.createElement("button", { type: "button", className: "gm-holder-my-position", onClick: () => setHolderShowPosition(!holderShowPosition) },
+                    icon('search', 18),
+                    React.createElement("span", null, walletLanguage('Minha posição', 'Моє місце', 'My position', 'Моё место')),
+                    React.createElement("strong", null, data?.my_rank ? '#' + data.my_rank : '—'),
+                    icon(holderShowPosition ? 'chevron-up' : 'chevron-down', 16)),
+                holderShowPosition ? React.createElement("div", { className: "gm-holder-me-note" }, data?.my_rank ? walletLanguage('Sua posição foi calculada usando GM confirmado on-chain.', 'Твоє місце визначене за підтвердженим балансом GM.', 'Your rank uses a recent verified on-chain GM balance.', 'Твоё место рассчитано по свежему подтверждённому балансу GM.') :
+                    walletLanguage('Conecte e verifique sua carteira, permita aparecer no ranking e atualize o saldo.', 'Підтвердь гаманець, дозволь участь у рейтингу та онови баланс.', 'Verify your wallet, opt in and refresh your GM balance to participate.', 'Подтверди кошелёк, разреши участие и обнови баланс GM, чтобы попасть в рейтинг.')) : null,
+                React.createElement("div", { className: "gm-holder-rows" }, entrants.filter((u) => u.rank >= 4).map((u) => React.createElement("div", { className: "gm-holder-row", key: u.rank },
+                    React.createElement("div", { className: "gm-holder-row-rank" }, u.rank),
+                    React.createElement("div", { className: "gm-holder-row-avatar" }, icon('profile', 24)),
+                    React.createElement("div", { className: "gm-holder-row-user" },
+                        React.createElement("b", null, u.username),
+                        React.createElement("small", null, walletLanguage('Saldo verificado', 'Баланс перевірено', 'Verified holdings', 'Баланс проверен'))),
+                    React.createElement("strong", null,
+                        u.gm,
+                        " ",
+                        React.createElement("small", null, "GM"))))),
+                verified && data?.participants > 0 && data?.participants <= 3 ? React.createElement("p", { className: "gm-holder-list-note" }, walletLanguage('Todos os participantes estão no pódio.', 'Усі учасники на п’єдесталі.', 'All current participants are on the podium.', 'Все участники сейчас на пьедестале.')) : null,
+                verified && data?.has_more ? React.createElement("button", { type: "button", className: "gm-holders-load-more", disabled: holderMoreBusy, onClick: () => void fetchHolders(data.next_offset || 30, true) },
+                    holderMoreBusy ? '…' : walletLanguage('Carregar mais', 'Завантажити ще', 'Load more', 'Показать ещё'),
+                    icon('chevron-down', 18)) : null,
+                !verified ? React.createElement("div", { className: "gm-holder-privacy-foot" },
+                    icon('shield-check', 18),
+                    " ",
+                    walletLanguage('Nenhum saldo não verificado é publicado.', 'Непідтверджені баланси не публікуються.', 'Unverified amounts are never published.', 'Неподтверждённые суммы не публикуются.')) : null),
+            React.createElement("button", { type: "button", className: "gm-holders-wallet-link", onClick: () => goto('wallet') },
+                icon('wallet', 23),
+                walletLanguage('Verificar carteira', 'Перевірити гаманець', 'Verify my wallet', 'Проверить мой кошелёк'),
+                icon('chevron-right', 19)));
+    }
     function Profile() {
         const e = React.createElement;
         const cosmetics = liveState?.cosmetics || { founder_slot: null, frames: [] };
@@ -1054,8 +1287,17 @@ function App() {
     }
     function WalletConnection() {
         const e = React.createElement;
-        const display = tonAccount ? (tonAccount.length > 24 ? tonAccount.slice(0, 12) + '…' + tonAccount.slice(-8) : tonAccount) : '—';
-        return e('div', { className: 'gm-wallet-screen' }, top(L('wallet'), true, 'shield-check'), e('div', { className: 'gm-wallet-hero gm-premium-card' }, e('div', { className: 'gm-wallet-hero-icon' }, icon('wallet', 72, true)), e('small', null, 'TON CONNECT · READ-ONLY'), e('h2', null, L('wallet')), e('p', null, walletLanguage('Conecte sua carteira TON para exibir o endereço. Nenhuma transferência será solicitada.', 'Підключіть TON-гаманець, щоб переглянути адресу. Перекази не запитуються.', 'Connect a TON wallet to display its address. No transfers are requested.', 'Подключи TON-кошелёк, чтобы увидеть адрес. Переводы и оплаты не запрашиваются.')), e('div', { className: 'gm-wallet-address' }, e('small', null, walletLanguage('Endereço da carteira', 'Адреса гаманця', 'Wallet address', 'Адрес кошелька')), e('strong', null, display)), e('button', { type: 'button', className: 'gm-wallet-connect', onClick: tonAccount ? disconnectTonWallet : connectTonWallet }, icon(tonAccount ? 'close' : 'link', 22), tonAccount ? walletLanguage('Desconectar', 'Від’єднати', 'Disconnect', 'Отключить') : walletLanguage('Conectar carteira TON', 'Підключити TON-гаманець', 'Connect TON wallet', 'Подключить TON-кошелёк'))), tonError ? e('div', { className: 'gm-wallet-error', role: 'status' }, tonError) : null, e('section', { className: 'gm-wallet-facts gm-premium-card' }, e('h3', null, L('holdings')), e('p', null, walletLanguage('O saldo de GM na blockchain ainda não é verificado. Até definir o contrato, nenhuma vantagem de mineração será concedida.', 'GM на блокчейні ще не перевіряються. До визначення контракту бонуси майнінгу не нараховуються.', 'On-chain GM holdings are not verified yet. No mining bonus is granted until the token contract is confirmed.', 'Количество GM в блокчейне пока не проверяется. Пока не подтверждён контракт токена, бонусы к майнингу не выдаются.')), e('div', { className: 'gm-wallet-total' }, icon('shield-check', 24), walletLanguage('Saldo pendente de verificação', 'Баланс очікує перевірки', 'Holdings pending verification', 'Холдинг ожидает проверки'))), wallet.vault > 0 ? e('button', { type: 'button', className: 'gm-wallet-legacy', onClick: () => goto('vault') }, icon('database', 20), walletLanguage('Saldo legado no jogo: ', 'Старий ігровий баланс: ', 'Legacy in-game Vault: ', 'Старый игровой Vault: ') + nf(wallet.vault) + ' GM', icon('chevron-right', 18)) : null, e('p', { className: 'gm-mining-footnote' }, walletLanguage('Nunca compartilhe sua frase-semente ou chave privada.', 'Ніколи не повідомляйте seed-фразу чи приватний ключ.', 'Never share your seed phrase or private key.', 'Никогда не передавай сид-фразу или приватный ключ.')));
+        const verified = holderStatus?.wallet_verified === true;
+        const walletAddress = holderStatus?.wallet_address || tonAccount;
+        const display = walletAddress ? (walletAddress.length > 26 ? walletAddress.slice(0, 13) + '…' + walletAddress.slice(-8) : walletAddress) : '—';
+        const loc = walletLanguage;
+        return e('div', { className: 'gm-wallet-screen' }, top(L('wallet'), true, 'shield-check'), e('div', { className: 'gm-wallet-hero gm-premium-card' }, e('div', { className: 'gm-wallet-hero-icon' }, icon('wallet', 72, true)), e('small', null, 'TON CONNECT · READ ONLY'), e('h2', null, L('wallet')), e('p', null, loc('Prove que você controla sua carteira TON. O app nunca pede transferências ou frases-semente.', 'Підтвердь право на TON-гаманець. Застосунок не просить переказів або seed-фраз.', 'Prove that you control your TON wallet. No funds, transfers or recovery phrases are requested.', 'Подтверди, что TON-кошелёк принадлежит тебе. Переводы монет и сид-фразы не запрашиваются.')), e('div', { className: 'gm-wallet-proof-status ' + (verified ? 'verified' : 'unverified') }, icon(verified ? 'shield-check' : 'clock', 18), verified ? loc('Propriedade verificada', 'Власність підтверджено', 'Wallet ownership verified', 'Владение кошельком подтверждено') :
+            loc('Assinatura ainda não verificada', 'Підпис ще не перевірено', 'Wallet signature not verified', 'Подпись кошелька не проверена')), e('div', { className: 'gm-wallet-address' }, e('small', null, loc('Endereço da carteira', 'Адреса гаманця', 'Wallet address', 'Адрес кошелька')), e('strong', null, display)), e('button', { type: 'button', className: 'gm-wallet-connect', onClick: tonAccount || verified ? disconnectTonWallet : connectTonWallet }, icon(tonAccount || verified ? 'close' : 'link', 22), tonAccount || verified ? loc('Desconectar carteira', 'Від’єднати гаманець', 'Disconnect wallet', 'Отключить кошелёк') :
+            loc('Conectar e verificar TON', 'Підключити й перевірити TON', 'Connect & verify TON', 'Подключить и проверить TON'))), tonError ? e('div', { className: 'gm-wallet-error', role: 'status' }, tonError) : null, e('section', { className: 'gm-wallet-holders gm-premium-card' }, e('div', { className: 'gm-wallet-holders-title' }, icon('trophy', 27, true), e('span', null, e('b', null, L('holdings')), e('small', null, 'TON MAINNET · GM JETTON'))), e('p', null, holderStatus?.configured ?
+            loc('Somente GM verificados na blockchain contam para o ranking.', 'Рейтинг враховує лише перевірені GM у блокчейні.', 'Only independently verified on-chain GM counts in the holders ranking.', 'В рейтинге учитываются только подтверждённые сервером GM в блокчейне.') :
+            loc('Aguardando o endereço oficial do contrato GM Jetton. Nenhum saldo será inventado.', 'Очікуємо офіційну адресу контракту GM Jetton. Баланси не вигадуємо.', 'Official GM Jetton contract is pending. No balances are fabricated.', 'Ожидаем официальный контракт GM Jetton. Балансы не будут выдуманы.')), e('button', { type: 'button', className: 'gm-wallet-consent ' + (holderStatus?.opt_in ? 'opted-in' : ''),
+            disabled: !verified || holderConsentBusy, onClick: () => void setHolderOptIn(!holderStatus?.opt_in) }, icon(holderStatus?.opt_in ? 'check' : 'shield-check', 21), loc(holderStatus?.opt_in ? 'Estou no ranking' : 'Participar do ranking', holderStatus?.opt_in ? 'Беру участь у рейтингу' : 'Участь у рейтингу', holderStatus?.opt_in ? 'Visible in leaderboard' : 'Join leaderboard', holderStatus?.opt_in ? 'Показываюсь в рейтинге' : 'Участвовать в рейтинге'), e('span', { className: 'gm-wallet-consent-state' }, holderStatus?.opt_in ? 'ON' : 'OFF')), e('p', { className: 'gm-wallet-consent-note' }, loc('Seu endereço permanece privado no ranking. Você pode sair a qualquer momento.', 'Твоя адреса у рейтингу прихована. Можна вийти будь-коли.', 'Your wallet address remains private. You can leave the public ranking at any time.', 'Адрес кошелька публично не показывается. Из рейтинга можно выйти в любой момент.')), e('button', { type: 'button', className: 'gm-wallet-verify-balance', disabled: !verified || !holderStatus?.configured || holderLoading,
+            onClick: () => void refreshHolderBalance() }, icon('refresh', 18), loc('Verificar saldo GM', 'Перевірити баланс GM', 'Verify GM balance', 'Проверить баланс GM')), e('button', { type: 'button', className: 'gm-wallet-to-ranks', onClick: () => goto('leaderboard') }, icon('trophy', 18), L('holdings'), icon('chevron-right', 18))), wallet.vault > 0 ? e('button', { type: 'button', className: 'gm-wallet-legacy', onClick: () => goto('vault') }, icon('database', 20), loc('Saldo legado do jogo: ', 'Старий ігровий баланс: ', 'Legacy in-game Vault: ', 'Старый игровой Vault: ') + nf(wallet.vault) + ' GM', icon('chevron-right', 18)) : null, e('p', { className: 'gm-mining-footnote' }, loc('Nunca compartilhe sua frase-semente ou chave privada.', 'Ніколи не повідомляй seed-фразу чи приватний ключ.', 'Never share a seed phrase or private key.', 'Никогда не передавай сид-фразу или приватный ключ.')));
     }
     function Vault() {
         const e = React.createElement;
