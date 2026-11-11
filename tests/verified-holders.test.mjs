@@ -48,6 +48,16 @@ test('ton proof accepts only matching Ed25519 signature of a recognized StateIni
  assert.equal(verifyTonProof(valid,nonce,DOMAIN,now()+700),null);
  assert.equal(verifyTonProof({...valid,proof:{...valid.proof,state_init:'invalid'}},nonce,DOMAIN),null);
 });
+test('wallet proof supports standard V5R1 if available in official TON SDK',t=>{
+ if(!ton.WalletContractV5R1){t.skip('V5R1 not provided by this SDK');return}
+ const {publicKey,privateKey}=crypto.generateKeyPairSync('ed25519');
+ const pk=publicKey.export({format:'der',type:'spki'}).subarray(-32);
+ const wallet=ton.WalletContractV5R1.create({workchain:0,publicKey:pk});
+ const nonce=crypto.randomBytes(32).toString('hex');
+ const proof=signedWalletProof(nonce,{privateKey,publicKey:pk,wallet});
+ assert.ok(supportedWalletVersions().includes('V5R1'),'wallet contract code is recognized');
+ assert.equal(verifyTonProof(proof,nonce,DOMAIN),wallet.address.toRawString(),'V5 proof is signed with valid StateInit key');
+});
 test('a verified wallet never becomes a holder without official contract and opt-in',async()=>{
  const f=fixture();
  const wa=generateWallet(),nonce=f.holder.challenge('11').payload;
