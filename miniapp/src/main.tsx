@@ -699,6 +699,17 @@ function App(){
  const [boxKind,setBoxKind]=React.useState('bronze');
  const [boxCount,setBoxCount]=React.useState(1);
  const [boxBusy,setBoxBusy]=React.useState(false);
+ // WebGL geometry is mounted only while the chests screen or reveal modal is visible.
+ // Unsupported phones keep the existing vector artwork as a no-crash fallback.
+ React.useEffect(()=>{
+  if(screen!=='boxes'&&modal!=='boxReveal')return;
+  let stop=()=>{};
+  const timer=window.setTimeout(()=>{
+   const renderer=(window as any).GMChest3D;
+   if(renderer&&typeof renderer.mountAll==='function')stop=renderer.mountAll();
+  },60);
+  return()=>{window.clearTimeout(timer);stop()};
+ },[screen,modal,boxKind,boxReveal.kind]);
  const [upgradeData,setUpgradeData]=React.useState(null as any);
  const [upgradeBusy,setUpgradeBusy]=React.useState(false);
  const [showAllUpgrades,setShowAllUpgrades]=React.useState(false);
@@ -1551,7 +1562,9 @@ function Splash(){return <div className="splash-view gm-splash-v3" role="status"
     e('p',null,'Гарантированная награда'),
     e('div',{className:'gm-chest-stage-art gm-chest-3d'},
      e('span',{className:'gm-chest-stage-halo','aria-hidden':true}),
-     e('img',{key:selected.kind,src:boxImage(selected.kind),alt:selected.name,draggable:false})),
+     e('img',{key:selected.kind,src:boxImage(selected.kind),alt:selected.name,draggable:false}),
+     e('canvas',{key:'webgl-'+selected.kind,className:'gm-chest-3d-canvas',
+       'data-gm-chest':selected.kind,'aria-hidden':'true'})),
     e('div',{className:'gm-chest-payout'},
      e('span',null,'За 1 сундук',e('strong',null,nf(reward,0)+' GM')),
      e('span',null,'Стоимость',e('strong',null,nf(selected.cost,0)+' POINTS'))),
@@ -1588,6 +1601,8 @@ function Splash(){return <div className="splash-view gm-splash-v3" role="status"
       src:'./assets/chests/gm-chest-'+kind+'.svg',alt:'',draggable:false}),
      e('img',{className:'gm-chests-animation-lid',
       src:'./assets/chests/gm-chest-'+kind+'.svg',alt:'',draggable:false}),
+     e('canvas',{className:'gm-chest-3d-canvas gm-chest-3d-modal',
+      'data-gm-chest':kind,'data-gm-chest-open':'true','aria-hidden':'true'}),
      e('div',{className:'gm-chests-flash'}),
      e('span',{className:'gm-chests-spark s1'},'✦'),
      e('span',{className:'gm-chests-spark s2'},'✧'),
