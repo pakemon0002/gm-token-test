@@ -33,6 +33,7 @@ test('mining upgrades: atomic purchase, idempotency, sequential levels, no XP ov
  const before=await request('/api/game/status');
  assert.equal(before.body.mining.upgrade.level,1);
  const rateBefore=before.body.mining.rate_cents_day;
+ assert.equal(before.body.mining.upgrade.bonus_pct,5);
  const list=await request('/api/mining/upgrades');
  assert.equal(list.status,200);
  assert.equal(list.body.levels.length,200);
@@ -56,7 +57,7 @@ test('mining upgrades: atomic purchase, idempotency, sequential levels, no XP ov
  const after=await request('/api/game/status');
  assert.equal(after.body.mining.upgrade.level,2);
  assert.equal(after.body.mining.upgrade.next_cost_gm,200);
- assert.equal(after.body.mining.upgrade.bonus_pct,0.1);
+ assert.equal(after.body.mining.upgrade.bonus_pct,10);
  assert.ok(after.body.mining.rate_cents_day>rateBefore);
  assert.equal(after.body.user.level,before.body.user.level,'account XP level remains untouched');
  assert.equal(after.body.user.xp,before.body.user.xp,'XP remains untouched');
