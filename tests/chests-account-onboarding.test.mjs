@@ -29,7 +29,7 @@ test('new Telegram accounts do not inherit another account onboarding completion
 test('chest 3D preview has distinguishable polished materials, depth and lock details',()=>{
  const engine=read('miniapp/public/assets/chests/gm-chest-3d.js');
  execFileSync(process.execPath,['--check',new URL('../miniapp/public/assets/chests/gm-chest-3d.js',import.meta.url).pathname]);
- for(const part of ['faceted','function disc(','Bright lip','prism(0,.53,.767','gl.uniform1f(uniforms.uPitch,-.23)',
+ for(const part of ['Faceted','function disc(','Bright lip','prism(0,.53,.767','gl.uniform1f(uniforms.uPitch,-.23)',
   'vec3 key=normalize','vec3 fill=normalize','float chrome=pow','float shade=.58']){
   assert.ok(engine.includes(part),part);
  }
