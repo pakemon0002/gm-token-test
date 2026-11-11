@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="270" viewBox="0 0 320 270" role="img" aria-label="GM TOKEN bronze chest badge">
+<defs>
+ <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffd3ad"/><stop offset=".35" stop-color="#c48b65"/><stop offset=".67" stop-color="#714432"/><stop offset="1" stop-color="#ffd3ad"/></linearGradient>
+ <linearGradient id="face" x1="0" y1="0" x2=".7" y2="1"><stop stop-color="#493431"/><stop offset="1" stop-color="#0b111c"/></linearGradient>
+ <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffd3ad"/><stop offset="1" stop-color="#714432"/></linearGradient>
+ <radialGradient id="aura"><stop stop-color="#f2ad76" stop-opacity=".35"/><stop offset="1" stop-color="#f2ad76" stop-opacity="0"/></radialGradient>
+</defs>
+<circle cx="160" cy="128" r="118" fill="url(#aura)"/>
+<path d="M160 15l8 13 13 8-13 8-8 13-8-13-13-8 13-8z" fill="#f2ad76" opacity=".95"/>
+<path d="M53 83L73 63Q160 28 246 63L266 83V195H53Z" fill="url(#face)" stroke="#714432" stroke-width="6"/>
+<path d="M65 86Q83 43 160 43Q236 43 254 86V119H65Z" fill="url(#face)" stroke="url(#metal)" stroke-width="12" stroke-linejoin="round"/>
+<path d="M79 87Q105 57 160 57Q218 57 240 87" fill="none" stroke="#ffd3ad" stroke-width="3" opacity=".85"/>
+<path d="M65 117H254V196H65Z" fill="url(#face)" stroke="url(#metal)" stroke-width="8"/>
+<path d="M63 116H256" fill="none" stroke="#ffd3ad" stroke-width="8"/>
+<path d="M66 187H254" stroke="url(#metal)" stroke-width="12"/>
+<path d="M91 76V191 M230 76V191" stroke="#c48b65" stroke-width="15"/>
+<path d="M91 76V191 M230 76V191" stroke="#ffd3ad" stroke-width="3" opacity=".9"/>
+<path d="M108 130H210" stroke="#714432" stroke-width="3" opacity=".9"/>
+<path d="M160 119l31 12v34l-31 23-31-23v-34Z" fill="url(#metal)" stroke="#ffd3ad" stroke-width="3"/>
+<path d="M160 127l23 9v26l-23 17-23-17v-26Z" fill="#202637" stroke="#714432" stroke-width="2"/>
+<text x="160" y="156" text-anchor="middle" font-size="19" font-weight="900" font-family="Arial,Helvetica,sans-serif" fill="#ffd3ad">GM</text>
+<rect x="58" y="185" width="39" height="16" rx="3" fill="url(#edge)" stroke="#ffd3ad" stroke-width="2"/>
+<rect x="224" y="185" width="39" height="16" rx="3" fill="url(#edge)" stroke="#ffd3ad" stroke-width="2"/>
+<path d="M45 224q114 28 230 0" fill="none" stroke="#f2ad76" opacity=".38" stroke-width="3"/>
+</svg>
