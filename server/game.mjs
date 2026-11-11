@@ -207,14 +207,37 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
   if(fromFees)takePool('HOLDING_FEES','gm',fromFees);
   log('system','holding_settlement',{gm_cents:distribute,requested_cents:demand,hours:(hour-previous)/HOUR});
  }
+ // Persistent UTC streak history comes from committed, unique daily_claim rows.
+ // No client-provided timestamps or local-storage progress can affect payouts.
+ const DAILY_MILESTONES=Object.freeze({5:25,10:50,15:75,20:100,25:150,30:200});
+ const milestoneTestEnabled=testEconomy&&process.env.GM_DAILY_MILESTONE_TEST==='1';
+ const dailyCycle=(streak)=>((streak-1)%30)+1;
+ function dailyRewardCents(base,streak){
+  if(!milestoneTestEnabled||base<=0)return base;
+  const milestone=DAILY_MILESTONES[dailyCycle(streak)];
+  // GM milestones are an opt-in test-only schedule, funded from the existing DAILY pool.
+  return milestone?Math.max(base,milestone*100):base;
+ }
  function dailyProfile(id){
-  const rows=stmt('SELECT day FROM daily_claim WHERE user_id=? ORDER BY day DESC LIMIT 100').all(id);
-  const last=rows[0]?.day||null;if(!last)return {streak:0,last_claim_day:null};
+  const rows=stmt('SELECT day FROM daily_claim WHERE user_id=? ORDER BY day ASC').all(id);
+  let current=0,best=0,previous=null,last=null;
+  for(const row of rows){
+   const timestamp=Date.parse(row.day+'T00:00:00Z')/1000;
+   if(!Number.isFinite(timestamp))throw Error('invalid stored daily claim date');
+   current=previous!==null&&timestamp-previous===DAY?current+1:1;
+   best=Math.max(best,current);previous=timestamp;last=row.day;
+  }
   const today=day(now()),yesterday=day(now()-DAY);
-  if(last!==today&&last!==yesterday)return {streak:0,last_claim_day:last};
-  let streak=0,expected=Date.parse(last+'T00:00:00Z')/1000;
-  for(const row of rows){if(day(expected)!==row.day)break;streak++;expected-=DAY}
-  return {streak,last_claim_day:last};
+  const claimed=last===today;
+  const active=claimed||last===yesterday;
+  const streak=active?current:0;
+  const nextStreak=claimed?current+1:streak+1;
+  const base=Number(v('daily_gm_cents'));
+  const nextReward=dailyRewardCents(base,nextStreak);
+  return {streak,best_streak:best,last_claim_day:last,total_claims:rows.length,
+   claimed_today:claimed,next_streak:nextStreak,next_cycle_day:dailyCycle(nextStreak),
+   next_reward_gm:nextReward/100,milestone_enabled:milestoneTestEnabled,
+   milestone_rewards:milestoneTestEnabled?DAILY_MILESTONES:{}};
  }
  function catalog(kind){const s=v(kind==='tasks'?'tasks_json':'achievements_json');const rows=JSON.parse(s||'[]');if(!Array.isArray(rows)||rows.length>100)throw Error('invalid configured task catalog');return rows}
  function qualifies(userId,condition,kind='tasks'){if(!condition||typeof condition!=='object')return false;const target=Math.max(0,Number(condition.gte||1));if(!Number.isFinite(target)||target>1000000000)return false;let current=0;
@@ -363,7 +386,23 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
    if(ref){const want=mulDiv(h.pending_cents,25,100);const free=Math.min(want,stmt('SELECT gm FROM holding_buckets WHERE name=?').get('REFERRAL').gm,pool('HOLDING'));if(free>0){stmt('UPDATE holding_buckets SET gm=gm-? WHERE name=?').run(free,'REFERRAL');takePool('HOLDING','gm',free);walletChange(ref.referrer_id,'gm',free);refPaid+=free}let extra=want-refPaid;if(extra>0){extra=Math.min(extra,pool('HOLDING_FEES'));if(extra){takePool('HOLDING_FEES','gm',extra);walletChange(ref.referrer_id,'gm',extra);refPaid+=extra}}if(refPaid)log('system','referral_reward',{user:ref.referrer_id,from:id,gm_cents:refPaid})}
    log(id,'holding_claim',{user:id,gm_cents:h.pending_cents,referral_gm_cents:refPaid});return {gm_cents:h.pending_cents,referral_paid_cents:refPaid,wallet:wal(id)}})}));
   if(p==='/api/referrals/me'&&verb==='GET')return response(200,{referred:stmt('SELECT user_id,created_at FROM referrals WHERE referrer_id=?').all(id),my_referrer:stmt('SELECT referrer_id FROM referrals WHERE user_id=?').get(id)?.referrer_id||null,received_gm_cents:stmt("SELECT info FROM journal WHERE kind='referral_reward' AND info LIKE ?").all('%\"user\":\"'+id+'\"%').reduce((sum,r)=>sum+(JSON.parse(r.info).gm_cents||0),0)});
-  if(p==='/api/daily/claim'&&verb==='POST')return response(200,tx(()=>once(op(),id,'daily_claim',()=>{const d=day(now()),n=Number(v('daily_gm_cents'));if(!n)throw Error('daily reward rate awaiting owners approval');if(stmt('SELECT 1 FROM daily_claim WHERE user_id=? AND day=?').get(id,d))throw Error('daily reward already claimed');takePool('DAILY','gm',n);walletChange(id,'gm',n);stmt('INSERT INTO daily_claim(user_id,day) VALUES(?,?)').run(id,d);log(id,'daily_claim',{user:id,gm_cents:n});return {gm_cents:n,wallet:wal(id)}})));
+  if(p==='/api/daily/claim'&&verb==='POST')return response(200,tx(()=>once(op(),id,'daily_claim',()=>{
+   ensure(id);
+   const d=day(now()),base=Number(v('daily_gm_cents'));
+   if(!Number.isSafeInteger(base)||base<=0)throw Error('daily reward rate awaiting owners approval');
+   const state=dailyProfile(id);
+   if(state.claimed_today)throw Error('daily reward already claimed');
+   const nextStreak=state.next_streak,cycleDay=dailyCycle(nextStreak);
+   const n=dailyRewardCents(base,nextStreak);
+   // Transaction includes pool debit, wallet credit, unique claim and journal entry.
+   takePool('DAILY','gm',n);
+   walletChange(id,'gm',n);
+   stmt('INSERT INTO daily_claim(user_id,day) VALUES(?,?)').run(id,d);
+   log(id,'daily_claim',{user:id,gm_cents:n,streak:nextStreak,cycle_day:cycleDay,
+    milestone:milestoneTestEnabled&&Object.hasOwn(DAILY_MILESTONES,cycleDay)});
+   return {gm_cents:n,streak:nextStreak,cycle_day:cycleDay,
+    milestone:milestoneTestEnabled&&Object.hasOwn(DAILY_MILESTONES,cycleDay),wallet:wal(id)};
+  })));
   if(p==='/api/boxes/open'&&verb==='POST')return response(200,tx(()=>{
    ensure(id);
    return once(op(),id,'box_open',()=>{

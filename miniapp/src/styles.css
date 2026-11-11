@@ -2001,3 +2001,138 @@ html,body,.application,.application button,.application input,.application texta
 }
 @media(prefers-reduced-motion:reduce){.gm-splash-v3-seal,.gm-splash-v3-progress span,
  .gm-boxes-v9 .gm-chest-stage-art img{animation:none!important}}
+
+
+/* GM TOKEN 3.0: verified daily streak, metallic silver fire and 30-day milestones */
+.gm-daily-v9{display:grid;gap:12px;padding:12px 9px 32px;min-width:0}
+.gm-daily-v9 .gm-daily-intro{display:grid;justify-items:center;text-align:center;gap:9px;padding-top:6px}
+.gm-daily-v9 .gm-daily-intro>h1{margin:0;font:900 21px 'Unbounded','Montserrat',sans-serif;line-height:1.4}
+.gm-daily-v9 .gm-daily-intro>p{max-width:270px;margin:0;font-size:11px;line-height:1.55;color:var(--muted)}
+.gm-streak-flame{--flame-size:110px;position:relative;display:grid;place-items:center;width:172px;
+ height:176px;isolation:isolate;margin:3px auto 0}
+.gm-streak-flame::before{content:"";position:absolute;inset:8px 13px;border-radius:50%;
+ background:radial-gradient(ellipse,#a8caff68,transparent 66%);filter:blur(10px);
+ animation:gm-streak-pulse 2.7s ease-in-out infinite}
+.gm-streak-flame svg{position:relative;z-index:1;width:var(--flame-size);height:calc(var(--flame-size) * 1.15);
+ overflow:visible;filter:drop-shadow(0 10px 11px #07152b93) drop-shadow(0 0 9px #d4e7ff70);
+ transform-origin:center 86%;animation:gm-streak-ignite 2.7s ease-in-out infinite}
+.gm-streak-flame.gm-flame-1{--flame-size:91px}
+.gm-streak-flame.gm-flame-2{--flame-size:105px}
+.gm-streak-flame.gm-flame-3{--flame-size:119px}
+.gm-streak-flame.gm-flame-4{--flame-size:131px}
+.gm-streak-flame.gm-flame-5{--flame-size:143px}
+.gm-streak-flame.gm-flame-5::before{background:radial-gradient(ellipse,#e6f4ffb0,transparent 69%)}
+.gm-streak-fire-count{position:absolute;z-index:3;bottom:5px;left:50%;transform:translateX(-50%);
+ background:linear-gradient(145deg,#f4f8ff,#8d9cb1);color:#152131;border-radius:22px;
+ border:1px solid #d5e3f4;padding:5px 13px;font-size:11px;font-weight:850;white-space:nowrap;
+ box-shadow:0 5px 13px #0004}
+.gm-daily-v9 .gm-daily-amount{padding:15px 12px!important;display:grid;justify-items:center;gap:8px;text-align:center}
+.gm-daily-v9 .gm-daily-amount strong{font:850 27px 'Montserrat',sans-serif;line-height:1.3}
+.gm-daily-v9 .gm-daily-amount span{font-size:11px;color:var(--muted)}
+.gm-daily-milestones{padding:15px 11px!important;display:grid;gap:11px;min-width:0}
+.gm-daily-milestones>b{font:850 13px 'Montserrat',sans-serif}
+.gm-daily-milestones>p{font-size:11px;color:var(--muted);line-height:1.55;margin:0}
+.gm-daily-milestones-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.gm-daily-milestone{display:grid;justify-items:center;align-content:center;gap:6px;min-width:0;
+ border:1px solid var(--border);background:var(--surface);border-radius:15px;min-height:83px;padding:9px 5px;
+ box-shadow:inset 0 1px #ffffff33}
+.gm-daily-milestone>span{font-size:9px;font-weight:850;letter-spacing:.07em;color:var(--muted)}
+.gm-daily-milestone>b{font-size:13px;font-weight:850;color:var(--ink)}
+.gm-daily-milestone>small{font-size:9px;color:var(--muted)}
+.gm-daily-milestone.next{border-color:#c5d6ec;box-shadow:0 0 0 1px #7f9ab9,0 0 15px #a3bee555}
+.gm-daily-milestone.done{background:linear-gradient(140deg,#d9e3ee,#8395ae);border-color:#e9f4ff}
+.gm-daily-milestone.done>span,.gm-daily-milestone.done>b,.gm-daily-milestone.done>small{color:#1b2a3c}
+.gm-daily-cycle-summary{font-size:10px;text-align:center;color:var(--muted)}
+.gm-daily-v9 .gm-daily-action,.gm-daily-v9 .gm-daily-secondary,
+.gm-points-tour-trigger{display:flex;align-items:center;justify-content:center;
+ text-align:center;gap:8px;line-height:1.3;min-width:0;padding:11px 10px;box-sizing:border-box}
+.gm-daily-v9 .gm-daily-action>.gm-icon,.gm-daily-v9 .gm-daily-secondary>.gm-icon{
+ flex-shrink:0}
+.gm-points-tour-trigger{margin-top:8px;min-height:42px;width:100%;
+ font-size:11px;font-weight:800;white-space:normal;border-radius:13px;
+ background:linear-gradient(135deg,#404b5c,#222a37);border:1px solid #6d7b8e;color:#eef4fb}
+@keyframes gm-streak-pulse{0%,100%{opacity:.5;transform:scale(.88)}50%{opacity:1;transform:scale(1.05)}}
+@keyframes gm-streak-ignite{0%,100%{transform:scale(1) rotate(-1deg)}50%{transform:scale(1.045) rotate(1.5deg)}}
+@media(max-width:365px){.gm-daily-milestones-grid{gap:5px}.gm-daily-milestone{min-height:76px;padding:8px 3px}
+ .gm-daily-milestone>b{font-size:11px}}
+@media(prefers-reduced-motion:reduce){.gm-streak-flame::before,.gm-streak-flame svg{animation:none!important}}
+
+
+/* GM TOKEN 3.0 mobile depth book: compact exchange-style bid/ask columns */
+.application .terminal-data-panel{min-width:0;max-width:100%;overflow:hidden}
+.application .terminal-data-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.application .terminal-data-tabs button{min-width:0;display:flex;align-items:center;
+ justify-content:center;min-height:39px;padding:7px 3px;text-align:center;
+ font-variant-numeric:tabular-nums;font-size:clamp(9px,2.75vw,11px);line-height:1.25}
+.application .terminal-depth{min-width:0;max-width:100%;overflow:hidden;
+ border:1px solid var(--border);border-radius:17px;padding:10px 9px;
+ background:linear-gradient(145deg,var(--surface),var(--gm-v2-bottom, #121822))}
+.application .terminal-depth-head{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:9px;padding:2px 7px 9px;text-align:center;color:var(--muted)}
+.application .terminal-depth-head>span{display:flex;gap:5px;justify-content:center;
+ align-items:baseline;font-size:10px;font-weight:750}
+.application .terminal-depth-head small{font-size:9px}
+.application .terminal-depth-columns{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ gap:9px!important;align-items:start;min-width:0;max-width:100%}
+.application .terminal-depth-column{min-width:0;overflow:hidden}
+.application .terminal-depth-label{display:flex;align-items:center;justify-content:center;
+ gap:6px;min-height:28px;margin-bottom:5px;font-size:10px;letter-spacing:.025em}
+.application .terminal-depth-label i{width:6px;height:6px;flex-shrink:0;border-radius:50%}
+.application .terminal-depth-row{position:relative;isolation:isolate;min-width:0;display:grid!important;
+ grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;
+ gap:3px;min-height:29px;padding:5px 5px!important;margin:2px 0;
+ border-radius:7px;border:1px solid #7e8da31e;box-sizing:border-box;
+ font-variant-numeric:tabular-nums}
+.application .terminal-depth-row>span,.application .terminal-depth-row>b{
+ position:relative;z-index:2;min-width:0;font:650 clamp(9px,2.55vw,11px) 'Inter',system-ui,sans-serif!important;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.25}
+.application .terminal-depth-row>span{text-align:left}
+.application .terminal-depth-row>b{text-align:right}
+.application .terminal-depth-row>.terminal-depth-bar{position:absolute;z-index:0;inset:0 auto 0 0;
+ height:100%;border-radius:6px;opacity:.16;pointer-events:none}
+.application .terminal-depth-row.ask>.terminal-depth-bar{inset:0 0 0 auto}
+.application .terminal-depth-bottom{display:flex;justify-content:space-between;gap:8px;
+ min-width:0;margin-top:10px;padding:10px 5px 0;border-top:1px solid var(--border);
+ font-size:10px;font-variant-numeric:tabular-nums}
+.application .terminal-depth-bottom>span{min-width:0;display:flex;align-items:baseline;gap:5px}
+.application .terminal-depth-bottom b{overflow:hidden;text-overflow:ellipsis}
+.application .terminal-table-empty{min-height:57px;margin:0!important;display:grid;
+ place-items:center;text-align:center;font-size:10px;line-height:1.45;color:var(--muted)}
+.application .gm-trade-quick-presets button,.application .gm-chests-qty button,
+.application .gm-chest-choice,.application .gm-points-guide-action{
+ display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.3}
+.application .gm-chest-choice{text-align:left;justify-content:space-between}
+.application .gm-chest-choice-info{text-align:left;align-items:start}
+@media(max-width:365px){.application .terminal-depth{padding:8px 6px}
+ .application .terminal-depth-columns{gap:5px!important}
+ .application .terminal-depth-row{padding:5px 3px!important;gap:2px}}
+
+
+/* GM TOKEN 3.0 — genuine GPU-rendered mesh, with SVG fallback on WebGL failure. */
+.gm-chest-stage-art.gm-chest-3d{position:relative;isolation:isolate;min-height:225px}
+.gm-chest-3d-canvas{display:block;position:absolute;inset:0;
+ z-index:3;width:100%;height:100%;border:0;outline:0;background:transparent;
+ object-fit:contain;touch-action:pan-y;cursor:grab}
+.gm-chest-3d-canvas:active{cursor:grabbing}
+.gm-chest-3d:not(.gm-chest-rendered)>.gm-chest-3d-canvas,
+.gm-chests-animation:not(.gm-chest-rendered)>.gm-chest-3d-modal{opacity:0;pointer-events:none}
+.gm-chest-stage-art.gm-chest-rendered>img{opacity:0!important}
+.gm-chests-animation.gm-chest-rendered>.gm-chests-animation-chest,
+.gm-chests-animation.gm-chest-rendered>.gm-chests-animation-lid{opacity:0!important;animation:none!important}
+.gm-chest-3d-modal{z-index:4;height:100%;width:100%;touch-action:none}
+.gm-chests-animation.gm-chest-rendered .gm-chests-flash{z-index:6}
+.gm-chests-animation.gm-chest-rendered .gm-chests-spark{z-index:7}
+.gm-chest-3d:after{pointer-events:none}
+@media(max-width:380px){.gm-chest-stage-art.gm-chest-3d{min-height:194px}}
+@media(prefers-reduced-motion:reduce){.gm-chest-3d-canvas{animation:none!important}}
+
+
+.gm-chests-tutorial-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;min-width:0}
+.gm-chests-tutorial-row .gm-chests-tutorial{justify-self:stretch;width:100%;min-width:0;
+ display:flex;justify-content:center;align-items:center;min-height:41px;
+ margin:0;padding:8px 6px;text-align:center;line-height:1.25;
+ font-size:clamp(9px,2.5vw,11px);overflow-wrap:anywhere}
+.gm-chests-points-tour{background:linear-gradient(145deg,#53637a,#252e3d)!important;
+ border-color:#b0bed2!important}
+@media(max-width:355px){.gm-chests-tutorial-row{gap:5px}
+ .gm-chests-tutorial-row .gm-chests-tutorial{font-size:9px}}
