@@ -1526,6 +1526,8 @@ function Reward(){
      e('div',{className:'gm-chests-burst'}),
      e('img',{className:'gm-chests-animation-chest',
       src:'./assets/chests/gm-chest-'+kind+'.svg',alt:'',draggable:false}),
+     e('img',{className:'gm-chests-animation-lid',
+      src:'./assets/chests/gm-chest-'+kind+'.svg',alt:'',draggable:false}),
      e('div',{className:'gm-chests-flash'}),
      e('span',{className:'gm-chests-spark s1'},'✦'),
      e('span',{className:'gm-chests-spark s2'},'✧'),
