@@ -24,7 +24,7 @@ test('GM UI uses available icon aliases, avatar placeholders, owner task editor,
  'gm-history-ticket','История обращений','showFounderCollection','GM GENESIS · 20 первых игроков']){
   assert.ok(src.includes(token),'Missing UI detail: '+token);
  }
- assert.ok(src.includes('setTimeout(()=>setToast(\\'\\'),3000)')||src.includes("window.setTimeout(()=>setToast(''),3000)"),'toast automatically dismisses');
+ assert.ok(src.includes("window.setTimeout(()=>setToast(''),3000)"),'toast automatically dismisses');
  assert.ok(!src.includes('Загрузить с сервера</button>'),'no manual history refresh');
  assert.ok(!src.includes("'Заявка GM/CR принята сервером'"),'remove generic trading server toast');
  for(const token of ['.gm-frame-art','.gm-mining-coin-outer-ring','.gm-points-guide',
