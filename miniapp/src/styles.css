@@ -1923,3 +1923,81 @@ html,body,.application,.application button,.application input,.application texta
  75%,100%{transform:translateY(-39px) rotate(-12deg)}
 }
 @media(prefers-reduced-motion:reduce){.gm-chests-animation-lid{animation:none!important;transform:translateY(-26px)}}
+
+/* GM TOKEN 2.5: refined compact brand loading screen */
+.gm-splash-v3{position:relative;isolation:isolate;min-height:100%;display:grid;place-items:center;
+ overflow:hidden;padding:40px 24px 38px!important;background:radial-gradient(ellipse at 50% 38%,#e0e6ef 0%,#b1bbc9 55%,#8c9aaa 100%);
+ color:#18202e}
+.theme-dark .gm-splash-v3{background:radial-gradient(ellipse at 50% 36%,#2b3443 0%,#101720 47%,#05070c 92%);color:#f5f7fc}
+.gm-splash-v3::before{content:"";position:absolute;inset:0;z-index:-1;
+ background:linear-gradient(145deg,#fff2,transparent 34%,#fff1 55%,transparent 77%);pointer-events:none}
+.gm-splash-v3-halo{position:absolute;width:min(90vw,400px);aspect-ratio:1;border:1px solid #d3deed22;
+ border-radius:50%;box-shadow:0 0 0 42px #d9e5f50a,0 0 0 85px #d9e5f508,0 0 100px #f4f7ff18;
+ top:42%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.gm-splash-v3-content{position:relative;display:grid;justify-items:center;align-content:center;
+ width:100%;max-width:310px;gap:13px;padding-bottom:20px}
+.gm-splash-v3-badge{display:flex;align-items:center;gap:7px;font:800 10px 'Montserrat',system-ui,sans-serif;
+ letter-spacing:.19em;opacity:.7;margin-bottom:17px}
+.gm-splash-v3-badge span{font-size:7px;color:#9eafc5}
+.gm-splash-v3-seal{display:grid;place-items:center;width:176px;height:176px;border-radius:50%;
+ padding:10px;background:linear-gradient(136deg,#f4f9ff,#7d8b9e 36%,#111824 67%,#b1bece);
+ box-shadow:0 22px 40px #0005,0 0 0 7px #8d9aab1c,inset 0 2px 2px #fff9;
+ animation:gm-splash-v3-hover 3.3s ease-in-out infinite}
+.gm-splash-v3-seal-inner{display:grid;place-items:center;width:100%;height:100%;border:2px solid #cbd6e7;
+ border-radius:50%;background:radial-gradient(circle at 35% 24%,#313c4d,#070b11 74%);overflow:hidden}
+.gm-splash-v3-seal-inner img{width:78%;height:78%;object-fit:contain;filter:drop-shadow(0 4px 8px #0006)}
+.gm-splash-v3 h1{margin:18px 0 0!important;font:850 clamp(23px,6.8vw,30px) 'Montserrat',system-ui,sans-serif!important;
+ letter-spacing:-.06em!important;line-height:1.15!important;white-space:nowrap;color:inherit!important}
+.gm-splash-v3 p{margin:0!important;font-size:9px;font-weight:850;letter-spacing:.14em;opacity:.68;text-align:center}
+.gm-splash-v3-progress{width:100%;max-width:240px;height:5px;border-radius:12px;overflow:hidden;
+ background:#71809646;border:1px solid #a3b2c46e;margin-top:34px}
+.gm-splash-v3-progress span{display:block;width:38%;height:100%;border-radius:inherit;
+ background:linear-gradient(90deg,#7387a0,#f9fcff,#b3c1d2);
+ animation:gm-splash-v3-load 1.35s ease-in-out infinite}
+.gm-splash-v3 small{font-size:11px;font-weight:750;opacity:.85}
+.gm-splash-v3-footer{position:absolute;bottom:45px;left:0;right:0;text-align:center;
+ font-size:9px;letter-spacing:.2em;font-weight:800;opacity:.48}
+@keyframes gm-splash-v3-load{0%{transform:translateX(-110%)}100%{transform:translateX(280%)}}
+@keyframes gm-splash-v3-hover{50%{transform:translateY(-5px)}}
+.gm-chests-tutorial{justify-self:end;display:flex;align-items:center;gap:7px;margin:0 4px 0 auto;
+ padding:8px 11px;min-height:35px;background:linear-gradient(140deg,#424a57,#202632);
+ border:1px solid #6b798c;border-radius:12px;color:#edf2f9;font-size:10px;font-weight:850}
+.gm-chests-tutorial .gm-icon{width:16px;height:16px}
+/* 3D carved metallic chest presentation, with a coherent graphite/silver palette */
+.gm-boxes-v9 .gm-chests-title h2{color:var(--ink)}
+.gm-boxes-v9 .gm-chest-choice{background:linear-gradient(145deg,#343b48,#1a1f29 63%,#12151d)!important;
+ border:1px solid #505b6b!important;box-shadow:inset 0 1px #ffffff33,0 10px 18px #0002}
+.gm-boxes-v9 .gm-chest-choice.selected{border-color:#c4d2e4!important;
+ box-shadow:inset 0 0 0 1px #a9bcd7,0 8px 22px #889cbf3a!important}
+.gm-boxes-v9 .gm-chest-choice-info em{color:#c3d0e4}
+.gm-boxes-v9 .gm-chest-stage{background:radial-gradient(ellipse at 45% 24%,#354153,#1c232e 56%,#0d121b 100%)!important;
+ color:#edf2fb!important;border:1px solid #667487!important;box-shadow:inset 0 1px #fff3,0 12px 23px #0004!important}
+.gm-boxes-v9 .gm-chest-stage-stars{color:#d4e0ee}
+.gm-boxes-v9 .gm-chest-stage-halo{background:radial-gradient(ellipse at center,#d8e7ff59,transparent 70%)!important}
+.gm-boxes-v9 .gm-chest-stage-art{height:220px;perspective:850px;transform-style:preserve-3d}
+.gm-boxes-v9 .gm-chest-stage-art::after{content:"";position:absolute;width:70%;height:20px;border-radius:50%;
+ background:#0103099c;filter:blur(13px);bottom:10px;z-index:0}
+.gm-boxes-v9 .gm-chest-stage-art img{transform:perspective(850px) rotateY(-10deg) rotateX(4deg);
+ filter:drop-shadow(14px 17px 10px #03060aa6) drop-shadow(-4px -3px 8px #c3d8fc30);
+ animation:gm-chest-3d-hover 4s ease-in-out infinite}
+.gm-boxes-v9 .gm-chest-payout>span{background:linear-gradient(140deg,#343d4e,#1b2532);border-color:#6b7a91;color:#d2dbe8}
+.gm-boxes-v9 .gm-chests-qty button{background:linear-gradient(140deg,#374052,#1e2735);
+ border-color:#6d788a;color:#fff}
+.gm-boxes-v9 .gm-chests-qty button.active{background:linear-gradient(145deg,#e8f0fb,#8ea0ba)!important;
+ border-color:#f4f9ff!important;color:#152234!important;box-shadow:0 0 14px #b5cbee75!important}
+.gm-boxes-v9 .gm-chests-open,.gm-chests-close{background:linear-gradient(145deg,#f9fcff,#c5d0df 62%,#8798b0)!important;
+ border-color:#e2efff!important;color:#182436!important;box-shadow:inset 0 2px #fff,0 9px 22px #6d81a73c}
+.gm-chests-result{background:radial-gradient(ellipse at 50% 8%,#414d60,#1b2432 57%,#0a0e16)!important;
+ border-color:#97a5bd!important}
+.gm-chests-burst{background:radial-gradient(ellipse,#d7e7ff99,transparent 68%)}
+.gm-chests-finished-tag{background:#384658b8;border-color:#8194b0;color:#e2ebf7}
+.gm-chest-reward-tile{background:linear-gradient(145deg,#354153,#192230);border-color:#6a7b96}
+.gm-chests-reward-total{border-color:#94a8c4;background:#6e86a940}
+.gm-chests-flash{background:radial-gradient(ellipse,#f2f8ffae,transparent 65%)}
+.gm-chests-spark{color:#e3f0ff;text-shadow:0 0 12px #a3caff}
+@keyframes gm-chest-3d-hover{
+ 0%,100%{transform:perspective(850px) rotateY(-10deg) rotateX(4deg) translateY(0)}
+ 50%{transform:perspective(850px) rotateY(1deg) rotateX(1deg) translateY(-7px)}
+}
+@media(prefers-reduced-motion:reduce){.gm-splash-v3-seal,.gm-splash-v3-progress span,
+ .gm-boxes-v9 .gm-chest-stage-art img{animation:none!important}}

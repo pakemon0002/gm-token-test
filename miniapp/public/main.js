@@ -395,7 +395,13 @@ function App() {
         home: [['wallet', 'balance', '.gm-home-wallet', 'home.balance'], ['lightning', 'mining', '.gm-home-shortcuts button', 'home.shortcuts'], ['gift', 'boxes', '.gm-home-offer', 'home.reward']],
         mining: [['gm-coin-orbit', 'mining', '.gm-mining-coin-wrap', 'mining.coin'], ['diamond', 'claim', '.gm-mining-claim', 'mining.claim'], ['lightning', 'miningUpgrades', '.gm-mining-upgrades', 'mining.upgrades'], ['coins', 'upgrade', '.gm-upgrades-purchase', 'mining.purchase'], ['clock', 'speed', '.gm-mining-energy', 'mining.storage']],
         trade: [['candlesticks', 'market', '.terminal-quote', 'trade.price'], ['candlesticks', 'market', '.terminal-periods', 'trade.chart'], ['wallet', 'balance', '.terminal-wallet-line', 'trade.balance'], ['coins', 'market', '.terminal-buy-sell', 'trade.actions'], ['shield-check', 'next', '.gm-trade-quick-card', 'trade.quantity'], ['coins', 'next', '.gm-trade-quick-continue', 'trade.review']],
-        boxes: [['gift', 'boxes', '.gm-box-card', 'boxes.choose'], ['trophy', 'achievements', '.gm-box-open', 'boxes.claim']],
+        boxes: [
+            ['wallet', 'balance', '.gm-boxes-points', 'boxes.points'],
+            ['gift', 'boxes', '.gm-chests-list', 'boxes.choose'],
+            ['gift', 'boxes', '.gm-chest-stage-art', 'boxes.preview'],
+            ['coins', 'boxes', '.gm-chests-qty', 'boxes.quantity'],
+            ['shield-check', 'boxes', '.gm-chests-open', 'boxes.claim']
+        ],
         tasks: [['tasks', 'tasks', '.gm-task-filters', 'tasks.filter'], ['trophy', 'achievements', '.gm-task-list', 'tasks.claim']],
         profile: [['profile', 'profile', '.gm-league-card', 'profile.league'], ['trophy', 'frames', '.gm-frames-section', 'profile.frames']],
         more: [['settings', 'customize', '.gm-more-list', 'more.menu']],
@@ -418,8 +424,11 @@ function App() {
         'trade.actions': { ru: 'Выбери «Купить GM» или «Продать GM». Кнопки переключают форму ниже, не отправляя заявку. Это тренировочный игровой рынок, не биржа настоящих денег.', uk: 'Обери «Купити» або «Продати». Перемикач змінює форму, але нічого не надсилає.', pt: 'Escolha Comprar ou Vender. Os botões apenas alternam o formulário, sem enviar ordem.', en: 'Select Buy or Sell. These buttons only switch the form; they do not place an order.' },
         'trade.review': { ru: 'Эта кнопка открывает отдельное окно проверки заявки, где ты задаёшь цену и срок. Она не совершает сделку сразу. Отправка на игровой сервер будет только после ещё одного подтверждения.', uk: 'Кнопка відкриває перевірку ціни та терміну. Угода не надсилається одразу.', pt: 'Este botão abre a revisão de preço e prazo. A ordem não é enviada imediatamente.', en: 'This button opens the order review, where you set price and duration. It does not submit immediately.' },
         'trade.quantity': { ru: 'Укажи количество GM. Ниже сразу появится приблизительный итог в CR. Нажми «Продолжить», проверь цену и срок заявки в следующем окне, затем отдельно подтверди отправку.', uk: 'Вкажи кількість GM, переглянь приблизну суму в CR і відкрий перевірку заявки.', pt: 'Digite o valor em GM para ver a estimativa em CR e abrir a revisão da ordem.', en: 'Enter a GM amount, review the CR estimate, and continue to the separate confirmation step.' },
+        'boxes.points': { ru: 'Это твои POINTS. Их можно заработать за подтверждённые игровые сделки. Открой «Как получить», чтобы увидеть правила.', uk: 'Тут показано POINTS. Отримуй їх за підтверджені ігрові угоди.', pt: 'Este é o seu saldo de POINTS, obtido com negociações verificadas.', en: 'Your POINTS balance comes from verified in-game trades.' },
+        'boxes.preview': { ru: 'Здесь крупно показан выбранный 3D-сундук, награда за одно открытие и стоимость. Бронзовый, серебряный и золотой сундуки отличаются оформлением.', uk: 'Тут показано вибрану скриню, нагороду та вартість.', pt: 'Veja o baú selecionado, o prêmio fixo e o custo.', en: 'Preview the selected chest, fixed reward and cost.' },
+        'boxes.quantity': { ru: 'Выбери, сколько сундуков открыть сразу: 1, 3, 5 или 10. Ниже пересчитаются стоимость в POINTS и итоговая награда GM.', uk: 'Вибери 1, 3, 5 або 10 скринь. Вартість та нагорода перерахуються.', pt: 'Escolha 1, 3, 5 ou 10 baús. O custo e a recompensa são atualizados.', en: 'Choose 1, 3, 5 or 10 chests. Total POINTS and GM update automatically.' },
         'boxes.choose': { ru: 'Здесь выбирают тип бокса. В каждом — заранее утверждённые игровые награды; их состав и доступность показывает сервер.', uk: 'Тут обирають тип боксу. Нагороди визначає сервер.', pt: 'Escolha o tipo de caixa. As recompensas são aprovadas pelo servidor.', en: 'Choose a box type. Rewards and availability come from the server.' },
-        'boxes.claim': { ru: 'Кнопка открытия активируется только при достаточном количестве POINTS. Содержимое показывается после подтверждения операции сервером.', uk: 'Бокс відкривається за POINTS; результат підтверджує сервер.', pt: 'Abra caixas com POINTS; o resultado é confirmado pelo servidor.', en: 'Use POINTS to open a box; the reveal follows server confirmation.' },
+        'boxes.claim': { ru: 'Здесь открываются выбранные сундуки. Сервер сначала проверяет POINTS и лимит наград, затем начисляет виртуальные GM. Одна общая анимация показывает результат.', uk: 'Бокс відкривається за POINTS; результат підтверджує сервер.', pt: 'Abra caixas com POINTS; o resultado é confirmado pelo servidor.', en: 'Use POINTS to open a box; the reveal follows server confirmation.' },
         'tasks.filter': { ru: 'Фильтры разделяют задания на общие, социальные и игровые. Выполняй условия; неподтверждённые задания не начисляют наград.', uk: 'Фільтри розділяють завдання за типами. Нагороду дають лише за виконану умову.', pt: 'Filtre tarefas por tipo. Recompensas exigem conclusão verificada.', en: 'Filter tasks by type. Rewards require verified completion.' },
         'tasks.claim': { ru: 'Каждая карточка содержит условие и награду. После выполнения появится кнопка получения; выдача проверяется сервером.', uk: 'Кожна картка містить умову й нагороду. Видачу перевіряє сервер.', pt: 'Cada cartão mostra o objetivo e a recompensa verificada.', en: 'Each task shows an objective and a server-verified reward.' },
         'profile.league': { ru: 'Это твоя лига и опыт XP. Полоса показывает прогресс, а под ней указано, сколько XP осталось до следующего ранга.', uk: 'Це твоя ліга та XP. Смуга показує шлях до наступного рангу.', pt: 'Sua liga e XP. A barra mostra o progresso até o próximo nível.', en: 'Your league and XP are here. The progress bar shows how close the next rank is.' },
@@ -432,7 +441,7 @@ function App() {
         'support.ticket': { ru: 'Выбери категорию и опиши проблему минимум десятью символами. Обращение создаётся на сервере и появляется в списке; можно просматривать ответы.', uk: 'Оберіть категорію й опишіть проблему. Звернення збережеться на сервері.', pt: 'Escolha a categoria e descreva o problema. O chamado será salvo no servidor.', en: 'Choose a category and describe the issue. Your ticket is saved on the server.' }
     };
     const closeGuide = () => { if (guideScreen)
-        store.setItem('gm_guide_v21_' + guideScreen, '1'); setGuideScreen(''); setGuideStep(0); setGuideSpot(null); };
+        store.setItem(guideScreen === 'boxes' ? 'gm_guide_chests_v3_boxes' : 'gm_guide_v21_' + guideScreen, '1'); setGuideScreen(''); setGuideStep(0); setGuideSpot(null); };
     const openGuide = (name) => { if (guideCatalog[name]) {
         setGuideScreen(name);
         setGuideStep(0);
@@ -520,7 +529,7 @@ function App() {
     React.useEffect(() => {
         if (demo || ['splash', 'intro', 'reward'].includes(screen) || !guideCatalog[screen] || guideScreen)
             return;
-        if (!store.getItem('gm_guide_v21_' + screen)) {
+        if (!store.getItem(screen === 'boxes' ? 'gm_guide_chests_v3_boxes' : 'gm_guide_v21_' + screen)) {
             const timeout = setTimeout(() => openGuide(screen), 550);
             return () => clearTimeout(timeout);
         }
@@ -1338,15 +1347,24 @@ function App() {
         const days = [1, 2, 3, 4, 5, 6, 7].map(n => e('div', { key: n, className: 'gm-daily-day ' + (n <= Math.min(streak, 7) ? 'done' : '') }, n <= Math.min(streak, 7) ? icon('check', 16) : e('b', null, String(n)), e('small', null, 'ДЕНЬ ' + n)));
         return e('div', { className: 'gm-daily-v8' }, e('button', { type: 'button', className: 'gm-daily-close', onClick: goBack, 'aria-label': 'Назад' }, icon('chevron-left', 23)), e('div', { className: 'gm-daily-intro' }, e('div', { className: 'gm-daily-medal' }, icon('gift', 80, true)), e('span', null, 'DAILY REWARD'), e('h1', null, 'Ежедневная награда'), e('p', null, claimed ? 'Ты уже получил награду сегодня. Заходи завтра!' : 'Заходи каждый день и получай виртуальные GM.')), e('div', { className: 'gm-daily-amount gm-premium-card' }, e('small', null, 'НАГРАДА ЗА СЕГОДНЯ'), e('strong', null, (reward > 0 ? nf(reward, 0) : '—') + ' GM'), e('span', null, 'Серия: ' + streak + ' дн.')), e('div', { className: 'gm-daily-week gm-premium-card' }, e('b', null, 'Недельная серия'), e('div', { className: 'gm-daily-days' }, days)), e('button', { type: 'button', className: 'gm-daily-action', disabled: demo || !enabled || claimed, onClick: todayClaim }, icon(claimed ? 'check' : 'gift', 23), claimed ? 'Награда получена' : enabled ? 'Получить ' + nf(reward, 0) + ' GM' : 'Награды не включены'), e('button', { type: 'button', className: 'gm-daily-secondary', onClick: () => goto('mining') }, icon('lightning', 21), 'Перейти в Майнинг', icon('chevron-right', 17)), e('p', { className: 'gm-daily-foot' }, 'Награды подтверждаются на сервере. Серия считается по UTC-дням; повторное получение за день невозможно.'));
     }
-    function Splash() { return React.createElement("div", { className: "splash-view gm-splash-v2", role: "status", "aria-live": "polite" },
-        React.createElement("div", { className: "splash-glow" }),
-        React.createElement("div", { className: "splash-logo" },
-            React.createElement("img", { src: BRAND + 'gm-lettermark-metallic-transparent.png', alt: "GM TOKEN" })),
-        React.createElement("h1", null, "GM TOKEN"),
-        React.createElement("p", null, "PREMIUM SILVER \u00B7 PREMIUM GRAPHITE"),
-        React.createElement("div", { className: "gm-splash-progress" },
-            React.createElement("span", null)),
-        React.createElement("small", null, L('loading'))); }
+    function Splash() {
+        return React.createElement("div", { className: "splash-view gm-splash-v3", role: "status", "aria-live": "polite" },
+            React.createElement("div", { className: "gm-splash-v3-halo", "aria-hidden": "true" }),
+            React.createElement("div", { className: "gm-splash-v3-content" },
+                React.createElement("div", { className: "gm-splash-v3-badge" },
+                    "GM ",
+                    React.createElement("span", null, "\u25CF"),
+                    " TOKEN"),
+                React.createElement("div", { className: "gm-splash-v3-seal" },
+                    React.createElement("div", { className: "gm-splash-v3-seal-inner" },
+                        React.createElement("img", { src: BRAND + 'gm-lettermark-metallic-transparent.png', alt: "GM TOKEN" }))),
+                React.createElement("h1", null, "GM TOKEN"),
+                React.createElement("p", null, "\u0422\u0412\u041E\u042F \u0418\u0413\u0420\u041E\u0412\u0410\u042F \u042D\u041A\u041E\u0421\u0418\u0421\u0422\u0415\u041C\u0410"),
+                React.createElement("div", { className: "gm-splash-v3-progress", "aria-hidden": "true" },
+                    React.createElement("span", null)),
+                React.createElement("small", null, L('loading'))),
+            React.createElement("span", { className: "gm-splash-v3-footer" }, "MINING \u00B7 MARKET \u00B7 REWARDS"));
+    }
     function Mining() {
         const e = React.createElement;
         const rate = liveState?.mining?.rate_cents_day != null ? liveState.mining.rate_cents_day / 100 : gmRate(wallet);
@@ -1430,10 +1448,10 @@ function App() {
         const totalCost = selected.cost * boxCount;
         const totalReward = reward * boxCount;
         const boxImage = kind => './assets/chests/gm-chest-' + kind + '.svg';
-        return e('div', { className: 'gm-boxes-v9' }, top('Боксы', true, 'info'), e('div', { className: 'gm-chests-title' }, e('h2', null, 'Сундуки GM'), e('p', null, 'Выбери сундук и количество открытий. Награды фиксированные, без случайного выпадения.')), e('div', { className: 'gm-boxes-points gm-premium-card' }, e('div', null, e('small', null, 'Твои POINTS'), e('strong', null, nf(points, 0))), e('button', { type: 'button', onClick: () => setPointsGuideOpen(!pointsGuideOpen) }, 'Как получить ', icon(pointsGuideOpen ? 'chevron-up' : 'chevron-down', 17))), pointsGuideOpen ? e('section', { className: 'gm-points-guide gm-premium-card' }, e('b', null, 'Как получить POINTS'), e('p', null, 'POINTS начисляются за подтверждённый игровой торговый объём с учётом лимитов и проверок.'), e('button', { type: 'button', className: 'gm-points-guide-action', onClick: () => goto('trade') }, 'Перейти на рынок', icon('chevron-right', 18))) : null, e('div', { className: 'gm-chests-list', role: 'group', 'aria-label': 'Выбор сундука' }, catalog.map(x => e('button', { type: 'button', key: x.kind,
+        return e('div', { className: 'gm-boxes-v9' }, top('Боксы', true, 'info'), e('button', { type: 'button', className: 'gm-chests-tutorial', onClick: () => openGuide('boxes') }, icon('info', 17), 'Инструкция по сундукам'), e('div', { className: 'gm-chests-title' }, e('h2', null, 'Сундуки GM'), e('p', null, 'Выбери сундук и количество открытий. Награды фиксированные, без случайного выпадения.')), e('div', { className: 'gm-boxes-points gm-premium-card' }, e('div', null, e('small', null, 'Твои POINTS'), e('strong', null, nf(points, 0))), e('button', { type: 'button', onClick: () => setPointsGuideOpen(!pointsGuideOpen) }, 'Как получить ', icon(pointsGuideOpen ? 'chevron-up' : 'chevron-down', 17))), pointsGuideOpen ? e('section', { className: 'gm-points-guide gm-premium-card' }, e('b', null, 'Как получить POINTS'), e('p', null, 'POINTS начисляются за подтверждённый игровой торговый объём с учётом лимитов и проверок.'), e('button', { type: 'button', className: 'gm-points-guide-action', onClick: () => goto('trade') }, 'Перейти на рынок', icon('chevron-right', 18))) : null, e('div', { className: 'gm-chests-list', role: 'group', 'aria-label': 'Выбор сундука' }, catalog.map(x => e('button', { type: 'button', key: x.kind,
             className: 'gm-chest-choice ' + x.kind + (boxKind === x.kind ? ' selected' : ''),
             'aria-pressed': boxKind === x.kind, onClick: () => setBoxKind(x.kind) }, e('img', { src: boxImage(x.kind), alt: '', draggable: false, 'aria-hidden': true }), e('span', { className: 'gm-chest-choice-info' }, e('b', null, x.name), e('small', null, x.tag), e('em', null, nf(Number(payouts[x.kind] || 0), 0) + ' GM за открытие')), icon('chevron-right', 18)))), e('section', { className: 'gm-chest-stage gm-premium-card ' + selected.kind,
-            'aria-label': 'Выбран ' + selected.name }, e('div', { className: 'gm-chest-stage-stars', 'aria-hidden': true }, '✦  ·  ✦  ·  ✦'), e('h3', null, selected.name), e('p', null, 'Гарантированная награда'), e('div', { className: 'gm-chest-stage-art' }, e('span', { className: 'gm-chest-stage-halo', 'aria-hidden': true }), e('img', { key: selected.kind, src: boxImage(selected.kind), alt: selected.name, draggable: false })), e('div', { className: 'gm-chest-payout' }, e('span', null, 'За 1 сундук', e('strong', null, nf(reward, 0) + ' GM')), e('span', null, 'Стоимость', e('strong', null, nf(selected.cost, 0) + ' POINTS'))), e('div', { className: 'gm-chests-qty-label' }, 'Сколько открыть?'), e('div', { className: 'gm-chests-qty', role: 'group', 'aria-label': 'Количество открытий' }, [1, 3, 5, 10].map(count => e('button', {
+            'aria-label': 'Выбран ' + selected.name }, e('div', { className: 'gm-chest-stage-stars', 'aria-hidden': true }, '✦  ·  ✦  ·  ✦'), e('h3', null, selected.name), e('p', null, 'Гарантированная награда'), e('div', { className: 'gm-chest-stage-art gm-chest-3d' }, e('span', { className: 'gm-chest-stage-halo', 'aria-hidden': true }), e('img', { key: selected.kind, src: boxImage(selected.kind), alt: selected.name, draggable: false })), e('div', { className: 'gm-chest-payout' }, e('span', null, 'За 1 сундук', e('strong', null, nf(reward, 0) + ' GM')), e('span', null, 'Стоимость', e('strong', null, nf(selected.cost, 0) + ' POINTS'))), e('div', { className: 'gm-chests-qty-label' }, 'Сколько открыть?'), e('div', { className: 'gm-chests-qty', role: 'group', 'aria-label': 'Количество открытий' }, [1, 3, 5, 10].map(count => e('button', {
             key: count, type: 'button', 'aria-pressed': boxCount === count,
             className: boxCount === count ? 'active' : '',
             onClick: () => setBoxCount(count)
