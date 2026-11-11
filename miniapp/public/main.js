@@ -528,6 +528,15 @@ function App() {
     const [adminCode, setAdminCode] = React.useState('');
     const [adminAction, setAdminAction] = React.useState('grant');
     const [adminTeam, setAdminTeam] = React.useState([]);
+    const [adminTasks, setAdminTasks] = React.useState([]);
+    const [taskEditingId, setTaskEditingId] = React.useState('');
+    const [taskDeleteArmed, setTaskDeleteArmed] = React.useState('');
+    const [taskForm, setTaskForm] = React.useState({
+        id: '', title: '', description: '', category: 'Other', icon: 'tasks',
+        type: 'mining_claim_count', gte: '1', xp: '25', gm: '0', daily: false
+    });
+    const [task2fa, setTask2fa] = React.useState('');
+    const [taskSaving, setTaskSaving] = React.useState(false);
     const [adminFunds, setAdminFunds] = React.useState([]);
     const [adminAmount, setAdminAmount] = React.useState('1000');
     const [adminFrom, setAdminFrom] = React.useState('TREASURY');
@@ -887,6 +896,42 @@ function App() {
         catch (e) {
             flash('Ошибка: ' + String(e.message || e));
             return null;
+        }
+    };
+    const loadAdminTasks = async () => { const data = await adminRequest('/api/admin/task-catalog'); if (data?.tasks)
+        setAdminTasks(data.tasks); };
+    React.useEffect(() => { if (!demo && screen === 'admin' && ['owner', 'coowner'].includes(liveRole))
+        void loadAdminTasks(); }, [demo, screen, liveRole]);
+    const beginTaskEdit = (task) => {
+        setTaskEditingId(task.id);
+        setTaskDeleteArmed('');
+        setTaskForm({ id: task.id, title: task.title, description: task.description, category: task.category || 'Other', icon: task.icon || 'tasks',
+            type: task.condition?.type || 'mining_claim_count', gte: String(task.condition?.gte || 1),
+            xp: String(task.xp || 0), gm: String(task.gm || 0), daily: Boolean(task.daily) });
+    };
+    const saveAdminTask = async (action = 'save') => {
+        if (taskSaving || task2fa.length !== 6)
+            return;
+        setTaskSaving(true);
+        try {
+            const kind = action === 'delete' ? 'delete' : taskEditingId ? 'update' : 'create';
+            const data = await adminRequest('/api/admin/task-catalog', {
+                action: kind, id: taskForm.id, title: taskForm.title, description: taskForm.description, category: taskForm.category,
+                icon: taskForm.icon, condition: { type: taskForm.type, gte: Number(taskForm.gte) }, xp: Number(taskForm.xp),
+                gm: Number(taskForm.gm), daily: taskForm.daily, code: task2fa
+            });
+            if (data?.ok) {
+                setAdminTasks(data.tasks || []);
+                setTask2fa('');
+                setTaskDeleteArmed('');
+                setTaskEditingId('');
+                setTaskForm({ id: '', title: '', description: '', category: 'Other', icon: 'tasks', type: 'mining_claim_count', gte: '1', xp: '25', gm: '0', daily: false });
+                flash(kind === 'delete' ? 'Задание удалено' : 'Задание сохранено');
+                await refreshLive();
+            }
+        }
+        finally {
+            setTaskSaving(false);
         }
     };
     const adminChangeRole = () => adminRequest('/api/admin/moderators', { telegramId: adminId, code: adminCode, action: adminAction }).then(() => adminRequest('/api/admin/team').then(x => x && setAdminTeam(x.team || [])));
@@ -1508,6 +1553,91 @@ function App() {
             placeholder: tr('Ex.: meu saldo sumiu após abrir o Mini App…', 'Наприклад: після відкриття Mini App зник баланс…', 'E.g. my balance disappeared after opening the Mini App…', 'Например: после открытия Mini App пропал баланс…'),
             onChange: event => setSupportText(event.target.value) }), e('small', { className: 'gm-support-length' }, supportText.trim().length + ' / 3000 · ' + tr('mínimo 10 caracteres', 'мінімум 10 символів', 'minimum 10 characters', 'минимум 10 символов')), e('button', { type: 'button', className: 'gm-support-submit', disabled: demo || supportText.trim().length < 10, onClick: createTicket }, icon('send', 20), tr('Enviar chamado', 'Створити звернення', 'Submit ticket', 'Создать обращение'))), e('div', { className: 'gm-support-section-label' }, e('b', null, tr('Meus chamados', 'Мої звернення', 'My tickets', 'Мои обращения')), e('button', { type: 'button', onClick: loadTickets }, icon('refresh', 17), tr('Atualizar', 'Оновити', 'Refresh', 'Обновить'))), rows.length ? rows : e('p', { className: 'gm-support-empty' }, tr('Você ainda não tem chamados. Use o formulário acima.', 'Звернень поки немає. Скористайся формою вище.', 'No tickets yet. Use the form above.', 'Пока нет обращений. Создай обращение через форму выше.')), e('p', { className: 'gm-support-foot' }, 'При серьёзной ошибке баланса выбери «Баланс GM/CR». Не сообщай коды 2FA и секреты бота.'));
     }
+    function AdminTaskCatalog() {
+        const f = taskForm;
+        const setField = (field, val) => setTaskForm((old) => ({ ...old, [field]: val }));
+        const examples = [
+            ['mining_claim_count', 'Сборы GM'], ['trade_count', 'Исполненные сделки'], ['referrals_count', 'Приглашённые игроки'],
+            ['mining_level', 'Уровень профиля'], ['daily_claim', 'Ежедневная награда'], ['founder_slot', 'Первые 20 игроков']
+        ];
+        return React.createElement("section", { className: "gm-admin-task-editor gm-premium-card" },
+            React.createElement("div", { className: "gm-admin-task-head" },
+                icon('tasks', 39, true),
+                React.createElement("div", null,
+                    React.createElement("h3", null, "\u041A\u043E\u043D\u0441\u0442\u0440\u0443\u043A\u0442\u043E\u0440 \u0437\u0430\u0434\u0430\u043D\u0438\u0439"),
+                    React.createElement("p", null, "\u0421\u043E\u0437\u0434\u0430\u043D\u0438\u0435, \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u0435 \u0438 \u0443\u0434\u0430\u043B\u0435\u043D\u0438\u0435 \u0437\u0430\u0434\u0430\u043D\u0438\u0439 \u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u043D\u043E\u0439 \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u043E\u0439 \u0438 2FA. \u041F\u043E\u0434\u0434\u0435\u043B\u044C\u043D\u044B\u0435 \u043D\u0430\u0433\u0440\u0430\u0434\u044B \u043D\u0435 \u043D\u0430\u0447\u0438\u0441\u043B\u044F\u044E\u0442\u0441\u044F."))),
+            React.createElement("div", { className: "gm-admin-task-summary" },
+                React.createElement("b", null,
+                    adminTasks.length,
+                    " \u0437\u0430\u0434\u0430\u043D\u0438\u0439"),
+                React.createElement("button", { type: "button", onClick: () => void loadAdminTasks() },
+                    icon('refresh', 17),
+                    " \u041E\u0431\u043D\u043E\u0432\u0438\u0442\u044C")),
+            React.createElement("div", { className: "gm-admin-task-list" }, adminTasks.map((item) => React.createElement("button", { type: "button", className: 'gm-admin-task-row ' + (taskEditingId === item.id ? 'selected' : ''), key: item.id, onClick: () => beginTaskEdit(item) },
+                React.createElement("span", null, icon(item.icon || 'tasks', 25, true)),
+                React.createElement("span", { className: "gm-admin-task-text" },
+                    React.createElement("b", null, item.title),
+                    React.createElement("small", null,
+                        item.id,
+                        " \u00B7 +",
+                        item.xp || 0,
+                        " XP",
+                        item.gm ? ' · +' + item.gm + ' GM' : '')),
+                icon('chevron-right', 18)))),
+            React.createElement("div", { className: "gm-admin-task-controls" },
+                React.createElement("button", { type: "button", className: "gm-admin-task-new", onClick: () => {
+                        setTaskEditingId('');
+                        setTaskDeleteArmed('');
+                        setTaskForm({ id: '', title: '', description: '', category: 'Other', icon: 'tasks', type: 'mining_claim_count', gte: '1', xp: '25', gm: '0', daily: false });
+                    } },
+                    icon('plus', 19),
+                    " \u041D\u043E\u0432\u043E\u0435 \u0437\u0430\u0434\u0430\u043D\u0438\u0435")),
+            React.createElement("div", { className: "gm-admin-task-form" },
+                React.createElement("h4", null, taskEditingId ? 'Редактирование: ' + taskEditingId : 'Создать задание'),
+                React.createElement("label", { htmlFor: "gm-task-id" }, "ID (\u043B\u0430\u0442\u0438\u043D\u0438\u0446\u0430, \u0431\u0435\u0437 \u043F\u0440\u043E\u0431\u0435\u043B\u043E\u0432)"),
+                React.createElement("input", { id: "gm-task-id", value: f.id, disabled: Boolean(taskEditingId), maxLength: 60, placeholder: "my_unique_task", onChange: (e) => setField('id', e.target.value) }),
+                React.createElement("label", { htmlFor: "gm-task-title" }, "\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435"),
+                React.createElement("input", { id: "gm-task-title", value: f.title, maxLength: 70, placeholder: "\u0421\u0442\u0430\u043B\u044C\u043D\u0430\u044F \u043B\u0435\u0433\u0435\u043D\u0434\u0430", onChange: (e) => setField('title', e.target.value) }),
+                React.createElement("label", { htmlFor: "gm-task-description" }, "\u0423\u0441\u043B\u043E\u0432\u0438\u0435 \u0434\u043B\u044F \u0438\u0433\u0440\u043E\u043A\u0430"),
+                React.createElement("textarea", { id: "gm-task-description", rows: 3, maxLength: 210, value: f.description, placeholder: "\u041D\u0430\u043F\u0440\u0438\u043C\u0435\u0440: \u0441\u043E\u0431\u0435\u0440\u0438 GM 5 \u0440\u0430\u0437", onChange: (e) => setField('description', e.target.value) }),
+                React.createElement("div", { className: "gm-admin-task-fields" },
+                    React.createElement("label", null,
+                        "\u041A\u0430\u0442\u0435\u0433\u043E\u0440\u0438\u044F",
+                        React.createElement("select", { value: f.category, onChange: (e) => setField('category', e.target.value) },
+                            React.createElement("option", { value: "Other" }, "\u0418\u0433\u0440\u043E\u0432\u044B\u0435"),
+                            React.createElement("option", { value: "Social" }, "\u0421\u043E\u0446\u0438\u0430\u043B\u044C\u043D\u044B\u0435"))),
+                    React.createElement("label", null,
+                        "\u0418\u043A\u043E\u043D\u043A\u0430",
+                        React.createElement("select", { value: f.icon, onChange: (e) => setField('icon', e.target.value) }, ['tasks', 'lightning', 'candlesticks', 'friends', 'gift', 'trophy', 'crown', 'clock', 'diamond', 'coins', 'star'].map(x => React.createElement("option", { key: x, value: x }, x))))),
+                React.createElement("label", null, "\u041F\u0440\u043E\u0432\u0435\u0440\u044F\u0435\u043C\u043E\u0435 \u0443\u0441\u043B\u043E\u0432\u0438\u0435"),
+                React.createElement("select", { value: f.type, onChange: (e) => { setField('type', e.target.value); if (e.target.value === 'daily_claim' || e.target.value === 'founder_slot')
+                        setField('gte', '1'); } }, examples.map(([type, label]) => React.createElement("option", { key: type, value: type }, label))),
+                React.createElement("div", { className: "gm-admin-task-fields" },
+                    React.createElement("label", null,
+                        "\u0421\u043A\u043E\u043B\u044C\u043A\u043E \u043D\u0443\u0436\u043D\u043E",
+                        React.createElement("input", { inputMode: "numeric", type: "number", min: 1, max: 10000, value: f.gte, disabled: f.type === 'daily_claim' || f.type === 'founder_slot', onChange: (e) => setField('gte', e.target.value) })),
+                    React.createElement("label", null,
+                        "\u041D\u0430\u0433\u0440\u0430\u0434\u0430 XP",
+                        React.createElement("input", { inputMode: "numeric", type: "number", min: 0, max: 1000, value: f.xp, onChange: (e) => setField('xp', e.target.value) }))),
+                React.createElement("label", null,
+                    "\u041D\u0430\u0433\u0440\u0430\u0434\u0430 \u0432\u0438\u0440\u0442\u0443\u0430\u043B\u044C\u043D\u044B\u0445 GM (0\u2013100)",
+                    React.createElement("input", { inputMode: "numeric", type: "number", min: 0, max: 100, value: f.gm, onChange: (e) => setField('gm', e.target.value) })),
+                React.createElement("label", { className: "gm-admin-task-check" },
+                    React.createElement("input", { type: "checkbox", checked: f.daily, disabled: f.type !== 'daily_claim', onChange: (e) => setField('daily', e.target.checked) }),
+                    React.createElement("span", null, "\u041F\u043E\u0432\u0442\u043E\u0440\u044F\u0442\u044C \u0435\u0436\u0435\u0434\u043D\u0435\u0432\u043D\u043E (\u0442\u043E\u043B\u044C\u043A\u043E \u0437\u0430 \u0435\u0436\u0435\u0434\u043D\u0435\u0432\u043D\u0443\u044E \u043D\u0430\u0433\u0440\u0430\u0434\u0443)")),
+                React.createElement("label", null, "\u041A\u043E\u0434 2FA \u0432\u043B\u0430\u0434\u0435\u043B\u044C\u0446\u0430"),
+                React.createElement("input", { value: task2fa, maxLength: 6, inputMode: "numeric", autoComplete: "one-time-code", placeholder: "6 \u0446\u0438\u0444\u0440", onChange: (e) => setTask2fa(e.target.value) }),
+                React.createElement("div", { className: "gm-admin-task-buttons" },
+                    React.createElement("button", { type: "button", className: "gm-admin-task-save", disabled: demo || taskSaving || task2fa.length !== 6 || !f.id || !f.title || !f.description, onClick: () => void saveAdminTask() },
+                        icon('check', 19),
+                        " ",
+                        taskSaving ? 'Сохранение…' : 'Сохранить задание'),
+                    taskEditingId ? React.createElement("button", { type: "button", className: "gm-admin-task-delete", disabled: demo || taskSaving || task2fa.length !== 6, onClick: () => taskDeleteArmed === f.id ? void saveAdminTask('delete') : setTaskDeleteArmed(f.id) },
+                        icon('minus', 18),
+                        " ",
+                        taskDeleteArmed === f.id ? 'Подтвердить удаление' : 'Удалить') : null),
+                React.createElement("small", { className: "gm-admin-task-foot" }, "\u0414\u043B\u044F \u043E\u043F\u0435\u0440\u0430\u0446\u0438\u0439 \u043D\u0443\u0436\u0435\u043D \u0441\u0432\u0435\u0436\u0438\u0439 \u043A\u043E\u0434 2FA. GM \u0431\u0435\u0440\u0443\u0442\u0441\u044F \u0438\u0437 \u0438\u0433\u0440\u043E\u0432\u043E\u0433\u043E \u0444\u043E\u043D\u0434\u0430 DAILY. \u0423\u0441\u043B\u043E\u0432\u0438\u044F \u043F\u0440\u043E\u0432\u0435\u0440\u044F\u044E\u0442\u0441\u044F \u0441\u0435\u0440\u0432\u0435\u0440\u043E\u043C \u2014 \u0437\u0430\u0434\u0430\u043D\u0438\u044F \u043F\u043E \u043F\u043E\u0434\u043F\u0438\u0441\u043A\u0435 \u0431\u0435\u0437 \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0438 \u0441\u043E\u0437\u0434\u0430\u0442\u044C \u043D\u0435\u043B\u044C\u0437\u044F.")));
+    }
     function AdminTestGrants() {
         const e = React.createElement;
         return e('section', { className: 'test-grants form-surface pearl-card', 'aria-label': 'Тестовые начисления GM и CR' }, e('div', { className: 'test-grants-heading' }, icon('coins', 40, true), e('div', null, e('strong', null, 'Тестовые начисления'), e('small', null, 'GM / CR / POINTS · только Owner / Co-Owner'))), e('p', { className: 'test-grants-note' }, testCurrency === 'POINTS' ? 'POINTS — игровые очки, не токен. Выдача ограничена, требует 2FA и фиксируется в журнале.' : 'GM/CR берутся из существующих резервов. Все начисления проходят 2FA и фиксируются в журнале.'), e('label', null, 'Кому начислить'), e('div', { className: 'test-grants-options', role: 'group', 'aria-label': 'Получатель' }, [['self', 'Себе'], ['other-owner', 'Совладельцу'], ['id', 'Игроку']].map(([id, title]) => e('button', { type: 'button', className: testRecipient === id ? 'selected' : '', key: id, onClick: () => setTestRecipient(id), 'aria-pressed': testRecipient === id }, title))), testRecipient === 'id' ? e('input', { value: testUserId, placeholder: 'Telegram ID зарегистрированного игрока', inputMode: 'numeric', onChange: event => setTestUserId(event.target.value), 'aria-label': 'Telegram ID игрока' }) : null, e('label', null, 'Игровая валюта'), e('div', { className: 'test-grants-options', role: 'group', 'aria-label': 'Валюта' }, ['GM', 'CR', 'POINTS'].map(currency => e('button', { key: currency, type: 'button', className: testCurrency === currency ? 'selected' : '', onClick: () => { setTestCurrency(currency); setTestAmount(currency === 'POINTS' ? '300' : currency === 'GM' ? '1000' : '10000'); }, 'aria-pressed': testCurrency === currency }, icon(currency === 'GM' ? 'gm-coin-orbit' : currency === 'POINTS' ? 'trophy' : 'coins', 23), currency))), e('label', null, 'Сумма ' + testCurrency), e('input', { value: testAmount, inputMode: 'decimal', placeholder: 'Например, 1000', onChange: event => setTestAmount(event.target.value), 'aria-label': 'Сумма тестового начисления' }), e('div', { className: 'test-grants-presets' }, (testCurrency === 'POINTS' ? ['100', '300', '1000'] : testCurrency === 'GM' ? ['1000', '5000', '10000'] : ['10000', '50000', '100000']).map(n => e('button', { key: n, type: 'button', onClick: () => setTestAmount(n) }, n))), e('small', { className: 'test-grants-limit' }, testCurrency === 'POINTS' ? 'До 1 000 POINTS за операцию и 5 000 POINTS в UTC-день на игрока.' : testCurrency === 'GM' ? 'До 10 000 GM за операцию и 50 000 GM в UTC-день на игрока.' : 'До 100 000 CR за операцию и 500 000 CR в UTC-день на игрока.'), e('label', null, 'Зачем выдаём'), e('textarea', { rows: 2, value: testReason, onChange: event => setTestReason(event.target.value), 'aria-label': 'Причина начисления' }), e('label', null, 'Код 2FA владельца'), e('input', { value: testCode, inputMode: 'numeric', type: 'text', autoComplete: 'one-time-code', maxLength: 6, placeholder: '6 цифр из приложения 2FA', onChange: event => setTestCode(event.target.value), 'aria-label': 'Код TOTP' }), e(GButton, { theme, disabled: demo || testBusy || !testAmount || testCode.length !== 6, onClick: testGrant, icon: 'shield-check' }, testBusy ? 'Проверяем начисление...' : 'Выдать тестовые ' + testCurrency), e('p', { className: 'test-grants-footer' }, 'Другой совладелец или игрок должен хотя бы один раз открыть GM TOKEN. При необходимости между начислениями дождись нового кода 2FA.'));
@@ -1533,6 +1663,7 @@ function App() {
                 React.createElement("b", null, b),
                 React.createElement("small", null, "\u0421\u0435\u0440\u0432\u0435\u0440\u043D\u044B\u0435 \u0434\u0430\u043D\u043D\u044B\u0435")))),
             AdminTestGrants(),
+            AdminTaskCatalog(),
             React.createElement("h3", { className: "section-title" }, "\u0423\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0438\u0435"),
             React.createElement("div", { className: "admin-actions pearl-card" },
                 React.createElement("button", { onClick: async () => { const x = await adminRequest('/api/admin/team'); if (x)
