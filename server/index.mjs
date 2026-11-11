@@ -157,6 +157,10 @@ const routes=async(req,res)=>{
   if(p==='/api/holders/refresh'&&verb==='POST')return send(res,200,await holders.refresh(id));
   if(p==='/api/me'&&verb==='GET'){const r=stmt('SELECT end_at,reason,issued_at FROM restrictions WHERE user_id=?').get(id);return send(res,200,{user:current,wallet:stmt('SELECT * FROM wallets WHERE user_id=?').get(id),restriction:r&&(!r.end_at||r.end_at>now())?r:null})}
   if(p==='/api/history'&&verb==='GET')return send(res,200,{events:stmt('SELECT * FROM journal WHERE info LIKE ? ORDER BY at DESC LIMIT 50').all(`%"user":"${id}"%`)});
+  if(p==='/api/tickets/my'&&verb==='GET'){
+   const rows=stmt('SELECT id,category,body,status,priority,created_at,updated_at,resolved_at FROM tickets WHERE user_id=? ORDER BY created_at DESC LIMIT 100').all(id);
+   return send(res,200,{tickets:rows});
+  }
   if(p==='/api/tickets'&&verb==='GET'){
    cleanTickets();const mod=['owner','coowner','moderator'].includes(current.role);
    const rows=mod?stmt('SELECT * FROM tickets WHERE status!=\'auto_support\' ORDER BY CASE priority WHEN \'P1\' THEN 1 WHEN \'P2\' THEN 2 ELSE 3 END,created_at ASC LIMIT 100').all():stmt('SELECT * FROM tickets WHERE user_id=? ORDER BY created_at DESC LIMIT 100').all(id);
@@ -172,6 +176,11 @@ const routes=async(req,res)=>{
    const isUrgent=priority!=='P3';
    if(dailyCount>=(isUrgent?20:10)||openCount>=10)throw Error('too many support tickets; use an existing ticket or wait');
    tx(()=>{stmt('INSERT INTO tickets(id,user_id,category,body,status,priority,updated_at,created_at) VALUES(?,?,?,?,?,?,?,?)').run(ticket,id,category,body,priority==='P3'?'auto_support':'open',priority,t,t);log(id,'ticket_created',{user:id,ticket,category})});
+   // The two owners are notified by the existing Telegram bot and can reply in the Mini App.
+   for(const ownerId of new Set(ownerIds)){
+    if(ownerId===id)continue;
+    sendTelegram(ownerId,'GM TOKEN · новое обращение #'+ticket.slice(0,8)+'\nКатегория: '+category+'\nПриоритет: '+priority+'\n'+body.slice(0,300)+'\nОткройте GM TOKEN → Поддержка для ответа.');
+   }
    return send(res,201,{ticket,priority,autoSupport:priority==='P3'?'2 attempts maximum':'manual review immediately'});
   }
   const match=p.match(/^\/api\/tickets\/([a-f0-9-]+)\/(auto|claim|reply|resolve|reopen)$/);
@@ -198,6 +207,7 @@ const routes=async(req,res)=>{
     if(isMod&&ticket.assigned_to!==id&&current.role!=='owner'&&current.role!=='coowner')throw Error('ticket is not assigned to you');
     tx(()=>{stmt('INSERT INTO ticket_messages(id,ticket_id,author,body,created_at) VALUES(?,?,?,?,?)').run(crypto.randomUUID(),ticketId,id,body,t);stmt('UPDATE tickets SET first_reply_at=COALESCE(first_reply_at,?),updated_at=?,status=? WHERE id=?').run(isMod?t:null,t,isMod?'in_review':'open',ticketId)});
     if(isMod)sendTelegram(ticket.user_id,'GM TOKEN Support: новый ответ в обращении '+ticketId);
+    else for(const ownerId of new Set(ownerIds)){if(ownerId!==id)sendTelegram(ownerId,'GM TOKEN Support: игрок ответил в обращении #'+ticketId.slice(0,8)+'\n'+body.slice(0,300));}
     return send(res,200,{sent:true});
    }
    if(action==='resolve'){
@@ -208,7 +218,9 @@ const routes=async(req,res)=>{
    }
    if(action==='reopen'){
     if(!isOwner)throw Error('only ticket author can reopen');
-    stmt('UPDATE tickets SET status=\'open\',resolved_at=NULL,assigned_to=NULL,claimed_at=NULL,first_reply_at=NULL,updated_at=? WHERE id=?').run(t,ticketId);return send(res,200,{reopened:true});
+    stmt('UPDATE tickets SET status=\'open\',resolved_at=NULL,assigned_to=NULL,claimed_at=NULL,first_reply_at=NULL,updated_at=? WHERE id=?').run(t,ticketId);
+    for(const ownerId of new Set(ownerIds)){if(ownerId!==id)sendTelegram(ownerId,'GM TOKEN Support: обращение #'+ticketId.slice(0,8)+' открыто повторно.');}
+    return send(res,200,{reopened:true});
    }
   }
   if(p==='/api/admin/stats'&&verb==='GET'){
