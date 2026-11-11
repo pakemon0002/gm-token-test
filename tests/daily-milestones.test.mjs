@@ -21,7 +21,7 @@ test('server-backed UTC daily streak: day 5/10/30 milestones, replay protection,
  const child=spawn(process.execPath,['--experimental-sqlite','server/index.mjs'],{
   cwd:new URL('..',import.meta.url).pathname,
   env:{...process.env,PORT:String(port),DB_PATH:dbPath,BOT_TOKEN:TOKEN,
-   PUBLIC_APP_URL:'',BOT_WEBHOOK_SECRET:'',BOT_POLLING:'0',GM_PRIVATE_TEST_ECONOMY:'1',
+   PUBLIC_APP_URL:'',BOT_WEBHOOK_SECRET:'',BOT_POLLING:'0',OWNER_TELEGRAM_IDS:'783001,783002',OWNER_TOTP_SECRETS:'{}',GM_PRIVATE_TEST_ECONOMY:'1',
    GM_ENABLE_REWARDS:'1',GM_DAILY_MILESTONE_TEST:'1',DAILY_REWARD_GM:'10'},
   stdio:['ignore','ignore','pipe']});
  let stderr='';child.stderr.on('data',x=>stderr+=String(x));
