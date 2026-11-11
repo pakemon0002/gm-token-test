@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="GM TOKEN">
+<defs>
+ <radialGradient id="face" cx="40%" cy="25%" r="78%"><stop stop-color="#252e3d"/><stop offset=".47" stop-color="#0b0f19"/><stop offset=".86" stop-color="#04060b"/><stop offset="1" stop-color="#1b2230"/></radialGradient>
+ <linearGradient id="outer" x1=".13" y1=".1" x2=".85" y2=".92"><stop stop-color="#f5faff"/><stop offset=".18" stop-color="#8e9aaa"/><stop offset=".33" stop-color="#e6effa"/><stop offset=".52" stop-color="#3d4a5a"/><stop offset=".72" stop-color="#d5deea"/><stop offset=".88" stop-color="#677889"/><stop offset="1" stop-color="#f7faff"/></linearGradient>
+ <linearGradient id="metal" x1=".1" y1="0" x2=".86" y2="1"><stop stop-color="#f8fbff"/><stop offset=".25" stop-color="#aebbcf"/><stop offset=".47" stop-color="#fcffff"/><stop offset=".62" stop-color="#718094"/><stop offset=".82" stop-color="#e4ecf4"/><stop offset="1" stop-color="#77859a"/></linearGradient>
+ <linearGradient id="rim" x1="0" y1="0" x2=".94" y2="1"><stop stop-color="#ccd6e1"/><stop offset=".34" stop-color="#344355"/><stop offset=".56" stop-color="#f8fcff"/><stop offset="1" stop-color="#637184"/></linearGradient>
+ <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9"/></filter>
+</defs>
+<circle cx="512" cy="512" r="493" fill="#080c14"/>
+<circle cx="512" cy="512" r="481" fill="none" stroke="url(#outer)" stroke-width="20"/>
+<circle cx="512" cy="512" r="452" fill="#121923" stroke="#5d6c7f" stroke-width="15"/>
+<circle cx="512" cy="512" r="423" fill="url(#face)" stroke="url(#rim)" stroke-width="19"/>
+<circle cx="512" cy="512" r="394" fill="none" stroke="#c9d8ee" stroke-opacity=".35" stroke-width="4"/>
+<circle cx="512" cy="512" r="376" fill="none" stroke="#0e1523" stroke-width="17"/>
+<path d="M192 335 A372 372 0 0 1 794 269" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width="10" stroke-linecap="round"/>
+<path d="M828 663 A370 370 0 0 1 253 777" fill="none" stroke="#9dacbc" stroke-opacity=".32" stroke-width="7" stroke-linecap="round"/>
+<path d="M208 630 C285 760 430 823 544 818" fill="none" stroke="#e6f1ff" stroke-opacity=".16" stroke-width="5"/>
+<g transform="translate(0 14) skewX(-7)">
+ <text x="512" y="587" text-anchor="middle" font-family="Arial Black,Arial,Helvetica,sans-serif" font-size="267" font-weight="900" letter-spacing="-35" fill="#0e1520" stroke="#05070e" stroke-width="16">GM</text>
+ <text x="512" y="575" text-anchor="middle" font-family="Arial Black,Arial,Helvetica,sans-serif" font-size="267" font-weight="900" letter-spacing="-35" fill="url(#metal)" stroke="#e7f1fc" stroke-opacity=".8" stroke-width="2">GM</text>
+</g>
+<path d="M304 706 Q512 758 720 706" fill="none" stroke="#e4f1ff" stroke-opacity=".15" stroke-width="3"/>
+<g fill="#dce8f7" opacity=".64"><circle cx="512" cy="169" r="3"/><circle cx="169" cy="512" r="3"/><circle cx="855" cy="512" r="3"/><circle cx="512" cy="855" r="3"/></g>
+</svg>

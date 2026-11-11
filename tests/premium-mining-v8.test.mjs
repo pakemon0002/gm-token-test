@@ -14,7 +14,7 @@ const sign=id=>{
  p.set('hash',crypto.createHmac('sha256',key).update(data).digest('hex'));
  return p.toString();
 };
-test('500 GM/day Mining uses existing pool, 24h storage and idempotent claim; Daily and Boxes have approved reserves',async t=>{
+test('525 GM/day level-one Mining (500 base +5% upgrade) uses existing pool, 24h storage and idempotent claim; Daily and Boxes have approved reserves',async t=>{
  const folder=mkdtempSync(join(tmpdir(),'gm-premium-v8-'));
  const dbPath=join(folder,'premium.sqlite'),port=51000+Math.floor(Math.random()*1000);
  const base='http://127.0.0.1:'+port;
@@ -45,7 +45,7 @@ test('500 GM/day Mining uses existing pool, 24h storage and idempotent claim; Da
  assert.equal((await call(u,'/api/bootstrap')).status,200);
  const initial=await call(u,'/api/game/status');
  assert.equal(initial.status,200);
- assert.equal(initial.data.mining.rate_cents_day,50000);
+ assert.equal(initial.data.mining.rate_cents_day,52500);
  assert.equal(initial.data.config.daily_enabled,true);
  assert.equal(initial.data.config.daily_reward_gm,10);
  assert.equal(initial.data.config.boxes_enabled,true);
@@ -63,11 +63,11 @@ test('500 GM/day Mining uses existing pool, 24h storage and idempotent claim; Da
  db.close();
  const mining=await call(u,'/api/game/status');
  assert.equal(mining.status,200,JSON.stringify(mining.data));
- assert.ok(mining.data.mining.pending_cents>=49900&&mining.data.mining.pending_cents<=50000,
-  'new level one miner collects almost 500 GM in 24 hours, subject to floor rounding');
+ assert.ok(mining.data.mining.pending_cents>=52400&&mining.data.mining.pending_cents<=52500,
+  'new level one miner collects almost 525 GM in 24 hours, subject to floor rounding');
  const collect=await call(u,'/api/mining/claim',{operationId:crypto.randomUUID()});
  assert.equal(collect.status,200,JSON.stringify(collect.data));
- assert.ok(collect.data.gm_cents>=49900);
+ assert.ok(collect.data.gm_cents>=52400);
  const again=await call(u,'/api/mining/claim',{operationId:crypto.randomUUID()});
  assert.equal(again.status,400);
  const audit=await call(u,'/api/admin/supply-audit');
