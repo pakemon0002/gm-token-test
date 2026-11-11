@@ -26,26 +26,27 @@ test('new Telegram accounts do not inherit another account onboarding completion
  assert.equal(done.get(key('10101','boxes')),'1');
  assert.equal(new Set(['gm_intro_v24_10101','gm_intro_v24_20202']).size,2);
 });
-test('chest 3D preview has distinguishable polished materials, depth and lock details',()=>{
- const engine=read('miniapp/public/assets/chests/gm-chest-3d.js');
- execFileSync(process.execPath,['--check',new URL('../miniapp/public/assets/chests/gm-chest-3d.js',import.meta.url).pathname]);
- for(const part of ['Faceted','function disc(','Bright lip','prism(0,.53,.767','gl.uniform1f(uniforms.uPitch,-.23)',
-  'vec3 key=normalize','vec3 fill=normalize','float chrome=pow','float shade=.58']){
-  assert.ok(engine.includes(part),part);
+test('approved chest badges are premium 2D graphics and no WebGL is loaded',()=>{
+ const source=read('miniapp/src/main.tsx');
+ const html=read('miniapp/public/preview.html');
+ const htmlVite=read('miniapp/index.html');
+ for(const kind of ['bronze','silver','gold']){
+  const svg=read('miniapp/public/assets/chests/gm-chest-badge-'+kind+'.svg');
+  assert.ok(svg.includes('GM TOKEN '+kind+' chest badge'));
  }
- for(const label of ['bronze','silver','gold'])assert.ok(engine.includes(label+':{metal:'));
+ assert.ok(!html.includes('gm-chest-3d.js'));
+ assert.ok(!htmlVite.includes('gm-chest-3d.js'));
+ assert.ok(!source.includes('GMChest3D'));
+ assert.ok(source.includes('gm-flat-catalog'));
 });
-test('chest actions remain reachable beneath Telegram fixed bottom navigation',()=>{
- const app=read('miniapp/src/main.tsx');
- const css=read('miniapp/public/styles.css');
- assert.ok(app.includes("className:'gm-chest-stage-meta'"));
- assert.ok(app.includes("className:'gm-chest-3d-hint'"));
+
+test('chest actions remain visible above Telegram navigation',()=>{
+ const app=read('miniapp/src/main.tsx'),css=read('miniapp/public/styles.css');
+ assert.ok(app.includes("className:'gm-flat-opening'"));
  assert.ok(app.includes("className:'gm-chests-actions'"));
  assert.ok(app.includes("'Не хватает '+nf(totalCost-points,0)+' POINTS'"));
- assert.ok(app.includes("'Как заработать POINTS'"));
- assert.ok(css.includes("padding-bottom:calc(175px + var(--tg-safe-area-inset-bottom,0px))!important"));
- assert.ok(css.includes('.gm-chests-how-points'));
- assert.ok(css.includes('.gm-boxes-v9 .gm-chest-stage-art'));
- assert.ok(css.includes('gm-chest-stage-meta'));
- assert.equal(read('miniapp/src/styles.css'),css,'deployed stylesheet must match React sources');
+ assert.ok(app.includes('Как заработать POINTS'));
+ assert.ok(css.includes('padding:5px 1px calc(154px + var(--tg-safe-area-inset-bottom,0px))!important'));
+ assert.ok(css.includes('.gm-flat-opening .gm-chests-open'));
+ assert.equal(read('miniapp/src/styles.css'),css);
 });
