@@ -2056,3 +2056,53 @@ html,body,.application,.application button,.application input,.application texta
 @media(max-width:365px){.gm-daily-milestones-grid{gap:5px}.gm-daily-milestone{min-height:76px;padding:8px 3px}
  .gm-daily-milestone>b{font-size:11px}}
 @media(prefers-reduced-motion:reduce){.gm-streak-flame::before,.gm-streak-flame svg{animation:none!important}}
+
+
+/* GM TOKEN 3.0 mobile depth book: compact exchange-style bid/ask columns */
+.application .terminal-data-panel{min-width:0;max-width:100%;overflow:hidden}
+.application .terminal-data-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.application .terminal-data-tabs button{min-width:0;display:flex;align-items:center;
+ justify-content:center;min-height:39px;padding:7px 3px;text-align:center;
+ font-variant-numeric:tabular-nums;font-size:clamp(9px,2.75vw,11px);line-height:1.25}
+.application .terminal-depth{min-width:0;max-width:100%;overflow:hidden;
+ border:1px solid var(--border);border-radius:17px;padding:10px 9px;
+ background:linear-gradient(145deg,var(--surface),var(--gm-v2-bottom, #121822))}
+.application .terminal-depth-head{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:9px;padding:2px 7px 9px;text-align:center;color:var(--muted)}
+.application .terminal-depth-head>span{display:flex;gap:5px;justify-content:center;
+ align-items:baseline;font-size:10px;font-weight:750}
+.application .terminal-depth-head small{font-size:9px}
+.application .terminal-depth-columns{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ gap:9px!important;align-items:start;min-width:0;max-width:100%}
+.application .terminal-depth-column{min-width:0;overflow:hidden}
+.application .terminal-depth-label{display:flex;align-items:center;justify-content:center;
+ gap:6px;min-height:28px;margin-bottom:5px;font-size:10px;letter-spacing:.025em}
+.application .terminal-depth-label i{width:6px;height:6px;flex-shrink:0;border-radius:50%}
+.application .terminal-depth-row{position:relative;isolation:isolate;min-width:0;display:grid!important;
+ grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;
+ gap:3px;min-height:29px;padding:5px 5px!important;margin:2px 0;
+ border-radius:7px;border:1px solid #7e8da31e;box-sizing:border-box;
+ font-variant-numeric:tabular-nums}
+.application .terminal-depth-row>span,.application .terminal-depth-row>b{
+ position:relative;z-index:2;min-width:0;font:650 clamp(9px,2.55vw,11px) 'Inter',system-ui,sans-serif!important;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.25}
+.application .terminal-depth-row>span{text-align:left}
+.application .terminal-depth-row>b{text-align:right}
+.application .terminal-depth-row>.terminal-depth-bar{position:absolute;z-index:0;inset:0 auto 0 0;
+ height:100%;border-radius:6px;opacity:.16;pointer-events:none}
+.application .terminal-depth-row.ask>.terminal-depth-bar{inset:0 0 0 auto}
+.application .terminal-depth-bottom{display:flex;justify-content:space-between;gap:8px;
+ min-width:0;margin-top:10px;padding:10px 5px 0;border-top:1px solid var(--border);
+ font-size:10px;font-variant-numeric:tabular-nums}
+.application .terminal-depth-bottom>span{min-width:0;display:flex;align-items:baseline;gap:5px}
+.application .terminal-depth-bottom b{overflow:hidden;text-overflow:ellipsis}
+.application .terminal-table-empty{min-height:57px;margin:0!important;display:grid;
+ place-items:center;text-align:center;font-size:10px;line-height:1.45;color:var(--muted)}
+.application .gm-trade-quick-presets button,.application .gm-chests-qty button,
+.application .gm-chest-choice,.application .gm-points-guide-action{
+ display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.3}
+.application .gm-chest-choice{text-align:left;justify-content:space-between}
+.application .gm-chest-choice-info{text-align:left;align-items:start}
+@media(max-width:365px){.application .terminal-depth{padding:8px 6px}
+ .application .terminal-depth-columns{gap:5px!important}
+ .application .terminal-depth-row{padding:5px 3px!important;gap:2px}}
