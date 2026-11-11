@@ -494,6 +494,12 @@ function App(){
  const [liveAchievements,setLiveAchievements]=React.useState([] as any[]);
  const [liveReferrals,setLiveReferrals]=React.useState(null as any);
  const [liveRanks,setLiveRanks]=React.useState(null as any);
+ const [holderRanks,setHolderRanks]=React.useState(null as any);
+ const [holderStatus,setHolderStatus]=React.useState(null as any);
+ const [holderLoading,setHolderLoading]=React.useState(false);
+ const [holderMoreBusy,setHolderMoreBusy]=React.useState(false);
+ const [holderShowPosition,setHolderShowPosition]=React.useState(false);
+ const [holderConsentBusy,setHolderConsentBusy]=React.useState(false);
  const [shopQuote,setShopQuote]=React.useState(null as any);
  const [orderType,setOrderType]=React.useState('limit');
  const [orderPrice,setOrderPrice]=React.useState('');
@@ -530,20 +536,112 @@ function App(){
  const [testReason,setTestReason]=React.useState('Начисление виртуальных GM/CR для проверки торговой системы');
  const [testCode,setTestCode]=React.useState('');
  const [testBusy,setTestBusy]=React.useState(false);
+ const walletLanguage=(pt:string,uk:string,en:string,ru:string)=>actualLang==='pt'?pt:actualLang==='uk'?uk:actualLang==='ru'?ru:en;
+ const holderAuthHeaders=()=>({Authorization:'tma '+(webapp?.initData||''),'Content-Type':'application/json'});
+ const fetchHolders=async(offset=0,append=false)=>{
+  if(demo||!webapp?.initData)return null;
+  if(offset===0)setHolderLoading(true);else setHolderMoreBusy(true);
+  try{
+   const response=await fetch('/api/holders?limit=30&offset='+offset,{headers:holderAuthHeaders(),cache:'no-store'});
+   const data=await response.json();if(!response.ok)throw Error(data.error||'Holders unavailable');
+   setHolderRanks((old:any)=>append&&old?{...data,users:[...(old.users||[]),...(data.users||[])]}:data);
+   return data;
+  }catch(error:any){setTonError(String(error.message||error));return null}
+  finally{setHolderLoading(false);setHolderMoreBusy(false)}
+ };
+ const getHolderStatus=async()=>{
+  if(!webapp?.initData)return;
+  try{
+   const response=await fetch('/api/holders/status',{headers:holderAuthHeaders(),cache:'no-store'});
+   if(response.ok){const d=await response.json();setHolderStatus(d);return d}
+  }catch{}
+  return null;
+ };
+ React.useEffect(()=>{if(demo||screen!=='leaderboard')return;void fetchHolders();void getHolderStatus()},[screen,demo]);
  React.useEffect(()=>{
   if(demo||!webapp?.initData)return;
   const sdk=(window as any).TON_CONNECT_UI;
   if(!sdk?.TonConnectUI){setTonError('TON Connect SDK unavailable');return}
+  let disposed=false;
   try{
    const instance=new sdk.TonConnectUI({manifestUrl:window.location.origin+'/tonconnect-manifest.json'});
    tonUi.current=instance;
-   const unsubscribe=instance.onStatusChange((connected:any)=>{setTonAccount(connected?.account?.address||'');setTonError('')},(error:any)=>setTonError(String(error?.message||error)));
-   return()=>{if(typeof unsubscribe==='function')unsubscribe();tonUi.current=null};
+   const prepareProof=async()=>{
+    if(disposed)return;
+    instance.setConnectRequestParameters({state:'loading'});
+    try{
+     const response=await fetch('/api/holders/challenge',{method:'POST',headers:holderAuthHeaders(),body:'{}'});
+     const challenge=await response.json();
+     if(!response.ok||!challenge.payload)throw Error(challenge.error||'Could not prepare wallet proof');
+     if(!disposed)instance.setConnectRequestParameters({state:'ready',value:{tonProof:challenge.payload}});
+    }catch(error:any){
+     if(!disposed){instance.setConnectRequestParameters(null);setTonError(String(error?.message||error))}
+    }
+   };
+   const unsubscribe=instance.onStatusChange(async(connected:any)=>{
+    if(disposed)return;
+    const address=connected?.account?.address||'';
+    setTonAccount(address);
+    if(!address){void getHolderStatus();void prepareProof();return}
+    const signed=connected?.connectItems?.tonProof;
+    if(!signed||!('proof' in signed)){
+     await getHolderStatus();return;
+    }
+    try{
+     const proof=signed.proof;
+     const response=await fetch('/api/holders/verify',{
+      method:'POST',headers:holderAuthHeaders(),body:JSON.stringify({
+       address:connected.account.address,network:connected.account.chain,
+       public_key:connected.account.publicKey,
+       proof:{...proof,state_init:connected.account.walletStateInit}
+      })
+     });
+     const outcome=await response.json();
+     if(!response.ok||!outcome.verified)throw Error(outcome.error||'TON proof rejected');
+     if(!disposed){setTonError('');await getHolderStatus();void fetchHolders()}
+    }catch(error:any){if(!disposed)setTonError(String(error?.message||error))}
+   },(error:any)=>{if(!disposed)setTonError(String(error?.message||error))});
+   void prepareProof();void getHolderStatus();
+   return()=>{disposed=true;if(typeof unsubscribe==='function')unsubscribe();tonUi.current=null};
   }catch(error:any){setTonError(String(error?.message||error))}
  },[demo]);
- const walletLanguage=(pt:string,uk:string,en:string,ru:string)=>actualLang==='pt'?pt:actualLang==='uk'?uk:actualLang==='ru'?ru:en;
- const connectTonWallet=async()=>{try{if(!tonUi.current)throw Error('TON Connect is not ready');await tonUi.current.openModal()}catch(err:any){setTonError(String(err?.message||err))}};
- const disconnectTonWallet=async()=>{try{await tonUi.current?.disconnect();setTonAccount('')}catch(err:any){setTonError(String(err?.message||err))}};
+ const connectTonWallet=async()=>{
+  try{
+   if(!tonUi.current)throw Error('TON Connect is not ready');
+   if(tonUi.current.connected){await tonUi.current.disconnect();setTonAccount('')}
+   const response=await fetch('/api/holders/challenge',{method:'POST',headers:holderAuthHeaders(),body:'{}'});
+   const data=await response.json();
+   if(!response.ok||!data.payload)throw Error(data.error||'TON proof challenge unavailable');
+   tonUi.current.setConnectRequestParameters({state:'ready',value:{tonProof:data.payload}});
+   await tonUi.current.openModal();
+  }catch(error:any){setTonError(String(error?.message||error))}
+ };
+ const disconnectTonWallet=async()=>{
+  try{
+   const response=await fetch('/api/holders/disconnect',{method:'POST',headers:holderAuthHeaders(),body:'{}'});
+   if(!response.ok)throw Error('Unable to unlink verified wallet');
+   await tonUi.current?.disconnect();setTonAccount('');setTonError('');
+   await getHolderStatus();void fetchHolders();
+  }catch(error:any){setTonError(String(error?.message||error))}
+ };
+ const setHolderOptIn=async(allowed:boolean)=>{
+  setHolderConsentBusy(true);
+  try{
+   const response=await fetch('/api/holders/consent',{method:'POST',headers:holderAuthHeaders(),body:JSON.stringify({opt_in:allowed})});
+   const data=await response.json();if(!response.ok)throw Error(data.error||'Consent update failed');
+   setHolderStatus(data);void fetchHolders();
+  }catch(error:any){setTonError(String(error?.message||error))}
+  finally{setHolderConsentBusy(false)}
+ };
+ const refreshHolderBalance=async()=>{
+  setHolderLoading(true);
+  try{
+   const response=await fetch('/api/holders/refresh',{method:'POST',headers:holderAuthHeaders(),body:'{}'});
+   const data=await response.json();if(!response.ok)throw Error(data.error||'Blockchain balance not verified');
+   void fetchHolders();void getHolderStatus();
+  }catch(error:any){setTonError(String(error?.message||error))}
+  finally{setHolderLoading(false)}
+ };
  const [backendStatus,setBackendStatus]=React.useState('Проверяем вход через Telegram…');
  const [modal,setModal]=React.useState('');
  const [boxReveal,setBoxReveal]=React.useState({kind:'bronze',gm:0});
