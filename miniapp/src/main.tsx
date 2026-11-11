@@ -524,6 +524,7 @@ function App(){
  const [orderDuration,setOrderDuration]=React.useState('24h');
  const [tradeReady,setTradeReady]=React.useState(false);
  const [serverHistory,setServerHistory]=React.useState([] as any[]);
+ const [myTicketHistory,setMyTicketHistory]=React.useState([] as any[]);
  const [demo,setDemo]=React.useState(true);
  React.useEffect(()=>{if(screen!=='splash'||demo)return;const timeout=setTimeout(()=>{setScreen(store.getItem('gm_onboarding_v21_complete')?'home':'intro')},1350);return()=>clearTimeout(timeout)},[screen,demo]);
  React.useEffect(()=>{if(demo||['splash','intro','reward'].includes(screen)||!guideCatalog[screen]||guideScreen)return;
@@ -838,7 +839,11 @@ function App(){
   if(x){setModal('');setTradeReady(false);flash(x.auction?'Заявка на аукционе · проверь «Мои ордера»':'Заявка размещена · проверь «Мои ордера»');}
  };
  const cancelLiveOrder=async(id:string)=>{await gameAction('/api/exchange/cancel',{orderId:id})};
- const loadHistory=async()=>{const x=await api('/api/history');if(x)setServerHistory(x.events||[])};
+ const loadHistory=async()=>{
+  const [x,y]=await Promise.all([api('/api/history',undefined,true),api('/api/tickets/my',undefined,true)]);
+  if(x)setServerHistory(x.events||[]);
+  if(y)setMyTicketHistory(y.tickets||[]);
+ };
  React.useEffect(()=>{if(!demo&&screen==='history')void loadHistory()},[screen,demo]);
  const tradePreview=()=>{
   const issue=tradeIssue();if(issue){flash(issue);return;}
@@ -1529,7 +1534,39 @@ function Referrals(){
  );
 }
 
- function History(){return <>{top(L('history'),true,'clock')}{!serverHistory.length&&<div className="empty-state gm-history-empty">{icon('clock',62,true)}<h3>История операций пока пуста</h3><p>Новые операции появятся здесь автоматически после подтверждения сервером.</p></div>}{serverHistory.map((x:any)=><div key={x.id} className="pearl-card form-surface"><b>{x.kind}</b><small>{new Date(x.at*1000).toLocaleString('ru-RU')}</small><p>{x.info}</p></div>)}</>}
+ function History(){
+  const labels:Record<string,string>={
+   mining_claim:'Сбор GM',daily_claim:'Ежедневная награда',
+   ticket_created:'Обращение в поддержку',admin_test_grant:'Тестовое начисление',
+   admin_points_grant:'Начисление POINTS',task_claimed:'Задание выполнено',
+   achievement_claimed:'Достижение открыто',box_open:'Открытие бокса',
+   mining_upgrade:'Улучшение майнинга',trade:'Игровая сделка',
+   order_placed:'Торговая заявка'
+  };
+  const statusLabels:Record<string,string>={open:'Открыто',auto_support:'Автопомощь',in_review:'На рассмотрении',resolved:'Решено',closed:'Закрыто'};
+  return <>
+   {top(L('history'),true,'clock')}
+   <section className="gm-history-section gm-premium-card">
+    <div className="gm-history-section-head">{icon('clock',26,true)}<div><b>История операций</b><small>Проверенные действия в игре</small></div></div>
+    {!serverHistory.length?<div className="gm-history-placeholder">{icon('clock',29)}<p>Операций пока нет. Новые записи появятся автоматически.</p></div>:null}
+    {serverHistory.map((x:any)=><div className="gm-history-entry" key={x.id}>
+      <span className="gm-history-entry-icon">{icon(x.kind==='mining_claim'?'lightning':x.kind?.includes('ticket')?'shield-check':x.kind?.includes('trade')?'candlesticks':'check',24,true)}</span>
+      <span><b>{labels[x.kind]||String(x.kind||'Операция').replace(/_/g,' ')}</b><small>{new Date(Number(x.at)*1000).toLocaleString(actualLang==='uk'?'uk-UA':'ru-RU')}</small></span>
+      {icon('check',17)}
+     </div>)}
+   </section>
+   <section className="gm-history-section gm-premium-card">
+    <div className="gm-history-section-head">{icon('shield-check',26,true)}<div><b>История обращений</b><small>Запросы в поддержку и их статусы</small></div></div>
+    {!myTicketHistory.length?<p className="gm-history-support-empty">У тебя пока нет обращений в поддержку.</p>:null}
+    {myTicketHistory.map((ticket:any)=><button type="button" className="gm-history-ticket" key={ticket.id} onClick={()=>goto('support')}>
+      <span className="gm-history-ticket-avatar">{icon('info',22)}</span>
+      <span><b>{ticket.category}</b><small>{new Date(Number(ticket.created_at)*1000).toLocaleDateString(actualLang==='uk'?'uk-UA':'ru-RU')} · {String(ticket.body||'').slice(0,90)}</small></span>
+      <strong className={'gm-history-ticket-status '+ticket.status}>{statusLabels[ticket.status]||ticket.status}</strong>
+     </button>)}
+    <button type="button" className="gm-history-support-button" onClick={()=>goto('support')}>{icon('shield-check',19)} Открыть поддержку {icon('chevron-right',17)}</button>
+   </section>
+  </>;
+ }
  function Achievements(){const items=liveAchievements;
  const planned=[['origin','trophy','Первопроходец','Один из первых 20 игроков — уникальная рамка'],['first_claim','lightning','Искра GM','Первый сбор майнинга'],['mining_25','gm-coin-orbit','Стальной майнер','25 улучшений майнинга'],['mining_50','diamond','Серебряная легенда','50 улучшений майнинга'],['collector','gift','Хранитель артефактов','Собери серию игровых наград'],['community','friends','Сила сообщества','Пригласи друзей'],['immortal','crown','GM Immortal','Достигни максимальной лиги']];
  return <>{top(L('achievements'),true,'info')}<div className="achievement-list">{items.map((t:any)=><div className="earn-item pearl-card" key={t.id}>{icon(t.icon||'trophy',45,true)}<span><b>{t.title||t.id}</b><small>{t.description||''}{!demo?` · ${t.xp||0} XP`:''}</small></span>{!demo&&<button disabled={t.claimed||!t.available} onClick={async()=>{const x=await gameAction('/api/achievements/claim',{id:t.id});if(x)await refreshLive()}}>{t.claimed?'Получено':t.available?'Получить':'Не выполнено'}</button>}</div>)}</div><div className="gm-achievement-planned"><h3>{L('achievements')} · {L('locked')}</h3>
