@@ -30,12 +30,14 @@ test('Mining has single central GM coin and progress from server storage/capacit
 });
 test('Boxes only reveal the server-approved reward after successful operation',()=>{
  for(const code of [source(),compiled()]){
-  assert.ok(has(code,'gm-box-result'));
-  assert.ok(has(code,'gm-crate'));
+  assert.ok(has(code,'gm-chests-result'));
+  assert.ok(has(code,'gm-chests-rewards-grid'));
+  assert.ok(has(code,'gm-chest-stage-art'));
+  assert.ok(has(code,'gm-chests-qty'));
   assert.ok(has(code,'gm_cents!=null'));
   assert.ok(has(code,"api('/api/boxes/open'"));
   assert.ok(has(code,'setBoxReveal'));
-  assert.ok(has(code,'disabled:demo||!enabled||points<cost||boxBusy'));
+  assert.ok(has(code,'disabled:demo||!enabled||!reward||boxBusy||points<totalCost'));
  }
 });
 test('Daily Reward and Holding retain server verified payouts and themed actions',()=>{
