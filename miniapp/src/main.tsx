@@ -1595,12 +1595,17 @@ function Splash(){return <div className="splash-view gm-splash-v3" role="status"
     e('div',{className:'gm-chests-subtotal'},
      e('span',null,'Итого: ',e('b',null,'+'+nf(totalReward,0)+' GM')),
      e('span',null,nf(totalCost,0)+' POINTS')),
-    e('button',{type:'button',className:'gm-chests-open',
-     disabled:demo||!enabled||!reward||boxBusy||points<totalCost,
-     onClick:()=>openBox(selected.kind,boxCount)},
-     icon('gift',20),
-     boxBusy?'Подтверждаем...':!enabled?'Сундуки недоступны':points<totalCost?
-      'Не хватает POINTS':'Открыть ×'+boxCount)),
+    e('div',{className:'gm-chests-actions'},
+     e('button',{type:'button',className:'gm-chests-open',
+      disabled:demo||!enabled||!reward||boxBusy||points<totalCost,
+      onClick:()=>openBox(selected.kind,boxCount)},
+      icon('gift',20),
+      boxBusy?'Подтверждаем...':!enabled?'Сундуки недоступны':points<totalCost?
+       'Не хватает '+nf(totalCost-points,0)+' POINTS':'Открыть ×'+boxCount),
+     !demo&&enabled&&reward&&points<totalCost?
+      e('button',{type:'button',className:'gm-chests-how-points',
+       onClick:()=>{setPointsGuideOpen(true);openGuide('points')}},
+       icon('info',16),'Как заработать POINTS',icon('chevron-right',16)):null)),
    e('p',{className:'gm-boxes-honest'},
     'Все результаты рассчитаны заранее: один сундук приносит фиксированное количество виртуальных GM. Массовое открытие списывает POINTS и начисляет награду одной серверной операцией.')
   );
