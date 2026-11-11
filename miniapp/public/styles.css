@@ -1803,3 +1803,9 @@ html,body,.application,.application button,.application input,.application texta
     font-size:11px!important;line-height:1.3;text-align:center;
   }
 }
+
+/* Crisp scalable GM mining emblem, independent of legacy low-resolution PNG. */
+.application .gm-mining-coin-face{
+ background:#080c14 url('./assets/brand-original-reference/gm-mining-coin-hd.svg') center/cover no-repeat;
+}
+.application .gm-mining-coin-face .brand-coin{opacity:0!important}
