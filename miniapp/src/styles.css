@@ -2136,3 +2136,93 @@ html,body,.application,.application button,.application input,.application texta
  border-color:#b0bed2!important}
 @media(max-width:355px){.gm-chests-tutorial-row{gap:5px}
  .gm-chests-tutorial-row .gm-chests-tutorial{font-size:9px}}
+
+
+/* GM TOKEN 3.1: studio-lit 3D treasure chest + mobile-safe action layout. */
+.gm-boxes-v9{padding-bottom:calc(175px + var(--tg-safe-area-inset-bottom,0px))!important}
+.gm-boxes-v9 .gm-chest-stage{
+ --chest-accent:#c49171;
+ position:relative;isolation:isolate;gap:10px!important;
+ overflow:hidden;padding:15px 13px 18px!important;
+ background:
+  radial-gradient(ellipse 75% 35% at 50% 31%,color-mix(in srgb,var(--chest-accent) 25%,transparent),transparent 82%),
+  radial-gradient(ellipse 110% 55% at 50% 0%,#3d4b5e 0%,#1c2835 61%,#0e141e 100%)!important;
+ border:1px solid #8392a4!important;
+ box-shadow:inset 0 1px #f0f7ff54,inset 0 -24px 30px #060b164d,0 16px 33px #0004!important;
+}
+.gm-boxes-v9 .gm-chest-stage.silver{--chest-accent:#c3dfff}
+.gm-boxes-v9 .gm-chest-stage.gold{--chest-accent:#f3ca75}
+.gm-boxes-v9 .gm-chest-stage::before{
+ content:"";position:absolute;pointer-events:none;inset:0;
+ background:linear-gradient(123deg,#ffffff14,transparent 27%,#ffffff05 60%,transparent 75%);
+ border-radius:inherit;z-index:0
+}
+.gm-boxes-v9 .gm-chest-stage>*{position:relative;z-index:1}
+.gm-chest-stage-meta{display:flex;align-items:center;justify-content:space-between;
+ gap:10px;border-bottom:1px solid #cad8eb28;padding:2px 2px 11px;
+ color:#b5c4d8;text-align:left}
+.gm-chest-stage-meta span{font-size:9px;letter-spacing:.19em;font-weight:800}
+.gm-chest-stage-meta b{font-size:9px;font-weight:850;letter-spacing:.09em;
+ border-radius:99px;padding:6px 10px;border:1px solid color-mix(in srgb,var(--chest-accent) 60%,#556273);
+ background:color-mix(in srgb,var(--chest-accent) 12%,transparent);
+ color:var(--chest-accent)}
+.gm-boxes-v9 .gm-chest-stage h3{color:#f7f9ff;font-size:19px;letter-spacing:-.025em;line-height:1.3}
+.gm-boxes-v9 .gm-chest-stage>p:not(.gm-chest-3d-hint){color:#afc0d3;font-size:10px}
+.gm-boxes-v9 .gm-chest-stage-art{
+ width:100%;height:240px;min-height:240px!important;
+ display:grid;place-items:center;position:relative;isolation:isolate;
+ margin:0 auto -5px;overflow:visible;
+ background:radial-gradient(ellipse 43% 55% at 50% 48%,color-mix(in srgb,var(--chest-accent) 35%,transparent),transparent 85%);
+}
+.gm-boxes-v9 .gm-chest-stage-art:before{
+ content:"";position:absolute;z-index:-1;top:11%;left:12%;width:76%;height:77%;
+ border-radius:50%;pointer-events:none;
+ background:radial-gradient(circle at 52% 45%,#c8d8ec1c,transparent 68%);
+ border:1px solid #e1efff17;box-shadow:0 0 0 17px #b0c5de08,0 0 0 43px #c8d8ef07;
+}
+.gm-boxes-v9 .gm-chest-stage-art::after{
+ content:"";position:absolute;z-index:0;bottom:17px;left:14%;
+ width:72%;height:19px;border-radius:50%;pointer-events:none;
+ background:#02060ab0;filter:blur(12px)
+}
+.gm-boxes-v9 .gm-chest-stage-art .gm-chest-3d-canvas{
+ z-index:4;inset:0;width:100%;height:100%;
+ touch-action:pan-y;
+}
+.gm-chest-3d-hint{display:flex;align-items:center;justify-content:center;gap:5px;
+ margin:-6px 0 3px!important;font-size:10px;letter-spacing:.02em;color:#aebcd1!important}
+.gm-chest-3d-hint .gm-icon{width:15px;height:15px}
+.gm-boxes-v9 .gm-chest-payout{gap:8px}
+.gm-boxes-v9 .gm-chest-payout>span{
+ min-height:60px;padding:11px 7px;
+ border:1px solid #7b8da9;background:linear-gradient(150deg,#2e3a4b,#1d2736);
+ border-radius:13px;box-shadow:inset 0 1px #ffffff23;
+}
+.gm-boxes-v9 .gm-chest-payout strong{font-size:14px;color:#f8fbff}
+.gm-boxes-v9 .gm-chests-qty{gap:7px}
+.gm-boxes-v9 .gm-chests-qty button{min-height:43px;font-weight:900}
+.gm-chests-actions{display:grid;gap:9px;margin-top:4px;min-width:0}
+.gm-boxes-v9 .gm-chests-open{min-height:54px!important;border-radius:15px;
+ display:flex;align-items:center;justify-content:center;gap:8px;
+ line-height:1.2;text-align:center;font-size:12px;
+ color:#1d2835!important;
+ background:linear-gradient(150deg,#f9fcff,#cad6e7 62%,#9cabc0)!important;
+ border:1px solid #e8f3ff!important;
+ box-shadow:inset 0 2px 3px #ffffff9b,0 8px 22px #0003}
+.gm-boxes-v9 .gm-chests-open:disabled{color:#8996a9!important;
+ border-color:#5b6a80!important;
+ background:linear-gradient(150deg,#475364,#303948)!important;
+ opacity:.86!important;box-shadow:inset 0 1px #ffffff13!important}
+.gm-chests-how-points{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+ min-height:39px;padding:8px 7px;border:1px solid #8293a9;border-radius:12px;
+ background:#253247;color:#e2ecf8;font-size:11px;font-weight:750;text-align:center}
+.gm-chests-how-points .gm-icon{width:15px;height:15px;flex:none}
+.gm-boxes-v9 .gm-chests-subtotal{padding:5px 2px;color:#d8e3f1}
+@media(max-width:380px){
+ .gm-boxes-v9 .gm-chest-stage-art{height:217px;min-height:217px!important}
+ .gm-boxes-v9 .gm-chest-stage{padding:13px 11px 15px!important}
+ .gm-boxes-v9 .gm-chests-open{min-height:51px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .gm-boxes-v9 .gm-chest-stage-art::before{animation:none!important}
+}

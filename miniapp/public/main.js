@@ -377,6 +377,10 @@ function App() {
     const [screen, setScreen] = React.useState('splash');
     const [locale, setLocale] = React.useState(store.getItem('gm_lang') || 'auto');
     const [introStep, setIntroStep] = React.useState(0);
+    // Tutorial completion belongs to the authenticated Telegram account, not the device.
+    const [authenticatedUserId, setAuthenticatedUserId] = React.useState('');
+    const tutorialKey = (section) => 'gm_tour_v24_' + authenticatedUserId + '_' + section;
+    const onboardingKey = () => authenticatedUserId ? 'gm_intro_v24_' + authenticatedUserId : '';
     const telegramLanguage = String(webapp?.initDataUnsafe?.user?.language_code || navigator.language || 'en').toLowerCase().split(/[-_]/)[0];
     const actualLang = locale === 'auto' ? telegramLanguage : locale;
     gmActiveLocale = actualLang;
@@ -452,8 +456,9 @@ function App() {
         'support.send': { ru: 'После ввода темы и описания нажми здесь. Обращение попадёт в серверный список поддержки, а его статус появится ниже. По возможности укажи раздел, время и текст ошибки.', uk: 'Після опису натисни сюди. Звернення збережеться на сервері, а статус з’явиться нижче.', pt: 'Depois de descrever o problema, toque aqui. O chamado será salvo e o status aparecerá abaixo.', en: 'After entering the topic and description, tap here. The server stores your ticket and its status appears below.' },
         'support.ticket': { ru: 'Выбери категорию и опиши проблему минимум десятью символами. Обращение создаётся на сервере и появляется в списке; можно просматривать ответы.', uk: 'Оберіть категорію й опишіть проблему. Звернення збережеться на сервері.', pt: 'Escolha a categoria e descreva o problema. O chamado será salvo no servidor.', en: 'Choose a category and describe the issue. Your ticket is saved on the server.' }
     };
-    const closeGuide = () => { if (guideScreen)
-        store.setItem(guideScreen === 'boxes' ? 'gm_guide_chests_v3_boxes' : 'gm_guide_v21_' + guideScreen, '1'); setGuideScreen(''); setGuideStep(0); setGuideSpot(null); };
+    const resetGuide = () => { setGuideScreen(''); setGuideStep(0); setGuideSpot(null); };
+    const closeGuide = () => { if (guideScreen && authenticatedUserId)
+        store.setItem(tutorialKey(guideScreen), '1'); resetGuide(); };
     const openGuide = (name) => { if (guideCatalog[name]) {
         setGuideScreen(name);
         setGuideStep(0);
@@ -536,16 +541,20 @@ function App() {
     const [serverHistory, setServerHistory] = React.useState([]);
     const [myTicketHistory, setMyTicketHistory] = React.useState([]);
     const [demo, setDemo] = React.useState(true);
-    React.useEffect(() => { if (screen !== 'splash' || demo)
-        return; const timeout = setTimeout(() => { setScreen(store.getItem('gm_onboarding_v21_complete') ? 'home' : 'intro'); }, 1350); return () => clearTimeout(timeout); }, [screen, demo]);
     React.useEffect(() => {
-        if (demo || ['splash', 'intro', 'reward'].includes(screen) || !guideCatalog[screen] || guideScreen)
+        if (screen !== 'splash' || demo || !authenticatedUserId)
             return;
-        if (!store.getItem(screen === 'boxes' ? 'gm_guide_chests_v3_boxes' : 'gm_guide_v21_' + screen)) {
+        const timeout = setTimeout(() => setScreen(store.getItem(onboardingKey()) ? 'home' : 'intro'), 1350);
+        return () => clearTimeout(timeout);
+    }, [screen, demo, authenticatedUserId]);
+    React.useEffect(() => {
+        if (demo || !authenticatedUserId || ['splash', 'intro', 'reward'].includes(screen) || !guideCatalog[screen] || guideScreen)
+            return;
+        if (!store.getItem(tutorialKey(screen))) {
             const timeout = setTimeout(() => openGuide(screen), 550);
             return () => clearTimeout(timeout);
         }
-    }, [screen, demo, guideScreen]);
+    }, [screen, demo, guideScreen, authenticatedUserId]);
     const [liveRole, setLiveRole] = React.useState('player');
     const [adminId, setAdminId] = React.useState('');
     const [adminCode, setAdminCode] = React.useState('');
@@ -821,7 +830,7 @@ function App() {
             if (navStack.current.length > 30)
                 navStack.current.shift();
         }
-        closeGuide();
+        resetGuide();
         setScreen(route);
         setModal('');
         try {
@@ -863,6 +872,7 @@ function App() {
             .then(d => {
             if (!valid)
                 return;
+            setAuthenticatedUserId(String(d.user?.id || ''));
             setDemo(false);
             setScreen('splash');
             setLiveRole(d.user?.role || 'player');
@@ -1486,15 +1496,17 @@ function App() {
             } }, icon('info', 17), 'Как получить POINTS')), e('div', { className: 'gm-chests-title' }, e('h2', null, 'Сундуки GM'), e('p', null, 'Выбери сундук и количество открытий. Награды фиксированные, без случайного выпадения.')), e('div', { className: 'gm-boxes-points gm-premium-card' }, e('div', null, e('small', null, 'Твои POINTS'), e('strong', null, nf(points, 0))), e('button', { type: 'button', onClick: () => setPointsGuideOpen(!pointsGuideOpen) }, 'Как получить ', icon(pointsGuideOpen ? 'chevron-up' : 'chevron-down', 17))), pointsGuideOpen ? e('section', { className: 'gm-points-guide gm-premium-card' }, e('b', null, 'Как получить POINTS'), e('p', null, 'POINTS начисляются за подтверждённый игровой торговый объём с учётом лимитов и проверок.'), e('button', { type: 'button', className: 'gm-points-tour-trigger', onClick: () => { setPointsGuideOpen(true); openGuide('points'); } }, 'Инструкция по POINTS', icon('info', 17)), e('button', { type: 'button', className: 'gm-points-guide-action', onClick: () => goto('trade') }, 'Перейти на рынок', icon('chevron-right', 18))) : null, e('div', { className: 'gm-chests-list', role: 'group', 'aria-label': 'Выбор сундука' }, catalog.map(x => e('button', { type: 'button', key: x.kind,
             className: 'gm-chest-choice ' + x.kind + (boxKind === x.kind ? ' selected' : ''),
             'aria-pressed': boxKind === x.kind, onClick: () => setBoxKind(x.kind) }, e('img', { src: boxImage(x.kind), alt: '', draggable: false, 'aria-hidden': true }), e('span', { className: 'gm-chest-choice-info' }, e('b', null, x.name), e('small', null, x.tag), e('em', null, nf(Number(payouts[x.kind] || 0), 0) + ' GM за открытие')), icon('chevron-right', 18)))), e('section', { className: 'gm-chest-stage gm-premium-card ' + selected.kind,
-            'aria-label': 'Выбран ' + selected.name }, e('div', { className: 'gm-chest-stage-stars', 'aria-hidden': true }, '✦  ·  ✦  ·  ✦'), e('h3', null, selected.name), e('p', null, 'Гарантированная награда'), e('div', { className: 'gm-chest-stage-art gm-chest-3d' }, e('span', { className: 'gm-chest-stage-halo', 'aria-hidden': true }), e('img', { key: selected.kind, src: boxImage(selected.kind), alt: selected.name, draggable: false }), e('canvas', { key: 'webgl-' + selected.kind, className: 'gm-chest-3d-canvas',
-            'data-gm-chest': selected.kind, 'aria-hidden': 'true' })), e('div', { className: 'gm-chest-payout' }, e('span', null, 'За 1 сундук', e('strong', null, nf(reward, 0) + ' GM')), e('span', null, 'Стоимость', e('strong', null, nf(selected.cost, 0) + ' POINTS'))), e('div', { className: 'gm-chests-qty-label' }, 'Сколько открыть?'), e('div', { className: 'gm-chests-qty', role: 'group', 'aria-label': 'Количество открытий' }, [1, 3, 5, 10].map(count => e('button', {
+            'aria-label': 'Выбран ' + selected.name }, e('div', { className: 'gm-chest-stage-meta' }, e('span', null, 'GM COLLECTION'), e('b', null, '3D · ', selected.kind === 'bronze' ? 'BRONZE' : selected.kind === 'silver' ? 'SILVER' : 'GOLD')), e('h3', null, selected.name), e('p', null, 'Виртуальная награда · без случайного выпадения'), e('div', { className: 'gm-chest-stage-art gm-chest-3d' }, e('span', { className: 'gm-chest-stage-halo', 'aria-hidden': true }), e('img', { key: selected.kind, src: boxImage(selected.kind), alt: selected.name, draggable: false }), e('canvas', { key: 'webgl-' + selected.kind, className: 'gm-chest-3d-canvas',
+            'data-gm-chest': selected.kind, 'aria-hidden': 'true' })), e('p', { className: 'gm-chest-3d-hint' }, icon('move-horizontal', 15), ' Поверни сундук пальцем'), e('div', { className: 'gm-chest-payout' }, e('span', null, 'За 1 сундук', e('strong', null, nf(reward, 0) + ' GM')), e('span', null, 'Стоимость', e('strong', null, nf(selected.cost, 0) + ' POINTS'))), e('div', { className: 'gm-chests-qty-label' }, 'Сколько открыть?'), e('div', { className: 'gm-chests-qty', role: 'group', 'aria-label': 'Количество открытий' }, [1, 3, 5, 10].map(count => e('button', {
             key: count, type: 'button', 'aria-pressed': boxCount === count,
             className: boxCount === count ? 'active' : '',
             onClick: () => setBoxCount(count)
-        }, '×' + count))), e('div', { className: 'gm-chests-subtotal' }, e('span', null, 'Итого: ', e('b', null, '+' + nf(totalReward, 0) + ' GM')), e('span', null, nf(totalCost, 0) + ' POINTS')), e('button', { type: 'button', className: 'gm-chests-open',
+        }, '×' + count))), e('div', { className: 'gm-chests-subtotal' }, e('span', null, 'Итого: ', e('b', null, '+' + nf(totalReward, 0) + ' GM')), e('span', null, nf(totalCost, 0) + ' POINTS')), e('div', { className: 'gm-chests-actions' }, e('button', { type: 'button', className: 'gm-chests-open',
             disabled: demo || !enabled || !reward || boxBusy || points < totalCost,
             onClick: () => openBox(selected.kind, boxCount) }, icon('gift', 20), boxBusy ? 'Подтверждаем...' : !enabled ? 'Сундуки недоступны' : points < totalCost ?
-            'Не хватает POINTS' : 'Открыть ×' + boxCount)), e('p', { className: 'gm-boxes-honest' }, 'Все результаты рассчитаны заранее: один сундук приносит фиксированное количество виртуальных GM. Массовое открытие списывает POINTS и начисляет награду одной серверной операцией.'));
+            'Не хватает ' + nf(totalCost - points, 0) + ' POINTS' : 'Открыть ×' + boxCount), !demo && enabled && reward && points < totalCost ?
+            e('button', { type: 'button', className: 'gm-chests-how-points',
+                onClick: () => { setPointsGuideOpen(true); openGuide('points'); } }, icon('info', 16), 'Как заработать POINTS', icon('chevron-right', 16)) : null)), e('p', { className: 'gm-boxes-honest' }, 'Все результаты рассчитаны заранее: один сундук приносит фиксированное количество виртуальных GM. Массовое открытие списывает POINTS и начисляет награду одной серверной операцией.'));
     }
     function BoxRevealModal() {
         const e = React.createElement;
@@ -1900,7 +1912,8 @@ function App() {
             ['friends', 'Приглашай друзей', 'Поделись персональной ссылкой. Награды появляются только после подтверждённых действий друзей.']
         ];
         const step = steps[Math.max(0, Math.min(steps.length - 1, introStep))];
-        const complete = () => { store.setItem('gm_onboarding_v21_complete', '1'); navStack.current = []; setScreen('home'); };
+        const complete = () => { if (authenticatedUserId)
+            store.setItem(onboardingKey(), '1'); navStack.current = []; setScreen('home'); };
         const ticks = steps.map((_, i) => e('i', { key: i, className: i <= introStep ? 'current' : '' }));
         const displayedLanguages = gmLanguages.filter(([code, label]) => (label.toLowerCase().includes(languageSearch.toLowerCase()) || code.includes(languageSearch.toLowerCase())));
         const chosenLanguage = gmLanguages.find(([code]) => code === locale)?.[1] || gmLanguages[0][1];

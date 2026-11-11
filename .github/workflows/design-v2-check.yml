@@ -7,6 +7,7 @@ on:
       - feature/chests-multi-open-20261111
       - fix/chests-3d-splash-tour-20261111
       - feature/gm-3-streak-milestones-audit-20261111
+      - fix/chests-onboarding-account-scoped-20261112
   workflow_dispatch:
 permissions:
   contents: write
