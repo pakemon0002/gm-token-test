@@ -1909,3 +1909,17 @@ html,body,.application,.application button,.application input,.application texta
  .gm-chests-animation{height:185px}.gm-chests-animation-chest{height:175px}}
 @media(prefers-reduced-motion:reduce){.gm-chest-stage-art img,.gm-chest-stage-halo,.gm-chests-burst,
  .gm-chests-animation-chest,.gm-chests-flash,.gm-chests-spark,.gm-chests-result-copy{animation:none!important}}
+
+/* Split the SVG image into a fixed chest body and a lid lifted on reveal. */
+.gm-chests-animation-chest,.gm-chests-animation-lid{grid-area:1/1;position:absolute;
+ width:min(100%,255px);height:207px;object-fit:contain;pointer-events:none}
+.gm-chests-animation-chest{clip-path:inset(47% 0 0 0)}
+.gm-chests-animation-lid{clip-path:inset(0 0 51% 0);z-index:2;
+ filter:drop-shadow(0 4px 8px #0008);transform-origin:51% 48%;
+ animation:gm-chest-lid-lift 1.25s cubic-bezier(.19,.78,.21,1) both}
+@keyframes gm-chest-lid-lift{
+ 0%,38%{transform:translateY(0) rotate(0)}
+ 51%{transform:translateY(6px) rotate(3deg)}
+ 75%,100%{transform:translateY(-39px) rotate(-12deg)}
+}
+@media(prefers-reduced-motion:reduce){.gm-chests-animation-lid{animation:none!important;transform:translateY(-26px)}}
