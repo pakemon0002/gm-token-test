@@ -2001,3 +2001,58 @@ html,body,.application,.application button,.application input,.application texta
 }
 @media(prefers-reduced-motion:reduce){.gm-splash-v3-seal,.gm-splash-v3-progress span,
  .gm-boxes-v9 .gm-chest-stage-art img{animation:none!important}}
+
+
+/* GM TOKEN 3.0: verified daily streak, metallic silver fire and 30-day milestones */
+.gm-daily-v9{display:grid;gap:12px;padding:12px 9px 32px;min-width:0}
+.gm-daily-v9 .gm-daily-intro{display:grid;justify-items:center;text-align:center;gap:9px;padding-top:6px}
+.gm-daily-v9 .gm-daily-intro>h1{margin:0;font:900 21px 'Unbounded','Montserrat',sans-serif;line-height:1.4}
+.gm-daily-v9 .gm-daily-intro>p{max-width:270px;margin:0;font-size:11px;line-height:1.55;color:var(--muted)}
+.gm-streak-flame{--flame-size:110px;position:relative;display:grid;place-items:center;width:172px;
+ height:176px;isolation:isolate;margin:3px auto 0}
+.gm-streak-flame::before{content:"";position:absolute;inset:8px 13px;border-radius:50%;
+ background:radial-gradient(ellipse,#a8caff68,transparent 66%);filter:blur(10px);
+ animation:gm-streak-pulse 2.7s ease-in-out infinite}
+.gm-streak-flame svg{position:relative;z-index:1;width:var(--flame-size);height:calc(var(--flame-size) * 1.15);
+ overflow:visible;filter:drop-shadow(0 10px 11px #07152b93) drop-shadow(0 0 9px #d4e7ff70);
+ transform-origin:center 86%;animation:gm-streak-ignite 2.7s ease-in-out infinite}
+.gm-streak-flame.gm-flame-1{--flame-size:91px}
+.gm-streak-flame.gm-flame-2{--flame-size:105px}
+.gm-streak-flame.gm-flame-3{--flame-size:119px}
+.gm-streak-flame.gm-flame-4{--flame-size:131px}
+.gm-streak-flame.gm-flame-5{--flame-size:143px}
+.gm-streak-flame.gm-flame-5::before{background:radial-gradient(ellipse,#e6f4ffb0,transparent 69%)}
+.gm-streak-fire-count{position:absolute;z-index:3;bottom:5px;left:50%;transform:translateX(-50%);
+ background:linear-gradient(145deg,#f4f8ff,#8d9cb1);color:#152131;border-radius:22px;
+ border:1px solid #d5e3f4;padding:5px 13px;font-size:11px;font-weight:850;white-space:nowrap;
+ box-shadow:0 5px 13px #0004}
+.gm-daily-v9 .gm-daily-amount{padding:15px 12px!important;display:grid;justify-items:center;gap:8px;text-align:center}
+.gm-daily-v9 .gm-daily-amount strong{font:850 27px 'Montserrat',sans-serif;line-height:1.3}
+.gm-daily-v9 .gm-daily-amount span{font-size:11px;color:var(--muted)}
+.gm-daily-milestones{padding:15px 11px!important;display:grid;gap:11px;min-width:0}
+.gm-daily-milestones>b{font:850 13px 'Montserrat',sans-serif}
+.gm-daily-milestones>p{font-size:11px;color:var(--muted);line-height:1.55;margin:0}
+.gm-daily-milestones-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.gm-daily-milestone{display:grid;justify-items:center;align-content:center;gap:6px;min-width:0;
+ border:1px solid var(--border);background:var(--surface);border-radius:15px;min-height:83px;padding:9px 5px;
+ box-shadow:inset 0 1px #ffffff33}
+.gm-daily-milestone>span{font-size:9px;font-weight:850;letter-spacing:.07em;color:var(--muted)}
+.gm-daily-milestone>b{font-size:13px;font-weight:850;color:var(--ink)}
+.gm-daily-milestone>small{font-size:9px;color:var(--muted)}
+.gm-daily-milestone.next{border-color:#c5d6ec;box-shadow:0 0 0 1px #7f9ab9,0 0 15px #a3bee555}
+.gm-daily-milestone.done{background:linear-gradient(140deg,#d9e3ee,#8395ae);border-color:#e9f4ff}
+.gm-daily-milestone.done>span,.gm-daily-milestone.done>b,.gm-daily-milestone.done>small{color:#1b2a3c}
+.gm-daily-cycle-summary{font-size:10px;text-align:center;color:var(--muted)}
+.gm-daily-v9 .gm-daily-action,.gm-daily-v9 .gm-daily-secondary,
+.gm-points-tour-trigger{display:flex;align-items:center;justify-content:center;
+ text-align:center;gap:8px;line-height:1.3;min-width:0;padding:11px 10px;box-sizing:border-box}
+.gm-daily-v9 .gm-daily-action>.gm-icon,.gm-daily-v9 .gm-daily-secondary>.gm-icon{
+ flex-shrink:0}
+.gm-points-tour-trigger{margin-top:8px;min-height:42px;width:100%;
+ font-size:11px;font-weight:800;white-space:normal;border-radius:13px;
+ background:linear-gradient(135deg,#404b5c,#222a37);border:1px solid #6d7b8e;color:#eef4fb}
+@keyframes gm-streak-pulse{0%,100%{opacity:.5;transform:scale(.88)}50%{opacity:1;transform:scale(1.05)}}
+@keyframes gm-streak-ignite{0%,100%{transform:scale(1) rotate(-1deg)}50%{transform:scale(1.045) rotate(1.5deg)}}
+@media(max-width:365px){.gm-daily-milestones-grid{gap:5px}.gm-daily-milestone{min-height:76px;padding:8px 3px}
+ .gm-daily-milestone>b{font-size:11px}}
+@media(prefers-reduced-motion:reduce){.gm-streak-flame::before,.gm-streak-flame svg{animation:none!important}}
