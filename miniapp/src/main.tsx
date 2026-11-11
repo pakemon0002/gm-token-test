@@ -1127,7 +1127,7 @@ function Tasks(){
       const person=podium.find((p:any)=>p.rank===place);
       return <div className={'gm-holder-podium-slot gm-holder-place-'+place+(person?' is-filled':' is-empty')} key={place}>
        <div className="gm-holder-podium-crown">{icon(place===1?'crown':'shield-check',place===1?32:25,true)}</div>
-       <div className="gm-holder-podium-avatar">{person?String(person.username).slice(0,1).toUpperCase():icon('profile',25)}</div>
+       <div className="gm-holder-podium-avatar">{person?<PlayerAvatar name={person.username} size={place===1?'large':'medium'} rank={place} photoUrl={data?.my_rank===place?(webapp?.initDataUnsafe?.user?.photo_url||''):''}/>:<PlayerAvatar name="GM" size={place===1?'large':'medium'} rank={place}/>}</div>
        <div className="gm-holder-podium-alias" title={person?.username||''}>{person?person.username:'—'}</div>
        <div className="gm-holder-podium-amount">{person?person.gm+' GM':'—'}</div>
        <div className="gm-holder-podium-pillar"><b>{place}</b><span>{place===1?'CHAMPION':place===2?'SILVER':'BRONZE'}</span></div>
@@ -1152,7 +1152,7 @@ function Tasks(){
     <div className="gm-holder-rows">
      {entrants.filter((u:any)=>u.rank>=4).map((u:any)=><div className="gm-holder-row" key={u.rank}>
       <div className="gm-holder-row-rank">{u.rank}</div>
-      <div className="gm-holder-row-avatar">{icon('profile',24)}</div>
+      <div className="gm-holder-row-avatar"><PlayerAvatar name={u.username} size="small" photoUrl={data?.my_rank===u.rank?(webapp?.initDataUnsafe?.user?.photo_url||''):''}/></div>
       <div className="gm-holder-row-user"><b>{u.username}</b><small>{walletLanguage('Saldo verificado','Баланс перевірено','Verified holdings','Баланс проверен')}</small></div>
       <strong>{u.gm} <small>GM</small></strong>
      </div>)}
@@ -1184,7 +1184,7 @@ function Tasks(){
    top(L('profile'),false,'settings'),
    e('div',{className:'profile-hero gm-profile-v2'},
     e('div',{className:'gm-profile-avatar '+(chosen==='standard'?'': 'gm-profile-avatar-special')},
-     e(Brand,{theme,size:100})),
+     e(PlayerAvatar,{name:user?.username||user?.first_name||'GM PLAYER',photoUrl:user?.photo_url||'',size:'large'})),
     e('h2',null,user?.username||user?.first_name||'GM PLAYER'),
     e('p',null,'#'+String(user?.id||'')),
     cosmetics.founder_slot?e('span',{className:'gm-founders-medal'},icon('crown',18),' FOUNDERS #'+cosmetics.founder_slot):null),
