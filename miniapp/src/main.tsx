@@ -1075,7 +1075,75 @@ function Tasks(){
  );
 }
 
- function Leaderboard(){const users=(liveRanks?.users||[]).filter((u:any)=>rankFilter==='Global'||(liveReferrals?.referred||[]).some((r:any)=>r.user_id===u.id));return <>{top(L('leaderboard'),true,'trophy')}<div className="rank-tabs"><button onClick={()=>setRankFilter('Global')} className={rankFilter==='Global'?'on':''}>Global</button><button onClick={()=>setRankFilter('Friends')} className={rankFilter==='Friends'?'on':''}>Friends</button></div><div className="leader-rows">{users.map((u:any,i:number)=><div className="leader-row" key={u.id}><b>{i+1}</b>{icon('profile',27)}<span>{clean(u.username||'Игрок')}</span><small>{nf(u.score_cents/100)} GM</small></div>)}</div>{users.length===0&&<p className="disclaimer">{liveRanks?.pending_rule?'Рейтинг ещё не включён: формула не утверждена. Фальшивых участников нет.':'Пока нет игроков в выбранном списке.'}</p>}</>}
+ function Leaderboard(){
+  const data=holderRanks;
+  const podium=data?.podium||[];
+  const entrants=data?.users||[];
+  const verified=data?.enabled===true;
+  const statusMessage=!data?walletLanguage('Verificando dados…','Перевіряємо дані…','Checking verified holders…','Проверяем подтверждённых держателей…'):
+   !verified?walletLanguage('Aguardando contrato oficial do GM Jetton. Nenhum saldo fictício é exibido.','Очікуємо офіційний контракт GM Jetton. Вигадані баланси не показуються.','Waiting for the official GM Jetton contract. No fictional balances are displayed.','Ожидаем официальный контракт GM Jetton. Вымышленные балансы и участники не отображаются.'):
+   !data.participants?walletLanguage('Ainda não há detentores com saldo e carteira verificados.','Наразі немає власників із перевіреними гаманцями та балансами.','No opted-in players have a fresh verified wallet balance yet.','Пока нет игроков с подтверждёнными кошельками и свежим проверенным балансом.'):null;
+  const slots=[3,1,2];
+  return <>
+   {top(L('holdings'),true,'trophy')}
+   <section className="gm-holders-header gm-premium-card">
+    <div className="gm-holders-header-label">{icon('shield-check',20,true)} <span>TON MAINNET · VERIFIED HOLDERS</span></div>
+    <h2>{walletLanguage('Ranking de detentores GM','Рейтинг власників GM','GM holders ranking','Рейтинг держателей GM')}</h2>
+    <p>{walletLanguage('Somente GM verificado na blockchain entra no ranking. GM do jogo não conta.','Враховуються лише перевірені GM у блокчейні. Ігрові GM не враховуються.','Only independently verified on-chain GM counts. In-game GM is excluded.','Учитываются только GM, проверенные в блокчейне. Игровые GM не влияют на рейтинг.')}</p>
+    <div className="gm-holders-stats">
+     <div><small>{walletLanguage('Participantes','Учасники','Participants','Участников')}</small><strong>{verified?data.participants:'—'}</strong></div>
+     <div><small>{walletLanguage('Rede','Мережа','Network','Сеть')}</small><strong>TON</strong></div>
+     <div><small>{walletLanguage('Verificação','Перевірка','Verification','Проверка')}</small><strong>{verified?'ON-CHAIN':'—'}</strong></div>
+    </div>
+   </section>
+   <section className="gm-holder-podium-wrap gm-premium-card">
+    <div className="gm-holder-section-title">{icon('crown',21)} <b>TOP 3 · GM TOKEN</b></div>
+    <div className="gm-holder-podium" aria-label="Verified Top 3">
+     {slots.map(place=>{
+      const person=podium.find((p:any)=>p.rank===place);
+      return <div className={'gm-holder-podium-slot gm-holder-place-'+place+(person?' is-filled':' is-empty')} key={place}>
+       <div className="gm-holder-podium-crown">{icon(place===1?'crown':'shield-check',place===1?32:25,true)}</div>
+       <div className="gm-holder-podium-avatar">{person?String(person.username).slice(0,1).toUpperCase():icon('profile',25)}</div>
+       <div className="gm-holder-podium-alias" title={person?.username||''}>{person?person.username:'—'}</div>
+       <div className="gm-holder-podium-amount">{person?person.gm+' GM':'—'}</div>
+       <div className="gm-holder-podium-pillar"><b>{place}</b><span>{place===1?'CHAMPION':place===2?'SILVER':'BRONZE'}</span></div>
+      </div>
+     })}
+    </div>
+    {statusMessage?<p className="gm-holder-pending">{icon('info',18)} {statusMessage}</p>:null}
+   </section>
+   <section className="gm-holders-list gm-premium-card">
+    <div className="gm-holder-list-head"><div><small>GM TOKEN</small><h3>{walletLanguage('Todos os participantes','Усі учасники','All participants','Все участники')}</h3></div>
+     <button type="button" className="gm-holder-refresh" disabled={holderLoading} onClick={()=>void fetchHolders()} aria-label={L('refresh')}>{icon('refresh',19)}</button></div>
+    <button type="button" className="gm-holder-my-position" onClick={()=>setHolderShowPosition(!holderShowPosition)}>
+     {icon('search',18)}
+     <span>{walletLanguage('Minha posição','Моє місце','My position','Моё место')}</span>
+     <strong>{data?.my_rank?'#'+data.my_rank:'—'}</strong>
+     {icon(holderShowPosition?'chevron-up':'chevron-down',16)}
+    </button>
+    {holderShowPosition?<div className="gm-holder-me-note">
+     {data?.my_rank?walletLanguage('Sua posição foi calculada usando GM confirmado on-chain.','Твоє місце визначене за підтвердженим балансом GM.','Your rank uses a recent verified on-chain GM balance.','Твоё место рассчитано по свежему подтверждённому балансу GM.'):
+      walletLanguage('Conecte e verifique sua carteira, permita aparecer no ranking e atualize o saldo.','Підтвердь гаманець, дозволь участь у рейтингу та онови баланс.','Verify your wallet, opt in and refresh your GM balance to participate.','Подтверди кошелёк, разреши участие и обнови баланс GM, чтобы попасть в рейтинг.')}
+    </div>:null}
+    <div className="gm-holder-rows">
+     {entrants.filter((u:any)=>u.rank>=4).map((u:any)=><div className="gm-holder-row" key={u.rank}>
+      <div className="gm-holder-row-rank">{u.rank}</div>
+      <div className="gm-holder-row-avatar">{icon('profile',24)}</div>
+      <div className="gm-holder-row-user"><b>{u.username}</b><small>{walletLanguage('Saldo verificado','Баланс перевірено','Verified holdings','Баланс проверен')}</small></div>
+      <strong>{u.gm} <small>GM</small></strong>
+     </div>)}
+    </div>
+    {verified&&data?.participants>0&&data?.participants<=3?<p className="gm-holder-list-note">{walletLanguage('Todos os participantes estão no pódio.','Усі учасники на п’єдесталі.','All current participants are on the podium.','Все участники сейчас на пьедестале.')}</p>:null}
+    {verified&&data?.has_more?<button type="button" className="gm-holders-load-more" disabled={holderMoreBusy} onClick={()=>void fetchHolders(data.next_offset||30,true)}>
+     {holderMoreBusy?'…':walletLanguage('Carregar mais','Завантажити ще','Load more','Показать ещё')}{icon('chevron-down',18)}
+    </button>:null}
+    {!verified?<div className="gm-holder-privacy-foot">{icon('shield-check',18)} {walletLanguage('Nenhum saldo não verificado é publicado.','Непідтверджені баланси не публікуються.','Unverified amounts are never published.','Неподтверждённые суммы не публикуются.')}</div>:null}
+   </section>
+   <button type="button" className="gm-holders-wallet-link" onClick={()=>goto('wallet')}>
+    {icon('wallet',23)}{walletLanguage('Verificar carteira','Перевірити гаманець','Verify my wallet','Проверить мой кошелёк')}{icon('chevron-right',19)}
+   </button>
+  </>;
+ }
  function Profile(){
   const e=React.createElement;
   const cosmetics=liveState?.cosmetics||{founder_slot:null,frames:[]};
