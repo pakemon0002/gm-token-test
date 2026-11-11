@@ -2125,3 +2125,14 @@ html,body,.application,.application button,.application input,.application texta
 .gm-chest-3d:after{pointer-events:none}
 @media(max-width:380px){.gm-chest-stage-art.gm-chest-3d{min-height:194px}}
 @media(prefers-reduced-motion:reduce){.gm-chest-3d-canvas{animation:none!important}}
+
+
+.gm-chests-tutorial-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;min-width:0}
+.gm-chests-tutorial-row .gm-chests-tutorial{justify-self:stretch;width:100%;min-width:0;
+ display:flex;justify-content:center;align-items:center;min-height:41px;
+ margin:0;padding:8px 6px;text-align:center;line-height:1.25;
+ font-size:clamp(9px,2.5vw,11px);overflow-wrap:anywhere}
+.gm-chests-points-tour{background:linear-gradient(145deg,#53637a,#252e3d)!important;
+ border-color:#b0bed2!important}
+@media(max-width:355px){.gm-chests-tutorial-row{gap:5px}
+ .gm-chests-tutorial-row .gm-chests-tutorial{font-size:9px}}
