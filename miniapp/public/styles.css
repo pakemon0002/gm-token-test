@@ -2106,3 +2106,22 @@ html,body,.application,.application button,.application input,.application texta
 @media(max-width:365px){.application .terminal-depth{padding:8px 6px}
  .application .terminal-depth-columns{gap:5px!important}
  .application .terminal-depth-row{padding:5px 3px!important;gap:2px}}
+
+
+/* GM TOKEN 3.0 — genuine GPU-rendered mesh, with SVG fallback on WebGL failure. */
+.gm-chest-stage-art.gm-chest-3d{position:relative;isolation:isolate;min-height:225px}
+.gm-chest-3d-canvas{display:block;position:absolute;inset:0;
+ z-index:3;width:100%;height:100%;border:0;outline:0;background:transparent;
+ object-fit:contain;touch-action:pan-y;cursor:grab}
+.gm-chest-3d-canvas:active{cursor:grabbing}
+.gm-chest-3d:not(.gm-chest-rendered)>.gm-chest-3d-canvas,
+.gm-chests-animation:not(.gm-chest-rendered)>.gm-chest-3d-modal{opacity:0;pointer-events:none}
+.gm-chest-stage-art.gm-chest-rendered>img{opacity:0!important}
+.gm-chests-animation.gm-chest-rendered>.gm-chests-animation-chest,
+.gm-chests-animation.gm-chest-rendered>.gm-chests-animation-lid{opacity:0!important;animation:none!important}
+.gm-chest-3d-modal{z-index:4;height:100%;width:100%;touch-action:none}
+.gm-chests-animation.gm-chest-rendered .gm-chests-flash{z-index:6}
+.gm-chests-animation.gm-chest-rendered .gm-chests-spark{z-index:7}
+.gm-chest-3d:after{pointer-events:none}
+@media(max-width:380px){.gm-chest-stage-art.gm-chest-3d{min-height:194px}}
+@media(prefers-reduced-motion:reduce){.gm-chest-3d-canvas{animation:none!important}}
