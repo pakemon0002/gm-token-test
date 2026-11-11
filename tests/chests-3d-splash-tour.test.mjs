@@ -28,13 +28,15 @@ test('boxes step tutorial points at five controls that exist in current UI',()=>
  assert.ok(source.includes("setAuthenticatedUserId(String(d.user?.id||''))"));
  assert.ok(section.includes("onClick:()=>openGuide('boxes')"));
 });
-test('3D chest style stays within silver graphite look with accessibility fallback',()=>{
- const css=read('miniapp/src/styles.css');
- const served=read('miniapp/public/styles.css');
- assert.equal(css,served);
- assert.ok(css.includes('gm-chest-3d'));
- assert.ok(css.includes('@keyframes gm-chest-3d-hover'));
- assert.ok(css.includes('.gm-boxes-v9 .gm-chest-choice.selected'));
+test('approved flat catalog replaces 3D staging and keeps reduced-motion support',()=>{
+ const source=read('miniapp/src/main.tsx'),css=read('miniapp/src/styles.css');
+ const deployed=read('miniapp/public/styles.css');
+ assert.equal(css,deployed);
+ assert.ok(source.includes('gm-flat-catalog'));
+ assert.ok(source.includes('gm-flat-opening'));
+ assert.ok(source.includes('gm-chest-stage-art'));
+ assert.ok(css.includes('.gm-flat-boxes .gm-flat-card'));
  assert.ok(css.includes('prefers-reduced-motion:reduce'));
- assert.ok(css.includes('gm-chests-animation-lid'));
+ assert.ok(!source.includes('GMChest3D'));
+ assert.ok(!source.includes('gm-chest-3d-canvas'));
 });
