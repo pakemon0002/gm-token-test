@@ -1592,6 +1592,28 @@ function Splash(){return <div className="splash-view gm-splash-v4" role="status"
       })())):null),
      active?e('span',{className:'gm-flat-card-check','aria-label':'Выбран'},icon('check',17)):null)
    })),
+  e('section',{className:'gm-chest-prize-preview','aria-label':'Предпросмотр наград выбранного сундука'},
+   e('div',{className:'gm-chest-prize-head'},
+    e('div',null,e('small',null,'СОДЕРЖИМОЕ СУНДУКА'),e('h3',null,'Что внутри?')),
+    e('span',{className:'gm-chest-prize-kind'},selected.name)),
+   e('div',{className:'gm-chest-prize-grid'},
+    e('div',{className:'gm-chest-prize-item'},
+     e('span',{className:'gm-chest-prize-icon'},icon('coins',23,true)),
+     e('span',null,e('b',null,'GM TOKEN'),e('small',null,'Гарантированная награда')),
+     e('strong',null,reward>0?'+'+nf(reward,0)+' GM':'—')),
+    bonusEnabled?e('div',{className:'gm-chest-prize-item'},
+     e('span',{className:'gm-chest-prize-icon'},icon('sparkles',23,true)),
+     e('span',null,e('b',null,'Опыт XP'),e('small',null,'За каждое открытие')),
+     e('strong',null,'+'+nf(Number(xpRewards[selected.kind]||0),0)+' XP')):null,
+    ...frameRewards.filter((f:any)=>f.kind===selected.kind).map((f:any)=>{
+     const progress=Number(collection[selected.kind]||0),required=Number(f.required||0);
+     return e('div',{className:'gm-chest-prize-item gm-chest-prize-frame',key:String(f.id||f.title)},
+      e('span',{className:'gm-chest-prize-icon'},icon('award',23,true)),
+      e('span',null,e('b',null,String(f.title||'Коллекционная рамка')),
+       e('small',null,required>0?'За '+required+' открытий этого сундука':'Коллекционная награда')),
+      e('strong',null,required>0?(progress>=required?'Получена':progress+'/'+required):'Бонус'));
+    })),
+   e('p',{className:'gm-chest-prize-note'},'Награды и прогресс берутся из настроек игры. Рамки выдаются за достижения, а не случайным образом.')),
   e('section',{className:'gm-flat-opening'},
    e('h3',null,'Сколько открыть?'),
    e('div',{className:'gm-chests-qty',role:'group','aria-label':'Количество открытий'},
