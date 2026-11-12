@@ -2817,3 +2817,16 @@ html,body,.application,.application button,.application input,.application texta
 .theme-dark .gm-chest-prize-item{background:#1c1e28;border-color:#414451}
 .theme-dark .gm-chest-prize-icon{background:#292c38;border-color:#4a4c5e}
 @media(max-width:360px){.gm-chest-prize-preview{padding:11px}.gm-chest-prize-item{gap:7px;padding:8px}.gm-chest-prize-icon{width:36px;height:36px;flex-basis:36px}.gm-chest-prize-item>strong{font-size:11px}}
+
+/* Chest collection: uses the existing GM TOKEN surfaces in both themes. */
+.gm-profile-collection{padding:16px;margin:14px 0;border:1px solid var(--border);border-radius:18px;background:var(--surface)}
+.gm-profile-collection h3{margin:0 0 5px;color:var(--ink);font-size:17px}
+.gm-profile-collection p{margin:0 0 14px;color:var(--muted);font-size:12px;line-height:1.5}
+.gm-profile-collection-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.gm-profile-collection-item{display:flex;align-items:center;gap:9px;min-width:0;padding:11px 9px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--ink)}
+.gm-profile-collection-item.locked{opacity:.66}
+.gm-profile-collection-item span{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}
+.gm-profile-collection-item b{font-size:12px;overflow-wrap:anywhere}
+.gm-profile-collection-item small{font-size:10px;color:var(--muted)}
+.gm-profile-collection-item strong{font-size:10px;white-space:nowrap}
+@media(max-width:370px){.gm-profile-collection-grid{grid-template-columns:1fr}}
