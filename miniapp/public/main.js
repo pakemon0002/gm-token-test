@@ -1498,15 +1498,7 @@ function App() {
         const picture = (kind) => './assets/chests/gm-chest-badge-' + kind + '.svg';
         return e('div', { className: 'gm-boxes-v9 gm-flat-boxes' }, top('Боксы', true, 'info'),
 
-        e('section', { className: 'gm-boxes-welcome', 'aria-label': 'Коллекция GM TOKEN' },
-            e('div', { className: 'gm-boxes-welcome-art', 'aria-hidden': true },
-                e('span', { className: 'gm-boxes-welcome-coin' }, 'GM'),
-                e('span', { className: 'gm-boxes-welcome-spark' }, '✦')),
-            e('div', { className: 'gm-boxes-welcome-copy' },
-                e('span', { className: 'gm-boxes-welcome-eyebrow' }, 'GM TOKEN · КОЛЛЕКЦИЯ'),
-                e('strong', null, 'Открывай. Собирай. Украшай.'),
-                e('small', null, 'Сундуки, опыт и уникальные награды для профиля.'))),
- e('header', { className: 'gm-flat-heading' }, e('span', { className: 'gm-flat-stars', 'aria-hidden': true }, '✦　✧　✦'), e('h2', null, 'Сундуки GM'), e('p', null, bonusEnabled ? 'Открывай сундуки и получай GM, XP и коллекционные рамки. Все призы гарантированы.' : 'Открывай сундуки и получай виртуальные GM. Награды фиксированные.')), e('div', { className: 'gm-boxes-points gm-flat-wallet' }, e('span', { className: 'gm-flat-point-icon' }, icon('diamond', 26, true)), e('div', { className: 'gm-flat-wallet-balance' }, e('small', null, 'Ваши POINTS'), e('strong', null, nf(points, 0) + ' POINTS')), e('button', { type: 'button', className: 'gm-flat-points-help',
+        e('header', { className: 'gm-flat-heading' }, e('span', { className: 'gm-flat-stars', 'aria-hidden': true }, '✦　✧　✦'), e('h2', null, 'Сундуки GM'), e('p', null, bonusEnabled ? 'Открывай сундуки и получай GM, XP и коллекционные рамки. Все призы гарантированы.' : 'Открывай сундуки и получай виртуальные GM. Награды фиксированные.')), e('div', { className: 'gm-boxes-points gm-flat-wallet' }, e('span', { className: 'gm-flat-point-icon' }, icon('diamond', 26, true)), e('div', { className: 'gm-flat-wallet-balance' }, e('small', null, 'Ваши POINTS'), e('strong', null, nf(points, 0) + ' POINTS')), e('button', { type: 'button', className: 'gm-flat-points-help',
             onClick: () => { setPointsGuideOpen(true); openGuide('points'); } }, icon('book-open', 18), 'Как получить POINTS?', icon('chevron-right', 16))), e('div', { className: 'gm-flat-tour-buttons' }, e('button', { type: 'button', className: 'gm-chests-tutorial', onClick: () => openGuide('boxes') }, icon('info', 15), 'Инструкция по сундукам'), e('button', { type: 'button', className: 'gm-chests-points-tour', onClick: () => {
                 setPointsGuideOpen(true);
                 openGuide('points');
