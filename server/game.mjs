@@ -33,6 +33,10 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
  CREATE TABLE IF NOT EXISTS trades(id TEXT PRIMARY KEY,buy_order TEXT NOT NULL,sell_order TEXT NOT NULL,buyer TEXT NOT NULL,seller TEXT NOT NULL,price INTEGER NOT NULL,amount_cents INTEGER NOT NULL,quote_cents INTEGER NOT NULL,at INTEGER NOT NULL,auction INTEGER NOT NULL DEFAULT 0,suspect INTEGER NOT NULL DEFAULT 0);
  CREATE TABLE IF NOT EXISTS points_pair_day(day TEXT NOT NULL,user_id TEXT NOT NULL,other_id TEXT NOT NULL,eligible_gm_cents INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(day,user_id,other_id));
  CREATE TABLE IF NOT EXISTS box_day(day TEXT NOT NULL,user_id TEXT NOT NULL,gm_cents INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(day,user_id));
+ CREATE TABLE IF NOT EXISTS box_collection(user_id TEXT PRIMARY KEY REFERENCES users(id),
+  bronze INTEGER NOT NULL DEFAULT 0 CHECK(bronze>=0),
+  silver INTEGER NOT NULL DEFAULT 0 CHECK(silver>=0),
+  gold INTEGER NOT NULL DEFAULT 0 CHECK(gold>=0));
  CREATE TABLE IF NOT EXISTS request_ids(id TEXT PRIMARY KEY,actor TEXT NOT NULL,kind TEXT NOT NULL,created_at INTEGER NOT NULL,response TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS order_activity(user_id TEXT NOT NULL,at INTEGER NOT NULL);
  CREATE INDEX IF NOT EXISTS idx_order_activity ON order_activity(user_id,at);
@@ -47,6 +51,22 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
  const config=(k,value)=>stmt('INSERT OR IGNORE INTO game_settings(k,v) VALUES(?,?)').run(k,String(value));
  const v=(k)=>stmt('SELECT v FROM game_settings WHERE k=?').get(k)?.v;
  const testEconomy=process.env.GM_PRIVATE_TEST_ECONOMY==='1';
+ // Additional in-game prizes are limited to isolated test-economy accounts.
+ // No randomized rewards or real-world token promises.
+ const boxBonusEnabled=testEconomy;
+ const boxXp=Object.freeze({bronze:20,silver:60,gold:150});
+ const boxFrameCatalog=Object.freeze([
+  {id:'box_bronze_5',title:'Бронзовый искатель',kind:'bronze',required:5},
+  {id:'box_silver_5',title:'Серебряный коллекционер',kind:'silver',required:5},
+  {id:'box_gold_5',title:'Золотой хранитель',kind:'gold',required:5},
+  {id:'box_master_30',title:'Мастер сундуков',kind:'total',required:30}
+ ]);
+ const collection=(id)=>{
+  const row=stmt('SELECT bronze,silver,gold FROM box_collection WHERE user_id=?').get(id)||{bronze:0,silver:0,gold:0};
+  return {...row,total:row.bronze+row.silver+row.gold};
+ };
+ const boxFrames=(counts)=>boxFrameCatalog.map(f=>({...f,
+  claimed:counts[f.kind]>=f.required,locked:counts[f.kind]<f.required,limited:false,category:'box'}));
  const testTasks=[
   {id:'first_mining',title:'Первый Mining Claim',description:'Получить первую подтверждённую награду Mining',category:'Other',icon:'lightning',xp:25,gm:0,condition:{type:'mining_claim_count',gte:1}},
   {id:'first_vault',title:'Первый вклад в Vault',description:'Положить минимум 1 GM в Holding',category:'Other',icon:'coins',xp:25,gm:0,condition:{type:'vault_balance_gm',gte:1}},
@@ -135,7 +155,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
   // Historical registration order is respected; no paid/repeatable claim can take a founder slot.
   const pioneers=stmt('SELECT id FROM users ORDER BY created_at,id LIMIT 20').all();
   for(let i=0;i<pioneers.length;i++)stmt('INSERT OR IGNORE INTO early_player_awards(slot,user_id,awarded_at) VALUES(?,?,?)').run(i+1,pioneers[i].id,t);
-  stmt('INSERT OR IGNORE INTO mining_upgrades(user_id,level,updated_at) VALUES(?,1,?)').run(id,t);stmt('INSERT OR IGNORE INTO mining_state(user_id,last_at) VALUES(?,?)').run(id,t);stmt('INSERT OR IGNORE INTO holding_state(user_id,last_checkpoint) VALUES(?,?)').run(id,t);stmt('INSERT OR IGNORE INTO points_account(user_id) VALUES(?)').run(id);stmt('INSERT OR IGNORE INTO holding_peak(user_id,peak_cents) SELECT user_id,vault FROM wallets WHERE user_id=?').run(id)}
+  stmt('INSERT OR IGNORE INTO mining_upgrades(user_id,level,updated_at) VALUES(?,1,?)').run(id,t);stmt('INSERT OR IGNORE INTO mining_state(user_id,last_at) VALUES(?,?)').run(id,t);stmt('INSERT OR IGNORE INTO holding_state(user_id,last_checkpoint) VALUES(?,?)').run(id,t);stmt('INSERT OR IGNORE INTO points_account(user_id) VALUES(?)').run(id);stmt('INSERT OR IGNORE INTO box_collection(user_id) VALUES(?)').run(id);stmt('INSERT OR IGNORE INTO holding_peak(user_id,peak_cents) SELECT user_id,vault FROM wallets WHERE user_id=?').run(id)}
  function once(id,actor,kind,callback){const existing=stmt('SELECT actor,kind,response FROM request_ids WHERE id=?').get(id);if(existing){if(existing.actor!==actor||existing.kind!==kind)throw Error('operationId already used for another operation');return JSON.parse(existing.response)}const response=callback();stmt('INSERT INTO request_ids(id,actor,kind,created_at,response) VALUES(?,?,?,?,?)').run(id,actor,kind,now(),JSON.stringify(response));return response}
  const wal=(id)=>stmt('SELECT * FROM wallets WHERE user_id=?').get(id);
  const upgradeLevel=(id)=>stmt('SELECT level FROM mining_upgrades WHERE user_id=?').get(id)?.level??1;
@@ -145,6 +165,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
   const upgrade=upgradeLevel(id);
   const frames=Array.from({length:20},(_,i)=>({id:'founder_'+(i+1),title:earlyNames[i],category:'founder',claimed:slot===i+1,locked:slot!==i+1,limited:true}));
   for(const level of [25,50,75,100,125,150,175,200])frames.push({id:'mining_'+level,title:'GM Mining · '+level,category:'milestone',claimed:upgrade>=level,locked:upgrade<level,limited:false});
+  if(boxBonusEnabled)frames.push(...boxFrames(collection(id)));
   return {founder_slot:slot,frames};
  };
 
@@ -360,7 +381,10 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
   if(p==='/api/achievements'&&verb==='GET')return response(200,{achievements:catalogStatus(id,'achievements')});
   if(p==='/api/tasks/claim'&&verb==='POST')return response(200,claimCatalog(id,'tasks',await read()));
   if(p==='/api/achievements/claim'&&verb==='POST')return response(200,claimCatalog(id,'achievements',await read()));
-  if(p==='/api/game/status'&&verb==='GET')return response(200,tx(()=>{ensure(id);settle();const m=stmt('SELECT * FROM mining_state WHERE user_id=?').get(id),h=stmt('SELECT * FROM holding_state WHERE user_id=?').get(id);return {user:stmt('SELECT level,xp,username FROM users WHERE id=?').get(id),wallet:wal(id),mining:{...m,rate_cents_day:rate({...stmt('SELECT level FROM users WHERE id=?').get(id),upgrade_level:upgradeLevel(id)},wal(id)),upgrade:upgradeState(id)},league:leagueForXp(stmt('SELECT xp FROM users WHERE id=?').get(id).xp),leagues:GM_LEAGUES,cosmetics:cosmetics(id),holding:h,points:stmt('SELECT * FROM points_account WHERE user_id=?').get(id),daily:dailyProfile(id),auction:{end_at:Number(v('auction_end')),done:v('auction_done')==='1'},config:{test_economy:testEconomy,holding_enabled:Number(v('holding_daily_bps'))>0,daily_enabled:Number(v('daily_gm_cents'))>0,shop_enabled:v('shop_rate_mode')!=='disabled',boxes_enabled:Object.keys(JSON.parse(v('box_rewards_json'))).length===3,box_rewards:JSON.parse(v('box_rewards_json')),daily_reward_gm:Number(v('daily_gm_cents'))/100}}}));
+  if(p==='/api/game/status'&&verb==='GET')return response(200,tx(()=>{ensure(id);settle();const m=stmt('SELECT * FROM mining_state WHERE user_id=?').get(id),h=stmt('SELECT * FROM holding_state WHERE user_id=?').get(id);return {user:stmt('SELECT level,xp,username FROM users WHERE id=?').get(id),wallet:wal(id),mining:{...m,rate_cents_day:rate({...stmt('SELECT level FROM users WHERE id=?').get(id),upgrade_level:upgradeLevel(id)},wal(id)),upgrade:upgradeState(id)},league:leagueForXp(stmt('SELECT xp FROM users WHERE id=?').get(id).xp),leagues:GM_LEAGUES,cosmetics:cosmetics(id),holding:h,points:stmt('SELECT * FROM points_account WHERE user_id=?').get(id),
+   box_collection:boxBonusEnabled?collection(id):null,daily:dailyProfile(id),auction:{end_at:Number(v('auction_end')),done:v('auction_done')==='1'},config:{test_economy:testEconomy,holding_enabled:Number(v('holding_daily_bps'))>0,daily_enabled:Number(v('daily_gm_cents'))>0,shop_enabled:v('shop_rate_mode')!=='disabled',boxes_enabled:Object.keys(JSON.parse(v('box_rewards_json'))).length===3,box_rewards:JSON.parse(v('box_rewards_json')),
+   box_bonus_enabled:boxBonusEnabled,box_xp_rewards:boxBonusEnabled?boxXp:{},
+   box_frame_rewards:boxBonusEnabled?boxFrameCatalog:[],daily_reward_gm:Number(v('daily_gm_cents'))/100}}}));
   const body=verb==='POST'?await read():{};
   const op=()=>requestId(body.operationId);
   if(p==='/api/mining/upgrade'&&verb==='POST')return response(200,tx(()=>{
@@ -422,11 +446,30 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
     if(used+n>cap)throw Error('GM Boxes daily payout limit reached; try tomorrow');
     if(!stmt('UPDATE points_account SET points=points-? WHERE user_id=? AND points>=?').run(cost,id,cost).changes)
      throw Error('not enough POINTS');
+    const totalXp=boxBonusEnabled?boxXp[kind]*count:0;
+    const before=boxBonusEnabled?collection(id):null;
+    if(!Number.isSafeInteger(totalXp)||totalXp<0)throw Error('invalid XP reward amount');
+    const u=stmt('SELECT xp FROM users WHERE id=?').get(id);
+    if(totalXp&&(!u||!Number.isSafeInteger(u.xp)||u.xp>Number.MAX_SAFE_INTEGER-totalXp))
+     throw Error('XP accounting limit');
     takePool('BOXES','gm',n);
     walletChange(id,'gm',n);
+    if(totalXp){settleMining();awardXp(id,totalXp)}
+    let unlocked=[];
+    if(boxBonusEnabled){
+     const column=kind==='bronze'?'bronze':kind==='silver'?'silver':'gold';
+     stmt('UPDATE box_collection SET '+column+'='+column+'+? WHERE user_id=?').run(count,id);
+     const after=collection(id);
+     unlocked=boxFrameCatalog.filter(frame=>
+      before[frame.kind]<frame.required&&after[frame.kind]>=frame.required)
+      .map(frame=>({id:frame.id,title:frame.title}));
+    }
     stmt('INSERT INTO box_day(day,user_id,gm_cents) VALUES(?,?,?) ON CONFLICT(day,user_id) DO UPDATE SET gm_cents=gm_cents+excluded.gm_cents').run(today,id,n);
-    log(id,'gm_box_open',{user:id,kind,count,spent_points:cost,gm_cents:n});
-    return {kind,count,spent_points:cost,gm_cents:n,unit_reward_gm:table[kind],wallet:wal(id)};
+    log(id,'gm_box_open',{user:id,kind,count,spent_points:cost,gm_cents:n,
+     xp:totalXp,unlocked_frames:unlocked.map(frame=>frame.id)});
+    return {kind,count,spent_points:cost,gm_cents:n,unit_reward_gm:table[kind],
+     xp:totalXp,unit_xp:boxBonusEnabled?boxXp[kind]:0,unlocked_frames:unlocked,
+     wallet:wal(id),level:stmt('SELECT level FROM users WHERE id=?').get(id)?.level};
    });
   }));
   if(p==='/api/exchange/book'&&verb==='GET')return response(200,tx(()=>{doAuction();expireOrders();const pre=v('auction_done')!=='1',a=pre?1:0,orders=pre?stmt("SELECT * FROM orders WHERE status='open' AND auction=1").all():[];return {bids:stmt("SELECT limit_price,SUM(remaining_cents) as gm_cents FROM orders WHERE status='open' AND auction=? AND side='buy' AND (expires_at IS NULL OR expires_at>?) GROUP BY limit_price ORDER BY limit_price DESC LIMIT 25").all(a,now()),asks:stmt("SELECT limit_price,SUM(remaining_cents) as gm_cents FROM orders WHERE status='open' AND auction=? AND side='sell' AND (expires_at IS NULL OR expires_at>?) GROUP BY limit_price ORDER BY limit_price ASC LIMIT 25").all(a,now()),auction_end_at:Number(v('auction_end')),auction_done:!pre,indicative:pre?indicativeAuction(orders):null,last_price:Number(v('last_trade_price'))||null}}));
