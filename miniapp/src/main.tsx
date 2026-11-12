@@ -708,7 +708,7 @@ function App(){
  };
  const [backendStatus,setBackendStatus]=React.useState('Проверяем вход через Telegram…');
  const [modal,setModal]=React.useState('');
- const [boxReveal,setBoxReveal]=React.useState({kind:'bronze',gm:0,count:1,unit:0,spent:0});
+ const [boxReveal,setBoxReveal]=React.useState({kind:'bronze',gm:0,count:1,unit:0,spent:0,xp:0,unitXp:0,unlocked:[] as {id:string,title:string}[]});
  const [boxKind,setBoxKind]=React.useState('bronze');
  const [boxCount,setBoxCount]=React.useState(1);
  const [boxBusy,setBoxBusy]=React.useState(false);
@@ -845,7 +845,9 @@ function App(){
    const result=await api('/api/boxes/open',{kind,count,operationId:cryptoId()});
    if(result?.gm_cents!=null){
     setBoxReveal({kind,gm:result.gm_cents/100,count:result.count||count,
-      unit:Number(result.unit_reward_gm||0),spent:Number(result.spent_points||0)});
+      unit:Number(result.unit_reward_gm||0),spent:Number(result.spent_points||0),
+      xp:Number(result.xp||0),unitXp:Number(result.unit_xp||0),
+      unlocked:Array.isArray(result.unlocked_frames)?result.unlocked_frames:[]});
     await refreshLive();
     setModal('boxReveal');
    }
@@ -1533,19 +1535,24 @@ function Splash(){return <div className="splash-view gm-splash-v4" role="status"
  const e=React.createElement;
  const points=Number(liveState?.points?.points||0), enabled=!!liveState?.config?.boxes_enabled;
  const payouts=liveState?.config?.box_rewards||{};
+ const xpRewards=liveState?.config?.box_xp_rewards||{};
+ const bonusEnabled=Boolean(liveState?.config?.box_bonus_enabled);
+ const collection=liveState?.box_collection||{};
+ const frameRewards=liveState?.config?.box_frame_rewards||[];
  const catalog=[
   {kind:'bronze',name:'Бронзовый сундук',tag:'Базовые награды',cost:300},
   {kind:'silver',name:'Серебряный сундук',tag:'Улучшенные награды',cost:750},
   {kind:'gold',name:'Золотой сундук',tag:'Максимальные награды',cost:1500}];
  const selected=catalog.find(x=>x.kind===boxKind)||catalog[0];
  const reward=Number(payouts[selected.kind]||0),totalCost=selected.cost*boxCount,totalReward=reward*boxCount;
+ const totalXp=bonusEnabled?Number(xpRewards[selected.kind]||0)*boxCount:0;
  const picture=(kind:string)=>'./assets/chests/gm-chest-badge-'+kind+'.svg';
  return e('div',{className:'gm-boxes-v9 gm-flat-boxes'},
   top('Боксы',true,'info'),
   e('header',{className:'gm-flat-heading'},
    e('span',{className:'gm-flat-stars','aria-hidden':true},'✦　✧　✦'),
    e('h2',null,'Сундуки GM'),
-   e('p',null,'Выбирай сундуки и получай виртуальные GM. Награды фиксированные.')),
+   e('p',null,'Открывай сундуки и получай GM, опыт и коллекционные награды. Без случайных призов.')),
   e('div',{className:'gm-boxes-points gm-flat-wallet'},
    e('span',{className:'gm-flat-point-icon'},icon('diamond',26,true)),
    e('div',{className:'gm-flat-wallet-balance'},e('small',null,'Ваши POINTS'),e('strong',null,nf(points,0)+' POINTS')),
@@ -1576,6 +1583,13 @@ function Splash(){return <div className="splash-view gm-splash-v4" role="status"
       e('span',{className:'gm-flat-card-stats'},
        e('span',null,'Награда',e('strong',null,nf(Number(payouts[x.kind]||0),0)+' GM')),
        e('span',null,'Стоимость',e('strong',null,nf(x.cost,0)+' POINTS')))),
+     bonusEnabled?e('span',{className:'gm-box-bonus'},
+      icon('sparkles',15),e('b',null,'+'+nf(Number(xpRewards[x.kind]||0),0)+' XP'),
+      e('small',null,(()=>{
+       const milestone=frameRewards.find((f:any)=>f.kind===x.kind);
+       const value=Number(collection[x.kind]||0);
+       return milestone?value>=milestone.required?'Рамка открыта':'Рамка: '+value+'/'+milestone.required:'Бонус опыта';
+      })())):null,
      active?e('span',{className:'gm-flat-card-check','aria-label':'Выбран'},icon('check',17)):null)
    })),
   e('section',{className:'gm-flat-opening'},
@@ -1587,6 +1601,9 @@ function Splash(){return <div className="splash-view gm-splash-v4" role="status"
    e('div',{className:'gm-chests-subtotal'},
     e('span',null,'Итого: ',e('b',null,'+'+nf(totalReward,0)+' GM')),
     e('span',null,nf(totalCost,0)+' POINTS')),
+   bonusEnabled?e('div',{className:'gm-box-total-bonuses'},
+    icon('sparkles',17),'Дополнительно: +'+nf(totalXp,0)+' XP',
+    e('span',null,'Рамки за открытия 5/5/5 и 30 всего')):null,
    e('div',{className:'gm-chests-actions'},
     e('button',{type:'button',className:'gm-chests-open',
      disabled:demo||!enabled||!reward||boxBusy||points<totalCost,
@@ -1599,12 +1616,13 @@ function Splash(){return <div className="splash-view gm-splash-v4" role="status"
       onClick:()=>{setPointsGuideOpen(true);openGuide('points')}},
       icon('info',16),'Как заработать POINTS',icon('chevron-right',16)):null)),
   e('p',{className:'gm-boxes-honest'},
-   'POINTS списываются и GM начисляются одной проверенной серверной операцией. Дневные лимиты сохранены.'));
+   'POINTS списываются, GM и XP начисляются одним серверным действием. Рамки доступны в профиле. Дневные лимиты сохранены.'));
  }
  function BoxRevealModal(){
   const e=React.createElement;
   const kind=boxReveal.kind||'bronze',count=boxReveal.count||1;
   const reward=Number(boxReveal.unit||((boxReveal.gm||0)/count));
+  const bonusXp=Number(boxReveal.xp||0),unitXp=Number(boxReveal.unitXp||0);
   return e('div',{className:'gm-box-overlay gm-chests-overlay',role:'presentation',
    onClick:()=>setModal('')},
    e('div',{className:'gm-chests-result gm-flat-result gm-premium-card '+kind,
@@ -1619,10 +1637,17 @@ function Splash(){return <div className="splash-view gm-splash-v4" role="status"
      e('div',{className:'gm-chests-rewards-grid'},
       Array.from({length:count},(_,i)=>e('div',{key:i,className:'gm-chest-reward-tile'},
        icon('coins',24,true),e('b',null,'+'+nf(reward,0)+' GM'),
+       unitXp?e('small',{className:'gm-box-reveal-xp'},'+'+nf(unitXp,0)+' XP'):null,
        e('small',null,'Сундук '+(i+1))))),
      e('div',{className:'gm-chests-reward-total'},
       e('span',null,'Итого начислено'),e('strong',null,'+'+nf(boxReveal.gm||0,0)+' GM')),
-     e('p',null,'Виртуальные GM начислены сервером, POINTS списаны.'),
+     bonusXp?e('div',{className:'gm-box-reveal-total-xp'},icon('sparkles',19),
+      'Дополнительно: +'+nf(bonusXp,0)+' XP'):null,
+     boxReveal.unlocked.length?e('div',{className:'gm-box-reveal-unlocks'},
+      icon('award',20),e('div',null,
+       e('b',null,'Новая рамка профиля!'),
+       ...boxReveal.unlocked.map(f=>e('span',{key:f.id},f.title)))):null,
+     e('p',null,'Виртуальные GM и XP начислены сервером, POINTS списаны.'),
      e('button',{type:'button',className:'gm-chests-close',onClick:()=>setModal('')},
       'Отлично!',icon('check',20)))));
  }
