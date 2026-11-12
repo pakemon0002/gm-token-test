@@ -1362,18 +1362,23 @@ function Reward(){
 }
 
 function Splash(){return <div className="splash-view gm-splash-v3" role="status" aria-live="polite">
-  <div className="gm-splash-v3-halo" aria-hidden="true"/>
   <div className="gm-splash-v3-content">
    <div className="gm-splash-v3-badge">GM <span>●</span> TOKEN</div>
-   <div className="gm-splash-v3-seal"><div className="gm-splash-v3-seal-inner"><img src={BRAND+'gm-lettermark-metallic-transparent.png'} alt="GM TOKEN"/></div></div>
-   <h1>GM TOKEN</h1>
-   <p>ТВОЯ ИГРОВАЯ ЭКОСИСТЕМА</p>
-   <div className="gm-splash-v3-progress" aria-hidden="true"><span/></div>
-   <small>{L('loading')}</small>
+   <div className="gm-splash-v3-coin-wrap">
+    <div className="gm-splash-v3-halo" aria-hidden="true"/>
+    <div className="gm-splash-v3-seal"><div className="gm-splash-v3-seal-inner"><img src={BRAND+'gm-lettermark-metallic-transparent.png'} alt="GM TOKEN"/></div></div>
+   </div>
+   <div className="gm-splash-v3-brand">
+    <h1>GM TOKEN</h1>
+    <p>ТВОЯ ИГРОВАЯ ЭКОСИСТЕМА</p>
+   </div>
+   <div className="gm-splash-v3-loading">
+    <div className="gm-splash-v3-progress" aria-hidden="true"><span/></div>
+    <small>{L('loading')}</small>
+   </div>
+   <span className="gm-splash-v3-footer">MINING · MARKET · REWARDS</span>
   </div>
-  <span className="gm-splash-v3-footer">MINING · MARKET · REWARDS</span>
- </div>}
- 
+ </div>} 
  function Mining(){
   const e=React.createElement;
   const rate=liveState?.mining?.rate_cents_day!=null?liveState.mining.rate_cents_day/100:gmRate(wallet);
