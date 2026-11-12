@@ -2075,7 +2075,7 @@ function App() {
             break;
         default: view = Home();
     }
-    return React.createElement("div", { className: 'application theme-' + theme + (webapp?.initData ? ' is-telegram' : '') },
+    return React.createElement("div", { className: 'application theme-' + theme + (webapp?.initData ? ' is-telegram' : '') + (screen === 'splash' ? ' gm-splash-active' : '') },
         React.createElement("aside", { className: "desktop-toolbar" },
             React.createElement("div", { className: "toolbar-logo" },
                 React.createElement(Brand, { theme: theme, size: 42 }),
@@ -2088,8 +2088,8 @@ function App() {
             React.createElement("div", { className: "toolbar-links" }, ['home', 'trade', 'earn', 'tasks', 'leaderboard', 'profile', 'mining', 'wallet', 'vault', 'shop', 'support', 'admin'].map(s => React.createElement("button", { key: s, className: screen === s ? 'chosen' : '', onClick: () => goto(s) }, s))),
             React.createElement("p", null, "\u041E\u0440\u0438\u0433\u0438\u043D\u0430\u043B\u044C\u043D\u044B\u0435 PNG \u00B7 54 \u0438\u043A\u043E\u043D\u043A\u0438 \u00D7 4 \u0432\u0430\u0440\u0438\u0430\u043D\u0442\u0430 \u00B7 \u0431\u0435\u0437 \u043F\u043E\u0434\u043C\u0435\u043D\u044B \u0441\u0442\u043E\u0440\u043E\u043D\u043D\u0438\u043C\u0438 \u043F\u0438\u043A\u0442\u043E\u0433\u0440\u0430\u043C\u043C\u0430\u043C\u0438")),
         React.createElement("div", { className: "device-stage" },
-            React.createElement("div", { className: "phone-frame" },
-                React.createElement("div", { className: 'phone-scroll ' + ((screen === 'splash') ? 'no-scroll' : '') }, view),
+            React.createElement("div", { className: 'phone-frame' + (screen === 'splash' ? ' gm-splash-frame' : '') },
+                React.createElement("div", { className: 'phone-scroll ' + ((screen === 'splash') ? 'no-scroll gm-splash-host' : '') }, view),
                 !['reward', 'splash', 'intro'].includes(screen) && bottom(),
                 React.createElement("div", { className: "home-indicator" })),
             React.createElement("div", { className: "underphone" },

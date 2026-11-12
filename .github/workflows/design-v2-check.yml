@@ -11,6 +11,7 @@ on:
       - design/flat-chests-selected-sketch-20261112
       - fix/splash-centered-layout-20261112
       - fix/splash-v4-visible-refresh-no-cache-20261112
+      - fix/splash-viewport-host-20261112
   workflow_dispatch:
 permissions:
   contents: write

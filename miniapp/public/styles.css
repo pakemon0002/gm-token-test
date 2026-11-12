@@ -2465,3 +2465,59 @@ html,body,.application,.application button,.application input,.application texta
 @media(prefers-reduced-motion:reduce){
  .gm-splash-v4 .gm-splash-v4-track span{animation:none!important}
 }
+
+
+/* GM TOKEN 3.4 — fix the host viewport, not the splash artwork.
+   Previously Telegram .phone-scroll restored 18px+ top and 122px+ bottom padding
+   even with .no-scroll, shifting the entire splash away from its true center. */
+.application.is-telegram.gm-splash-active{
+  min-height:100dvh!important;height:100dvh!important;max-height:100dvh!important;
+  overflow:hidden!important;
+}
+.application.is-telegram.gm-splash-active .device-stage,
+.application.is-telegram.gm-splash-active .phone-frame.gm-splash-frame{
+  height:100%!important;min-height:0!important;max-height:100%!important;
+  overflow:hidden!important;
+}
+.application .phone-frame.gm-splash-frame::before,
+.application .phone-frame.gm-splash-frame::after{
+  content:none!important;display:none!important;box-shadow:none!important;
+}
+/* Also reset padding in desktop preview. In Telegram the rule is intentionally more
+   specific than .application.is-telegram .phone-scroll. */
+.application .phone-scroll.gm-splash-host{
+  display:block!important;box-sizing:border-box!important;
+  width:100%!important;height:100%!important;min-height:0!important;max-height:100%!important;
+  margin:0!important;padding:0!important;
+  overflow:hidden!important;overscroll-behavior:none!important;
+}
+.application.is-telegram .phone-scroll.gm-splash-host{
+  padding:0!important;
+  padding-top:0!important;padding-right:0!important;
+  padding-bottom:0!important;padding-left:0!important;
+}
+.application .gm-splash-host>.splash-view.gm-splash-v4{
+  position:relative!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  inset:auto!important;box-sizing:border-box!important;
+  width:100%!important;height:100%!important;min-height:100%!important;
+  max-height:100%!important;margin:0!important;
+}
+.application.is-telegram.gm-splash-active.theme-dark,
+.application.is-telegram.gm-splash-active.theme-dark .gm-splash-frame{
+  background:#080d16!important;
+}
+.application.is-telegram.gm-splash-active.theme-light,
+.application.is-telegram.gm-splash-active.theme-light .gm-splash-frame{
+  background:#d6deea!important;
+}
+@media(max-height:520px){
+  .application .gm-splash-host>.splash-view.gm-splash-v4{padding:8px 12px!important}
+  .gm-splash-v4 .gm-splash-v4-orbit{width:125px;height:125px;flex-basis:125px}
+  .gm-splash-v4 .gm-splash-v4-coin{width:115px;height:115px}
+  .gm-splash-v4 .gm-splash-v4-orbit::before{width:123px;height:123px}
+  .gm-splash-v4 .gm-splash-v4-eyebrow{margin-bottom:8px!important}
+  .gm-splash-v4 .gm-splash-v4-wordmark{margin-top:10px!important}
+  .gm-splash-v4 .gm-splash-v4-status{margin-top:14px!important}
+  .gm-splash-v4 .gm-splash-v4-tagline{margin-top:12px!important}
+}
