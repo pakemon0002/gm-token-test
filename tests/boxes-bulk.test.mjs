@@ -18,7 +18,7 @@ test('batch chest opening is atomic, priced correctly, audited, and idempotent',
  const path=join(tmp,'db.sqlite');
  const child=spawn(process.execPath,['--experimental-sqlite','server/index.mjs'],{
   cwd:new URL('..',import.meta.url).pathname,
-  env:{...process.env,BOT_TOKEN:TOKEN,PORT:String(port),DB_PATH:path,BOX_REWARDS_GM_JSON:'{"bronze":15,"silver":45,"gold":105}',GM_ENABLE_REWARDS:'1',BOT_POLLING:'0',PUBLIC_APP_URL:'',BOT_WEBHOOK_SECRET:''},stdio:'ignore'
+  env:{...process.env,BOT_TOKEN:TOKEN,PORT:String(port),DB_PATH:path,BOX_REWARDS_GM_JSON:'{"bronze":15,"silver":45,"gold":105}',GM_ENABLE_REWARDS:'1',GM_BOX_BONUS_REWARDS:'0',BOT_POLLING:'0',PUBLIC_APP_URL:'',BOT_WEBHOOK_SECRET:''},stdio:'ignore'
  });
  t.after(()=>{child.kill();rmSync(tmp,{recursive:true,force:true})});
  let ready=false;
@@ -38,6 +38,8 @@ test('batch chest opening is atomic, priced correctly, audited, and idempotent',
  assert.equal(opened.data.count,3);
  assert.equal(opened.data.spent_points,900);
  assert.equal(opened.data.gm_cents,4500);
+ assert.equal(opened.data.xp,0,'default mode grants no additional XP');
+ assert.deepEqual(opened.data.unlocked_frames,[],'no collectible frames without staging opt-in');
  const replay=await req('/api/boxes/open',first);
  assert.equal(replay.status,200);
  assert.deepEqual(replay.data,opened.data,'retry must not charge twice');

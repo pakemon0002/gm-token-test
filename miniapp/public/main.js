@@ -781,7 +781,7 @@ function App() {
     };
     const [backendStatus, setBackendStatus] = React.useState('Проверяем вход через Telegram…');
     const [modal, setModal] = React.useState('');
-    const [boxReveal, setBoxReveal] = React.useState({ kind: 'bronze', gm: 0, count: 1, unit: 0, spent: 0 });
+    const [boxReveal, setBoxReveal] = React.useState({ kind: 'bronze', gm: 0, count: 1, unit: 0, spent: 0, xp: 0, unitXp: 0, unlocked: [] });
     const [boxKind, setBoxKind] = React.useState('bronze');
     const [boxCount, setBoxCount] = React.useState(1);
     const [boxBusy, setBoxBusy] = React.useState(false);
@@ -1031,7 +1031,9 @@ function App() {
             const result = await api('/api/boxes/open', { kind, count, operationId: cryptoId() });
             if (result?.gm_cents != null) {
                 setBoxReveal({ kind, gm: result.gm_cents / 100, count: result.count || count,
-                    unit: Number(result.unit_reward_gm || 0), spent: Number(result.spent_points || 0) });
+                    unit: Number(result.unit_reward_gm || 0), spent: Number(result.spent_points || 0),
+                    xp: Number(result.xp || 0), unitXp: Number(result.unit_xp || 0),
+                    unlocked: Array.isArray(result.unlocked_frames) ? result.unlocked_frames : [] });
                 await refreshLive();
                 setModal('boxReveal');
             }
@@ -1357,7 +1359,7 @@ function App() {
             onClick: () => { setSelectedFrame(framePreview); store.setItem('gm_profile_frame', framePreview); } }, framePreview === chosen ? 'Используется' : 'Применить рамку'))), e('div', { className: 'gm-frame-grid' }, frames.map((f) => e('button', { key: f.id, type: 'button',
             className: 'gm-frame-card ' + (f.claimed ? 'unlocked' : 'locked') + (framePreview === f.id ? ' active' : ''),
             'aria-pressed': framePreview === f.id,
-            onClick: () => setFramePreview(f.id) }, e('span', { className: 'gm-frame-art gm-frame-thumb ' + (f.category === 'founder' ? 'gm-frame-founder' : f.category === 'milestone' ? 'gm-frame-milestone' : 'gm-frame-standard'),
+            onClick: () => setFramePreview(f.id) }, e('span', { className: 'gm-frame-art gm-frame-thumb ' + (f.category === 'founder' ? 'gm-frame-founder' : f.category === 'milestone' ? 'gm-frame-milestone' : f.category === 'box' ? 'gm-frame-box' : 'gm-frame-standard'),
             style: { '--frame-hue': String(String(f.id).split('').reduce((n, c) => n + c.charCodeAt(0), 0) % 360) + 'deg' } }, e('span', { className: 'gm-frame-inner' }, e(PlayerAvatar, { name: user?.username || 'GM', size: 'small' }))), e('span', null, f.title), f.claimed ? icon('check', 16) : icon('minus', 16))))), e('div', { className: 'profile-menu' }, [['trophy', L('achievements'), 'achievements'], ['friends', L('referrals'), 'referrals'], ['clock', L('history'), 'history'], ['wallet', L('wallet'), 'wallet'], ['settings', L('customize'), 'settings'], ['info', L('support'), 'support']].map(([i, t, route]) => e('button', { key: route, onClick: () => goto(route) }, icon(i, 21), e('span', null, t), icon('chevron-right', 18)))), e('button', { type: 'button', className: 'gm-settings-onboard gm-premium-card', onClick: () => openGuide('profile') }, icon('info', 22), L('startTour'), icon('chevron-right', 18)));
     }
     function Reward() {
@@ -1473,6 +1475,10 @@ function App() {
         const e = React.createElement;
         const points = Number(liveState?.points?.points || 0), enabled = !!liveState?.config?.boxes_enabled;
         const payouts = liveState?.config?.box_rewards || {};
+        const xpRewards = liveState?.config?.box_xp_rewards || {};
+        const bonusEnabled = Boolean(liveState?.config?.box_bonus_enabled);
+        const collection = liveState?.box_collection || {};
+        const frameRewards = liveState?.config?.box_frame_rewards || [];
         const catalog = [
             { kind: 'bronze', name: 'Бронзовый сундук', tag: 'Базовые награды', cost: 300 },
             { kind: 'silver', name: 'Серебряный сундук', tag: 'Улучшенные награды', cost: 750 },
@@ -1480,8 +1486,9 @@ function App() {
         ];
         const selected = catalog.find(x => x.kind === boxKind) || catalog[0];
         const reward = Number(payouts[selected.kind] || 0), totalCost = selected.cost * boxCount, totalReward = reward * boxCount;
+        const totalXp = bonusEnabled ? Number(xpRewards[selected.kind] || 0) * boxCount : 0;
         const picture = (kind) => './assets/chests/gm-chest-badge-' + kind + '.svg';
-        return e('div', { className: 'gm-boxes-v9 gm-flat-boxes' }, top('Боксы', true, 'info'), e('header', { className: 'gm-flat-heading' }, e('span', { className: 'gm-flat-stars', 'aria-hidden': true }, '✦　✧　✦'), e('h2', null, 'Сундуки GM'), e('p', null, 'Выбирай сундуки и получай виртуальные GM. Награды фиксированные.')), e('div', { className: 'gm-boxes-points gm-flat-wallet' }, e('span', { className: 'gm-flat-point-icon' }, icon('diamond', 26, true)), e('div', { className: 'gm-flat-wallet-balance' }, e('small', null, 'Ваши POINTS'), e('strong', null, nf(points, 0) + ' POINTS')), e('button', { type: 'button', className: 'gm-flat-points-help',
+        return e('div', { className: 'gm-boxes-v9 gm-flat-boxes' }, top('Боксы', true, 'info'), e('header', { className: 'gm-flat-heading' }, e('span', { className: 'gm-flat-stars', 'aria-hidden': true }, '✦　✧　✦'), e('h2', null, 'Сундуки GM'), e('p', null, bonusEnabled ? 'Открывай сундуки и получай GM, XP и коллекционные рамки. Все призы гарантированы.' : 'Открывай сундуки и получай виртуальные GM. Награды фиксированные.')), e('div', { className: 'gm-boxes-points gm-flat-wallet' }, e('span', { className: 'gm-flat-point-icon' }, icon('diamond', 26, true)), e('div', { className: 'gm-flat-wallet-balance' }, e('small', null, 'Ваши POINTS'), e('strong', null, nf(points, 0) + ' POINTS')), e('button', { type: 'button', className: 'gm-flat-points-help',
             onClick: () => { setPointsGuideOpen(true); openGuide('points'); } }, icon('book-open', 18), 'Как получить POINTS?', icon('chevron-right', 16))), e('div', { className: 'gm-flat-tour-buttons' }, e('button', { type: 'button', className: 'gm-chests-tutorial', onClick: () => openGuide('boxes') }, icon('info', 15), 'Инструкция по сундукам'), e('button', { type: 'button', className: 'gm-chests-points-tour', onClick: () => {
                 setPointsGuideOpen(true);
                 openGuide('points');
@@ -1489,24 +1496,29 @@ function App() {
             const active = boxKind === x.kind;
             return e('button', { key: x.kind, type: 'button',
                 className: 'gm-chest-choice gm-flat-card ' + x.kind + (active ? ' selected' : ''),
-                'aria-pressed': active, onClick: () => setBoxKind(x.kind) }, e('span', { className: 'gm-flat-card-image' }, e('img', { src: picture(x.kind), alt: '', draggable: false, 'aria-hidden': true })), e('span', { className: 'gm-chest-choice-info gm-flat-card-body' }, e('b', null, x.name), e('small', null, x.tag), e('span', { className: 'gm-flat-card-stats' }, e('span', null, 'Награда', e('strong', null, nf(Number(payouts[x.kind] || 0), 0) + ' GM')), e('span', null, 'Стоимость', e('strong', null, nf(x.cost, 0) + ' POINTS')))), active ? e('span', { className: 'gm-flat-card-check', 'aria-label': 'Выбран' }, icon('check', 17)) : null);
+                'aria-pressed': active, onClick: () => setBoxKind(x.kind) }, e('span', { className: 'gm-flat-card-image' }, e('img', { src: picture(x.kind), alt: '', draggable: false, 'aria-hidden': true })), e('span', { className: 'gm-chest-choice-info gm-flat-card-body' }, e('b', null, x.name), e('small', null, x.tag), e('span', { className: 'gm-flat-card-stats' }, e('span', null, 'Награда', e('strong', null, nf(Number(payouts[x.kind] || 0), 0) + ' GM')), e('span', null, 'Стоимость', e('strong', null, nf(x.cost, 0) + ' POINTS'))), bonusEnabled ? e('span', { className: 'gm-box-bonus' }, icon('sparkles', 15), e('b', null, '+' + nf(Number(xpRewards[x.kind] || 0), 0) + ' XP'), e('small', null, (() => {
+                const milestone = frameRewards.find((f) => f.kind === x.kind);
+                const value = Number(collection[x.kind] || 0);
+                return milestone ? value >= milestone.required ? 'Рамка открыта' : 'Рамка: ' + value + '/' + milestone.required : 'Бонус опыта';
+            })())) : null), active ? e('span', { className: 'gm-flat-card-check', 'aria-label': 'Выбран' }, icon('check', 17)) : null);
         })), e('section', { className: 'gm-flat-opening' }, e('h3', null, 'Сколько открыть?'), e('div', { className: 'gm-chests-qty', role: 'group', 'aria-label': 'Количество открытий' }, [1, 3, 5, 10].map(count => e('button', { type: 'button', key: count,
             'aria-pressed': boxCount === count, className: boxCount === count ? 'active' : '',
-            onClick: () => setBoxCount(count) }, '×' + count))), e('div', { className: 'gm-chests-subtotal' }, e('span', null, 'Итого: ', e('b', null, '+' + nf(totalReward, 0) + ' GM')), e('span', null, nf(totalCost, 0) + ' POINTS')), e('div', { className: 'gm-chests-actions' }, e('button', { type: 'button', className: 'gm-chests-open',
+            onClick: () => setBoxCount(count) }, '×' + count))), e('div', { className: 'gm-chests-subtotal' }, e('span', null, 'Итого: ', e('b', null, '+' + nf(totalReward, 0) + ' GM')), e('span', null, nf(totalCost, 0) + ' POINTS')), bonusEnabled ? e('div', { className: 'gm-box-total-bonuses' }, icon('sparkles', 17), 'Дополнительно: +' + nf(totalXp, 0) + ' XP', e('span', null, 'Рамки за открытия 5/5/5 и 30 всего')) : null, e('div', { className: 'gm-chests-actions' }, e('button', { type: 'button', className: 'gm-chests-open',
             disabled: demo || !enabled || !reward || boxBusy || points < totalCost,
             onClick: () => openBox(selected.kind, boxCount) }, icon('gift', 20), boxBusy ? 'Подтверждаем...' : !enabled ? 'Сундуки недоступны' : !reward ? 'Награды недоступны' :
             points < totalCost ? 'Не хватает ' + nf(totalCost - points, 0) + ' POINTS' : 'Открыть сундук ×' + boxCount), !demo && enabled && reward > 0 && points < totalCost ?
             e('button', { type: 'button', className: 'gm-chests-how-points',
-                onClick: () => { setPointsGuideOpen(true); openGuide('points'); } }, icon('info', 16), 'Как заработать POINTS', icon('chevron-right', 16)) : null)), e('p', { className: 'gm-boxes-honest' }, 'POINTS списываются и GM начисляются одной проверенной серверной операцией. Дневные лимиты сохранены.'));
+                onClick: () => { setPointsGuideOpen(true); openGuide('points'); } }, icon('info', 16), 'Как заработать POINTS', icon('chevron-right', 16)) : null)), e('p', { className: 'gm-boxes-honest' }, bonusEnabled ? 'POINTS списываются, GM и XP начисляются одним серверным действием. Рамки доступны в профиле. Дневные лимиты сохранены.' : 'POINTS списываются и GM начисляются сервером. Дневные лимиты сохранены.'));
     }
     function BoxRevealModal() {
         const e = React.createElement;
         const kind = boxReveal.kind || 'bronze', count = boxReveal.count || 1;
         const reward = Number(boxReveal.unit || ((boxReveal.gm || 0) / count));
+        const bonusXp = Number(boxReveal.xp || 0), unitXp = Number(boxReveal.unitXp || 0);
         return e('div', { className: 'gm-box-overlay gm-chests-overlay', role: 'presentation',
             onClick: () => setModal('') }, e('div', { className: 'gm-chests-result gm-flat-result gm-premium-card ' + kind,
             role: 'dialog', 'aria-modal': true, 'aria-label': 'Получены награды за сундуки',
-            onClick: event => event.stopPropagation() }, e('div', { className: 'gm-flat-result-image', 'aria-hidden': true }, e('div', { className: 'gm-chests-burst' }), e('img', { src: './assets/chests/gm-chest-badge-' + kind + '.svg', alt: '', draggable: false })), e('div', { className: 'gm-chests-result-copy' }, e('span', { className: 'gm-chests-finished-tag' }, 'Открыто ' + count + ' ' + (count === 1 ? 'сундук' : count === 3 ? 'сундука' : 'сундуков')), e('h2', null, 'Полученные награды'), e('div', { className: 'gm-chests-rewards-grid' }, Array.from({ length: count }, (_, i) => e('div', { key: i, className: 'gm-chest-reward-tile' }, icon('coins', 24, true), e('b', null, '+' + nf(reward, 0) + ' GM'), e('small', null, 'Сундук ' + (i + 1))))), e('div', { className: 'gm-chests-reward-total' }, e('span', null, 'Итого начислено'), e('strong', null, '+' + nf(boxReveal.gm || 0, 0) + ' GM')), e('p', null, 'Виртуальные GM начислены сервером, POINTS списаны.'), e('button', { type: 'button', className: 'gm-chests-close', onClick: () => setModal('') }, 'Отлично!', icon('check', 20)))));
+            onClick: event => event.stopPropagation() }, e('div', { className: 'gm-flat-result-image', 'aria-hidden': true }, e('div', { className: 'gm-chests-burst' }), e('img', { src: './assets/chests/gm-chest-badge-' + kind + '.svg', alt: '', draggable: false })), e('div', { className: 'gm-chests-result-copy' }, e('span', { className: 'gm-chests-finished-tag' }, 'Открыто ' + count + ' ' + (count === 1 ? 'сундук' : count === 3 ? 'сундука' : 'сундуков')), e('h2', null, 'Полученные награды'), e('div', { className: 'gm-chests-rewards-grid' }, Array.from({ length: count }, (_, i) => e('div', { key: i, className: 'gm-chest-reward-tile' }, icon('coins', 24, true), e('b', null, '+' + nf(reward, 0) + ' GM'), unitXp ? e('small', { className: 'gm-box-reveal-xp' }, '+' + nf(unitXp, 0) + ' XP') : null, e('small', null, 'Сундук ' + (i + 1))))), e('div', { className: 'gm-chests-reward-total' }, e('span', null, 'Итого начислено'), e('strong', null, '+' + nf(boxReveal.gm || 0, 0) + ' GM')), bonusXp ? e('div', { className: 'gm-box-reveal-total-xp' }, icon('sparkles', 19), 'Дополнительно: +' + nf(bonusXp, 0) + ' XP') : null, boxReveal.unlocked.length ? e('div', { className: 'gm-box-reveal-unlocks' }, icon('award', 20), e('div', null, e('b', null, 'Новая рамка профиля!'), ...boxReveal.unlocked.map(f => e('span', { key: f.id }, f.title)))) : null, e('p', null, bonusXp ? 'Виртуальные GM и XP начислены сервером, POINTS списаны.' : 'Виртуальные GM начислены сервером, POINTS списаны.'), e('button', { type: 'button', className: 'gm-chests-close', onClick: () => setModal('') }, 'Отлично!', icon('check', 20)))));
     }
     function Referrals() {
         const e = React.createElement;
