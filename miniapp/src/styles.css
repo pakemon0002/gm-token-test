@@ -2521,3 +2521,224 @@ html,body,.application,.application button,.application input,.application texta
   .gm-splash-v4 .gm-splash-v4-status{margin-top:14px!important}
   .gm-splash-v4 .gm-splash-v4-tagline{margin-top:12px!important}
 }
+
+
+/* GM TOKEN 3.5 — unified Silver / White Boxes.
+   Only the light theme changes; graphite theme retains its existing colors.
+   Do not reuse the oversized .gm-chest-stage-art class in selectable catalog cards. */
+.application .gm-flat-boxes .gm-flat-card{
+ height:auto!important;min-height:128px!important;max-height:none!important;
+ align-content:center!important;overflow:hidden!important;
+ grid-template-columns:minmax(84px,30%) minmax(0,1fr)!important;
+}
+.application .gm-flat-boxes .gm-flat-card-image{
+ display:grid!important;place-items:center!important;
+ width:100%!important;height:104px!important;min-height:0!important;
+ max-height:104px!important;margin:0!important;padding:0!important;
+ transform:none!important;animation:none!important;perspective:none!important;
+}
+.application .gm-flat-boxes .gm-flat-card-image img{
+ display:block!important;width:100%!important;height:102px!important;
+ max-width:118px!important;object-fit:contain!important;
+ transform:none!important;animation:none!important;
+}
+.application.theme-light .gm-flat-boxes{
+ color:#20293c;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-stars{
+ color:#7c8fae;text-shadow:0 0 11px #99afd260;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-heading h2{
+ color:#20293c!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-heading p{
+ color:#59677c!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-wallet{
+ background:linear-gradient(135deg,#fff,#f3f6fc 60%,#e6ecf7)!important;
+ border:1px solid #c5cedf!important;
+ box-shadow:inset 0 1px #fff,0 6px 17px #344c6a22!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-point-icon{
+ color:#314563!important;
+ border:1px solid #b6c5da!important;
+ background:linear-gradient(140deg,#fff,#e1e9f5 58%,#ccd7e8)!important;
+ box-shadow:inset 0 1px #fff,0 3px 8px #50678024!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-wallet-balance small{
+ color:#69778a!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-wallet-balance strong{
+ color:#192439!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-points-help{
+ background:linear-gradient(140deg,#fff,#e8eef8)!important;
+ color:#26364d!important;border:1px solid #bbc8dc!important;
+ box-shadow:inset 0 1px #fff,0 3px 9px #33476117;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-tour-buttons button{
+ color:#28394f!important;
+ background:linear-gradient(140deg,#fff,#e9eef7)!important;
+ border:1px solid #ccd5e3!important;
+ box-shadow:inset 0 1px #fff,0 3px 9px #34496518;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-points-detail{
+ background:linear-gradient(145deg,#fff,#ecf1f9)!important;
+ color:#26344b!important;border:1px solid #c7d1e2!important;
+ box-shadow:inset 0 1px #fff;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-points-detail p{
+ color:#394960!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-points-detail .gm-points-guide-action{
+ background:linear-gradient(135deg,#e4ecf7,#c7d4e6)!important;
+ color:#1b304c!important;border:1px solid #b6c5dc!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-card{
+ --metal:#b87951;--metal-shadow:#c68a5640;
+ color:#1f2a40!important;
+ border:1px solid #d6c0b3!important;
+ background:radial-gradient(ellipse at 12% 52%,#e6c9b7ad,transparent 64%),
+  linear-gradient(135deg,#fff8f5,#f4f0ef 58%,#fff)!important;
+ box-shadow:inset 0 1px #fff,0 7px 16px #36445b25!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-card.silver{
+ --metal:#7288a7;--metal-shadow:#8ba7c749;
+ border-color:#c0cde0!important;
+ background:radial-gradient(ellipse at 12% 52%,#ccdbeeab,transparent 64%),
+  linear-gradient(135deg,#fff,#ecf2fa 64%,#fff)!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-card.gold{
+ --metal:#b99042;--metal-shadow:#b18c464d;
+ border-color:#d9c59e!important;
+ background:radial-gradient(ellipse at 12% 52%,#f5e1b8bd,transparent 65%),
+  linear-gradient(135deg,#fffaf1,#f5f0e7 62%,#fff)!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-card.selected{
+ border:2px solid var(--metal)!important;
+ box-shadow:0 0 0 1px var(--metal-shadow),0 8px 22px var(--metal-shadow),inset 0 1px #fff!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-card-image::before{
+ background:radial-gradient(circle,var(--metal-shadow),transparent 68%)!important;
+ opacity:.85!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-card-body>b{
+ color:#202a3b!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-card-body>small{
+ color:#5d6b7f!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-card-stats{
+ border-top:1px solid #b7c4d549!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-card-stats>span{
+ color:#58687c!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-card-stats>span+span{
+ border-left:1px solid #b3bfd26e!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-card-stats strong{
+ color:#192538!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-card-check{
+ color:#32445d!important;border:1px solid var(--metal)!important;
+ background:linear-gradient(145deg,#fff,#e8eff8)!important;
+ box-shadow:0 0 0 2px #fff9,0 0 10px var(--metal-shadow)!important;
+}
+.application.theme-light .gm-flat-boxes .gm-flat-opening h3{
+ color:#1d2a3d!important;
+}
+.application.theme-light .gm-flat-boxes .gm-chests-qty button{
+ color:#29384e!important;
+ border:1px solid #c1ccdc!important;
+ background:linear-gradient(150deg,#fff,#e8eef7)!important;
+ box-shadow:inset 0 1px #fff,0 4px 10px #37577a1c!important;
+}
+.application.theme-light .gm-flat-boxes .gm-chests-qty button.active{
+ color:#13243e!important;
+ border-color:#a0b4d0!important;
+ background:linear-gradient(130deg,#e7f0fb,#bfcde2)!important;
+ box-shadow:inset 0 1px #fff,0 0 0 1px #bdcbe0,0 5px 14px #526f9c30!important;
+}
+.application.theme-light .gm-flat-boxes .gm-chests-subtotal{
+ color:#57677c!important;
+}
+.application.theme-light .gm-flat-boxes .gm-chests-subtotal b{
+ color:#23374e!important;
+}
+.application.theme-light .gm-flat-boxes .gm-chests-open{
+ color:#172a42!important;
+ background:linear-gradient(145deg,#e7eef8,#b4c5de)!important;
+ border:1px solid #aabbd4!important;
+ box-shadow:inset 0 1px #fff,0 6px 16px #536b9528!important;
+ opacity:1!important;
+}
+.application.theme-light .gm-flat-boxes .gm-chests-open:disabled{
+ color:#39465b!important;
+ background:linear-gradient(145deg,#e2e7f0,#c6cfde)!important;
+ border-color:#bdc7d7!important;
+ box-shadow:inset 0 1px #fff7!important;
+ opacity:1!important;
+}
+.application.theme-light .gm-flat-boxes .gm-chests-how-points{
+ color:#293b55!important;
+ background:linear-gradient(145deg,#fff,#eaf0f8)!important;
+ border:1px solid #bdc9dc!important;
+ box-shadow:inset 0 1px #fff,0 4px 10px #4e668a19;
+}
+.application.theme-light .gm-flat-boxes .gm-boxes-honest{
+ color:#5b6a7f!important;
+}
+.application.theme-light .gm-chests-result.gm-flat-result{
+ color:#1c2b3f!important;
+ border:1px solid #c2cddd!important;
+ background:radial-gradient(ellipse at 50% 8%,#fff,#eff3fa 62%,#e1e8f3)!important;
+ box-shadow:0 15px 45px #27385134!important;
+}
+.application.theme-light .gm-flat-result .gm-chests-finished-tag{
+ color:#263b54!important;border:1px solid #bdcadf!important;
+ background:#e7eef9!important;
+}
+.application.theme-light .gm-flat-result .gm-chests-result-copy h2{
+ color:#192c45!important;
+}
+.application.theme-light .gm-flat-result .gm-chest-reward-tile{
+ color:#24344b!important;
+ background:linear-gradient(145deg,#fff,#e9eef7)!important;
+ border:1px solid #c7d3e3!important;
+}
+.application.theme-light .gm-flat-result .gm-chest-reward-tile b{
+ color:#192d47!important;
+}
+.application.theme-light .gm-flat-result .gm-chest-reward-tile small{
+ color:#69778c!important;
+}
+.application.theme-light .gm-flat-result .gm-chests-reward-total{
+ background:linear-gradient(145deg,#f8fbff,#dbe6f4)!important;
+ border:1px solid #b8cae0!important;
+}
+.application.theme-light .gm-flat-result .gm-chests-reward-total span,
+.application.theme-light .gm-flat-result .gm-chests-result-copy p{
+ color:#596c85!important;
+}
+.application.theme-light .gm-flat-result .gm-chests-reward-total strong{
+ color:#19314f!important;
+}
+.application.theme-light .gm-flat-result .gm-chests-close{
+ color:#172a45!important;
+ background:linear-gradient(135deg,#e6effb,#bdcee3)!important;
+ border:1px solid #b4c6dd!important;
+}
+@media(max-width:380px){
+ .application .gm-flat-boxes .gm-flat-card{
+   grid-template-columns:minmax(73px,29%) minmax(0,1fr)!important;
+   min-height:122px!important;
+ }
+ .application .gm-flat-boxes .gm-flat-card-image{
+   height:98px!important;max-height:98px!important;
+ }
+ .application .gm-flat-boxes .gm-flat-card-image img{height:98px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .application .gm-flat-boxes .gm-flat-card{transition:none!important}
+}
