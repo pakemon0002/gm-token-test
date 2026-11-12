@@ -32,7 +32,8 @@ test('Boxes only reveal the server-approved reward after successful operation',(
  for(const code of [source(),compiled()]){
   assert.ok(has(code,'gm-chests-result'));
   assert.ok(has(code,'gm-chests-rewards-grid'));
-  assert.ok(has(code,'gm-chest-stage-art'));
+  assert.ok(has(code,'gm-flat-card-image'));
+  assert.ok(!has(code,"active?' gm-chest-stage-art'"));
   assert.ok(has(code,'gm-chests-qty'));
   assert.ok(has(code,'gm_cents!=null'));
   assert.ok(has(code,"api('/api/boxes/open'"));
