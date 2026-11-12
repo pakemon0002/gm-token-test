@@ -1552,7 +1552,7 @@ function Splash(){return <div className="splash-view gm-splash-v4" role="status"
   e('header',{className:'gm-flat-heading'},
    e('span',{className:'gm-flat-stars','aria-hidden':true},'✦　✧　✦'),
    e('h2',null,'Сундуки GM'),
-   e('p',null,'Открывай сундуки и получай GM, опыт и коллекционные награды. Без случайных призов.')),
+   e('p',null,bonusEnabled?'Открывай сундуки и получай GM, XP и коллекционные рамки. Все призы гарантированы.':'Открывай сундуки и получай виртуальные GM. Награды фиксированные.')),
   e('div',{className:'gm-boxes-points gm-flat-wallet'},
    e('span',{className:'gm-flat-point-icon'},icon('diamond',26,true)),
    e('div',{className:'gm-flat-wallet-balance'},e('small',null,'Ваши POINTS'),e('strong',null,nf(points,0)+' POINTS')),
@@ -1582,14 +1582,14 @@ function Splash(){return <div className="splash-view gm-splash-v4" role="status"
       e('small',null,x.tag),
       e('span',{className:'gm-flat-card-stats'},
        e('span',null,'Награда',e('strong',null,nf(Number(payouts[x.kind]||0),0)+' GM')),
-       e('span',null,'Стоимость',e('strong',null,nf(x.cost,0)+' POINTS')))),
-     bonusEnabled?e('span',{className:'gm-box-bonus'},
+       e('span',null,'Стоимость',e('strong',null,nf(x.cost,0)+' POINTS'))),
+      bonusEnabled?e('span',{className:'gm-box-bonus'},
       icon('sparkles',15),e('b',null,'+'+nf(Number(xpRewards[x.kind]||0),0)+' XP'),
       e('small',null,(()=>{
        const milestone=frameRewards.find((f:any)=>f.kind===x.kind);
        const value=Number(collection[x.kind]||0);
        return milestone?value>=milestone.required?'Рамка открыта':'Рамка: '+value+'/'+milestone.required:'Бонус опыта';
-      })())):null,
+      })())):null),
      active?e('span',{className:'gm-flat-card-check','aria-label':'Выбран'},icon('check',17)):null)
    })),
   e('section',{className:'gm-flat-opening'},
@@ -1616,7 +1616,7 @@ function Splash(){return <div className="splash-view gm-splash-v4" role="status"
       onClick:()=>{setPointsGuideOpen(true);openGuide('points')}},
       icon('info',16),'Как заработать POINTS',icon('chevron-right',16)):null)),
   e('p',{className:'gm-boxes-honest'},
-   'POINTS списываются, GM и XP начисляются одним серверным действием. Рамки доступны в профиле. Дневные лимиты сохранены.'));
+   bonusEnabled?'POINTS списываются, GM и XP начисляются одним серверным действием. Рамки доступны в профиле. Дневные лимиты сохранены.':'POINTS списываются и GM начисляются сервером. Дневные лимиты сохранены.'));
  }
  function BoxRevealModal(){
   const e=React.createElement;
@@ -1647,7 +1647,7 @@ function Splash(){return <div className="splash-view gm-splash-v4" role="status"
       icon('award',20),e('div',null,
        e('b',null,'Новая рамка профиля!'),
        ...boxReveal.unlocked.map(f=>e('span',{key:f.id},f.title)))):null,
-     e('p',null,'Виртуальные GM и XP начислены сервером, POINTS списаны.'),
+     e('p',null,bonusXp?'Виртуальные GM и XP начислены сервером, POINTS списаны.':'Виртуальные GM начислены сервером, POINTS списаны.'),
      e('button',{type:'button',className:'gm-chests-close',onClick:()=>setModal('')},
       'Отлично!',icon('check',20)))));
  }
