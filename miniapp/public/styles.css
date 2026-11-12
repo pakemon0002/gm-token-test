@@ -2851,5 +2851,4 @@ html,body,.application,.application button,.application input,.application texta
 .gm-flat-boxes .gm-flat-opening .gm-chests-how-points:active{transform:scale(.98)}
 .gm-flat-boxes .gm-flat-opening .gm-chests-open{min-height:60px;border-radius:17px;font-weight:850}
 .application.theme-light .gm-flat-boxes .gm-flat-opening .gm-chests-how-points{background:linear-gradient(135deg,#fff,#e9edfb)!important;border:1px solid #b7c3de!important;color:#273651!important;box-shadow:0 5px 15px #425b8b20!important}
-.application.theme-dark .gm-flat-boxes .gm-flat-opening .gm-chests-how-points{background:linear-gradient(125deg,#353056,#4b387e)!important;border:1px solid #8170bd!important;color:#fff!important;box-shadow:0 5px 16px #211a5133!important}
 @media(max-width:370px){.gm-flat-boxes .gm-boxes-welcome{margin-inline:12px;padding:13px;gap:10px}.gm-flat-boxes .gm-boxes-welcome-art{width:61px}.gm-flat-boxes .gm-boxes-welcome-coin{width:50px;height:50px;font-size:15px}.gm-flat-boxes .gm-boxes-welcome-copy strong{font-size:15px}.gm-flat-boxes .gm-flat-opening .gm-chests-qty{gap:6px}}
