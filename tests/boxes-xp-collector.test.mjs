@@ -99,9 +99,9 @@ test('fixed GM + XP + collectible frames are granted atomically, once per reques
  assert.equal(audit.data.ok,true,'XP rewards do not inflate GM/CR supply');
 });
 
-test('extra prizes remain unavailable outside the isolated virtual testing mode',()=>{
+test('extra prizes stay disabled unless the server staging flag is explicitly enabled',()=>{
  const server=readFileSync(new URL('../server/game.mjs',import.meta.url),'utf8');
- assert.ok(server.includes('const boxBonusEnabled=process.env.GM_BOX_BONUS_REWARDS==='1';'));
+ assert.ok(server.includes("const boxBonusEnabled=process.env.GM_BOX_BONUS_REWARDS==='1';"));
  assert.ok(server.includes('box_bonus_enabled:boxBonusEnabled'));
  assert.ok(server.includes("return {...row,total:row.bronze+row.silver+row.gold}"));
  assert.ok(server.includes('takePool(\'BOXES\',\'gm\',n)'));
