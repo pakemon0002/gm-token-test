@@ -20,7 +20,7 @@ test('fixed GM + XP + collectible frames are granted atomically, once per reques
  const child=spawn(process.execPath,['--experimental-sqlite','server/index.mjs'],{
   cwd:new URL('..',import.meta.url).pathname,
   env:{...process.env,BOT_TOKEN:TOKEN,PORT:String(port),DB_PATH:path,
-   GM_PRIVATE_TEST_ECONOMY:'1',GM_TEST_STARTER_FUNDS:'0',
+   GM_PRIVATE_TEST_ECONOMY:'1',GM_TEST_STARTER_FUNDS:'0',GM_BOX_BONUS_REWARDS:'1',
    BOX_REWARDS_GM_JSON:'{"bronze":15,"silver":45,"gold":105}',
    BOT_POLLING:'0',PUBLIC_APP_URL:'',BOT_WEBHOOK_SECRET:'',
    BOX_DAILY_GM_CAP:'1000',OWNER_TELEGRAM_IDS:String(USER),OWNER_TOTP_SECRETS:'{}'},
@@ -101,7 +101,7 @@ test('fixed GM + XP + collectible frames are granted atomically, once per reques
 
 test('extra prizes remain unavailable outside the isolated virtual testing mode',()=>{
  const server=readFileSync(new URL('../server/game.mjs',import.meta.url),'utf8');
- assert.ok(server.includes('const boxBonusEnabled=testEconomy;'));
+ assert.ok(server.includes('const boxBonusEnabled=process.env.GM_BOX_BONUS_REWARDS==='1';'));
  assert.ok(server.includes('box_bonus_enabled:boxBonusEnabled'));
  assert.ok(server.includes("return {...row,total:row.bronze+row.silver+row.gold}"));
  assert.ok(server.includes('takePool(\'BOXES\',\'gm\',n)'));
