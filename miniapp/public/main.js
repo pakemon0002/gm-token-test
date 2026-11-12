@@ -1501,7 +1501,28 @@ function App() {
                 const value = Number(collection[x.kind] || 0);
                 return milestone ? value >= milestone.required ? 'Рамка открыта' : 'Рамка: ' + value + '/' + milestone.required : 'Бонус опыта';
             })())) : null), active ? e('span', { className: 'gm-flat-card-check', 'aria-label': 'Выбран' }, icon('check', 17)) : null);
-        })), e('section', { className: 'gm-flat-opening' }, e('h3', null, 'Сколько открыть?'), e('div', { className: 'gm-chests-qty', role: 'group', 'aria-label': 'Количество открытий' }, [1, 3, 5, 10].map(count => e('button', { type: 'button', key: count,
+        })), e('section', { className: 'gm-chest-prize-preview', 'aria-label': 'Предпросмотр наград выбранного сундука' },
+            e('div', { className: 'gm-chest-prize-head' },
+                e('div', null, e('small', null, 'СОДЕРЖИМОЕ СУНДУКА'), e('h3', null, 'Что внутри?')),
+                e('span', { className: 'gm-chest-prize-kind' }, selected.name)),
+            e('div', { className: 'gm-chest-prize-grid' },
+                e('div', { className: 'gm-chest-prize-item' },
+                    e('span', { className: 'gm-chest-prize-icon' }, icon('coins', 23, true)),
+                    e('span', null, e('b', null, 'GM TOKEN'), e('small', null, 'Гарантированная награда')),
+                    e('strong', null, reward > 0 ? '+' + nf(reward, 0) + ' GM' : '—')),
+                bonusEnabled ? e('div', { className: 'gm-chest-prize-item' },
+                    e('span', { className: 'gm-chest-prize-icon' }, icon('sparkles', 23, true)),
+                    e('span', null, e('b', null, 'Опыт XP'), e('small', null, 'За каждое открытие')),
+                    e('strong', null, '+' + nf(Number(xpRewards[selected.kind] || 0), 0) + ' XP')) : null,
+                ...frameRewards.filter(f => f.kind === selected.kind).map(f => {
+                    const progress = Number(collection[selected.kind] || 0), required = Number(f.required || 0);
+                    return e('div', { className: 'gm-chest-prize-item gm-chest-prize-frame', key: String(f.id || f.title) },
+                        e('span', { className: 'gm-chest-prize-icon' }, icon('award', 23, true)),
+                        e('span', null, e('b', null, String(f.title || 'Коллекционная рамка')),
+                            e('small', null, required > 0 ? 'За ' + required + ' открытий этого сундука' : 'Коллекционная награда')),
+                        e('strong', null, required > 0 ? (progress >= required ? 'Получена' : progress + '/' + required) : 'Бонус'));
+                })),
+            e('p', { className: 'gm-chest-prize-note' }, 'Награды и прогресс берутся из настроек игры. Рамки выдаются за достижения, а не случайным образом.')), e('section', { className: 'gm-flat-opening' }, e('h3', null, 'Сколько открыть?'), e('div', { className: 'gm-chests-qty', role: 'group', 'aria-label': 'Количество открытий' }, [1, 3, 5, 10].map(count => e('button', { type: 'button', key: count,
             'aria-pressed': boxCount === count, className: boxCount === count ? 'active' : '',
             onClick: () => setBoxCount(count) }, '×' + count))), e('div', { className: 'gm-chests-subtotal' }, e('span', null, 'Итого: ', e('b', null, '+' + nf(totalReward, 0) + ' GM')), e('span', null, nf(totalCost, 0) + ' POINTS')), bonusEnabled ? e('div', { className: 'gm-box-total-bonuses' }, icon('sparkles', 17), 'Дополнительно: +' + nf(totalXp, 0) + ' XP', e('span', null, 'Рамки за открытия 5/5/5 и 30 всего')) : null, e('div', { className: 'gm-chests-actions' }, e('button', { type: 'button', className: 'gm-chests-open',
             disabled: demo || !enabled || !reward || boxBusy || points < totalCost,
