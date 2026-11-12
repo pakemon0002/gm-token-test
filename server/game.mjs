@@ -51,9 +51,9 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
  const config=(k,value)=>stmt('INSERT OR IGNORE INTO game_settings(k,v) VALUES(?,?)').run(k,String(value));
  const v=(k)=>stmt('SELECT v FROM game_settings WHERE k=?').get(k)?.v;
  const testEconomy=process.env.GM_PRIVATE_TEST_ECONOMY==='1';
- // Additional in-game prizes are limited to isolated test-economy accounts.
+ // Additional in-game prizes require a server-only explicit opt-in, enabled on staging only.
  // No randomized rewards or real-world token promises.
- const boxBonusEnabled=testEconomy;
+ const boxBonusEnabled=process.env.GM_BOX_BONUS_REWARDS==='1';
  const boxXp=Object.freeze({bronze:20,silver:60,gold:150});
  const boxFrameCatalog=Object.freeze([
   {id:'box_bronze_5',title:'Бронзовый искатель',kind:'bronze',required:5},
