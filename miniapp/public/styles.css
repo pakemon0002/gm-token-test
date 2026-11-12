@@ -2797,3 +2797,23 @@ html,body,.application,.application button,.application input,.application texta
 @media(max-width:380px){.application .gm-flat-boxes .gm-flat-card{min-height:144px!important}
  .gm-box-bonus{gap:3px 5px}.gm-box-bonus small{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.gm-box-reveal-unlocks{animation:none!important}}
+
+
+/* Chest prize preview: inherits the existing GM TOKEN light/dark palette. */
+.gm-chest-prize-preview{margin:14px 0;padding:15px;border:1px solid var(--border);border-radius:20px;background:var(--surface);color:var(--ink);box-shadow:0 8px 22px #0000000a}
+.gm-chest-prize-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.gm-chest-prize-head small{display:block;font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--muted)}
+.gm-chest-prize-head h3{font-size:17px;margin:4px 0 0}
+.gm-chest-prize-kind{font-size:10px;text-align:right;color:var(--muted);max-width:42%}
+.gm-chest-prize-grid{display:grid;gap:8px}
+.gm-chest-prize-item{display:flex;align-items:center;gap:10px;min-width:0;padding:10px;border:1px solid var(--border);border-radius:14px;background:var(--surface)}
+.gm-chest-prize-icon{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:12px;background:var(--surface);border:1px solid var(--border)}
+.gm-chest-prize-item>span:nth-child(2){display:grid;gap:4px;min-width:0;flex:1}
+.gm-chest-prize-item b{font-size:12px;overflow-wrap:anywhere}
+.gm-chest-prize-item small{font-size:10px;color:var(--muted);line-height:1.3}
+.gm-chest-prize-item>strong{font-size:12px;white-space:nowrap;text-align:right}
+.gm-chest-prize-note{font-size:10px;line-height:1.5;color:var(--muted);margin:11px 2px 0}
+.theme-dark .gm-chest-prize-preview{background:linear-gradient(145deg,#292b37,#12131a);border-color:#4a4c5e}
+.theme-dark .gm-chest-prize-item{background:#1c1e28;border-color:#414451}
+.theme-dark .gm-chest-prize-icon{background:#292c38;border-color:#4a4c5e}
+@media(max-width:360px){.gm-chest-prize-preview{padding:11px}.gm-chest-prize-item{gap:7px;padding:8px}.gm-chest-prize-icon{width:36px;height:36px;flex-basis:36px}.gm-chest-prize-item>strong{font-size:11px}}
