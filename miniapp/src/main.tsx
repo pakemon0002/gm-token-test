@@ -1254,7 +1254,8 @@ function Tasks(){
  function Profile(){
   const e=React.createElement;
   const cosmetics=liveState?.cosmetics||{founder_slot:null,frames:[]};
-  const frames=[{id:'standard',title:'GM Classic',claimed:true},...(cosmetics.frames||[])];
+  const frames=[{id:'standard',title:'GM Classic',claimed:true},...(cosmetics.frames||[]).filter((f:any)=>!f.type||f.type==='frame')];
+  const boxCollectibles=(cosmetics.frames||[]).filter((f:any)=>f.category==='box'&&f.type&&f.type!=='frame');
   const chosen=frames.find((f:any)=>f.id===selectedFrame&&f.claimed)?selectedFrame:'standard';
   const league=liveState?.league||{name:'Bronze',min_xp:0};
   const leagues=liveState?.leagues||[];
@@ -1301,6 +1302,14 @@ function Tasks(){
        style:{'--frame-hue':String(String(f.id).split('').reduce((n:number,c:string)=>n+c.charCodeAt(0),0)%360)+'deg'}},
        e('span',{className:'gm-frame-inner'},e(PlayerAvatar,{name:user?.username||'GM',size:'small'}))),
       e('span',null,f.title),f.claimed?icon('check',16):icon('minus',16))))),
+   boxCollectibles.length?e('section',{className:'gm-profile-collection gm-premium-card'},
+    e('h3',null,'Коллекция сундуков'),
+    e('p',null,'Значки, фоны, титулы и медали за открытия сундуков. Полученные предметы сохраняются в коллекции.'),
+    e('div',{className:'gm-profile-collection-grid'},boxCollectibles.map((f:any)=>e('div',{
+     key:f.id,className:'gm-profile-collection-item '+(f.claimed?'unlocked':'locked')},
+     icon(f.type==='badge'?'award':f.type==='background'?'image':f.type==='title'?'type':'medal',21),
+     e('span',null,e('b',null,f.title),e('small',null,({badge:'Значок',background:'Фон',title:'Титул',medal:'Медаль'} as any)[f.type]||'Награда')),
+     e('strong',null,f.claimed?'Получено':'Закрыто'))))) : null,
    e('div',{className:'profile-menu'},
     [['trophy',L('achievements'),'achievements'],['friends',L('referrals'),'referrals'],['clock',L('history'),'history'],['wallet',L('wallet'),'wallet'],['settings',L('customize'),'settings'],['info',L('support'),'support']].map(([i,t,route])=>
      e('button',{key:route,onClick:()=>goto(route)},icon(i,21),e('span',null,t),icon('chevron-right',18)))),
@@ -1609,7 +1618,7 @@ function Splash(){return <div className="splash-view gm-splash-v4" role="status"
      const progress=Number(collection[selected.kind]||0),required=Number(f.required||0);
      return e('div',{className:'gm-chest-prize-item gm-chest-prize-frame',key:String(f.id||f.title)},
       e('span',{className:'gm-chest-prize-icon'},icon('award',23,true)),
-      e('span',null,e('b',null,String(f.title||'Коллекционная рамка')),
+      e('span',null,e('b',null,String(f.title||'Коллекционная награда')),
        e('small',null,required>0?'За '+required+' открытий этого сундука':'Коллекционная награда')),
       e('strong',null,required>0?(progress>=required?'Получена':progress+'/'+required):'Бонус'));
     })),
