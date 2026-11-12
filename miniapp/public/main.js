@@ -402,7 +402,7 @@ function App() {
         boxes: [
             ['wallet', 'balance', '.gm-boxes-points', 'boxes.points'],
             ['gift', 'boxes', '.gm-chests-list', 'boxes.choose'],
-            ['gift', 'boxes', '.gm-chest-stage-art', 'boxes.preview'],
+            ['gift', 'boxes', '.gm-flat-card.selected .gm-flat-card-image', 'boxes.preview'],
             ['coins', 'boxes', '.gm-chests-qty', 'boxes.quantity'],
             ['shield-check', 'boxes', '.gm-chests-open', 'boxes.claim']
         ],
@@ -1489,7 +1489,7 @@ function App() {
             const active = boxKind === x.kind;
             return e('button', { key: x.kind, type: 'button',
                 className: 'gm-chest-choice gm-flat-card ' + x.kind + (active ? ' selected' : ''),
-                'aria-pressed': active, onClick: () => setBoxKind(x.kind) }, e('span', { className: 'gm-flat-card-image' + (active ? ' gm-chest-stage-art' : '') }, e('img', { src: picture(x.kind), alt: '', draggable: false, 'aria-hidden': true })), e('span', { className: 'gm-chest-choice-info gm-flat-card-body' }, e('b', null, x.name), e('small', null, x.tag), e('span', { className: 'gm-flat-card-stats' }, e('span', null, 'Награда', e('strong', null, nf(Number(payouts[x.kind] || 0), 0) + ' GM')), e('span', null, 'Стоимость', e('strong', null, nf(x.cost, 0) + ' POINTS')))), active ? e('span', { className: 'gm-flat-card-check', 'aria-label': 'Выбран' }, icon('check', 17)) : null);
+                'aria-pressed': active, onClick: () => setBoxKind(x.kind) }, e('span', { className: 'gm-flat-card-image' }, e('img', { src: picture(x.kind), alt: '', draggable: false, 'aria-hidden': true })), e('span', { className: 'gm-chest-choice-info gm-flat-card-body' }, e('b', null, x.name), e('small', null, x.tag), e('span', { className: 'gm-flat-card-stats' }, e('span', null, 'Награда', e('strong', null, nf(Number(payouts[x.kind] || 0), 0) + ' GM')), e('span', null, 'Стоимость', e('strong', null, nf(x.cost, 0) + ' POINTS')))), active ? e('span', { className: 'gm-flat-card-check', 'aria-label': 'Выбран' }, icon('check', 17)) : null);
         })), e('section', { className: 'gm-flat-opening' }, e('h3', null, 'Сколько открыть?'), e('div', { className: 'gm-chests-qty', role: 'group', 'aria-label': 'Количество открытий' }, [1, 3, 5, 10].map(count => e('button', { type: 'button', key: count,
             'aria-pressed': boxCount === count, className: boxCount === count ? 'active' : '',
             onClick: () => setBoxCount(count) }, '×' + count))), e('div', { className: 'gm-chests-subtotal' }, e('span', null, 'Итого: ', e('b', null, '+' + nf(totalReward, 0) + ' GM')), e('span', null, nf(totalCost, 0) + ' POINTS')), e('div', { className: 'gm-chests-actions' }, e('button', { type: 'button', className: 'gm-chests-open',
