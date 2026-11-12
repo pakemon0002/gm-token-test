@@ -2331,3 +2331,137 @@ html,body,.application,.application button,.application input,.application texta
 @media(prefers-reduced-motion:reduce){
  .gm-splash-v3 .gm-splash-v3-progress span{animation:none!important}
 }
+
+
+/* GM TOKEN splash v4 — visibly compact, single-axis loading composition.
+   Uses independent class names to avoid conflicting older v2/v3 CSS. */
+.splash-view.gm-splash-v4{
+  position:relative!important;isolation:isolate;
+  box-sizing:border-box!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  flex-direction:column!important;
+  width:100%!important;height:100%!important;min-height:100%!important;
+  margin:0!important;padding:18px 18px!important;overflow:hidden!important;
+  color:#f6f9ff!important;
+  background:radial-gradient(ellipse 70% 53% at 50% 42%,#25344a 0%,#111923 58%,#080d16 100%)!important;
+}
+.theme-light .splash-view.gm-splash-v4{
+  color:#142336!important;
+  background:radial-gradient(ellipse 70% 58% at 50% 43%,#f6faff 0%,#d3dce9 60%,#b4c1d1 100%)!important;
+}
+.splash-view.gm-splash-v4::before,
+.splash-view.gm-splash-v4::after{content:none!important;display:none!important}
+.gm-splash-v4 .gm-splash-v4-stack{
+  position:relative!important;z-index:1;
+  display:flex!important;flex-direction:column!important;align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;max-width:320px!important;
+  margin:0 auto!important;padding:0!important;
+  gap:0!important;box-sizing:border-box!important;
+  text-align:center!important;
+}
+.gm-splash-v4 .gm-splash-v4-eyebrow{
+  display:flex;justify-content:center;align-items:center;gap:10px;
+  min-height:16px!important;margin:0 0 17px!important;
+  font-size:10px;line-height:1.4;font-weight:800;letter-spacing:.22em;
+  color:#bbcbe0;text-align:center!important;
+}
+.theme-light .gm-splash-v4 .gm-splash-v4-eyebrow{color:#556882}
+.gm-splash-v4 .gm-splash-v4-eyebrow span{font-size:9px;color:#f3f7ff}
+.theme-light .gm-splash-v4 .gm-splash-v4-eyebrow span{color:#556985}
+.gm-splash-v4 .gm-splash-v4-orbit{
+  position:relative;display:grid;place-items:center;
+  width:192px;height:192px;flex:0 0 192px;
+  margin:0 auto!important;border-radius:50%;
+  background:radial-gradient(circle,#96abc52a 0%,#819db81b 55%,transparent 71%);
+}
+.gm-splash-v4 .gm-splash-v4-orbit::before{
+  content:"";position:absolute;width:186px;height:186px;left:50%;top:50%;
+  transform:translate(-50%,-50%);border:1px solid #c9ddf15e;border-radius:50%;
+  box-shadow:0 0 0 12px #bbd4f30a,0 0 0 27px #c4d8ee06;
+  pointer-events:none;
+}
+.gm-splash-v4 .gm-splash-v4-coin{
+  box-sizing:border-box;position:relative;
+  width:166px;height:166px;display:grid;place-items:center;
+  padding:8px;border-radius:50%;
+  background:linear-gradient(135deg,#f7faff 0%,#8b9cb5 29%,#3c4e64 54%,#e3eafa 80%,#718098 100%);
+  border:1px solid #d9e7fa;box-shadow:0 13px 27px #0008,inset 0 2px 3px #fff9;
+  transform:none!important;animation:none!important;
+}
+.gm-splash-v4 .gm-splash-v4-coin-inner{
+  width:100%;height:100%;border-radius:50%;
+  border:2px solid #a6b7d0;
+  background:radial-gradient(circle at 32% 21%,#344153,#101721 65%,#070b11);
+  display:grid;place-items:center;overflow:hidden;box-sizing:border-box;
+}
+.gm-splash-v4 .gm-splash-v4-coin-inner img{
+  width:80%;height:80%;object-fit:contain;display:block;
+  margin:auto;filter:drop-shadow(0 3px 5px #0007);
+  transform:none!important;animation:none!important;
+}
+.gm-splash-v4 .gm-splash-v4-wordmark{
+  display:flex;flex-direction:column;align-items:center;
+  width:100%;margin:17px 0 0!important;padding:0!important;gap:0!important;
+}
+.gm-splash-v4 .gm-splash-v4-wordmark h1{
+  color:inherit!important;font:850 28px/1.2 'Montserrat',system-ui,sans-serif!important;
+  letter-spacing:-.065em!important;margin:0!important;padding:0!important;
+  text-align:center!important;white-space:nowrap;
+}
+.gm-splash-v4 .gm-splash-v4-wordmark p{
+  color:inherit!important;font:800 9px/1.45 'Montserrat',system-ui,sans-serif!important;
+  letter-spacing:.12em!important;opacity:.72;
+  width:100%;max-width:300px;white-space:normal;
+  text-align:center!important;margin:11px 0 0!important;padding:0!important;
+}
+.gm-splash-v4 .gm-splash-v4-status{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:100%;max-width:225px;gap:10px;
+  margin:30px auto 0!important;padding:0!important;
+}
+.gm-splash-v4 .gm-splash-v4-track{
+  position:relative;overflow:hidden;
+  width:100%;height:5px;box-sizing:border-box;
+  margin:0 auto;border-radius:99px;
+  background:#64789152;border:1px solid #adbbce8a;
+}
+.gm-splash-v4 .gm-splash-v4-track span{
+  display:block;width:35%;height:100%;
+  border-radius:99px;background:linear-gradient(90deg,#99abc5,#f8fcff,#bbcbe0);
+  animation:gm-splash-v4-progress 1.25s ease-in-out infinite;
+}
+.gm-splash-v4 .gm-splash-v4-status small{
+  margin:0!important;padding:0!important;
+  font-size:11px;line-height:1.4;font-weight:750;
+  color:inherit!important;opacity:.83;
+  text-align:center!important;
+}
+.gm-splash-v4 .gm-splash-v4-tagline{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin:25px auto 0!important;padding:0!important;
+  font-size:9px;line-height:1.4;font-weight:800;letter-spacing:.12em;
+  color:#b9c7d9;opacity:.75;text-align:center!important;white-space:nowrap;
+}
+.theme-light .gm-splash-v4 .gm-splash-v4-tagline{color:#53657f}
+.gm-splash-v4 .gm-splash-v4-tagline span{opacity:.55}
+@keyframes gm-splash-v4-progress{
+  0%{transform:translateX(-110%)}100%{transform:translateX(295%)}
+}
+@media(max-height:640px){
+ .splash-view.gm-splash-v4{padding:12px 16px!important}
+ .gm-splash-v4 .gm-splash-v4-eyebrow{margin-bottom:10px!important}
+ .gm-splash-v4 .gm-splash-v4-orbit{width:160px;height:160px;flex-basis:160px}
+ .gm-splash-v4 .gm-splash-v4-orbit::before{width:154px;height:154px}
+ .gm-splash-v4 .gm-splash-v4-coin{width:143px;height:143px}
+ .gm-splash-v4 .gm-splash-v4-wordmark{margin-top:12px!important}
+ .gm-splash-v4 .gm-splash-v4-status{margin-top:19px!important}
+ .gm-splash-v4 .gm-splash-v4-tagline{margin-top:17px!important}
+}
+@media(max-width:350px){
+ .gm-splash-v4 .gm-splash-v4-wordmark h1{font-size:25px!important}
+ .gm-splash-v4 .gm-splash-v4-tagline{font-size:8px;gap:5px}
+}
+@media(prefers-reduced-motion:reduce){
+ .gm-splash-v4 .gm-splash-v4-track span{animation:none!important}
+}

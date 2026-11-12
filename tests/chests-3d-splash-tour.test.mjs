@@ -3,16 +3,17 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
-test('compact splash uses dedicated silver/graphite coin and accessible loading status',()=>{
+test('compact splash v4 has original metallic brand and accessible loading',()=>{
  const source=read('miniapp/src/main.tsx');
  const css=read('miniapp/src/styles.css');
- assert.ok(source.includes('gm-splash-v3-seal'));
+ assert.ok(source.includes('gm-splash-v4-coin-inner'));
  assert.ok(source.includes('role="status" aria-live="polite"'));
- assert.ok(source.includes('gm-splash-v3-progress'));
- assert.ok(css.includes('.gm-splash-v3-seal{'));
- assert.ok(css.includes('width:176px;height:176px'));
- assert.ok(css.includes('@keyframes gm-splash-v3-load'));
+ assert.ok(source.includes('gm-splash-v4-track'));
+ assert.ok(css.includes('.gm-splash-v4 .gm-splash-v4-coin{'));
+ assert.ok(css.includes('width:166px;height:166px'));
+ assert.ok(css.includes('@keyframes gm-splash-v4-progress'));
 });
+
 test('boxes step tutorial points at five controls that exist in current UI',()=>{
  const source=read('miniapp/src/main.tsx');
  const section=source.slice(source.indexOf('function Boxes(){'),source.indexOf('function BoxRevealModal(){'));

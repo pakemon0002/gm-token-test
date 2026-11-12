@@ -2,35 +2,39 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
-test('loading screen uses one centered vertical composition from badge through footer',()=>{
+test('v4 splash has an unmistakable compact one-axis coin and loading composition',()=>{
  const src=read('miniapp/src/main.tsx');
  const splash=src.slice(src.indexOf('function Splash(){'),src.indexOf('function Mining(){'));
- assert.ok(splash.includes('gm-splash-v3-content'));
- assert.ok(splash.includes('gm-splash-v3-coin-wrap'));
- assert.ok(splash.includes('gm-splash-v3-brand'));
- assert.ok(splash.includes('gm-splash-v3-loading'));
- assert.ok(splash.includes('gm-splash-v3-footer'));
- assert.ok(splash.indexOf('gm-splash-v3-badge')<splash.indexOf('gm-splash-v3-coin-wrap'));
- assert.ok(splash.indexOf('gm-splash-v3-coin-wrap')<splash.indexOf('gm-splash-v3-brand'));
- assert.ok(splash.indexOf('gm-splash-v3-brand')<splash.indexOf('gm-splash-v3-loading'));
- assert.ok(splash.indexOf('gm-splash-v3-loading')<splash.indexOf('gm-splash-v3-footer'));
- assert.ok(splash.indexOf('gm-splash-v3-footer')<splash.lastIndexOf('</div>'),'footer is part of inner content');
+ const steps=['gm-splash-v4-eyebrow','gm-splash-v4-orbit','gm-splash-v4-wordmark',
+  'gm-splash-v4-status','gm-splash-v4-tagline'];
+ assert.ok(splash.includes('gm-splash-v4'), 'new version must be a distinct component');
+ for(const step of steps)assert.ok(splash.includes(step),step);
+ for(let i=1;i<steps.length;i++)assert.ok(splash.indexOf(steps[i-1])<splash.indexOf(steps[i]));
  assert.ok(splash.includes('role="status" aria-live="polite"'));
+ assert.ok(!splash.includes('gm-splash-v3-halo'),'legacy giant background rings removed');
 });
-test('coin halo and brand, progress and footer have responsive shared alignment',()=>{
+test('v4 CSS is responsive and disables inherited giant ring pseudo-element',()=>{
  const css=read('miniapp/src/styles.css'),production=read('miniapp/public/styles.css');
  assert.equal(css,production,'source and served CSS must remain synchronized');
- for(const token of [
-  '.splash-view.gm-splash-v3{',
-  '.splash-view.gm-splash-v3::before{',
-  '.gm-splash-v3-coin-wrap{',
-  'transform:translate(-50%,-50%)!important',
-  '.gm-splash-v3 .gm-splash-v3-brand{',
-  '.gm-splash-v3-loading{',
-  '.gm-splash-v3 .gm-splash-v3-footer{',
-  'position:static!important',
+ for(const token of ['.splash-view.gm-splash-v4{',
+  '.splash-view.gm-splash-v4::before,','.gm-splash-v4 .gm-splash-v4-stack{',
+  '.gm-splash-v4 .gm-splash-v4-orbit{',
+  '.gm-splash-v4 .gm-splash-v4-wordmark h1{',
+  '.gm-splash-v4 .gm-splash-v4-status{',
+  '.gm-splash-v4 .gm-splash-v4-tagline{',
   '@media(max-height:640px)',
   '@media(prefers-reduced-motion:reduce)'
- ]) assert.ok(css.includes(token),token+' missing');
- assert.ok(css.includes('justify-content:center!important'));
+ ])assert.ok(css.includes(token),token);
+ assert.ok(css.includes('content:none!important;display:none!important'));
+});
+test('Telegram loads versioned entry assets without stale HTML/JS/CSS cache',()=>{
+ const html=read('miniapp/public/preview.html');
+ const server=read('server/index.mjs');
+ assert.ok(html.includes('styles.css?v=splash-v4-20261112'));
+ assert.ok(html.includes('main.js?v=splash-v4-20261112'));
+ assert.ok(html.includes('http-equiv="Cache-Control"'));
+ assert.ok(server.includes("const noCache=ext==='.html'||ext==='.js'||ext==='.css';"));
+ assert.ok(server.includes("'Cache-Control':'no-store, max-age=0, must-revalidate'"));
+ assert.ok(server.includes("'Pragma':'no-cache'"));
+ assert.ok(server.includes("loc==='/tonconnect-manifest.json'"),'manifest route preserved');
 });

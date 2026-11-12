@@ -428,7 +428,11 @@ function staticFile(path,res){
  const full=resolve(staticRoot,'.'+loc);if(!full.startsWith(staticRoot+'/'))return res.writeHead(403).end('Forbidden');
  if(!existsSync(full))return res.writeHead(404).end('Not found');
  const ext=extname(full),mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.svg':'image/svg+xml','.json':'application/json','.jpg':'image/jpeg'}[ext]||'application/octet-stream';
- res.writeHead(200,{'Content-Type':mime,'X-Content-Type-Options':'nosniff',...(loc==='/tonconnect-manifest.json'?{'Access-Control-Allow-Origin':'*','Cache-Control':'public, max-age=300'}:{})});res.end(readFileSync(full));
+ const noCache=ext==='.html'||ext==='.js'||ext==='.css';
+ res.writeHead(200,{'Content-Type':mime,'X-Content-Type-Options':'nosniff',
+  ...(noCache?{'Cache-Control':'no-store, max-age=0, must-revalidate','Pragma':'no-cache','Expires':'0'}:{}),
+  ...(loc==='/tonconnect-manifest.json'?{'Access-Control-Allow-Origin':'*','Cache-Control':'public, max-age=300'}:{})});
+ res.end(readFileSync(full));
 }
 // Automated housekeeping runs even when no moderators are online.
 const housekeeping=setInterval(()=>{try{tx(()=>{cleanTickets();game.settle();stmt('DELETE FROM order_activity WHERE at<?').run(now()-120);stmt('DELETE FROM admin_2fa_failures WHERE at<?').run(now()-3600);stmt('DELETE FROM holder_nonces WHERE expires_at<?').run(now())})}catch(e){console.error('housekeeping failed',e)}},60000);housekeeping.unref();

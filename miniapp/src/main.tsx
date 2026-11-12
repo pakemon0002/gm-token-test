@@ -1361,22 +1361,25 @@ function Reward(){
  );
 }
 
-function Splash(){return <div className="splash-view gm-splash-v3" role="status" aria-live="polite">
-  <div className="gm-splash-v3-content">
-   <div className="gm-splash-v3-badge">GM <span>●</span> TOKEN</div>
-   <div className="gm-splash-v3-coin-wrap">
-    <div className="gm-splash-v3-halo" aria-hidden="true"/>
-    <div className="gm-splash-v3-seal"><div className="gm-splash-v3-seal-inner"><img src={BRAND+'gm-lettermark-metallic-transparent.png'} alt="GM TOKEN"/></div></div>
+function Splash(){return <div className="splash-view gm-splash-v4" role="status" aria-live="polite">
+  <div className="gm-splash-v4-stack">
+   <div className="gm-splash-v4-eyebrow">GM <span aria-hidden="true">✦</span> TOKEN</div>
+   <div className="gm-splash-v4-orbit" aria-hidden="true">
+    <div className="gm-splash-v4-coin">
+     <div className="gm-splash-v4-coin-inner">
+      <img src={BRAND+'gm-lettermark-metallic-transparent.png'} alt=""/>
+     </div>
+    </div>
    </div>
-   <div className="gm-splash-v3-brand">
+   <div className="gm-splash-v4-wordmark">
     <h1>GM TOKEN</h1>
     <p>ТВОЯ ИГРОВАЯ ЭКОСИСТЕМА</p>
    </div>
-   <div className="gm-splash-v3-loading">
-    <div className="gm-splash-v3-progress" aria-hidden="true"><span/></div>
+   <div className="gm-splash-v4-status">
+    <div className="gm-splash-v4-track" aria-hidden="true"><span/></div>
     <small>{L('loading')}</small>
    </div>
-   <span className="gm-splash-v3-footer">MINING · MARKET · REWARDS</span>
+   <div className="gm-splash-v4-tagline">MINING <span>·</span> MARKET <span>·</span> REWARDS</div>
   </div>
  </div>} 
  function Mining(){
