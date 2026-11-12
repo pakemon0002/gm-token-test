@@ -1378,21 +1378,24 @@ function App() {
     }
     function Splash() {
         return React.createElement("div", { className: "splash-view gm-splash-v3", role: "status", "aria-live": "polite" },
-            React.createElement("div", { className: "gm-splash-v3-halo", "aria-hidden": "true" }),
             React.createElement("div", { className: "gm-splash-v3-content" },
                 React.createElement("div", { className: "gm-splash-v3-badge" },
                     "GM ",
                     React.createElement("span", null, "\u25CF"),
                     " TOKEN"),
-                React.createElement("div", { className: "gm-splash-v3-seal" },
-                    React.createElement("div", { className: "gm-splash-v3-seal-inner" },
-                        React.createElement("img", { src: BRAND + 'gm-lettermark-metallic-transparent.png', alt: "GM TOKEN" }))),
-                React.createElement("h1", null, "GM TOKEN"),
-                React.createElement("p", null, "\u0422\u0412\u041E\u042F \u0418\u0413\u0420\u041E\u0412\u0410\u042F \u042D\u041A\u041E\u0421\u0418\u0421\u0422\u0415\u041C\u0410"),
-                React.createElement("div", { className: "gm-splash-v3-progress", "aria-hidden": "true" },
-                    React.createElement("span", null)),
-                React.createElement("small", null, L('loading'))),
-            React.createElement("span", { className: "gm-splash-v3-footer" }, "MINING \u00B7 MARKET \u00B7 REWARDS"));
+                React.createElement("div", { className: "gm-splash-v3-coin-wrap" },
+                    React.createElement("div", { className: "gm-splash-v3-halo", "aria-hidden": "true" }),
+                    React.createElement("div", { className: "gm-splash-v3-seal" },
+                        React.createElement("div", { className: "gm-splash-v3-seal-inner" },
+                            React.createElement("img", { src: BRAND + 'gm-lettermark-metallic-transparent.png', alt: "GM TOKEN" })))),
+                React.createElement("div", { className: "gm-splash-v3-brand" },
+                    React.createElement("h1", null, "GM TOKEN"),
+                    React.createElement("p", null, "\u0422\u0412\u041E\u042F \u0418\u0413\u0420\u041E\u0412\u0410\u042F \u042D\u041A\u041E\u0421\u0418\u0421\u0422\u0415\u041C\u0410")),
+                React.createElement("div", { className: "gm-splash-v3-loading" },
+                    React.createElement("div", { className: "gm-splash-v3-progress", "aria-hidden": "true" },
+                        React.createElement("span", null)),
+                    React.createElement("small", null, L('loading'))),
+                React.createElement("span", { className: "gm-splash-v3-footer" }, "MINING \u00B7 MARKET \u00B7 REWARDS")));
     }
     function Mining() {
         const e = React.createElement;
