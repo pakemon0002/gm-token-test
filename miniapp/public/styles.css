@@ -2742,3 +2742,58 @@ html,body,.application,.application button,.application input,.application texta
 @media(prefers-reduced-motion:reduce){
  .application .gm-flat-boxes .gm-flat-card{transition:none!important}
 }
+
+
+/* GM TOKEN 3.6 — guaranteed XP and collector-frame rewards, both themes. */
+.application .gm-flat-boxes .gm-flat-card-body{min-width:0;align-content:center}
+.application .gm-flat-boxes .gm-flat-card{min-height:145px!important;height:auto!important}
+.application .gm-flat-boxes .gm-flat-card-image{align-self:center}
+.gm-box-bonus{display:flex;align-items:center;flex-wrap:wrap;gap:4px 7px;min-width:0;
+ padding-top:7px;margin-top:3px;border-top:1px solid #c5d4e326;
+ color:#d4e6ff;font-size:10px;line-height:1.35}
+.gm-box-bonus .gm-icon{width:15px;height:15px;flex-shrink:0;color:#d1bc86}
+.gm-box-bonus b{color:#f1f7ff;font-size:11px;font-weight:850;white-space:nowrap}
+.gm-box-bonus small{font-size:9px;line-height:1.35;color:#aebed1;white-space:normal}
+.application.theme-light .gm-box-bonus{border-color:#b6c5d650;color:#384e6c}
+.application.theme-light .gm-box-bonus b{color:#2b4568}
+.application.theme-light .gm-box-bonus small{color:#536782}
+.application.theme-light .gm-box-bonus .gm-icon{color:#ad803f}
+.gm-box-total-bonuses{display:flex;align-items:center;flex-wrap:wrap;
+ gap:6px;min-height:37px;margin:0;padding:8px 10px;border-radius:11px;
+ color:#d9e8ff;font-size:11px;line-height:1.4;font-weight:750;
+ background:linear-gradient(130deg,#33445d,#1d2c42);border:1px solid #627d9d}
+.gm-box-total-bonuses .gm-icon{width:16px;height:16px;color:#e2c88b;flex-shrink:0}
+.gm-box-total-bonuses>span{font-size:9px;font-weight:550;color:#b5c5d9}
+.application.theme-light .gm-box-total-bonuses{
+ color:#304563;background:linear-gradient(135deg,#f9fcff,#e5eef9);
+ border:1px solid #b9c9df}
+.application.theme-light .gm-box-total-bonuses>span{color:#657a95}
+.gm-box-reveal-xp{color:#c0dbfa!important;font-size:10px!important;font-weight:800}
+.gm-box-reveal-total-xp{display:flex;align-items:center;justify-content:center;gap:8px;
+ min-height:40px;margin:9px 0 4px;padding:9px;border-radius:12px;
+ background:linear-gradient(135deg,#35435d,#27344b);border:1px solid #6a86ad;
+ color:#e4f0ff;font-size:12px;font-weight:850;text-align:center}
+.gm-box-reveal-total-xp .gm-icon{width:18px;height:18px;color:#f0d08d}
+.gm-box-reveal-unlocks{display:flex;align-items:center;justify-content:center;
+ gap:10px;min-height:50px;margin:10px 0 6px;padding:10px 12px;
+ border:1px solid #c9aa6d;border-radius:13px;background:linear-gradient(135deg,#735b37,#3b3650);
+ color:#fff2d8;box-shadow:0 0 12px #d0a65a38}
+.gm-box-reveal-unlocks>.gm-icon{width:23px;height:23px;color:#ffe5a7;flex-shrink:0}
+.gm-box-reveal-unlocks>div{display:grid;gap:4px}
+.gm-box-reveal-unlocks b{font-size:12px;color:#fff}
+.gm-box-reveal-unlocks span{font-size:11px;color:#ffdf9c}
+.application.theme-light .gm-flat-result .gm-box-reveal-xp{color:#355e87!important}
+.application.theme-light .gm-flat-result .gm-box-reveal-total-xp{
+ color:#2a4362;background:linear-gradient(135deg,#f8fbff,#e0ebfa);
+ border-color:#bfd1e5}
+.application.theme-light .gm-flat-result .gm-box-reveal-unlocks{
+ color:#6b542b;background:linear-gradient(130deg,#fff8e6,#f1e1b7);
+ border-color:#d0b775;box-shadow:0 0 10px #c3a0612d}
+.application.theme-light .gm-flat-result .gm-box-reveal-unlocks b{color:#3f3019}
+.application.theme-light .gm-flat-result .gm-box-reveal-unlocks span{color:#725728}
+.gm-frame-box{border-color:#c7ac71!important;
+ background:linear-gradient(150deg,#e8d9b0,#a8a6c6 45%,#474e66)!important;
+ box-shadow:inset 0 1px #fff9,0 0 10px #d1a85655!important}
+@media(max-width:380px){.application .gm-flat-boxes .gm-flat-card{min-height:144px!important}
+ .gm-box-bonus{gap:3px 5px}.gm-box-bonus small{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.gm-box-reveal-unlocks{animation:none!important}}
