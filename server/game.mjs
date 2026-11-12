@@ -59,6 +59,21 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
   {id:'box_bronze_5',title:'Бронзовый искатель',kind:'bronze',required:5},
   {id:'box_silver_5',title:'Серебряный коллекционер',kind:'silver',required:5},
   {id:'box_gold_5',title:'Золотой хранитель',kind:'gold',required:5},
+  {id:'box_bronze_cosmetic_1',title:'Новичок',kind:'bronze',required:10,type:'frame'},
+  {id:'box_bronze_cosmetic_2',title:'Шахтёр',kind:'bronze',required:15,type:'badge'},
+  {id:'box_bronze_cosmetic_3',title:'Бронза',kind:'bronze',required:20,type:'background'},
+  {id:'box_bronze_cosmetic_4',title:'Коллекционер',kind:'bronze',required:30,type:'title'},
+  {id:'box_bronze_cosmetic_5',title:'Бронзовая медаль',kind:'bronze',required:50,type:'medal'},
+  {id:'box_silver_cosmetic_1',title:'Кристалл',kind:'silver',required:10,type:'frame'},
+  {id:'box_silver_cosmetic_2',title:'Инвестор',kind:'silver',required:15,type:'badge'},
+  {id:'box_silver_cosmetic_3',title:'Лунный свет',kind:'silver',required:20,type:'background'},
+  {id:'box_silver_cosmetic_4',title:'Мастер GM',kind:'silver',required:30,type:'title'},
+  {id:'box_silver_cosmetic_5',title:'Серебряная медаль',kind:'silver',required:50,type:'medal'},
+  {id:'box_gold_cosmetic_1',title:'Корона',kind:'gold',required:10,type:'frame'},
+  {id:'box_gold_cosmetic_2',title:'Легенда',kind:'gold',required:15,type:'badge'},
+  {id:'box_gold_cosmetic_3',title:'Золотая галактика',kind:'gold',required:20,type:'background'},
+  {id:'box_gold_cosmetic_4',title:'GM Legend',kind:'gold',required:30,type:'title'},
+  {id:'box_gold_cosmetic_5',title:'Золотая медаль',kind:'gold',required:50,type:'medal'},
   {id:'box_master_30',title:'Мастер сундуков',kind:'total',required:30}
  ]);
  const collection=(id)=>{
