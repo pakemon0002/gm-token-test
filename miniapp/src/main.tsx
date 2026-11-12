@@ -421,7 +421,7 @@ function App(){
   boxes:[
    ['wallet','balance','.gm-boxes-points','boxes.points'],
    ['gift','boxes','.gm-chests-list','boxes.choose'],
-   ['gift','boxes','.gm-chest-stage-art','boxes.preview'],
+   ['gift','boxes','.gm-flat-card.selected .gm-flat-card-image','boxes.preview'],
    ['coins','boxes','.gm-chests-qty','boxes.quantity'],
    ['shield-check','boxes','.gm-chests-open','boxes.claim']
   ],
@@ -1568,7 +1568,7 @@ function Splash(){return <div className="splash-view gm-splash-v4" role="status"
     return e('button',{key:x.kind,type:'button',
      className:'gm-chest-choice gm-flat-card '+x.kind+(active?' selected':''),
      'aria-pressed':active,onClick:()=>setBoxKind(x.kind)},
-     e('span',{className:'gm-flat-card-image'+(active?' gm-chest-stage-art':'')},
+     e('span',{className:'gm-flat-card-image'},
       e('img',{src:picture(x.kind),alt:'',draggable:false,'aria-hidden':true})),
      e('span',{className:'gm-chest-choice-info gm-flat-card-body'},
       e('b',null,x.name),
