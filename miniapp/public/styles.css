@@ -2830,3 +2830,26 @@ html,body,.application,.application button,.application input,.application texta
 .gm-profile-collection-item small{font-size:10px;color:var(--muted)}
 .gm-profile-collection-item strong{font-size:10px;white-space:nowrap}
 @media(max-width:370px){.gm-profile-collection-grid{grid-template-columns:1fr}}
+
+/* Boxes hero + refined action area, scoped to avoid changing other screens. */
+.gm-flat-boxes .gm-boxes-welcome{display:flex;align-items:center;gap:15px;min-height:108px;margin:9px 16px 17px;padding:17px 18px;border-radius:22px;overflow:hidden;position:relative;background:linear-gradient(116deg,#202b49,#33345c 68%,#4a4576);border:1px solid #6b7099;box-shadow:0 12px 26px #1b27412c;color:#fff}
+.gm-flat-boxes .gm-boxes-welcome:after{content:'';position:absolute;right:-36px;bottom:-73px;width:155px;height:155px;border:1px solid #b3aaff55;border-radius:50%;box-shadow:0 0 0 19px #a9a3f00a,0 0 0 38px #a9a3f008;pointer-events:none}
+.gm-flat-boxes .gm-boxes-welcome-art{width:78px;height:72px;flex:none;position:relative;display:grid;place-items:center}
+.gm-flat-boxes .gm-boxes-welcome-coin{display:grid;place-items:center;width:60px;height:60px;border-radius:50%;font-size:18px;font-weight:900;letter-spacing:-1px;color:#ffecb9;background:radial-gradient(circle at 28% 22%,#ffe7aa,#bb7737 60%,#77421e);border:5px double #ffdb86;box-shadow:0 5px 13px #0005,0 0 23px #ffc97855;transform:rotate(-13deg)}
+.gm-flat-boxes .gm-boxes-welcome-spark{position:absolute;top:0;right:0;color:#d8d2ff;font-size:22px;text-shadow:0 0 12px #d0baff}
+.gm-flat-boxes .gm-boxes-welcome-copy{display:flex;flex-direction:column;gap:5px;position:relative;z-index:1;min-width:0}
+.gm-flat-boxes .gm-boxes-welcome-eyebrow{font-size:9px;font-weight:800;letter-spacing:1.2px;color:#c3c6ed}
+.gm-flat-boxes .gm-boxes-welcome-copy strong{font-size:17px;line-height:1.2;color:#fff}
+.gm-flat-boxes .gm-boxes-welcome-copy small{font-size:11px;line-height:1.45;color:#d9dcee}
+.gm-flat-boxes .gm-flat-opening .gm-chests-qty{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.gm-flat-boxes .gm-flat-opening .gm-chests-qty button{min-width:0;min-height:56px;border-radius:16px;font-size:18px;font-weight:800;transition:background .2s,border-color .2s,box-shadow .2s,transform .2s}
+.gm-flat-boxes .gm-flat-opening .gm-chests-qty button:active{transform:scale(.96)}
+.gm-flat-boxes .gm-flat-opening .gm-chests-qty button.active{border:2px solid #9588db!important;box-shadow:0 0 0 3px #998bd326,0 6px 17px #6c61a83d!important}
+.gm-flat-boxes .gm-flat-opening .gm-chests-subtotal{padding:14px 2px 13px}
+.gm-flat-boxes .gm-flat-opening .gm-box-total-bonuses{border-radius:15px;padding:14px 13px;line-height:1.45}
+.gm-flat-boxes .gm-flat-opening .gm-chests-how-points{min-height:52px;border-radius:15px;padding:0 16px;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;transition:transform .18s,box-shadow .18s}
+.gm-flat-boxes .gm-flat-opening .gm-chests-how-points:active{transform:scale(.98)}
+.gm-flat-boxes .gm-flat-opening .gm-chests-open{min-height:60px;border-radius:17px;font-weight:850}
+.application.theme-light .gm-flat-boxes .gm-flat-opening .gm-chests-how-points{background:linear-gradient(135deg,#fff,#e9edfb)!important;border:1px solid #b7c3de!important;color:#273651!important;box-shadow:0 5px 15px #425b8b20!important}
+.application.theme-dark .gm-flat-boxes .gm-flat-opening .gm-chests-how-points{background:linear-gradient(125deg,#353056,#4b387e)!important;border:1px solid #8170bd!important;color:#fff!important;box-shadow:0 5px 16px #211a5133!important}
+@media(max-width:370px){.gm-flat-boxes .gm-boxes-welcome{margin-inline:12px;padding:13px;gap:10px}.gm-flat-boxes .gm-boxes-welcome-art{width:61px}.gm-flat-boxes .gm-boxes-welcome-coin{width:50px;height:50px;font-size:15px}.gm-flat-boxes .gm-boxes-welcome-copy strong{font-size:15px}.gm-flat-boxes .gm-flat-opening .gm-chests-qty{gap:6px}}
