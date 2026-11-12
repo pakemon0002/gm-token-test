@@ -1559,15 +1559,6 @@ function Splash(){return <div className="splash-view gm-splash-v4" role="status"
  return e('div',{className:'gm-boxes-v9 gm-flat-boxes'},
   top('Боксы',true,'info'),
 
-  e('section',{className:'gm-boxes-welcome','aria-label':'Коллекция GM TOKEN'},
-   e('div',{className:'gm-boxes-welcome-art','aria-hidden':true},
-    e('span',{className:'gm-boxes-welcome-coin'},'GM'),
-    e('span',{className:'gm-boxes-welcome-spark'},'✦')),
-   e('div',{className:'gm-boxes-welcome-copy'},
-    e('span',{className:'gm-boxes-welcome-eyebrow'},'GM TOKEN · КОЛЛЕКЦИЯ'),
-    e('strong',null,'Открывай. Собирай. Украшай.'),
-    e('small',null,'Сундуки, опыт и уникальные награды для профиля.'))),
-
   e('header',{className:'gm-flat-heading'},
    e('span',{className:'gm-flat-stars','aria-hidden':true},'✦　✧　✦'),
    e('h2',null,'Сундуки GM'),
