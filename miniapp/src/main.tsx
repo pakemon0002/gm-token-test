@@ -1560,7 +1560,6 @@ function Splash(){return <div className="splash-view gm-splash-v4" role="status"
   top('Боксы',true,'info'),
 
   e('header',{className:'gm-flat-heading'},
-   e('span',{className:'gm-flat-stars','aria-hidden':true},'✦　✧　✦'),
    e('h2',null,'Сундуки GM'),
    e('p',null,bonusEnabled?'Открывай сундуки и получай GM, XP и коллекционные рамки. Все призы гарантированы.':'Открывай сундуки и получай виртуальные GM. Награды фиксированные.')),
   e('div',{className:'gm-boxes-points gm-flat-wallet'},
