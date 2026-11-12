@@ -13,6 +13,7 @@ on:
       - fix/splash-v4-visible-refresh-no-cache-20261112
       - fix/splash-viewport-host-20261112
       - fix/boxes-white-theme-consistency-20261112
+      - feature/boxes-xp-collector-rewards-20261112
   workflow_dispatch:
 permissions:
   contents: write
