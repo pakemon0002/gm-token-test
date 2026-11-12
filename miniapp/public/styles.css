@@ -2852,3 +2852,18 @@ html,body,.application,.application button,.application input,.application texta
 .gm-flat-boxes .gm-flat-opening .gm-chests-open{min-height:60px;border-radius:17px;font-weight:850}
 .application.theme-light .gm-flat-boxes .gm-flat-opening .gm-chests-how-points{background:linear-gradient(135deg,#fff,#e9edfb)!important;border:1px solid #b7c3de!important;color:#273651!important;box-shadow:0 5px 15px #425b8b20!important}
 @media(max-width:370px){.gm-flat-boxes .gm-boxes-welcome{margin-inline:12px;padding:13px;gap:10px}.gm-flat-boxes .gm-boxes-welcome-art{width:61px}.gm-flat-boxes .gm-boxes-welcome-coin{width:50px;height:50px;font-size:15px}.gm-flat-boxes .gm-boxes-welcome-copy strong{font-size:15px}.gm-flat-boxes .gm-flat-opening .gm-chests-qty{gap:6px}}
+
+/* Boxes 3.6: clean heading and balanced controls, matching existing themes. */
+.gm-flat-boxes .gm-flat-heading{padding-top:14px!important;padding-bottom:18px!important}
+.gm-flat-boxes .gm-flat-heading h2{margin-top:0!important}
+.gm-flat-boxes .gm-flat-opening .gm-chests-qty{gap:9px}
+.gm-flat-boxes .gm-flat-opening .gm-chests-qty button{height:54px;min-height:54px!important;border-radius:15px!important;font-size:17px!important;font-weight:750!important;letter-spacing:.2px;border-width:1px!important;box-shadow:inset 0 1px #ffffff20,0 3px 8px #00000016!important}
+.gm-flat-boxes .gm-flat-opening .gm-chests-qty button.active{border-width:1.5px!important;box-shadow:0 0 0 2px #9689db38,inset 0 1px #ffffff45,0 5px 13px #7363b030!important}
+.gm-flat-boxes .gm-flat-opening .gm-chests-actions{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:10px!important}
+.gm-flat-boxes .gm-flat-opening .gm-chests-actions>button{width:100%!important;max-width:none!important;box-sizing:border-box!important;margin:0!important;display:flex!important;justify-content:center!important;align-items:center!important;gap:11px!important;border-radius:16px!important;font-size:14px!important;font-weight:750!important;min-height:54px!important;line-height:1.25!important}
+.gm-flat-boxes .gm-flat-opening .gm-chests-actions .gm-chests-open{min-height:58px!important}
+.gm-flat-boxes .gm-flat-opening .gm-chests-actions .gm-chests-how-points{min-height:52px!important}
+.gm-flat-boxes .gm-flat-opening .gm-chests-actions .gm-chests-how-points svg:last-child{margin-left:auto}
+.gm-flat-boxes .gm-flat-opening .gm-chests-actions .gm-chests-how-points svg:first-child{margin-left:6px}
+.application.theme-light .gm-flat-boxes .gm-flat-opening .gm-chests-actions .gm-chests-how-points{background:linear-gradient(145deg,#fff,#e9eff9)!important;color:#24324b!important;border:1px solid #c1cce0!important;box-shadow:inset 0 1px #fff,0 4px 12px #314d7820!important}
+@media(max-width:360px){.gm-flat-boxes .gm-flat-opening .gm-chests-qty{gap:6px}.gm-flat-boxes .gm-flat-opening .gm-chests-actions>button{font-size:13px!important}}
