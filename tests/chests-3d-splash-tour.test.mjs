@@ -18,7 +18,7 @@ test('boxes step tutorial points at five controls that exist in current UI',()=>
  const source=read('miniapp/src/main.tsx');
  const section=source.slice(source.indexOf('function Boxes(){'),source.indexOf('function BoxRevealModal(){'));
  const entries=source.slice(source.indexOf('boxes:[',source.indexOf('const guideCatalog')),source.indexOf('tasks:[',source.indexOf('const guideCatalog')));
- for(const selector of ['gm-boxes-points','gm-chests-list','gm-chest-stage-art','gm-chests-qty','gm-chests-open']){
+ for(const selector of ['gm-boxes-points','gm-chests-list','gm-flat-card.selected .gm-flat-card-image','gm-chests-qty','gm-chests-open']){
   assert.ok(entries.includes('.'+selector),selector+' missing from tour');
   assert.ok(section.includes(selector),selector+' missing from Boxes');
  }
@@ -35,7 +35,8 @@ test('approved flat catalog replaces 3D staging and keeps reduced-motion support
  assert.equal(css,deployed);
  assert.ok(source.includes('gm-flat-catalog'));
  assert.ok(source.includes('gm-flat-opening'));
- assert.ok(source.includes('gm-chest-stage-art'));
+ assert.ok(source.includes("className:'gm-flat-card-image'"));
+ assert.ok(!source.includes("' gm-chest-stage-art'"));
  assert.ok(css.includes('.gm-flat-boxes .gm-flat-card'));
  assert.ok(css.includes('prefers-reduced-motion:reduce'));
  assert.ok(!source.includes('GMChest3D'));
