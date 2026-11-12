@@ -1297,7 +1297,7 @@ function Tasks(){
       className:'gm-frame-card '+(f.claimed?'unlocked':'locked')+(framePreview===f.id?' active':''),
       'aria-pressed':framePreview===f.id,
       onClick:()=>setFramePreview(f.id)},
-      e('span',{className:'gm-frame-art gm-frame-thumb '+(f.category==='founder'?'gm-frame-founder':f.category==='milestone'?'gm-frame-milestone':'gm-frame-standard'),
+      e('span',{className:'gm-frame-art gm-frame-thumb '+(f.category==='founder'?'gm-frame-founder':f.category==='milestone'?'gm-frame-milestone':f.category==='box'?'gm-frame-box':'gm-frame-standard'),
        style:{'--frame-hue':String(String(f.id).split('').reduce((n:number,c:string)=>n+c.charCodeAt(0),0)%360)+'deg'}},
        e('span',{className:'gm-frame-inner'},e(PlayerAvatar,{name:user?.username||'GM',size:'small'}))),
       e('span',null,f.title),f.claimed?icon('check',16):icon('minus',16))))),
