@@ -11,6 +11,7 @@
     "pretest": "npm install --no-audit --no-fund --ignore-scripts"
   },
   "dependencies": {
-    "@ton/ton": "16.3.0"
+    "@ton/ton": "16.3.0",
+    "pg": "8.16.3"
   }
 }
