@@ -59,6 +59,13 @@ export async function claimCalendarRewardWithClient(client, playerId) {
   );
   if (profile.rows.length !== 1) throw new Error('Game account unavailable');
 
+  const legacyDay = await client.query(
+    `SELECT 1 FROM gm_game.daily_claim
+     WHERE user_id=$1 AND day=(now() at time zone 'UTC')::date::text`,
+    [playerId],
+  );
+  if (legacyDay.rows.length) throw new Error('already claimed today');
+
   const result = await client.query(
     'SELECT * FROM gm_internal.claim_autumn_reward_atomic($1::bigint)',
     [playerId],
@@ -80,6 +87,13 @@ export async function claimCalendarRewardWithClient(client, playerId) {
       [playerId, nextXp, calendarXpLevel(nextXp)],
     );
   }
+  // Calendar and game daily streak share one unique UTC date. An exception
+  // also rolls back both the calendar payout and any XP mirror.
+  await client.query(
+    `INSERT INTO gm_game.daily_claim(user_id,day)
+     VALUES ($1,(now() at time zone 'UTC')::date::text)`,
+    [playerId],
+  );
   // HP and box inventory remain recorded in gm_internal; game features that
   // consume those rewards must be integrated separately before public launch.
   return reward;
