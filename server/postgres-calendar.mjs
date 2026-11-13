@@ -28,7 +28,7 @@ export async function calendarStatus(id) {
   return withTransaction(async client => {
     const [progress, schedule] = await Promise.all([
       client.query(
-        `SELECT cycle_number,next_day,last_claim_date,best_day,total_claims
+        `SELECT cycle_number,next_day,last_claim_date, last_claim_date = (now() at time zone 'UTC')::date as claimed_today,best_day,total_claims
          FROM gm_internal.autumn_calendar_progress WHERE player_telegram_id=$1`,
         [playerId],
       ),
