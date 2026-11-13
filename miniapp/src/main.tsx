@@ -418,31 +418,29 @@ class AutumnCalendar extends React.Component {
     const quantity = row => row.reward_type.endsWith('_box')
       ? names[row.reward_type] + ' × ' + row.reward_amount
       : '+' + row.reward_amount + ' ' + names[row.reward_type];
-    return e('section', {className:'autumn', 'aria-label':'Осенний календарь'},
-      e('header', {className:'autumn-head'},
-        e('div', null, e('span', {className:'autumn-month'}, 'СЕЗОННЫЕ НАГРАДЫ'),
-          e('h2', null, 'Осенний календарь')),
-        e('span', {className:'autumn-leaf','aria-hidden':true}, '🍁')),
-      data && e('div', {className:'autumn-progress'},
-        e('span', null, 'Получено дней'), e('strong', null, completed + ' / 30'),
-        e('progress', {max:30,value:completed,'aria-label':'Получено дней'})),
-      data && e('div', {className:'autumn-grid'}, rows.map(row => {
+    return e('section', {className:'harvest', 'aria-label':'Осенний адвент-календарь'},
+      e('div', {className:'harvest-banner'},
+        e('img',{src:'/season/header.webp',alt:'GM TOKEN. Адвент-календарь. Заходи в игру каждый день и получай уникальные награды!'}),
+        e('button',{type:'button',className:'harvest-back','aria-label':'Назад',onClick:this.props.onBack})),
+      e('div',{className:'harvest-stats'},
+        e('div',null,e('span',null,'Получено дней'),e('b',null,data ? completed + ' / 30' : '…')),
+        e('div',{className:'harvest-prize'},e('div',null,e('span',null,'Главная награда'),e('b',null,'30-й день')),e('img',{src:'/season/chest.webp',alt:''}))),
+      data && e('div', {className:'harvest-grid'}, rows.map(row => {
         const n = Number(row.calendar_day);
-        const box = row.reward_type.endsWith('_box');
-        const status = n <= completed ? 'получено' : n === today ? 'доступно сегодня' : 'впереди';
-        return e('button', {key:n, type:'button',
-          className:'autumn-tile' + (n <= completed ? ' done' : '') + (n === focusDay ? ' selected' : ''),
-          'aria-pressed':n === focusDay,'aria-label':'День ' + n + ', ' + quantity(row) + ', ' + status,
+        const done = n <= completed;
+        const current = !received && n === next;
+        return e('button',{type:'button', key:n,className:'harvest-day' + (done?' done':'') + (current?' current':''),
+          'aria-pressed':focusDay===n,'aria-label':'День '+n+', '+quantity(row)+', '+(done?'получено':current?'доступно':'закрыто'),
           onClick:()=>this.setState({selected:n})},
-          e('b', null, n), e('span', {className:'autumn-mark','aria-hidden':true}, n <= completed ? '✓' : ''),
-          e('small', null, box ? 'Бокс ×' + row.reward_amount : row.reward_amount + ' ' + names[row.reward_type]));
+          e('b',null,'День '+n),e('img',{src:'/season/'+row.reward_type+'.webp',alt:''}),
+          e('small',null,row.reward_type.endsWith('_box')?'Бокс ×'+row.reward_amount:row.reward_amount+' '+names[row.reward_type]),
+          e('i',{'aria-hidden':true},done?'✓':current?'':'🔒'));
       })),
-      reward && e('div', {className:'autumn-detail', 'aria-live':'polite'},
-        e('span', null, 'День ' + focusDay + (focusDay <= completed ? ' · получено' : focusDay === today ? ' · сегодня' : ' · впереди')),
-        e('strong', null, quantity(reward))),
-      received ? e('p', {className:'autumn-status',role:'status'}, '✓  Сегодня награда получена') :
-        e('button', {className:'autumn-claim',type:'button',disabled:busy || (!data && !error),onClick:()=>error ? this.refresh() : this.claim()},
-          error ? 'Повторить загрузку' : !data ? 'Загрузка календаря…' : busy ? 'Получаем…' : 'Забрать награду за день ' + today));
+      e('div',{className:'harvest-foot'},
+        reward && e('p',{'aria-live':'polite'},'День '+focusDay+' · '+quantity(reward)),
+        received ? e('span',{className:'harvest-received',role:'status'},'✓ Сегодня награда получена') :
+          e('button',{type:'button',className:'harvest-action',disabled:busy||(!data&&!error),onClick:()=>error?this.refresh():this.claim()},
+            error?'Повторить загрузку':!data?'Загрузка…':busy?'Получаем…':'Забрать награду за день '+today)));
   }
 }
 
@@ -1401,8 +1399,7 @@ function Reward(){
  const nextMilestone=milestones.find(n=>n>Math.min(streak%30|| (streak===0?0:30),30))||5;
  const milestoneActive=!!daily.milestone_enabled;
  return e('div',{className:'gm-daily-v8 gm-daily-v9'},
-  e('button',{type:'button',className:'gm-daily-close',onClick:goBack,'aria-label':'Назад'},icon('chevron-left',23)),
-  e(AutumnCalendar, {api}), e('div',{className:'gm-daily-intro'},
+  e(AutumnCalendar, {api,onBack:goBack}), e('div',{className:'gm-daily-intro'},
    e('div',{className:'gm-streak-flame gm-flame-'+flameTier,role:'img','aria-label':'Огонь серии '+streak+' дней'},
     e('svg',{viewBox:'0 0 120 150',focusable:'false','aria-hidden':'true'},
      e('defs',null,

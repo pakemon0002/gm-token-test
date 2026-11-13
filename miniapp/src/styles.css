@@ -2868,37 +2868,23 @@ html,body,.application,.application button,.application input,.application texta
 .application.theme-light .gm-flat-boxes .gm-flat-opening .gm-chests-actions .gm-chests-how-points{background:linear-gradient(145deg,#fff,#e9eff9)!important;color:#24324b!important;border:1px solid #c1cce0!important;box-shadow:inset 0 1px #fff,0 4px 12px #314d7820!important}
 @media(max-width:360px){.gm-flat-boxes .gm-flat-opening .gm-chests-qty{gap:6px}.gm-flat-boxes .gm-flat-opening .gm-chests-actions>button{font-size:13px!important}}
 
-/* Seasonal calendar on the daily rewards screen */
-.autumn {
-  --ac-bg:#24201e; --ac-tile:#302925; --ac-ink:#fff4e9; --ac-sub:#cfbcae;
-  --ac-line:#584a41; --ac-hot:#ffc28d; --ac-selected:#533621; --ac-btn:#ffd1a4; --ac-btn-ink:#39200e;
-  --ac-good:#a9dab5;
-  color:var(--ac-ink); background:var(--ac-bg); border:1px solid var(--ac-line);
-  border-radius:23px; padding:clamp(12px,3.8vw,22px); min-width:0; text-align:left;
-}
-.theme-light .autumn {
-  --ac-bg:#fffbf5; --ac-tile:#faf3e9; --ac-ink:#30231e; --ac-sub:#69594d;
-  --ac-line:#ddcfc1; --ac-hot:#8c4216; --ac-selected:#ffe3c6; --ac-btn:#843d16; --ac-btn-ink:#fff;
-  --ac-good:#316441;
-}
-.autumn .autumn-head,.autumn .autumn-detail {display:flex;align-items:center;justify-content:space-between;gap:8px}
-.autumn .autumn-month {font-size:10px;font-weight:750;letter-spacing:.12em;color:var(--ac-hot)}
-.autumn .autumn-head h2 {font-size:clamp(20px,5.6vw,29px);line-height:1.12;letter-spacing:-.035em;color:var(--ac-ink);margin:5px 0 0}
-.autumn-leaf {font-size:29px;line-height:1}
-.autumn .autumn-progress {display:grid;grid-template-columns:1fr auto;gap:6px;margin:15px 0;color:var(--ac-sub);font-size:12px}
-.autumn progress {grid-column:1/-1;width:100%;height:4px;border:0;border-radius:5px;overflow:hidden;background:var(--ac-line);appearance:none}
-.autumn progress::-webkit-progress-bar {background:var(--ac-line)}
-.autumn progress::-webkit-progress-value {background:var(--ac-hot)}
-.autumn progress::-moz-progress-bar {background:var(--ac-hot)}
-.autumn-grid {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
-.application .autumn .autumn-tile {position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;width:100%;min-width:0;min-height:45px;padding:5px clamp(3px,1.3vw,8px);border:1px solid var(--ac-line);border-radius:9px;background:var(--ac-tile);color:var(--ac-ink);box-shadow:none;font:inherit;text-align:left}
-.autumn-tile b {font-size:15px;line-height:1}
-.autumn-tile small {font-size:clamp(9px,2.55vw,12px);line-height:1.2;color:var(--ac-sub);white-space:nowrap}
-.autumn-mark {position:absolute;right:4px;top:3px;font-size:11px;color:var(--ac-good)}
-.application .autumn .autumn-tile.selected {border-color:var(--ac-hot);background:var(--ac-selected);box-shadow:inset 0 0 0 1px var(--ac-hot)}
-.autumn .autumn-detail {margin:14px 0 10px;font-size:12px;color:var(--ac-sub);flex-wrap:wrap}
-.autumn-detail strong {font-size:15px;color:var(--ac-ink)}
-.application .autumn .autumn-claim,.autumn .autumn-status {display:block;width:100%;box-sizing:border-box;padding:11px 6px;border:0;border-radius:11px;font:inherit;font-size:14px;font-weight:700;text-align:center;margin:0}
-.application .autumn .autumn-claim {background:var(--ac-btn);color:var(--ac-btn-ink)}
-.autumn .autumn-status {border:1px solid var(--ac-line);background:var(--ac-tile);color:var(--ac-good)}
-.autumn button:focus-visible {outline:2px solid var(--ac-hot);outline-offset:2px}
+
+/* Advent artwork and interactive day tiles from the approved autumn reference. */
+.harvest {--panel:#30190f;--tile:#392014;--rim:#a66a32;--ink:#fff5df;--muted:#efcd99;background:#2b150c;color:var(--ink);border:1px solid var(--rim);border-radius:16px;overflow:hidden;text-align:center;min-width:0}
+.theme-light .harvest {--panel:#6e3f23;--tile:#f6dfb8;--rim:#b17b3c;--ink:#361d0d;--muted:#6a401f;background:#75421e}
+.harvest-banner {position:relative}
+.harvest-banner img {width:100%;height:auto;display:block}
+.application .harvest-back {position:absolute;top:4%;left:1%;width:12%;height:44%;min-height:32px;background:transparent;border:0;box-shadow:none}
+.harvest-stats {display:grid;grid-template-columns:1fr 1fr;gap:4px;align-items:center;border:1px solid #d99c48;border-radius:25px;background:linear-gradient(#59341c,#2c160e);color:#fff5df;margin:0 2% 5px;padding:5px 2px;box-shadow:inset 0 1px 4px #f6a94870}
+.harvest-stats span {display:block;font-size:11px}
+.harvest-stats b {font-size:14px}.harvest-prize {display:flex;justify-content:center;align-items:center;gap:4px;border-left:1px solid #ab804f}.harvest-prize img{width:32px;height:26px;object-fit:contain}
+.harvest-grid {display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:3px;padding:5px;background:var(--panel);border:1px solid var(--rim);border-radius:12px;margin:0 1%}
+.application .harvest-day {display:flex;position:relative;flex-direction:column;align-items:center;justify-content:space-between;gap:2px;min-width:0;min-height:58px;width:100%;padding:3px 1px;border:1px solid var(--rim);border-radius:7px;background:linear-gradient(135deg,#ffffff16,transparent 60%),var(--tile);color:var(--ink);box-shadow:inset 0 0 5px #fbba6338;font-family:inherit;line-height:1.1}
+.application .harvest-day.current,.application .harvest-day[aria-pressed=true]{border-color:#ffc24e;box-shadow:inset 0 0 5px #f5ac37,0 0 4px #f8a934}
+.harvest-day b {font-size:clamp(9px,2.4vw,13px)}.harvest-day img {display:block;width:65%;height:clamp(19px,5.5vw,34px);object-fit:contain}
+.harvest-day small {font-size:clamp(8px,2.1vw,11px);line-height:1.15}.harvest-day i {position:absolute;right:1px;top:42%;font:normal 9px/1 sans-serif;color:var(--muted)}.harvest-day.done i {color:white;background:#528022;border-radius:50%;padding:1px}
+.harvest-foot {padding:10px 8px 14px;background:linear-gradient(#261308bb,#26130888),url('/season/forest.webp') center/cover;color:white}
+.harvest-foot p {margin:0 0 7px;font-size:13px;color:#fff4dd}
+.application .harvest-action,.harvest-received {display:inline-block;margin:0;border:1px solid #ffd575;border-radius:22px;padding:8px 15px;color:#392007;background:linear-gradient(#ffe395,#ffad26);font-family:inherit;font-weight:700;font-size:13px;line-height:1.2}
+.harvest-received {background:#372013;color:#fff2d1;font-size:13px}
+.harvest button:focus-visible {outline:2px solid #ffe490;outline-offset:1px}
