@@ -1,6 +1,7 @@
 // PostgreSQL-only calendar adapter; not wired into the SQLite production server.
 // Telegram initData must be validated by the HTTP layer before calling these methods.
 import { withTransaction } from './postgres.mjs';
+import { xpLevels } from './game.mjs';
 
 const validId = value => {
   const id = String(value ?? '');
@@ -41,14 +42,50 @@ export async function calendarStatus(id) {
   });
 }
 
+// XP earned from the autumn calendar is part of the same in-game profile
+// progression as mining and tasks. The private calendar ledger is retained,
+// while the real GM game profile is updated in the very same PG transaction.
+export function calendarXpLevel(xp) {
+  if (!Number.isSafeInteger(xp) || xp < 0) throw new Error('Invalid calendar XP');
+  return Math.max(1, Math.min(10, xpLevels.findLastIndex(threshold => xp >= threshold) + 1));
+}
+
+export async function claimCalendarRewardWithClient(client, playerId) {
+  // Lock the user's game profile *before* recording the claim so a successful
+  // claim can never exist without the corresponding game XP.
+  const profile = await client.query(
+    'SELECT xp FROM gm_game.users WHERE id=$1 FOR UPDATE',
+    [playerId],
+  );
+  if (profile.rows.length !== 1) throw new Error('Game account unavailable');
+
+  const result = await client.query(
+    'SELECT * FROM gm_internal.claim_autumn_reward_atomic($1::bigint)',
+    [playerId],
+  );
+  if (result.rows.length !== 1) throw new Error('Calendar claim returned no reward');
+
+  const reward = result.rows[0];
+  if (reward.reward_type === 'xp') {
+    const amount = Number(reward.reward_amount);
+    const current = Number(profile.rows[0].xp);
+    if (!Number.isSafeInteger(amount) || amount <= 0 ||
+        !Number.isSafeInteger(current) || current < 0 ||
+        !Number.isSafeInteger(current + amount)) {
+      throw new Error('Invalid calendar XP');
+    }
+    const nextXp = current + amount;
+    await client.query(
+      'UPDATE gm_game.users SET xp=$2,level=$3 WHERE id=$1',
+      [playerId, nextXp, calendarXpLevel(nextXp)],
+    );
+  }
+  // HP and box inventory remain recorded in gm_internal; game features that
+  // consume those rewards must be integrated separately before public launch.
+  return reward;
+}
+
 export async function claimCalendarReward(id) {
   const playerId = validId(id);
-  return withTransaction(async client => {
-    const result = await client.query(
-      'SELECT * FROM gm_internal.claim_autumn_reward_atomic($1::bigint)',
-      [playerId],
-    );
-    if (result.rows.length !== 1) throw new Error('Calendar claim returned no reward');
-    return result.rows[0];
-  });
+  return withTransaction(client => claimCalendarRewardWithClient(client, playerId));
 }
