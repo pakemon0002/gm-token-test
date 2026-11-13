@@ -418,29 +418,31 @@ class AutumnCalendar extends React.Component {
     const quantity = row => row.reward_type.endsWith('_box')
       ? names[row.reward_type] + ' × ' + row.reward_amount
       : '+' + row.reward_amount + ' ' + names[row.reward_type];
-    return e('section', {className:'harvest', 'aria-label':'Осенний адвент-календарь'},
-      e('div', {className:'harvest-banner'},
-        e('img',{src:'/season/header.webp',alt:'GM TOKEN. Адвент-календарь. Заходи в игру каждый день и получай уникальные награды!'}),
-        e('button',{type:'button',className:'harvest-back','aria-label':'Назад',onClick:this.props.onBack})),
-      e('div',{className:'harvest-stats'},
-        e('div',null,e('span',null,'Получено дней'),e('b',null,data ? completed + ' / 30' : '…')),
-        e('div',{className:'harvest-prize'},e('div',null,e('span',null,'Главная награда'),e('b',null,'30-й день')),e('img',{src:'/season/chest.webp',alt:''}))),
-      data && e('div', {className:'harvest-grid'}, rows.map(row => {
-        const n = Number(row.calendar_day);
-        const done = n <= completed;
-        const current = !received && n === next;
-        return e('button',{type:'button', key:n,className:'harvest-day' + (done?' done':'') + (current?' current':''),
-          'aria-pressed':focusDay===n,'aria-label':'День '+n+', '+quantity(row)+', '+(done?'получено':current?'доступно':'закрыто'),
-          onClick:()=>this.setState({selected:n})},
-          e('b',null,'День '+n),e('img',{src:'/season/'+row.reward_type+'.webp',alt:''}),
-          e('small',null,row.reward_type.endsWith('_box')?'Бокс ×'+row.reward_amount:row.reward_amount+' '+names[row.reward_type]),
-          e('i',{'aria-hidden':true},done?'✓':current?'':'🔒'));
-      })),
-      e('div',{className:'harvest-foot'},
-        reward && e('p',{'aria-live':'polite'},'День '+focusDay+' · '+quantity(reward)),
-        received ? e('span',{className:'harvest-received',role:'status'},'✓ Сегодня награда получена') :
-          e('button',{type:'button',className:'harvest-action',disabled:busy||(!data&&!error),onClick:()=>error?this.refresh():this.claim()},
-            error?'Повторить загрузку':!data?'Загрузка…':busy?'Получаем…':'Забрать награду за день '+today)));
+    const glyph = row => row.reward_type === 'hp' ? 'lightning' : row.reward_type === 'xp' ? 'database' : 'gift';
+    const icon = this.props.icon;
+    const preview = data && focusDay !== today;
+    const action = error ? 'Повторить загрузку' : !data ? 'Загрузка календаря…' : busy ? 'Получаем…' :
+      preview ? 'Вернуться к сегодняшней награде' : received ? 'Сегодня награда получена' : 'Забрать награду';
+    return e('div', {className:'gm-calendar'},
+      this.props.header,
+      e('section', {className:'gm-premium-card gm-mining-energy'},
+        e('div',{className:'gm-mining-energy-head'},e('b',null,'Прогресс календаря'),e('span',null,data ? completed + ' / 30' : '…')),
+        e('div',{className:'gm-mining-energy-track',role:'progressbar','aria-label':'Получено дней','aria-valuenow':completed,'aria-valuemin':0,'aria-valuemax':30},e('span',{style:{width:(completed / 30 * 100)+'%'}}))),
+      data && e('section',{className:'gm-premium-card gm-calendar-panel'},
+        e('h3',null,'Награды за 30 дней'),
+        e('div',{className:'gm-calendar-grid'},rows.map(row => {
+          const n = Number(row.calendar_day);
+          return e('button',{key:n,type:'button','aria-pressed':focusDay===n,
+            'aria-label':'День '+n+', '+quantity(row)+(n<=completed?', получено':''),
+            onClick:()=>this.setState({selected:n})},
+            e('b',null,n),icon(glyph(row),22),
+            n<=completed && e('span',{className:'gm-calendar-check','aria-hidden':true},'✓'));
+        })),
+        reward && e('div',{className:'gm-calendar-detail','aria-live':'polite'},
+          e('b',null,'День '+focusDay),e('strong',null,icon(glyph(reward),18),quantity(reward)))),
+      e('button',{type:'button',className:'gm-mining-claim',disabled:busy||(!data&&!error)||(received&&!preview),
+        onClick:()=>error ? this.refresh() : preview ? this.setState({selected:null}) : this.claim()},
+        icon(received&&!preview?'check':'diamond',23),e('span',null,action),icon('chevron-right',19)));
   }
 }
 
@@ -974,7 +976,7 @@ function App(){
  const isLight=theme==='light';
  const top=(title:string,back=true,right='more')=><header className={'screen-header '+(!isLight?'dark-head':'')}><button className="header-icon" aria-label="Назад" onClick={()=>back?goBack():goto('more')} >{back?icon('chevron-left',24):<Brand theme={theme} size={35}/>}</button><strong>{title}</strong><button className="header-icon" onClick={()=>right==='settings'?goto('settings'):right==='info'?openGuide(screen):goto('more')} aria-label={right==='info'?L('instruction'):"Дополнительные действия"}>{icon(right,23)}</button></header>;
  const menuItems=[['home','home',lang('home')],['trade','candlesticks',lang('market')],['mining','lightning',lang('mining')],['boxes','gift',lang('boxes')],['more','more',lang('more')]];
- const bottom=()=> <nav className="bottom-nav" aria-label="Основные разделы">{menuItems.map(([s,i,t]:any)=><BarButton key={s} name={i} theme={theme} title={t} selected={screen===s||(isLight&&s==='earn'&&screen==='tasks')||(!isLight&&s==='earn'&&screen==='tasks')} onClick={()=>goto(s==='earn'&&isLight?'tasks':s)}/>)}</nav>;
+ const bottom=()=> <nav className="bottom-nav" aria-label="Основные разделы">{menuItems.map(([s,i,t]:any)=><BarButton key={s} name={i} theme={theme} title={t} selected={screen===s|| (s==='more' && ['reward','streak'].includes(screen)) ||(isLight&&s==='earn'&&screen==='tasks')||(!isLight&&s==='earn'&&screen==='tasks')} onClick={()=>goto(s==='earn'&&isLight?'tasks':s)}/>)}</nav>;
  
  
  function Home(){
@@ -1384,59 +1386,10 @@ function Tasks(){
 
  
  
-function Reward(){
- const e=React.createElement;
- const daily=liveState?.daily||{};
- const enabled=!!liveState?.config?.daily_enabled;
- const claimed=Boolean(daily.claimed_today??(wallet.lastClaim===todayUTC()));
- const streak=Math.max(0,Number(daily.streak??wallet.streak)||0);
- const best=Math.max(streak,Number(daily.best_streak||0));
- const nextStreak=Math.max(1,Number(daily.next_streak||streak+1));
- const reward=Number(daily.next_reward_gm??liveState?.config?.daily_reward_gm??0);
- const flameTier=streak>=30?5:streak>=20?4:streak>=10?3:streak>=5?2:1;
- const milestones=[5,10,15,20,25,30];
- const milestoneRewards=daily.milestone_rewards||{};
- const nextMilestone=milestones.find(n=>n>Math.min(streak%30|| (streak===0?0:30),30))||5;
- const milestoneActive=!!daily.milestone_enabled;
- return e('div',{className:'gm-daily-v8 gm-daily-v9'},
-  e(AutumnCalendar, {api,onBack:goBack}), e('div',{className:'gm-daily-intro'},
-   e('div',{className:'gm-streak-flame gm-flame-'+flameTier,role:'img','aria-label':'Огонь серии '+streak+' дней'},
-    e('svg',{viewBox:'0 0 120 150',focusable:'false','aria-hidden':'true'},
-     e('defs',null,
-      e('linearGradient',{id:'gm-flame-outer',x1:'0',x2:'1',y1:'1',y2:'0'},
-       e('stop',{offset:'0%',stopColor:'#526682'}),
-       e('stop',{offset:'60%',stopColor:'#a9c7f5'}),
-       e('stop',{offset:'100%',stopColor:'#f7faff'})),
-      e('linearGradient',{id:'gm-flame-inner',x1:'0',x2:'1',y1:'1',y2:'0'},
-       e('stop',{offset:'0%',stopColor:'#d5e5ff'}),
-       e('stop',{offset:'100%',stopColor:'#ffffff'}))),
-     e('path',{d:'M63 6 C74 34 94 48 93 73 C102 65 107 55 108 48 C124 89 108 128 80 140 C40 156 7 128 12 91 C16 67 33 49 39 25 C46 46 44 66 50 72 C69 55 71 31 63 6 Z',fill:'url(#gm-flame-outer)'}),
-     e('path',{d:'M65 66 C82 90 92 98 86 119 C82 135 70 142 58 140 C34 135 29 115 38 100 C42 93 54 86 54 78 C58 87 63 89 65 66 Z',fill:'url(#gm-flame-inner)'})),
-    e('span',{className:'gm-streak-fire-count'},streak+' дн.')),
-   e('span',null,'DAILY STREAK'),e('h1',null,'Ежедневная серия'),
-   e('p',null,claimed?'Награда за сегодня получена. Продолжай серию завтра!':'Забирай награду каждый день и развивай свой огонёк.')),
-  e('div',{className:'gm-daily-amount gm-premium-card'},
-   e('small',null,claimed?'СЛЕДУЮЩАЯ НАГРАДА':'НАГРАДА ЗА СЕГОДНЯ'),
-   e('strong',null,(reward>0?nf(reward,0):'—')+' GM'),
-   e('span',null,'Сейчас: '+streak+' дней · Рекорд: '+best+' дней')),
-  e('section',{className:'gm-daily-milestones gm-premium-card'},
-   e('b',null,'Путь огонька · 30 дней'),
-   e('p',null,milestoneActive?'Юбилейные награды каждые 5 дней. После 30-го цикл наград начинается снова.':'Серия сохраняется на сервере. Юбилейные GM-награды проходят проверку тестовой экономики.'),
-   e('div',{className:'gm-daily-milestones-grid'},
-    milestones.map(n=>e('div',{key:n,className:'gm-daily-milestone'+((streak>0&&n<=(streak-1)%30+1)?' done':'')+(nextMilestone===n?' next':'')},
-     e('span',null,'ДЕНЬ '+n),
-     e('b',null,milestoneActive?nf(Number(milestoneRewards[n]||0),0)+' GM':'✦'),
-     e('small',null,milestoneActive?'Награда':'Цель')))),
-   e('div',{className:'gm-daily-cycle-summary'},'Следующее получение — день '+nextStreak+' серии')),
-  e('button',{type:'button',className:'gm-daily-action',disabled:demo||!enabled||claimed,onClick:todayClaim},
-   icon(claimed?'check':'flame',23),claimed?'Награда получена':enabled?'Получить '+nf(reward,0)+' GM':'Награды не включены'),
-  e('button',{type:'button',className:'gm-daily-secondary',onClick:()=>goto('mining')},
-   icon('lightning',21),'Перейти в Майнинг',icon('chevron-right',17)),
-  e('p',{className:'gm-daily-foot'},'Серии и начисления проверяются сервером по UTC. Повторная награда в один день невозможна.')
- );
-}
-
-function Splash(){return <div className="splash-view gm-splash-v4" role="status" aria-live="polite">
+function Reward() {
+    return React.createElement(AutumnCalendar, {api, icon, header:top('Осенний календарь', true, 'info')});
+  }
+  function Splash(){return <div className="splash-view gm-splash-v4" role="status" aria-live="polite">
   <div className="gm-splash-v4-stack">
    <div className="gm-splash-v4-eyebrow">GM <span aria-hidden="true">✦</span> TOKEN</div>
    <div className="gm-splash-v4-orbit" aria-hidden="true">
@@ -2183,10 +2136,10 @@ function Streak(){return <>{top('Daily Streak',true,'flame')}<div className="ref
   </section>
  </main>}
  let view:any;
- switch(screen){case 'home':view=Home();break;case 'trade':view=Trading();break;case 'earn':view=Earn();break;case 'tasks':view=Tasks();break;case 'leaderboard':view=Leaderboard();break;case 'profile':view=Profile();break;case 'reward':view=Reward();break;case 'splash':view=Splash();break;case 'intro':view=Intro();break;case 'mining':view=Mining();break;case 'vault':view=Vault();break;case 'wallet':view=WalletConnection();break;case 'shop':view=Shop();break;case 'boxes':view=Boxes();break;case 'referrals':view=Referrals();break;case 'history':view=History();break;case 'settings':view=Settings();break;case 'support':view=Support();break;case 'admin':view=['owner','coowner'].includes(liveRole)?Admin():Home();break;case 'achievements':view=Achievements();break;case 'more':view=More();break;case 'streak':view=Streak();break;default:view=Home();}
+ switch(screen){case 'home':view=Home();break;case 'trade':view=Trading();break;case 'earn':view=Earn();break;case 'tasks':view=Tasks();break;case 'leaderboard':view=Leaderboard();break;case 'profile':view=Profile();break;case 'reward':view=Reward();break;case 'splash':view=Splash();break;case 'intro':view=Intro();break;case 'mining':view=Mining();break;case 'vault':view=Vault();break;case 'wallet':view=WalletConnection();break;case 'shop':view=Shop();break;case 'boxes':view=Boxes();break;case 'referrals':view=Referrals();break;case 'history':view=History();break;case 'settings':view=Settings();break;case 'support':view=Support();break;case 'admin':view=['owner','coowner'].includes(liveRole)?Admin():Home();break;case 'achievements':view=Achievements();break;case 'more':view=More();break;case 'streak':view = Reward();break;default:view=Home();}
  return <div className={'application theme-'+theme+(webapp?.initData?' is-telegram':'')+(screen==='splash'?' gm-splash-active':'')}>
  <aside className="desktop-toolbar"><div className="toolbar-logo"><Brand theme={theme} size={42}/><span><b>GM TOKEN</b><small>Оригинальные эскизы · интерактивная сборка</small></span></div><div className="toolbar-tabs"><button onClick={()=>setTheme('light')} className={isLight?'chosen':''}>Light</button><button onClick={()=>setTheme('dark')} className={!isLight?'chosen':''}>Dark</button></div><div className="toolbar-links">{(['home','trade','earn','tasks','leaderboard','profile','mining','wallet','vault','shop','support','admin'] as Route[]).map(s=><button key={s} className={screen===s?'chosen':''} onClick={()=>goto(s)}>{s}</button>)}</div><p>Оригинальные PNG · 54 иконки × 4 варианта · без подмены сторонними пиктограммами</p></aside>
- <div className="device-stage"><div className={'phone-frame'+(screen==='splash'?' gm-splash-frame':'')}><div className={'phone-scroll '+((screen==='splash')?'no-scroll gm-splash-host':'')}>{view}</div>{!['reward','splash','intro'].includes(screen)&&bottom()}<div className="home-indicator"/></div><div className="underphone"><span className="demo-pill">{'Серверная авторизация · виртуальные GM/CR'}</span><button onClick={()=>goto('splash')}>Заставка</button><button onClick={()=>goto('home')}>Home</button><button onClick={()=>setTheme(isLight?'dark':'light')}>Сменить тему</button></div><small className="status-note">{backendStatus}</small></div>
+ <div className="device-stage"><div className={'phone-frame'+(screen==='splash'?' gm-splash-frame':'')}><div className={'phone-scroll '+((screen==='splash')?'no-scroll gm-splash-host':'')}>{view}</div>{!['splash','intro'].includes(screen)&&bottom()}<div className="home-indicator"/></div><div className="underphone"><span className="demo-pill">{'Серверная авторизация · виртуальные GM/CR'}</span><button onClick={()=>goto('splash')}>Заставка</button><button onClick={()=>goto('home')}>Home</button><button onClick={()=>setTheme(isLight?'dark':'light')}>Сменить тему</button></div><small className="status-note">{backendStatus}</small></div>
  {toast&&<div className={'toast-message '+(/ошиб|недоступ|error|отмен/i.test(toast)?'toast-error':'toast-info')} role="status" aria-live="polite">
   <span className="gm-toast-icon">{icon(/ошиб|недоступ|error|отмен/i.test(toast)?'info':'check',21,true)}</span>
   <span className="gm-toast-copy">{toast}</span>
