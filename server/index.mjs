@@ -143,7 +143,10 @@ const routes=async(req,res)=>{
   if(!secret)throw Error('BOT_TOKEN must be configured for API authentication');
   const identity=auth(req);id=identity.id;
   if ((p === '/api/autumn-calendar' && verb === 'GET') ||
-      (p === '/api/autumn-calendar/claim' && verb === 'POST')) {
+      (p === '/api/autumn-calendar/claim' && verb === 'POST') ||
+      // Compatibility with old reward buttons: same new calendar transaction,
+      // never a second payout from the legacy DAILY pool.
+      (p === '/api/daily/claim' && verb === 'POST' && process.env.GM_DATABASE_DRIVER === 'postgres')) {
     if (!process.env.DATABASE_URL) return fail(res, 503, 'Calendar unavailable');
     try {
       const calendar = await import('./postgres-calendar.mjs');
