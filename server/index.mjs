@@ -118,6 +118,23 @@ const routes=async(req,res)=>{
  try{
   if(!secret)throw Error('BOT_TOKEN must be configured for API authentication');
   const identity=auth(req);id=identity.id;
+  if ((p === '/api/autumn-calendar' && verb === 'GET') ||
+      (p === '/api/autumn-calendar/claim' && verb === 'POST')) {
+    if (!process.env.DATABASE_URL) return fail(res, 503, 'Calendar unavailable');
+    try {
+      const calendar = await import('./postgres-calendar.mjs');
+      await calendar.registerPlayer(identity);
+      const result = verb === 'POST'
+        ? await calendar.claimCalendarReward(id)
+        : await calendar.calendarStatus(id);
+      return send(res, 200, result);
+    } catch (error) {
+      if (error.message === 'already claimed today') return fail(res, 409, 'already claimed today');
+      if (error.message === 'player not found or inactive') return fail(res, 403, 'Player inactive');
+      console.error('Calendar request failed', error.code || error.name);
+      return fail(res, 503, 'Calendar unavailable');
+    }
+  }
   if(p==='/api/bootstrap'&&verb==='GET'){
    const user=upsertUser(identity);game.ensure(id);const wallet=stmt('SELECT * FROM wallets WHERE user_id=?').get(id);
    return send(res,200,{user:{id:user.id,role:user.role,username:user.username,level:user.level,xp:user.xp},wallet,virtual:true});
