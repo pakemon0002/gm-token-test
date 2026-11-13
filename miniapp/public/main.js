@@ -354,6 +354,43 @@ React.createElement = (type, props, ...children) => {
     }
     return gmNativeCreateElement(type, props, ...mapped);
 };
+function AutumnCalendar({ api }) {
+  const e = React.createElement;
+  const [data, setData] = React.useState(null);
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState(false);
+  const pending = React.useRef(false);
+  async function refresh() {
+    const status = await api('/api/autumn-calendar', undefined, true);
+    setData(status);
+    setError(!status);
+  }
+  React.useEffect(() => { void refresh(); }, []);
+  async function claim() {
+    if (pending.current) return;
+    pending.current = true;
+    setBusy(true);
+    try {
+      await api('/api/autumn-calendar/claim', {});
+      await refresh();
+    } finally {
+      pending.current = false;
+      setBusy(false);
+    }
+  }
+  const day = data?.progress?.next_day || 1;
+  const received = data?.progress?.claimed_today;
+  const names = {xp:'XP', hp:'HP', bronze_box:'Бронзовый бокс', silver_box:'Серебряный бокс', gold_box:'Золотой бокс'};
+  return e('section', {className:'pearl-card',style:{padding:'16px',margin:'12px 0'}},
+    e('h2', null, 'Осенний календарь'),
+    data ? e('details', null, e('summary', null, 'Награды на 30 дней'),
+      e('ol', null, data.schedule.map(row => e('li', {key:row.calendar_day},
+        names[row.reward_type] + ' × ' + row.reward_amount)))) : null,
+    e('button', {type:'button', disabled:busy || received || (!data && !error), onClick:error ? refresh : claim},
+      error ? 'Загрузить календарь снова' : !data ? 'Загрузка…' : busy ? 'Получаем…' :
+      received ? 'Сегодня награда получена' : 'Забрать награду за день ' + day));
+}
+
 function App() {
     const webapp = window.Telegram?.WebApp;
     const openBot = (ev) => {
@@ -1384,7 +1421,7 @@ function App() {
         const milestoneRewards = daily.milestone_rewards || {};
         const nextMilestone = milestones.find(n => n > Math.min(streak % 30 || (streak === 0 ? 0 : 30), 30)) || 5;
         const milestoneActive = !!daily.milestone_enabled;
-        return e('div', { className: 'gm-daily-v8 gm-daily-v9' }, e('button', { type: 'button', className: 'gm-daily-close', onClick: goBack, 'aria-label': 'Назад' }, icon('chevron-left', 23)), e('div', { className: 'gm-daily-intro' }, e('div', { className: 'gm-streak-flame gm-flame-' + flameTier, role: 'img', 'aria-label': 'Огонь серии ' + streak + ' дней' }, e('svg', { viewBox: '0 0 120 150', focusable: 'false', 'aria-hidden': 'true' }, e('defs', null, e('linearGradient', { id: 'gm-flame-outer', x1: '0', x2: '1', y1: '1', y2: '0' }, e('stop', { offset: '0%', stopColor: '#526682' }), e('stop', { offset: '60%', stopColor: '#a9c7f5' }), e('stop', { offset: '100%', stopColor: '#f7faff' })), e('linearGradient', { id: 'gm-flame-inner', x1: '0', x2: '1', y1: '1', y2: '0' }, e('stop', { offset: '0%', stopColor: '#d5e5ff' }), e('stop', { offset: '100%', stopColor: '#ffffff' }))), e('path', { d: 'M63 6 C74 34 94 48 93 73 C102 65 107 55 108 48 C124 89 108 128 80 140 C40 156 7 128 12 91 C16 67 33 49 39 25 C46 46 44 66 50 72 C69 55 71 31 63 6 Z', fill: 'url(#gm-flame-outer)' }), e('path', { d: 'M65 66 C82 90 92 98 86 119 C82 135 70 142 58 140 C34 135 29 115 38 100 C42 93 54 86 54 78 C58 87 63 89 65 66 Z', fill: 'url(#gm-flame-inner)' })), e('span', { className: 'gm-streak-fire-count' }, streak + ' дн.')), e('span', null, 'DAILY STREAK'), e('h1', null, 'Ежедневная серия'), e('p', null, claimed ? 'Награда за сегодня получена. Продолжай серию завтра!' : 'Забирай награду каждый день и развивай свой огонёк.')), e('div', { className: 'gm-daily-amount gm-premium-card' }, e('small', null, claimed ? 'СЛЕДУЮЩАЯ НАГРАДА' : 'НАГРАДА ЗА СЕГОДНЯ'), e('strong', null, (reward > 0 ? nf(reward, 0) : '—') + ' GM'), e('span', null, 'Сейчас: ' + streak + ' дней · Рекорд: ' + best + ' дней')), e('section', { className: 'gm-daily-milestones gm-premium-card' }, e('b', null, 'Путь огонька · 30 дней'), e('p', null, milestoneActive ? 'Юбилейные награды каждые 5 дней. После 30-го цикл наград начинается снова.' : 'Серия сохраняется на сервере. Юбилейные GM-награды проходят проверку тестовой экономики.'), e('div', { className: 'gm-daily-milestones-grid' }, milestones.map(n => e('div', { key: n, className: 'gm-daily-milestone' + ((streak > 0 && n <= (streak - 1) % 30 + 1) ? ' done' : '') + (nextMilestone === n ? ' next' : '') }, e('span', null, 'ДЕНЬ ' + n), e('b', null, milestoneActive ? nf(Number(milestoneRewards[n] || 0), 0) + ' GM' : '✦'), e('small', null, milestoneActive ? 'Награда' : 'Цель')))), e('div', { className: 'gm-daily-cycle-summary' }, 'Следующее получение — день ' + nextStreak + ' серии')), e('button', { type: 'button', className: 'gm-daily-action', disabled: demo || !enabled || claimed, onClick: todayClaim }, icon(claimed ? 'check' : 'flame', 23), claimed ? 'Награда получена' : enabled ? 'Получить ' + nf(reward, 0) + ' GM' : 'Награды не включены'), e('button', { type: 'button', className: 'gm-daily-secondary', onClick: () => goto('mining') }, icon('lightning', 21), 'Перейти в Майнинг', icon('chevron-right', 17)), e('p', { className: 'gm-daily-foot' }, 'Серии и начисления проверяются сервером по UTC. Повторная награда в один день невозможна.'));
+        return e('div', { className: 'gm-daily-v8 gm-daily-v9' }, e(AutumnCalendar, {api}), e('button', { type: 'button', className: 'gm-daily-close', onClick: goBack, 'aria-label': 'Назад' }, icon('chevron-left', 23)), e('div', { className: 'gm-daily-intro' }, e('div', { className: 'gm-streak-flame gm-flame-' + flameTier, role: 'img', 'aria-label': 'Огонь серии ' + streak + ' дней' }, e('svg', { viewBox: '0 0 120 150', focusable: 'false', 'aria-hidden': 'true' }, e('defs', null, e('linearGradient', { id: 'gm-flame-outer', x1: '0', x2: '1', y1: '1', y2: '0' }, e('stop', { offset: '0%', stopColor: '#526682' }), e('stop', { offset: '60%', stopColor: '#a9c7f5' }), e('stop', { offset: '100%', stopColor: '#f7faff' })), e('linearGradient', { id: 'gm-flame-inner', x1: '0', x2: '1', y1: '1', y2: '0' }, e('stop', { offset: '0%', stopColor: '#d5e5ff' }), e('stop', { offset: '100%', stopColor: '#ffffff' }))), e('path', { d: 'M63 6 C74 34 94 48 93 73 C102 65 107 55 108 48 C124 89 108 128 80 140 C40 156 7 128 12 91 C16 67 33 49 39 25 C46 46 44 66 50 72 C69 55 71 31 63 6 Z', fill: 'url(#gm-flame-outer)' }), e('path', { d: 'M65 66 C82 90 92 98 86 119 C82 135 70 142 58 140 C34 135 29 115 38 100 C42 93 54 86 54 78 C58 87 63 89 65 66 Z', fill: 'url(#gm-flame-inner)' })), e('span', { className: 'gm-streak-fire-count' }, streak + ' дн.')), e('span', null, 'DAILY STREAK'), e('h1', null, 'Ежедневная серия'), e('p', null, claimed ? 'Награда за сегодня получена. Продолжай серию завтра!' : 'Забирай награду каждый день и развивай свой огонёк.')), e('div', { className: 'gm-daily-amount gm-premium-card' }, e('small', null, claimed ? 'СЛЕДУЮЩАЯ НАГРАДА' : 'НАГРАДА ЗА СЕГОДНЯ'), e('strong', null, (reward > 0 ? nf(reward, 0) : '—') + ' GM'), e('span', null, 'Сейчас: ' + streak + ' дней · Рекорд: ' + best + ' дней')), e('section', { className: 'gm-daily-milestones gm-premium-card' }, e('b', null, 'Путь огонька · 30 дней'), e('p', null, milestoneActive ? 'Юбилейные награды каждые 5 дней. После 30-го цикл наград начинается снова.' : 'Серия сохраняется на сервере. Юбилейные GM-награды проходят проверку тестовой экономики.'), e('div', { className: 'gm-daily-milestones-grid' }, milestones.map(n => e('div', { key: n, className: 'gm-daily-milestone' + ((streak > 0 && n <= (streak - 1) % 30 + 1) ? ' done' : '') + (nextMilestone === n ? ' next' : '') }, e('span', null, 'ДЕНЬ ' + n), e('b', null, milestoneActive ? nf(Number(milestoneRewards[n] || 0), 0) + ' GM' : '✦'), e('small', null, milestoneActive ? 'Награда' : 'Цель')))), e('div', { className: 'gm-daily-cycle-summary' }, 'Следующее получение — день ' + nextStreak + ' серии')), e('button', { type: 'button', className: 'gm-daily-action', disabled: demo || !enabled || claimed, onClick: todayClaim }, icon(claimed ? 'check' : 'flame', 23), claimed ? 'Награда получена' : enabled ? 'Получить ' + nf(reward, 0) + ' GM' : 'Награды не включены'), e('button', { type: 'button', className: 'gm-daily-secondary', onClick: () => goto('mining') }, icon('lightning', 21), 'Перейти в Майнинг', icon('chevron-right', 17)), e('p', { className: 'gm-daily-foot' }, 'Серии и начисления проверяются сервером по UTC. Повторная награда в один день невозможна.'));
     }
     function Splash() {
         return React.createElement("div", { className: "splash-view gm-splash-v4", role: "status", "aria-live": "polite" },
