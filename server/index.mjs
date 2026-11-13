@@ -5,7 +5,7 @@ import {readFileSync,existsSync,mkdirSync} from 'node:fs';
 import {resolve,dirname,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import crypto from 'node:crypto';
-import {DatabaseSync} from 'node:sqlite';
+import {openGamePostgres} from './game-postgres.mjs';
 import {verifyInitData,checkTotp,totp,toCents,gmFunds,crFunds} from './lib.mjs';
 import {makeGame} from './game.mjs';
 import {makeTelegramWebhook} from './webhook.mjs';
@@ -13,8 +13,14 @@ import {makeHolders,HOLDINGS_REFRESH_SECONDS} from './holders.mjs';
 const here=dirname(fileURLToPath(import.meta.url));
 const staticRoot=resolve(here,'../miniapp/public');
 const dbPath=resolve(process.env.DB_PATH||resolve(here,'../data/gm-token.sqlite'));
-mkdirSync(dirname(dbPath),{recursive:true});
-const database=new DatabaseSync(dbPath);
+let database;
+if(process.env.GM_DATABASE_DRIVER==='postgres'){
+  database=openGamePostgres();
+}else{
+  mkdirSync(dirname(dbPath),{recursive:true});
+  const {DatabaseSync}=await import('node:sqlite');
+  database=new DatabaseSync(dbPath);
+}
 database.exec('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA busy_timeout=5000;');
 database.exec(`CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY, username TEXT DEFAULT '', role TEXT NOT NULL DEFAULT 'player',created_at INTEGER NOT NULL,last_seen INTEGER NOT NULL,level INTEGER DEFAULT 1,xp INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS wallets(user_id TEXT PRIMARY KEY REFERENCES users(id), gm INTEGER NOT NULL DEFAULT 0 CHECK(gm>=0),cr INTEGER NOT NULL DEFAULT 0 CHECK(cr>=0),vault INTEGER NOT NULL DEFAULT 0 CHECK(vault>=0));
@@ -30,6 +36,7 @@ CREATE TABLE IF NOT EXISTS ticket_messages(id TEXT PRIMARY KEY,ticket_id TEXT NO
 CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status,priority,created_at);`);
 const now=()=>Math.floor(Date.now()/1000);
 const stmt=(sql)=>database.prepare(sql);
+if(process.env.GM_DATABASE_DRIVER==='postgres')database.exec('BEGIN IMMEDIATE');
 for(const [name,gm] of Object.entries(gmFunds))stmt('INSERT OR IGNORE INTO pools(name,gm,cr) VALUES(?,?,0)').run(name,gm*100);
 for(const [name,cr] of Object.entries(crFunds))stmt('INSERT OR IGNORE INTO pools(name,gm,cr) VALUES(?,0,?)').run(name,cr*100);
 stmt('INSERT OR IGNORE INTO holding_buckets(name,gm) VALUES(?,?)').run('HOLDER',18400000*100);
@@ -103,6 +110,23 @@ function publicPools(){return stmt('SELECT name,gm,cr FROM pools ORDER BY name')
 function sendTelegram(id,message){if(!secret)return;fetch(`https://api.telegram.org/bot${secret}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:id,text:message.slice(0,1000)})}).catch(()=>{})}
 const game=makeGame({db:database,stmt,tx,log,now,send,readBody,sendTelegram});
 const holders=makeHolders({stmt,tx,now});
+if(process.env.GM_DATABASE_DRIVER==='postgres'){
+  // Verify boot, balances, rollback and the main game status using an uncommitted fixture.
+  const fixture='qa:'+crypto.randomUUID();
+  database.exec('COMMIT');
+  database.exec('BEGIN IMMEDIATE');
+  try {
+    stmt("INSERT INTO users(id,created_at,last_seen) VALUES(?,?,?)").run(fixture,now(),now());
+    stmt("INSERT INTO wallets(user_id,gm,cr) VALUES(?,?,?)").run(fixture,12345,500000);
+    game.ensure(fixture);
+    stmt("UPDATE wallets SET gm=gm-?,vault=vault+? WHERE user_id=?").run(345,345,fixture);
+    log(fixture,'vault_deposit',{user:fixture,gm_cents:345});
+    const w=stmt("SELECT gm,cr,vault FROM wallets WHERE user_id=?").get(fixture);
+    if(w.gm!==12000||w.vault!==345||w.cr!==500000)throw Error('Wallet readiness check failed');
+  } finally {database.exec('ROLLBACK')}
+  if(stmt('SELECT id FROM users WHERE id=?').get(fixture))throw Error('Transaction rollback failed');
+  console.log('Game PostgreSQL ready; private test settings disabled');
+}
 const routes=async(req,res)=>{
  const url=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`);const p=url.pathname;const verb=req.method||'GET';
  if(p==='/api/health')return send(res,200,{ok:true,mode:'GM TOKEN server / no real-money operations',time:new Date().toISOString()});
