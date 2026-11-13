@@ -467,7 +467,7 @@ const holderRefreshTimer=setInterval(async()=>{
 holderRefreshTimer.unref();
 const port=Number(process.env.PORT||8787);
 const app=createServer((req,res)=>{routes(req,res).catch(e=>{console.error('request failure',e);fail(res,500,'internal error')})});
-if (process.env.RENDER === 'true' && process.env.BOT_TOKEN) {
+if (process.env.RENDER === 'true' && process.env.npm_lifecycle_event === 'start') {
   try {
     const { getPool } = await import('./postgres.mjs');
     const { rows } = await getPool().query(`
