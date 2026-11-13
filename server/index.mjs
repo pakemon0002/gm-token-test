@@ -467,6 +467,20 @@ const holderRefreshTimer=setInterval(async()=>{
 holderRefreshTimer.unref();
 const port=Number(process.env.PORT||8787);
 const app=createServer((req,res)=>{routes(req,res).catch(e=>{console.error('request failure',e);fail(res,500,'internal error')})});
+if (process.env.RENDER === 'true' && process.env.BOT_TOKEN) {
+  try {
+    const { getPool } = await import('./postgres.mjs');
+    const { rows } = await getPool().query(`
+      SELECT count(*) AS days FROM gm_internal.autumn_reward_schedule
+      WHERE calendar_day BETWEEN 1 AND 30
+    `);
+    if (Number(rows[0].days) !== 30) throw new Error('calendar_incomplete');
+    console.log('Autumn calendar connected: 30 reward days');
+  } catch (error) {
+    console.error('Calendar startup check failed:', error.code || error.name);
+    process.exit(1);
+  }
+}
 app.listen(port,'0.0.0.0',()=>{
  console.log(`GM TOKEN server on :${port} | ${secret?'Telegram auth enabled':'Telegram auth requires BOT_TOKEN'} | ${isDev?'development':'production'}`);
  if(telegramWebhook)void telegramWebhook.configure().catch(err=>console.error('Telegram webhook setup failed:',err?.message));
