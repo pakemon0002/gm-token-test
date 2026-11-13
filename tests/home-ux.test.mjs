@@ -43,9 +43,9 @@ test('Boxes only reveal the server-approved reward after successful operation',(
 });
 test('Daily Reward and Holding retain server verified payouts and themed actions',()=>{
  for(const code of [source(),compiled()]){
-  assert.ok(has(code,'gm-daily-v8'));
-  assert.ok(has(code,'daily_reward_gm'));
-  assert.ok(has(code,'disabled:demo||!enabled||claimed'));
+  assert.ok(has(code,'gm-calendar-grid'));
+  assert.ok(has(code,'/api/autumn-calendar/claim'));
+  assert.ok(has(code,'(received&&!preview)'));
   assert.ok(has(code,'vault-deposit'));
   assert.ok(has(code,'vault-withdraw'));
  }
