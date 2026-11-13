@@ -379,6 +379,43 @@ React.createElement=(type:any,props:any,...children:any[])=>{
  return gmNativeCreateElement(type,props,...mapped);
 };
 
+function AutumnCalendar({ api }) {
+  const e = React.createElement;
+  const [data, setData] = React.useState(null);
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState(false);
+  const pending = React.useRef(false);
+  async function refresh() {
+    const status = await api('/api/autumn-calendar', undefined, true);
+    setData(status);
+    setError(!status);
+  }
+  React.useEffect(() => { void refresh(); }, []);
+  async function claim() {
+    if (pending.current) return;
+    pending.current = true;
+    setBusy(true);
+    try {
+      await api('/api/autumn-calendar/claim', {});
+      await refresh();
+    } finally {
+      pending.current = false;
+      setBusy(false);
+    }
+  }
+  const day = data?.progress?.next_day || 1;
+  const received = data?.progress?.claimed_today;
+  const names = {xp:'XP', hp:'HP', bronze_box:'Бронзовый бокс', silver_box:'Серебряный бокс', gold_box:'Золотой бокс'};
+  return e('section', {className:'pearl-card',style:{padding:'16px',margin:'12px 0'}},
+    e('h2', null, 'Осенний календарь'),
+    data ? e('details', null, e('summary', null, 'Награды на 30 дней'),
+      e('ol', null, data.schedule.map(row => e('li', {key:row.calendar_day},
+        names[row.reward_type] + ' × ' + row.reward_amount)))) : null,
+    e('button', {type:'button', disabled:busy || received || (!data && !error), onClick:error ? refresh : claim},
+      error ? 'Загрузить календарь снова' : !data ? 'Загрузка…' : busy ? 'Получаем…' :
+      received ? 'Сегодня награда получена' : 'Забрать награду за день ' + day));
+}
+
 function App(){
  const webapp=(window as any).Telegram?.WebApp;
  const openBot=(ev:any)=>{
@@ -1333,7 +1370,7 @@ function Reward(){
  const milestoneRewards=daily.milestone_rewards||{};
  const nextMilestone=milestones.find(n=>n>Math.min(streak%30|| (streak===0?0:30),30))||5;
  const milestoneActive=!!daily.milestone_enabled;
- return e('div',{className:'gm-daily-v8 gm-daily-v9'},
+ return e('div',{className:'gm-daily-v8 gm-daily-v9'}, e(AutumnCalendar, {api}),
   e('button',{type:'button',className:'gm-daily-close',onClick:goBack,'aria-label':'Назад'},icon('chevron-left',23)),
   e('div',{className:'gm-daily-intro'},
    e('div',{className:'gm-streak-flame gm-flame-'+flameTier,role:'img','aria-label':'Огонь серии '+streak+' дней'},
