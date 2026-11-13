@@ -19,7 +19,7 @@ export function readSnapshot(filename) {
     }
     const hash = createHash('sha256').update(JSON.stringify(schema));
     const snapshots = tables.map(({name}) => {
-      const statement = db.prepare('SELECT * FROM ' + quote(name));
+      const statement = db.prepare((name === 'trades' ? 'SELECT rowid, * FROM ' : 'SELECT * FROM ') + quote(name));
       statement.setReadBigInts(true);
       // Preserve SQL storage classes, including exact 64-bit integers and blobs.
       const rows = Array.from(statement.iterate(), row => JSON.stringify(row, (_, value) => {
