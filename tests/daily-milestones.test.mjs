@@ -88,15 +88,15 @@ test('server-backed UTC daily streak: day 5/10/30 milestones, replay protection,
  assert.equal(audit.status,200);
  assert.equal(audit.data.ok,true,'rewards may only come from pre-funded DAILY pool');
 });
-test('daily UI renders original flame, milestone calendar and POINTS step-by-step tutorial',()=>{
+test('daily UI shows the seasonal schedule and retains the POINTS tutorial',()=>{
  const source=readFileSync(new URL('../miniapp/src/main.tsx',import.meta.url),'utf8');
  const css=readFileSync(new URL('../miniapp/src/styles.css',import.meta.url),'utf8');
- const markup=source.slice(source.indexOf('function Reward(){'),source.indexOf('function Splash(){'));
- for(const token of ['gm-streak-flame','gm-daily-milestones-grid','best_streak','next_reward_gm','claimed_today']){
+ const markup=source.slice(source.indexOf('class AutumnCalendar'),source.indexOf('function App('));
+ for(const token of ['gm-calendar-grid','/api/autumn-calendar/claim','data?.schedule','claimed_today']){
   assert.ok(markup.includes(token),token);
  }
  for(const term of ['points.balance','points.earn','points.market','points.spend','points.open',
   "openGuide('points')"]){assert.ok(source.includes(term),term)}
- assert.ok(css.includes('gm-flame-5'));
+ assert.ok(css.includes('.gm-calendar-detail'));
  assert.ok(css.includes('prefers-reduced-motion:reduce'));
 });
