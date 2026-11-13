@@ -405,18 +405,44 @@ class AutumnCalendar extends React.Component {
   }
   render() {
     const e = React.createElement;
-    const {data,busy,error} = this.state;
-    const day = data?.progress?.next_day || 1;
-    const received = data?.progress?.claimed_today;
+    const {data, busy, error, selected} = this.state;
+    const progress = data?.progress;
+    const next = Number(progress?.next_day || 1);
+    const received = !!progress?.claimed_today;
+    const completed = received && next === 1 ? 30 : next - 1;
+    const today = received ? completed : next;
+    const rows = data?.schedule || [];
     const names = {xp:'XP', hp:'HP', bronze_box:'Бронзовый бокс', silver_box:'Серебряный бокс', gold_box:'Золотой бокс'};
-    return e('section', {className:'pearl-card',style:{padding:'16px',margin:'12px 0'}},
-      e('h2', null, 'Осенний календарь'),
-      data ? e('details', null, e('summary', null, 'Награды на 30 дней'),
-        e('ol', null, data.schedule.map(row => e('li', {key:row.calendar_day},
-          names[row.reward_type] + ' × ' + row.reward_amount)))) : null,
-      e('button', {type:'button', disabled:busy || received || (!data && !error), onClick:()=>error ? this.refresh() : this.claim()},
-        error ? 'Загрузить календарь снова' : !data ? 'Загрузка…' : busy ? 'Получаем…' :
-        received ? 'Сегодня награда получена' : 'Забрать награду за день ' + day));
+    const focusDay = selected || today;
+    const reward = rows.find(row => Number(row.calendar_day) === focusDay);
+    const quantity = row => row.reward_type.endsWith('_box')
+      ? names[row.reward_type] + ' × ' + row.reward_amount
+      : '+' + row.reward_amount + ' ' + names[row.reward_type];
+    return e('section', {className:'autumn', 'aria-label':'Осенний календарь'},
+      e('header', {className:'autumn-head'},
+        e('div', null, e('span', {className:'autumn-month'}, 'СЕЗОННЫЕ НАГРАДЫ'),
+          e('h2', null, 'Осенний календарь')),
+        e('span', {className:'autumn-leaf','aria-hidden':true}, '🍁')),
+      data && e('div', {className:'autumn-progress'},
+        e('span', null, 'Получено дней'), e('strong', null, completed + ' / 30'),
+        e('progress', {max:30,value:completed,'aria-label':'Получено дней'})),
+      data && e('div', {className:'autumn-grid'}, rows.map(row => {
+        const n = Number(row.calendar_day);
+        const box = row.reward_type.endsWith('_box');
+        const status = n <= completed ? 'получено' : n === today ? 'доступно сегодня' : 'впереди';
+        return e('button', {key:n, type:'button',
+          className:'autumn-tile' + (n <= completed ? ' done' : '') + (n === focusDay ? ' selected' : ''),
+          'aria-pressed':n === focusDay,'aria-label':'День ' + n + ', ' + quantity(row) + ', ' + status,
+          onClick:()=>this.setState({selected:n})},
+          e('b', null, n), e('span', {className:'autumn-mark','aria-hidden':true}, n <= completed ? '✓' : ''),
+          e('small', null, box ? 'Бокс ×' + row.reward_amount : row.reward_amount + ' ' + names[row.reward_type]));
+      })),
+      reward && e('div', {className:'autumn-detail', 'aria-live':'polite'},
+        e('span', null, 'День ' + focusDay + (focusDay <= completed ? ' · получено' : focusDay === today ? ' · сегодня' : ' · впереди')),
+        e('strong', null, quantity(reward))),
+      received ? e('p', {className:'autumn-status',role:'status'}, '✓  Сегодня награда получена') :
+        e('button', {className:'autumn-claim',type:'button',disabled:busy || (!data && !error),onClick:()=>error ? this.refresh() : this.claim()},
+          error ? 'Повторить загрузку' : !data ? 'Загрузка календаря…' : busy ? 'Получаем…' : 'Забрать награду за день ' + today));
   }
 }
 
@@ -1374,9 +1400,9 @@ function Reward(){
  const milestoneRewards=daily.milestone_rewards||{};
  const nextMilestone=milestones.find(n=>n>Math.min(streak%30|| (streak===0?0:30),30))||5;
  const milestoneActive=!!daily.milestone_enabled;
- return e('div',{className:'gm-daily-v8 gm-daily-v9'}, e(AutumnCalendar, {api}),
+ return e('div',{className:'gm-daily-v8 gm-daily-v9'},
   e('button',{type:'button',className:'gm-daily-close',onClick:goBack,'aria-label':'Назад'},icon('chevron-left',23)),
-  e('div',{className:'gm-daily-intro'},
+  e(AutumnCalendar, {api}), e('div',{className:'gm-daily-intro'},
    e('div',{className:'gm-streak-flame gm-flame-'+flameTier,role:'img','aria-label':'Огонь серии '+streak+' дней'},
     e('svg',{viewBox:'0 0 120 150',focusable:'false','aria-hidden':'true'},
      e('defs',null,
