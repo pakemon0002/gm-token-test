@@ -716,6 +716,67 @@ html,body,button,input,textarea,select{font-family:'Exo 2',system-ui,-apple-syst
  border:1px solid var(--border);background:var(--surface);color:var(--ink);font-size:10px;font-weight:800}
 .theme-dark .gm-home-lower button{background:#22252d;border-color:#4a505d}
 .gm-home-lower button .gm-icon:last-child{width:14px;height:14px}
+
+/* Daily Streak — living silver-blue fire, growing only from server-backed UTC streak. */
+.gm-home-streak{position:relative;display:flex;align-items:center;gap:12px;min-height:94px;width:100%;padding:9px 13px;border-radius:20px;text-align:left;color:var(--ink);overflow:hidden;isolation:isolate}
+.gm-home-streak:after{content:"";position:absolute;inset:auto -35px -64px 24%;width:160px;height:100px;background:radial-gradient(ellipse,#c6dfff2b,transparent 72%);pointer-events:none;z-index:-1}
+.theme-dark .gm-home-streak{background:radial-gradient(ellipse at 9% 45%,#35475c77,transparent 40%),linear-gradient(150deg,#222630,#0d1017 75%);border:1px solid #526070}
+.gm-home-streak-copy{display:grid;gap:4px;min-width:0;flex:1}
+.gm-home-streak-copy small,.gm-streak-calendar-copy small{font-size:8px;letter-spacing:.13em;font-weight:850;color:var(--muted)}
+.gm-home-streak-copy strong{font:850 16px 'Montserrat',Inter,system-ui,sans-serif;letter-spacing:-.035em}
+.gm-home-streak-copy>span{font-size:10px;line-height:1.35;color:var(--muted)}
+.gm-home-streak-arrow{display:grid;place-items:center;width:27px;height:27px;flex:none;border-radius:50%;border:1px solid var(--border);color:var(--ink);background:var(--surface)}
+.gm-streak-calendar{display:flex;align-items:center;gap:12px;min-height:88px;padding:10px 13px;isolation:isolate}
+.gm-streak-calendar-copy{display:grid;gap:4px;min-width:0;flex:1}
+.gm-streak-calendar-copy b{font:850 14px 'Montserrat',Inter,system-ui,sans-serif}
+.gm-streak-calendar-copy>span{font-size:10px;line-height:1.4;color:var(--muted)}
+.gm-streak-calendar-badge{font-size:20px;opacity:.6;color:#8ca8cb}
+.theme-dark .gm-streak-calendar{border-color:#49566c;background:linear-gradient(140deg,#262d3c,#0b0e17)}
+.gm-streak-flame{position:relative;width:67px;height:74px;flex:none;display:grid;place-items:center;isolation:isolate}
+.gm-streak-flame-calendar{width:58px;height:64px}
+.gm-streak-flame-glow{position:absolute;inset:20% 10% 6%;border-radius:50%;background:radial-gradient(ellipse at 50% 55%,#8cbcff9e,transparent 70%);filter:blur(11px);opacity:.75;animation:gm-flame-halo 3.5s ease-in-out infinite}
+.gm-streak-flame-art{position:relative;z-index:2;width:100%;height:100%;transform-origin:50% 88%;transform:scale(var(--gm-streak-growth));filter:drop-shadow(0 0 6px #a9ceefaa);animation:gm-flame-sway 2.6s ease-in-out infinite}
+.gm-streak-flame-inner{transform-origin:50% 83%;animation:gm-flame-inner 2s ease-in-out infinite}
+.gm-streak-flame-highlight{opacity:.45}
+.gm-streak-flame-spark{position:absolute;z-index:3;width:3px;height:3px;border-radius:50%;background:#f1f9ff;box-shadow:0 0 7px 2px #a4d3ff;opacity:0;animation:gm-flame-spark 2.7s ease-out infinite}
+.gm-streak-flame-spark-one{left:23%;top:42%;animation-delay:-.2s}
+.gm-streak-flame-spark-two{left:72%;top:56%;animation-delay:-1.2s}
+.gm-streak-flame-spark-three{left:44%;top:20%;animation-delay:-2s}
+.gm-streak-flame-stage-0 .gm-streak-flame-art{opacity:.48;filter:grayscale(.8) drop-shadow(0 0 2px #9bb3cf55)}
+.gm-streak-flame-stage-0 .gm-streak-flame-glow{opacity:.12}
+.gm-streak-flame-stage-0 .gm-streak-flame-spark{display:none}
+.gm-streak-flame-stage-1 .gm-streak-flame-glow{opacity:.33}
+.gm-streak-flame-stage-1 .gm-streak-flame-spark-two,.gm-streak-flame-stage-1 .gm-streak-flame-spark-three{display:none}
+.gm-streak-flame-stage-2 .gm-streak-flame-glow{opacity:.55}
+.gm-streak-flame-stage-2 .gm-streak-flame-spark-three{display:none}
+.gm-streak-flame-stage-3 .gm-streak-flame-glow{opacity:.85;filter:blur(13px)}
+.gm-streak-flame-stage-4 .gm-streak-flame-glow{opacity:1;filter:blur(15px)}
+.gm-streak-flame-stage-4 .gm-streak-flame-art{filter:drop-shadow(0 0 11px #b0d8ff)}
+.gm-streak-flame-stage-5 .gm-streak-flame-glow{opacity:1;filter:blur(17px);background:radial-gradient(ellipse,#dbeeffee,transparent 72%)}
+.gm-streak-flame-stage-5 .gm-streak-flame-art{filter:drop-shadow(0 0 13px #e2f2ff)}
+@keyframes gm-flame-sway{
+ 0%,100%{transform:scale(var(--gm-streak-growth)) rotate(-2deg)}
+ 50%{transform:scale(calc(var(--gm-streak-growth) * 1.035)) rotate(2deg)}
+}
+@keyframes gm-flame-inner{
+ 0%,100%{transform:scaleX(.96) translateY(1px);opacity:.84}
+ 50%{transform:scaleX(1.055) translateY(-1px);opacity:1}
+}
+@keyframes gm-flame-halo{
+ 0%,100%{transform:scale(.89)}
+ 50%{transform:scale(1.14)}
+}
+@keyframes gm-flame-spark{
+ 0%,24%{transform:translateY(8px) scale(.6);opacity:0}
+ 32%{opacity:.96}
+ 77%{opacity:.7}
+ 100%{transform:translateY(-23px) translateX(6px) scale(.3);opacity:0}
+}
+@media (prefers-reduced-motion:reduce){
+ .gm-streak-flame-art,.gm-streak-flame-glow,.gm-streak-flame-inner,.gm-streak-flame-spark{animation:none!important;transition:none!important}
+ .gm-streak-flame-spark{opacity:0}
+}
+
 /* Notcoin-like one-coin Mining — central coin collects accrued GM */
 .gm-mining-v8{display:grid;justify-items:stretch;gap:13px;padding-bottom:22px}
 .gm-mining-title{text-align:center;display:grid;gap:6px;padding-top:8px}
