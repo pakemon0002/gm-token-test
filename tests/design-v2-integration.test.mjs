@@ -57,5 +57,5 @@ test('v2: unique founder frames, XP league, safe wallet pending mode and audited
  const manifest=await fetch(url+'/tonconnect-manifest.json');
  assert.equal(manifest.status,200);
  assert.equal(manifest.headers.get('access-control-allow-origin'),'*');
- assert.equal((await manifest.json()).name,'GM TOKEN — Test Mini App');
+ assert.equal((await manifest.json()).name,'GM TOKEN');
 });
