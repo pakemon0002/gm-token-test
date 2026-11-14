@@ -12,6 +12,7 @@ test('support Auto Support two tries, then manual moderator queue; only assigned
  assert.equal((await call(303003,`/api/tickets/${id}/auto`,{})).data.escalated,true);
  assert.equal((await call(101001,'/api/tickets')).data.tickets.length,1);
  assert.equal((await call(101001,`/api/tickets/${id}/claim`,{})).status,200);
+ assert.equal((await call(303003,`/api/tickets/${id}/auto`,{})).status,400,'auto help cannot overwrite a claimed ticket');
  assert.equal((await call(101001,`/api/tickets/${id}/reply`,{body:'Просмотрел журнал, попробуйте обновить раздел'})).status,200);
  const transcript=await call(303003,`/api/tickets/${id}/messages`);
  assert.equal(transcript.status,200,JSON.stringify(transcript.data));
@@ -25,6 +26,7 @@ test('support Auto Support two tries, then manual moderator queue; only assigned
  assert.equal((await call(101001,'/api/tickets/notifications')).status,200,'staff may see delivery diagnostics');
  assert.equal((await call(303003,'/api/tickets/notifications')).status,403,'players cannot inspect notification queue');
  assert.equal((await call(101001,`/api/tickets/${id}/resolve`,{})).status,200);
+ assert.equal((await call(303003,`/api/tickets/${id}/reply`,{body:'Дополнительно'})).status,400,'resolved tickets must be reopened before new replies');
  assert.equal((await call(303003,`/api/tickets/${id}/reopen`,{})).status,200);
  const reopened=(await call(303003,'/api/tickets')).data.tickets[0];assert.equal(reopened.status,'open');assert.equal(reopened.assigned_to,null);
  assert.equal((await call(303003,`/api/tickets/${id}/messages`)).data.messages.length,3,'reopening must not erase conversation history');
