@@ -82,6 +82,18 @@ test('pending staff notifications survive a new notifier instance (restart)',asy
  }finally{f.db.close()}
 });
 
+test('revoked moderator is never sent a pending private ticket notification',async()=>{
+ const f=fixture();
+ try{
+  f.notifier.queueStaff('ticket-1','created','Private ticket');
+  f.stmt("UPDATE users SET role='player' WHERE id='303003'").run();
+  assert.equal(f.notifier.retryForChat('303003'),0,'revoked staff cannot restart a staff notice via /start');
+  await f.notifier.deliverBatch();
+  assert.deepEqual(f.delivered.map(x=>x.id).sort(),['101001','202002']);
+  assert.equal(f.notifier.statusForStaff('303003')[0].status,'failed');
+ }finally{f.db.close()}
+});
+
 test('temporary Telegram outage leaves a retryable notification rather than losing it',async()=>{
  const f=fixture();
  try{
@@ -92,7 +104,7 @@ test('temporary Telegram outage leaves a retryable notification rather than losi
    schedule:false,logger:{warn(){},error(){}}
   });
   await fail.deliverBatch();
-  const row=f.stmt("SELECT status,attempts,next_attempt_at FROM support_notifications WHERE event='reply:failed'").get();
+  const row=f.stmt("SELECT status,attempts,next_attempt_at FROM support_notifications WHERE event='player:reply:failed'").get();
   assert.equal(row.status,'pending');
   assert.equal(row.attempts,1);
   assert.ok(row.next_attempt_at>200);
