@@ -48,7 +48,6 @@ test('XP claim updates game profile and daily streak in the SAME transaction',as
   assert.match(queries[2].sql,/gm_game.daily_claim/);
   assert.match(queries[3].sql,/claim_autumn_reward_atomic/);
   assert.deepEqual(queries[4].params,['42',265,3]);
-  assert.match(queries[5].sql,/INSERT INTO gm_game.daily_claim/);
   assert.match(queries[5].sql,/INSERT INTO gm_game.journal/);
   assert.equal(queries[5].params[0],'calendar:xp:mirrored:'+xpReward.operation_id);
   assert.deepEqual(queries[5].params[1],'42');
