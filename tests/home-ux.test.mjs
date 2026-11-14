@@ -45,7 +45,8 @@ test('Daily Reward and Holding retain server verified payouts and themed actions
  for(const code of [source(),compiled()]){
   assert.ok(has(code,'gm-calendar-grid'));
   assert.ok(has(code,'/api/autumn-calendar/claim'));
-  assert.ok(has(code,'(received&&!preview)'));
+  assert.ok(has(code,'((received||claimedViaDaily)&&!preview)'));
+  assert.ok(has(code,'daily_claimed_today'));
   assert.ok(has(code,'vault-deposit'));
   assert.ok(has(code,'vault-withdraw'));
  }
