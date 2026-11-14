@@ -8,6 +8,7 @@ function mockCalendar({xp=245,legacyClaim=false,reward=xpReward,gameExists=true}
   const queries=[];
   const client={async query(sql,params){
     queries.push({sql,params});
+    if(sql.includes('pg_advisory_xact_lock'))return {rows:[{}]};
     if(sql.includes('SELECT xp FROM gm_game.users'))
       return {rows:gameExists?[{xp}]:[]};
     if(sql.includes('SELECT 1 FROM gm_game.daily_claim'))
@@ -36,14 +37,15 @@ test('XP claim updates game profile and daily streak in the SAME transaction',as
   const {client,queries}=mockCalendar();
   const reward=await claimCalendarRewardWithClient(client,'42');
   assert.equal(reward.reward_type,'xp');
-  assert.equal(queries.length,5);
-  assert.match(queries[0].sql,/FOR UPDATE/);
-  assert.deepEqual(queries[0].params,['42']);
-  assert.match(queries[1].sql,/gm_game.daily_claim/);
-  assert.match(queries[2].sql,/claim_autumn_reward_atomic/);
-  assert.deepEqual(queries[3].params,['42',265,3]);
-  assert.match(queries[4].sql,/INSERT INTO gm_game.daily_claim/);
-  assert.deepEqual(queries[4].params,['42']);
+  assert.equal(queries.length,6);
+  assert.match(queries[0].sql,/pg_advisory_xact_lock/);
+  assert.match(queries[1].sql,/FOR UPDATE/);
+  assert.deepEqual(queries[1].params,['42']);
+  assert.match(queries[2].sql,/gm_game.daily_claim/);
+  assert.match(queries[3].sql,/claim_autumn_reward_atomic/);
+  assert.deepEqual(queries[4].params,['42',265,3]);
+  assert.match(queries[5].sql,/INSERT INTO gm_game.daily_claim/);
+  assert.deepEqual(queries[5].params,['42']);
 });
 
 test('box and HP rewards share daily state without duplicate game XP',async()=>{
@@ -51,29 +53,29 @@ test('box and HP rewards share daily state without duplicate game XP',async()=>{
     const {client,queries}=mockCalendar({reward:{calendar_day:3,reward_type,reward_amount:1}});
     const reward=await claimCalendarRewardWithClient(client,'500');
     assert.equal(reward.reward_type,reward_type);
-    assert.equal(queries.length,4);
+    assert.equal(queries.length,5);
     assert.ok(queries.every(x=>!x.sql.includes('UPDATE gm_game.users')));
-    assert.match(queries[3].sql,/INSERT INTO gm_game.daily_claim/);
+    assert.match(queries[4].sql,/INSERT INTO gm_game.daily_claim/);
   }
 });
 
 test('missing game player rejected BEFORE calendar reward',async()=>{
   const {client,queries}=mockCalendar({gameExists:false});
   await assert.rejects(claimCalendarRewardWithClient(client,'555'),/Game account unavailable/);
-  assert.equal(queries.length,1);
+  assert.equal(queries.length,2);
 });
 
 test('a legacy daily claim blocks a second calendar reward on same UTC date',async()=>{
   const {client,queries}=mockCalendar({legacyClaim:true});
   await assert.rejects(claimCalendarRewardWithClient(client,'555'),/already claimed today/);
-  assert.equal(queries.length,2);
+  assert.equal(queries.length,3);
   assert.ok(queries.every(x=>!x.sql.includes('claim_autumn_reward_atomic')));
 });
 
 test('overflow rejects the transaction without game XP or daily claim writes',async()=>{
   const {client,queries}=mockCalendar({xp:Number.MAX_SAFE_INTEGER,reward:{reward_type:'xp',reward_amount:50}});
   await assert.rejects(claimCalendarRewardWithClient(client,'555'),/Invalid calendar XP/);
-  assert.equal(queries.length,3);
+  assert.equal(queries.length,4);
 });
 
 test('live PostgreSQL legacy Daily Reward route calls autumn calendar only',()=>{
