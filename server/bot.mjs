@@ -1,6 +1,6 @@
 // Optional Telegram bot worker for GM TOKEN test Mini App.
 // Required: BOT_TOKEN, PUBLIC_APP_URL=https://... ; never commit actual secrets.
-const token=process.env.BOT_TOKEN,url=process.env.PUBLIC_APP_URL,user=process.env.BOT_USERNAME||'gm_token_test_bot';
+const token=process.env.BOT_TOKEN,url=process.env.PUBLIC_APP_URL,user=process.env.BOT_USERNAME||'GM_TOKEN_BOT';
 if(!token||!url||!url.startsWith('https://'))throw Error('BOT_TOKEN and HTTPS PUBLIC_APP_URL required');
 const endpoint=`https://api.telegram.org/bot${token}/`;
 const pause=(ms)=>new Promise(r=>setTimeout(r,ms));
