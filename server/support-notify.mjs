@@ -24,12 +24,12 @@ export function makeSupportNotifier({stmt,tx,now,ownerIds=[],send,logger=console
   }
   const queueStaff=(ticketId,event,message,exclude='')=>{
     let count=0;
-    for(const id of staffRecipients(exclude))if(queueOne(ticketId,id,event,message))count++;
+    for(const id of staffRecipients(exclude))if(queueOne(ticketId,id,'staff:'+event,message))count++;
     if(count)wake();
     return count;
   };
   const queuePlayer=(ticketId,event,playerId,message)=>{
-    const added=queueOne(ticketId,playerId,event,message);
+    const added=queueOne(ticketId,playerId,'player:'+event,message);
     if(added)wake();
     return added;
   };
@@ -44,9 +44,13 @@ export function makeSupportNotifier({stmt,tx,now,ownerIds=[],send,logger=console
     processing=true;
     try {
       const pending=stmt(
-        "SELECT id,recipient_id,body,attempts FROM support_notifications WHERE status='pending' AND next_attempt_at<=? ORDER BY created_at,id LIMIT 15"
+        "SELECT id,recipient_id,event,body,attempts FROM support_notifications WHERE status='pending' AND next_attempt_at<=? ORDER BY created_at,id LIMIT 15"
       ).all(now());
       for(const item of pending) {
+        if(item.event.startsWith('staff:')&&!staffRecipients().includes(item.recipient_id)){
+          stmt("UPDATE support_notifications SET status='failed',last_error='staff role revoked' WHERE id=?").run(item.id);
+          continue;
+        }
         try {
           await send(item.recipient_id,item.body);
           stmt("UPDATE support_notifications SET status='sent',sent_at=?,attempts=attempts+1,last_error=NULL WHERE id=? AND status='pending'")
@@ -70,8 +74,10 @@ export function makeSupportNotifier({stmt,tx,now,ownerIds=[],send,logger=console
   function retryForChat(chatId) {
     const id=String(chatId);
     if(!/^\d{5,20}$/.test(id))return 0;
-    const result=stmt("UPDATE support_notifications SET status='pending',attempts=0,next_attempt_at=?,last_error=NULL WHERE recipient_id=? AND status='blocked'")
-      .run(now(),id);
+    const staff=staffRecipients().includes(id);
+    const result=staff
+      ?stmt("UPDATE support_notifications SET status='pending',attempts=0,next_attempt_at=?,last_error=NULL WHERE recipient_id=? AND status='blocked'").run(now(),id)
+      :stmt("UPDATE support_notifications SET status='pending',attempts=0,next_attempt_at=?,last_error=NULL WHERE recipient_id=? AND status='blocked' AND event LIKE 'player:%'").run(now(),id);
     if(result.changes)wake();
     return result.changes;
   }
