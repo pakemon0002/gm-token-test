@@ -9,6 +9,7 @@ import {openGamePostgres} from './game-postgres.mjs';
 import {verifyInitData,checkTotp,totp,toCents,gmFunds,crFunds} from './lib.mjs';
 import {makeGame} from './game.mjs';
 import {makeTelegramWebhook} from './webhook.mjs';
+import {makeSupportNotifier,deliverSupportTelegram} from './support-notify.mjs';
 import {publicTonLaunchStatus,denyTonTokenOperation} from './ton-prelaunch.mjs';
 import {makeHolders,HOLDINGS_REFRESH_SECONDS} from './holders.mjs';
 const here=dirname(fileURLToPath(import.meta.url));
@@ -34,7 +35,14 @@ CREATE TABLE IF NOT EXISTS used_admin_2fa(owner_id TEXT NOT NULL,step INTEGER NO
 CREATE TABLE IF NOT EXISTS holding_buckets(name TEXT PRIMARY KEY, gm INTEGER NOT NULL DEFAULT 0 CHECK(gm>=0));
 CREATE TABLE IF NOT EXISTS restrictions(user_id TEXT PRIMARY KEY REFERENCES users(id),end_at INTEGER,reason TEXT,issued_by TEXT NOT NULL,issued_at INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS ticket_messages(id TEXT PRIMARY KEY,ticket_id TEXT NOT NULL REFERENCES tickets(id),author TEXT NOT NULL,body TEXT NOT NULL,created_at INTEGER NOT NULL);
-CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status,priority,created_at);`);
+CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status,priority,created_at);
+CREATE TABLE IF NOT EXISTS support_notifications(
+ id TEXT PRIMARY KEY,ticket_id TEXT NOT NULL REFERENCES tickets(id),recipient_id TEXT NOT NULL,
+ event TEXT NOT NULL,body TEXT NOT NULL,created_at INTEGER NOT NULL,
+ attempts INTEGER NOT NULL DEFAULT 0,next_attempt_at INTEGER NOT NULL,sent_at INTEGER,
+ status TEXT NOT NULL DEFAULT 'pending',last_error TEXT,
+ UNIQUE(ticket_id,recipient_id,event));
+CREATE INDEX IF NOT EXISTS idx_support_notifications_due ON support_notifications(status,next_attempt_at);`);
 const now=()=>Math.floor(Date.now()/1000);
 const stmt=(sql)=>database.prepare(sql);
 if(process.env.GM_DATABASE_DRIVER==='postgres')database.exec('BEGIN IMMEDIATE');
@@ -45,8 +53,9 @@ stmt('INSERT OR IGNORE INTO holding_buckets(name,gm) VALUES(?,?)').run('REFERRAL
 const ownerIds=(process.env.OWNER_TELEGRAM_IDS||'').split(',').map(x=>x.trim()).filter(Boolean);
 const ownerTotps=(()=>{try{return JSON.parse(process.env.OWNER_TOTP_SECRETS||'{}')}catch{return {}}})();
 const secret=process.env.BOT_TOKEN||'';
+let supportNotifier=null;
 const telegramWebhook = secret && process.env.PUBLIC_APP_URL && process.env.BOT_WEBHOOK_SECRET && process.env.BOT_POLLING !== '1'
- ? makeTelegramWebhook({token:secret,publicUrl:process.env.PUBLIC_APP_URL,webhookSecret:process.env.BOT_WEBHOOK_SECRET,botUsername:process.env.BOT_USERNAME||'gm_token_test_bot'}) : null;
+ ? makeTelegramWebhook({token:secret,publicUrl:process.env.PUBLIC_APP_URL,webhookSecret:process.env.BOT_WEBHOOK_SECRET,botUsername:process.env.BOT_USERNAME||'gm_token_test_bot',onStart:(chatId)=>supportNotifier?.retryForChat(chatId)}) : null;
 const isDev=process.env.NODE_ENV!=='production';
 function tx(fn){database.exec('BEGIN IMMEDIATE');try{const x=fn();database.exec('COMMIT');return x}catch(e){database.exec('ROLLBACK');throw e}}
 function log(actor,kind,data){stmt('INSERT INTO journal(id,at,actor,kind,info) VALUES(?,?,?,?,?)').run(crypto.randomUUID(),now(),actor,kind,JSON.stringify(data))}
@@ -111,6 +120,10 @@ function publicPools(){return stmt('SELECT name,gm,cr FROM pools ORDER BY name')
 function sendTelegram(id,message){if(!secret)return;fetch(`https://api.telegram.org/bot${secret}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:id,text:message.slice(0,1000)})}).catch(()=>{})}
 const game=makeGame({db:database,stmt,tx,log,now,send,readBody,sendTelegram});
 const holders=makeHolders({stmt,tx,now});
+supportNotifier=makeSupportNotifier({
+ stmt,tx,now,ownerIds,
+ send:(recipient,text)=>deliverSupportTelegram({token:secret,chatId:recipient,text})
+});
 if(process.env.GM_DATABASE_DRIVER==='postgres'){
   // Verify boot, balances, rollback and the main game status using an uncommitted fixture.
   const fixture='qa:'+crypto.randomUUID();
