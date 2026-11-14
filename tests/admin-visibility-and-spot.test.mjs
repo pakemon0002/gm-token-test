@@ -17,7 +17,7 @@ test('Admin entry and route are restricted to verified Owner/Co-Owner in both UI
 });
 test('Spot ribbon uses real server state rather than synthetic prices',()=>{
  for(const code of [read('../miniapp/src/main.tsx'),read('../miniapp/public/main.js')]){
-  assert.ok(has(code,'TEST SPOT'));
+  assert.ok(has(code,'ИГРОВОЙ SPOT'));
   assert.ok(has(code,'Цена появится после первой исполненной сделки между разными игроками'));
  }
  const market=read('../server/game.mjs');
