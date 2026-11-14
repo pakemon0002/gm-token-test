@@ -22,4 +22,9 @@ CREATE INDEX IF NOT EXISTS idx_support_notifications_due
 CREATE INDEX IF NOT EXISTS idx_support_notifications_recipient
  ON gm_game.support_notifications(recipient_id,created_at DESC);
 REVOKE ALL ON gm_game.support_notifications FROM PUBLIC,anon,authenticated;
+-- A monotonic per-ticket sequence preserves reply order when several messages
+-- share the same timestamp second. Older entries remain untouched (ordinal 0).
+ALTER TABLE gm_game.ticket_messages ADD COLUMN IF NOT EXISTS ordinal BIGINT NOT NULL DEFAULT 0;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ticket_messages_ordinal
+ ON gm_game.ticket_messages(ticket_id,ordinal) WHERE ordinal>0;
 COMMIT;
