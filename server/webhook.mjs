@@ -3,7 +3,7 @@
 // Does not handle real-money transactions; only opens the GM TOKEN virtual-game mini app.
 const isSafeSecret = x => typeof x === 'string' && /^[a-zA-Z0-9_-]{16,256}$/.test(x);
 
-export function makeTelegramWebhook({token, publicUrl, webhookSecret, botUsername='GM_TOKEN_BOT', fetchImpl=fetch, logger=console, onStart=null}) {
+export function makeTelegramWebhook({token, publicUrl, webhookSecret, botUsername='GmTokenApp', fetchImpl=fetch, logger=console, onStart=null}) {
   if (!token || !/^https:\/\//.test(publicUrl || '') || !isSafeSecret(webhookSecret)) {
     throw new Error('Telegram webhook requires BOT_TOKEN, HTTPS PUBLIC_APP_URL, and BOT_WEBHOOK_SECRET (16+ characters)');
   }

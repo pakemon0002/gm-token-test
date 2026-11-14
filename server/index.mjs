@@ -55,7 +55,7 @@ const ownerTotps=(()=>{try{return JSON.parse(process.env.OWNER_TOTP_SECRETS||'{}
 const secret=process.env.BOT_TOKEN||'';
 let supportNotifier=null;
 const telegramWebhook = secret && process.env.PUBLIC_APP_URL && process.env.BOT_WEBHOOK_SECRET && process.env.BOT_POLLING !== '1'
- ? makeTelegramWebhook({token:secret,publicUrl:process.env.PUBLIC_APP_URL,webhookSecret:process.env.BOT_WEBHOOK_SECRET,botUsername:process.env.BOT_USERNAME||'GM_TOKEN_BOT',onStart:(chatId)=>supportNotifier?.retryForChat(chatId)}) : null;
+ ? makeTelegramWebhook({token:secret,publicUrl:process.env.PUBLIC_APP_URL,webhookSecret:process.env.BOT_WEBHOOK_SECRET,botUsername:process.env.BOT_USERNAME||'GmTokenApp',onStart:(chatId)=>supportNotifier?.retryForChat(chatId)}) : null;
 const isDev=process.env.NODE_ENV!=='production';
 function tx(fn){database.exec('BEGIN IMMEDIATE');try{const x=fn();database.exec('COMMIT');return x}catch(e){database.exec('ROLLBACK');throw e}}
 function log(actor,kind,data){stmt('INSERT INTO journal(id,at,actor,kind,info) VALUES(?,?,?,?,?)').run(crypto.randomUUID(),now(),actor,kind,JSON.stringify(data))}

@@ -1,36 +1,25 @@
-# GM TOKEN — подготовка перехода на @GM_TOKEN_BOT
+# GM TOKEN — переход на @GmTokenApp
 
-**Статус: только подготовка. Не мерджить и не деплоить до настройки нового Telegram-бота.**
+## Проверенная идентичность
 
-## Важно: ограничения Telegram
+При развертывании на Render 14 ноября 2026 Telegram API getMe подтвердил, что сохраненный в Render BOT_TOKEN принадлежит **@gmtokenapp**. Это имя пишется здесь в согласованной форме **@GmTokenApp** — регистр букв в usernames Telegram несущественен.
 
-Telegram официально описывает username бота как неизменяемый после создания. Если BotFather не предоставляет функцию смены username существующего бота, потребуется **новый бот**, а не переименование старого. Имя бота (display name) можно сменить через `/setname`, но это **не изменит @username**.
+Новый бот с username @GM_TOKEN_BOT был создан отдельно, но пользователь выбрал вместо него уже доступного @GmTokenApp. Продолжать использовать в Render токен именно @GmTokenApp.
 
-Целевой username: `@GM_TOKEN_BOT`. Доступность имени пока **не подтверждена**. Если имя занято, согласовать другое имя до изменения production.
+## Обновление
 
-## Подготовленные изменения в этой ветке
+- Все пользовательские ссылки на Mini App, профиль бота, реферальные приглашения и сообщения поддержки должны указывать на `https://t.me/GmTokenApp`.
+- Значение Render `BOT_USERNAME`: `GmTokenApp`.
+- `BOT_TOKEN`: существующий подтвержденный сервером токен @GmTokenApp (не копировать в GitHub или чат).
+- `BOT_WEBHOOK_SECRET`: уже заменен ранее на новый случайный секрет.
+- Публичный URL приложения не менять: `https://gm-token-test-iprj.onrender.com`.
+- После выпуска проверить серверный лог `Telegram bot identity verified: @gmtokenapp`, затем `Telegram webhook configured.`.
+- В @BotFather → /mybots → @GmTokenApp настроить **Main App** на существующий Mini App URL. Меню откроет тот же URL, если сервер успеет выполнить `setChatMenuButton`.
+- Нажать `/start` в @GmTokenApp, проверить Mini App авторизацию, сохраненный игровой баланс и историю, рефералов и поддержку.
+- Старые ссылки @gm_token_test_bot и @GM_TOKEN_BOT не будут автоматически переадресованы; заменить их в публичных каналах и постах.
 
-- Deep links Mini App, приглашений `?startapp=ref_<telegram_id>`, экраны входа и инструкции поддержки используют `@GM_TOKEN_BOT`.
-- Fallback `BOT_USERNAME` в сервере и Telegram webhook обновлён на `GM_TOKEN_BOT`.
-- Проверки GitHub обновлены для ожидаемого имени.
-- **Пока не менялись**: реальный `BOT_TOKEN`, `BOT_WEBHOOK_SECRET`, Telegram BotFather, Render production, существующий Mini App URL, Supabase, игровые балансы и история.
-- Текущая Mini App URL остаётся `https://gm-token-test-iprj.onrender.com`.
+## Что остается неизменным
 
-## Только после создания и подтверждения нового бота
+Существующая Supabase PostgreSQL, пользователи (по Telegram ID), игровые GM/CR/POINTS, история операций, календарь, Render service, адрес Mini App. Реальные TON Jetton не выпускались, выводы выключены.
 
-1. В личном Telegram владельца откройте [@BotFather](https://t.me/BotFather) → `/newbot` → задайте отображаемое имя `GM TOKEN` и username `GM_TOKEN_BOT` (если он свободен). **Не удаляйте старого бота.**
-2. В BotFather настройте меню/Mini App для нового бота на **тот же URL** `https://gm-token-test-iprj.onrender.com`. Убедитесь, что в Telegram открывается встроенное Mini App, и тестовые deep links `https://t.me/GM_TOKEN_BOT?startapp=ref_...` открывают приложение.
-3. В настройках **существующего Render** обновите **секретно** `BOT_TOKEN` (токен *нового* бота), `BOT_USERNAME=GM_TOKEN_BOT`. Обновите `BOT_WEBHOOK_SECRET` на новый случайный секрет, чтобы старый webhook не мог обращаться к новому серверу.
-4. Merge этой ветки в `main`, соберите клиент и опубликуйте текущий Render без изменения домена и DATABASE_URL. Сервер проверит `getMe.username` и только после совпадения настроит webhook и кнопку Mini App.
-5. В новом боте нажмите `/start`; проверьте кнопки открытия Mini App, Telegram initData, вход под прежним Telegram ID, прежний баланс GM/CR/POINTS, майнинг, календарь, поддержку, сообщения персонала и реферальные ссылки. Проверить на Android и iOS по возможности.
-6. Старые ссылки `https://t.me/gm_token_test_bot` **не переадресуются автоматически** на нового бота. Обновите ссылки в канале, публикациях, QR-кодах, закрепах и приглашениях. История чата со старым ботом в Telegram **не переносится** автоматически; игровые данные в Supabase сохраняются при том же Telegram ID.
-
-### Не делать
-
-- Не отправлять токен бота, приватные ключи, seed-фразы или webhook secret в чат.
-- Не запускать новый бот на старом `BOT_TOKEN`.
-- Не создавать новую Supabase БД и не сбрасывать игроков.
-- Не публиковать подготовленную ветку до подтверждения имени и токена. Несовпадение `BOT_USERNAME` с реальным `getMe.username` приводит к ошибке настройки webhook — это защита, а не баг.
-- Не активировать реальные Jetton, выводы или платежи в рамках переезда.
-
-Источники: https://core.telegram.org/bots/features и https://core.telegram.org/bots/api
+Ни одна seed-фраза, wallet key или BotFather API token не должна сохраняться в GitHub. При следующем обновлении безопасно проверить, что никто из модераторов не потерял доступ к уведомлениям.
