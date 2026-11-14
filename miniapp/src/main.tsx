@@ -382,7 +382,7 @@ React.createElement=(type:any,props:any,...children:any[])=>{
 class AutumnCalendar extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {data:null, busy:false, error:false};
+    this.state = {data:null, busy:false, error:false, feedback:''};
     this.pending = false;
   }
   componentDidMount() { this.active = true; void this.refresh(); }
@@ -396,9 +396,20 @@ class AutumnCalendar extends React.Component {
     this.pending = true;
     this.setState({busy:true});
     try {
-      await this.props.api('/api/autumn-calendar/claim', {});
+      const result = await this.props.api('/api/autumn-calendar/claim', {});
+      if (result?.reward_type && Number.isSafeInteger(Number(result.reward_amount))) {
+        const rewardLabels = {xp:'XP',hp:'HP',bronze_box:'бронзовый бокс',silver_box:'серебряный бокс',gold_box:'золотой бокс'};
+        const label = rewardLabels[result.reward_type] || 'бонус';
+        const quantity = Number(result.reward_amount);
+        const message = result.reward_type.endsWith('_box')
+          ? 'Получено: '+label+' × '+quantity
+          : 'Начислено: +'+quantity+' '+label;
+        if(this.active)this.setState({feedback:message});
+      } else if(this.active) {
+        this.setState({feedback:'Не удалось подтвердить получение. Проверь награды и попробуй снова.'});
+      }
       await this.refresh();
-      if (this.props.onClaim) await this.props.onClaim();
+      if (result && this.props.onClaim) await this.props.onClaim();
     } finally {
       this.pending = false;
       if (this.active) this.setState({busy:false});
@@ -418,7 +429,7 @@ class AutumnCalendar extends React.Component {
   }
   render() {
     const e = React.createElement;
-    const {data, busy, error, selected} = this.state;
+    const {data, busy, error, selected, feedback} = this.state;
     const progress = data?.progress;
     const next = Number(progress?.next_day || 1);
     const received = !!progress?.claimed_today;
@@ -447,6 +458,7 @@ class AutumnCalendar extends React.Component {
         e('div',{className:'gm-calendar-assets-row'},
           e('span',null,'HP'),e('b',null,String(data.hp||0)),
           e('span',null,'Боксы'),e('b',null,String(Object.values(data.inventory||{}).reduce((n:number,value:any)=>n+Number(value||0),0)))),
+        e('p',{className:'gm-calendar-xp-summary'},'Опыт профиля: '+String(data.xp??0)+' XP · Уровень '+String(data.level??1)),
         e('div',{className:'gm-hp-collection'},
           e('div',{className:'gm-hp-collection-heading'},
             e('b',null,'Коллекция HP'),
@@ -477,6 +489,7 @@ class AutumnCalendar extends React.Component {
         })),
         reward && e('div',{className:'gm-calendar-detail','aria-live':'polite'},
           e('b',null,'День '+focusDay),e('strong',null,icon(glyph(reward),18),quantity(reward)))),
+      feedback && e('p',{className:'gm-calendar-feedback',role:'status','aria-live':'polite'},feedback),
       e('button',{type:'button',className:'gm-mining-claim',disabled:busy||(!data&&!error)||((received||claimedViaDaily)&&!preview),
         onClick:()=>error ? this.refresh() : preview ? this.setState({selected:null}) : this.claim()},
         icon(received&&!preview?'check':'diamond',23),e('span',null,action),icon('chevron-right',19)));

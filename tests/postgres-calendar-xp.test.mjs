@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import { calendarXpLevel, claimCalendarRewardWithClient } from '../server/postgres-calendar.mjs';
 
 const xpReward={calendar_day:1,reward_type:'xp',reward_amount:'20',operation_id:'autumn:42:1:1'};
-function mockCalendar({xp=245,legacyClaim=false,reward=xpReward,gameExists=true}={}){
+function mockCalendar({xp=245,legacyClaim=false,reward=xpReward,gameExists=true,auditAlreadyExists=false}={}){
   const queries=[];
   const client={async query(sql,params){
     queries.push({sql,params});
@@ -15,7 +15,11 @@ function mockCalendar({xp=245,legacyClaim=false,reward=xpReward,gameExists=true}
       return {rows:legacyClaim?[{exists:1}]:[]};
     if(sql.includes('claim_autumn_reward_atomic'))
       return {rows:[reward]};
-    if(sql.includes('UPDATE gm_game.users')||sql.includes('INSERT INTO gm_game.daily_claim'))
+    if(sql.includes('UPDATE gm_game.users'))
+      return {rows:[{xp:params[1],level:params[2]}],rowCount:1};
+    if(sql.includes('INSERT INTO gm_game.journal'))
+      return {rows:auditAlreadyExists?[]:[{id:params[0]}],rowCount:auditAlreadyExists?0:1};
+    if(sql.includes('INSERT INTO gm_game.daily_claim'))
       return {rowCount:1};
     throw Error('Unexpected SQL: '+sql);
   }};
@@ -37,15 +41,18 @@ test('XP claim updates game profile and daily streak in the SAME transaction',as
   const {client,queries}=mockCalendar();
   const reward=await claimCalendarRewardWithClient(client,'42');
   assert.equal(reward.reward_type,'xp');
-  assert.equal(queries.length,6);
+  assert.equal(queries.length,7);
   assert.match(queries[0].sql,/pg_advisory_xact_lock/);
   assert.match(queries[1].sql,/FOR UPDATE/);
   assert.deepEqual(queries[1].params,['42']);
   assert.match(queries[2].sql,/gm_game.daily_claim/);
   assert.match(queries[3].sql,/claim_autumn_reward_atomic/);
   assert.deepEqual(queries[4].params,['42',265,3]);
-  assert.match(queries[5].sql,/INSERT INTO gm_game.daily_claim/);
-  assert.deepEqual(queries[5].params,['42']);
+  assert.match(queries[5].sql,/INSERT INTO gm_game.journal/);
+  assert.equal(queries[5].params[0],'calendar:xp:mirrored:'+xpReward.operation_id);
+  assert.deepEqual(queries[5].params[1],'42');
+  assert.match(queries[6].sql,/INSERT INTO gm_game.daily_claim/);
+  assert.deepEqual(queries[6].params,['42']);
 });
 
 test('box and HP rewards share daily state without duplicate game XP',async()=>{
@@ -84,4 +91,29 @@ test('live PostgreSQL legacy Daily Reward route calls autumn calendar only',()=>
   const calendar=code.indexOf('await calendar.claimCalendarReward(id)');
   const engine=code.indexOf('return await game.handle(p,verb,id,req,res)');
   assert.ok(pos>0&&calendar>pos&&engine>calendar,'legacy route must hit protected calendar before the legacy game engine');
+});
+
+test('calendar XP audit conflict aborts the same transaction before daily claim',async()=>{
+  const {client,queries}=mockCalendar({auditAlreadyExists:true});
+  await assert.rejects(claimCalendarRewardWithClient(client,'42'),/Calendar XP operation already mirrored/);
+  assert.ok(queries.some(x=>x.sql.includes('UPDATE gm_game.users')));
+  assert.ok(queries.some(x=>x.sql.includes('INSERT INTO gm_game.journal')));
+  assert.ok(!queries.some(x=>x.sql.includes('INSERT INTO gm_game.daily_claim')));
+});
+
+test('calendar status reads profile XP from canonical game schema, not private XP wallet',()=>{
+  const code=readFileSync(new URL('../server/postgres-calendar.mjs',import.meta.url),'utf8');
+  assert.match(code,/SELECT xp,level FROM gm_game.users WHERE id=\$1/);
+  assert.match(code,/xp:Number\(gameProfile.rows\[0\]\?\.xp\?\?0\)/);
+  assert.match(code,/level:Number\(gameProfile.rows\[0\]\?\.level\?\?1\)/);
+  assert.match(code,/hp:Number\(hp.rows\[0\]\?\.balance\?\?0\)/);
+});
+
+test('all XP credits update profile and append game audit in one transaction',()=>{
+  const sql=readFileSync(new URL('../server/postgres-calendar.mjs',import.meta.url),'utf8');
+  const update=sql.indexOf('UPDATE gm_game.users SET xp=$2');
+  const audit=sql.indexOf('INSERT INTO gm_game.journal');
+  const daily=sql.indexOf('INSERT INTO gm_game.daily_claim');
+  assert.ok(update>0 && audit>update && daily>audit);
+  assert.match(sql,/ON CONFLICT \(id\) DO NOTHING RETURNING id/);
 });
