@@ -628,7 +628,13 @@ function App(){
  const [shopAmount,setShopAmount]=React.useState('');
  const [vaultAmount,setVaultAmount]=React.useState('');
  const [supportText,setSupportText]=React.useState('');
- const [supportTickets,setSupportTickets]=React.useState([]);
+ const [supportTickets,setSupportTickets]=React.useState([] as any[]);
+ const [supportThreads,setSupportThreads]=React.useState({} as Record<string,any[]>);
+ const [supportDrafts,setSupportDrafts]=React.useState({} as Record<string,string>);
+ const [expandedSupportTicket,setExpandedSupportTicket]=React.useState('');
+ const [supportDeliveries,setSupportDeliveries]=React.useState([] as any[]);
+ const [supportCreating,setSupportCreating]=React.useState(false);
+ const supportCreateLock=React.useRef(false);
  const [staffReply,setStaffReply]=React.useState('');
  const [supportCategory,setSupportCategory]=React.useState('Общий вопрос');
  const [liveState,setLiveState]=React.useState(null as any);
@@ -1006,16 +1012,56 @@ function App(){
   setModalText((side==='buy'?'Покупка ':'Продажа ')+nf(n)+' GM. '+(orderType==='limit'?'Лимит '+nf(price)+' CR/GM.':'Market с защитой 3% от проскальзывания.')+' Комиссия при исполнении: 0,5% для каждой стороны. Подтверждение отправляет заявку на сервер.');
   setTradeReady(true);setModal('order');
  };
- const loadTickets=async()=>{
-  try{const r=await fetch('/api/tickets',{headers:{Authorization:'tma '+webapp?.initData}});const x=await r.json();if(!r.ok)throw Error(x.error);setSupportTickets(x.tickets||[])}catch(e:any){flash('Ошибка получения тикетов: '+e.message)}
+ const loadSupportThread=async(ticketId:string)=>{
+  const response=await api('/api/tickets/'+ticketId+'/messages',undefined,true);
+  if(response?.messages)setSupportThreads((old:any)=>({...old,[ticketId]:response.messages||[]}));
+  return response;
  };
- React.useEffect(()=>{if(!demo&&screen==='support')void loadTickets()},[screen,demo]);
+ const loadTickets=async()=>{
+  try{
+   const response=await fetch('/api/tickets',{headers:{Authorization:'tma '+webapp?.initData},cache:'no-store'});
+   const data=await response.json();
+   if(!response.ok)throw Error(data.error||'Поддержка недоступна');
+   setSupportTickets(data.tickets||[]);
+   if(['owner','coowner','moderator'].includes(liveRole)){
+    const notices=await api('/api/tickets/notifications',undefined,true);
+    if(notices?.deliveries)setSupportDeliveries(notices.deliveries);
+   }
+   if(expandedSupportTicket)await loadSupportThread(expandedSupportTicket);
+  }catch(error:any){flash('Ошибка загрузки поддержки: '+String(error?.message||error))}
+ };
+ React.useEffect(()=>{
+  if(demo||screen!=='support')return;
+  void loadTickets();
+  const timer=setInterval(()=>void loadTickets(),25000);
+  return()=>clearInterval(timer);
+ },[screen,demo,liveRole,expandedSupportTicket]);
+ const toggleSupportThread=async(ticketId:string)=>{
+  if(expandedSupportTicket===ticketId){setExpandedSupportTicket('');return;}
+  setExpandedSupportTicket(ticketId);
+  await loadSupportThread(ticketId);
+ };
  const ticketAction=async(id:string,action:string,payload:any={})=>{
-  const x=await adminRequest(`/api/tickets/${id}/${action}`,payload);if(x)loadTickets();
+  const response=await adminRequest(`/api/tickets/${id}/${action}`,payload);
+  if(response){
+   if(action==='reply')setSupportDrafts((old:any)=>({...old,[id]:''}));
+   await loadTickets();
+   await loadSupportThread(id);
+   if(action==='reply')flash('Ответ сохранён');
+  }
  };
  const createTicket=async()=>{
+  if(supportCreateLock.current)return;
   if(supportText.trim().length<10){flash('Опиши проблему минимум в 10 символах');return;}
-  const x=await adminRequest('/api/tickets',{category:supportCategory,body:supportText});if(x){setSupportText('');flash('Обращение создано');await loadTickets()}
+  supportCreateLock.current=true;setSupportCreating(true);
+  try{
+   const response=await adminRequest('/api/tickets',{category:supportCategory,body:supportText});
+   if(response?.ticket){
+    setSupportText('');setExpandedSupportTicket(response.ticket);
+    flash('Обращение создано и сохранено');await loadTickets();
+    await loadSupportThread(response.ticket);
+   }
+  }finally{supportCreateLock.current=false;setSupportCreating(false)}
  };
  const icon=(n:string,size=23,tile=false)=> <Icon name={n} theme={theme} size={size} tile={tile}/>;
  const isLight=theme==='light';
@@ -1827,9 +1873,9 @@ function Reward() {
    <section className="gm-history-section gm-premium-card">
     <div className="gm-history-section-head">{icon('shield-check',26,true)}<div><b>История обращений</b><small>Запросы в поддержку и их статусы</small></div></div>
     {!myTicketHistory.length?<p className="gm-history-support-empty">У тебя пока нет обращений в поддержку.</p>:null}
-    {myTicketHistory.map((ticket:any)=><button type="button" className="gm-history-ticket" key={ticket.id} onClick={()=>goto('support')}>
+    {myTicketHistory.map((ticket:any)=><button type="button" className="gm-history-ticket" key={ticket.id} onClick={()=>{setExpandedSupportTicket(ticket.id);goto('support')}}>
       <span className="gm-history-ticket-avatar">{icon('info',22)}</span>
-      <span><b>{ticket.category}</b><small>{new Date(Number(ticket.created_at)*1000).toLocaleDateString(actualLang==='uk'?'uk-UA':'ru-RU')} · {String(ticket.body||'').slice(0,90)}</small></span>
+      <span><b>{ticket.category}</b><small>{new Date(Number(ticket.created_at)*1000).toLocaleDateString(actualLang==='uk'?'uk-UA':'ru-RU')} · {String(ticket.body||'').slice(0,90)} · {Number(ticket.message_count||0)} ответов</small></span>
       <strong className={'gm-history-ticket-status '+ticket.status}>{statusLabels[ticket.status]||ticket.status}</strong>
      </button>)}
     <button type="button" className="gm-history-support-button" onClick={()=>goto('support')}>{icon('shield-check',19)} Открыть поддержку {icon('chevron-right',17)}</button>
@@ -1911,25 +1957,58 @@ function Support(){
  const tr=(pt:string,uk:string,en:string,ru:string)=>walletLanguage(pt,uk,en,ru);
  const categories=['Общий вопрос','Mining','Holding','Биржа GM/CR','Баланс GM/CR','Апелляция','Рефералы'];
  const labels=[tr('Geral','Загальне питання','General','Общий вопрос'),tr('Mineração','Майнінг','Mining','Mining'),tr('Holding','Холдинг','Holding','Holding'),tr('Mercado GM/CR','Ринок GM/CR','GM/CR market','Биржа GM/CR'),tr('Saldo GM/CR','Баланс GM/CR','GM/CR balance','Баланс GM/CR'),tr('Recurso','Оскарження','Appeal','Апелляция'),tr('Indicações','Реферали','Referrals','Рефералы')];
- const rows=(supportTickets||[]).map(t=>{
-  const isOwn=t.user_id===String(webapp?.initDataUnsafe?.user?.id||'');
-  const isStaff=['owner','coowner','moderator'].includes(liveRole);
+ const isStaff=['owner','coowner','moderator'].includes(liveRole);
+ const me=String(webapp?.initDataUnsafe?.user?.id||'');
+ const labelStatus:Record<string,string>={open:'Ожидает сотрудника',auto_support:'Автопомощь · доступно сотрудникам',in_review:'На рассмотрении',resolved:'Решено',closed:'Закрыто'};
+ const undelivered=(supportDeliveries||[]).filter(x=>x.status==='blocked'||x.status==='failed').length;
+ const rows=(supportTickets||[]).map((t:any)=>{
+  const isOwn=t.user_id===me;
+  const assigned=t.assigned_to===me;
+  const expanded=expandedSupportTicket===t.id;
+  const messages=supportThreads[t.id]||[];
   const actions=[];
-  if(!demo&&isOwn&&t.status!=='closed')actions.push(e('button',{type:'button',key:'auto',
-   onClick:()=>ticketAction(t.id,'auto')},'Автопроверка ('+(t.auto_attempts||0)+'/2)'));
-  if(!demo&&isStaff&&t.status==='open')actions.push(e('button',{type:'button',key:'claim',
-   onClick:()=>ticketAction(t.id,'claim')},'Взять в работу'));
-  if(!demo&&isStaff&&t.status==='in_review'){
-   actions.push(e('input',{key:'reply',placeholder:'Ответ пользователю',value:staffReply,onChange:event=>setStaffReply(event.target.value)}));
-   actions.push(e('button',{type:'button',key:'send',onClick:()=>ticketAction(t.id,'reply',{body:staffReply})},'Ответить'));
+  if(!demo&&isOwn&&t.status==='auto_support'&&Number(t.auto_attempts||0)<2){
+   actions.push(e('button',{type:'button',key:'auto',onClick:()=>ticketAction(t.id,'auto')},
+     'Автопроверка ('+(t.auto_attempts||0)+'/2)'));
+  }
+  if(!demo&&isStaff&&['open','auto_support'].includes(t.status)&&!t.assigned_to){
+   actions.push(e('button',{type:'button',key:'claim',onClick:()=>ticketAction(t.id,'claim')},'Взять в работу'));
+  }
+  const canStaffReply=isStaff&&t.status==='in_review'&&(assigned||liveRole==='owner'||liveRole==='coowner');
+  const canPlayerReply=isOwn&&!isStaff&&['open','in_review','auto_support'].includes(t.status);
+  if(!demo&&(canStaffReply||canPlayerReply)){
+   actions.push(e('textarea',{key:'reply',className:'gm-support-reply-box',rows:2,
+    placeholder:canStaffReply?'Ответ пользователю':'Дополнить обращение',
+    value:supportDrafts[t.id]||'',maxLength:3000,
+    onChange:(event:any)=>setSupportDrafts((old:any)=>({...old,[t.id]:event.target.value}))}));
+   actions.push(e('button',{type:'button',key:'send',disabled:!(supportDrafts[t.id]||'').trim(),
+    onClick:()=>ticketAction(t.id,'reply',{body:supportDrafts[t.id]||''})},'Отправить ответ'));
+  }
+  if(!demo&&isStaff&&t.status==='in_review'&&(assigned||liveRole==='owner'||liveRole==='coowner')&&
+    (t.priority==='P3'||liveRole==='owner'||liveRole==='coowner')){
    actions.push(e('button',{type:'button',key:'resolve',onClick:()=>ticketAction(t.id,'resolve')},'Решено'));
   }
-  if(!demo&&isOwn&&['resolved','closed'].includes(t.status))actions.push(e('button',{type:'button',key:'reopen',
-   onClick:()=>ticketAction(t.id,'reopen')},'Открыть повторно'));
+  if(!demo&&isOwn&&['resolved','closed'].includes(t.status)){
+   actions.push(e('button',{type:'button',key:'reopen',onClick:()=>ticketAction(t.id,'reopen')},'Открыть повторно'));
+  }
+  const thread=expanded?e('section',{className:'gm-support-thread',role:'log','aria-label':'История переписки'},
+   e('div',{className:'gm-support-thread-message own',key:'initial'},
+     e('b',null,'Первое сообщение'),
+     e('p',null,clean(t.body||'')),
+     e('small',null,new Date(Number(t.created_at)*1000).toLocaleString(actualLang==='uk'?'uk-UA':'ru-RU'))),
+   messages.map((m:any)=>e('div',{className:'gm-support-thread-message '+(m.author===t.user_id?'own':m.author==='auto'?'auto':'staff'),key:m.id},
+    e('b',null,m.author==='auto'?'Автопомощь':m.author===t.user_id?'Игрок':'Сотрудник поддержки'),
+    e('p',null,clean(m.body||'')),
+    e('small',null,new Date(Number(m.created_at)*1000).toLocaleString(actualLang==='uk'?'uk-UA':'ru-RU')))))
+   :null;
   return e('section',{className:'gm-support-ticket gm-premium-card',key:t.id},
    e('div',null,e('b',null,'#'+String(t.id).slice(0,8)),e('span',null,t.category)),
    e('p',null,clean(t.body||t.text||'')),
-   e('small',null,'Статус: '+t.status+' · '+(t.priority||'P3')),
+   e('small',null,'Статус: '+(labelStatus[t.status]||t.status)+' · '+(t.priority||'P3')),
+   isStaff?e('small',{className:'gm-support-player-ref'},'Игрок: '+String(t.user_id)):null,
+   e('button',{type:'button',className:'gm-support-transcript-toggle',onClick:()=>toggleSupportThread(t.id),
+    'aria-expanded':expanded},expanded?'Скрыть переписку':'История переписки',icon(expanded?'chevron-up':'chevron-down',16)),
+   thread,
    e('div',{className:'gm-support-actions'},actions));
  });
  return e(React.Fragment,null,
@@ -1937,6 +2016,10 @@ function Support(){
   e('div',{className:'gm-support-hero gm-premium-card'},icon('shield-check',43,true),
    e('div',null,e('b',null,tr('Central de suporte GM TOKEN','Центр підтримки GM TOKEN','GM TOKEN Support Center','Центр поддержки GM TOKEN')),
     e('p',null,tr('Ajuda com mineração, caixas, ordens, saldo e login no Telegram.','Допомога з майнінгом, боксами, угодами, балансом і входом у Telegram.','Help with Mining, Boxes, orders, balances and Telegram login.','Поможем разобраться с Mining, боксами, сделками, балансом и входом в Telegram.')))),
+  isStaff?e('section',{className:'gm-support-staff-banner gm-premium-card'},
+    e('b',null,'Очередь поддержки · '+String(supportTickets.length)),
+    e('p',null,'Новые заявки, включая автопомощь, доступны всем сотрудникам. Чтобы бот присылал уведомления в Telegram, открой чат с @gm_token_test_bot и нажми /start.'),
+    undelivered?e('small',null,'Недоставленные уведомления: '+undelivered+' · открой чат с ботом и отправь /start для повторной доставки.'):null):null,
   e('section',{className:'gm-support-form gm-premium-card'},
    e('div',{className:'gm-support-form-head'},icon('info',29),e('span',null,e('b',null,tr('Novo chamado','Нове звернення','New ticket','Новое обращение')),e('small',null,tr('Histórico e respostas salvos no servidor','Історія й відповіді на сервері','Status and replies stored on the server','Ответы и статус сохраняются на сервере')))),
    e('label',null,tr('Assunto','Тема звернення','Topic','Тема обращения')),
@@ -1944,16 +2027,16 @@ function Support(){
     categories.map((x,i)=>e('button',{type:'button',key:x,className:'gm-support-category '+(supportCategory===x?'selected':''),'aria-pressed':supportCategory===x,onClick:()=>setSupportCategory(x)},
      icon(['info','lightning','wallet','candlesticks','coins','shield-check','friends'][i],18),labels[i]))),
    e('label',{htmlFor:'gm-support-message'},tr('Descreva o problema','Опиши проблему','Describe the issue','Опиши проблему')),
-   e('textarea',{id:'gm-support-message',rows:5,value:supportText,
+   e('textarea',{id:'gm-support-message',rows:5,value:supportText,maxLength:3000,
     placeholder:tr('Ex.: meu saldo sumiu após abrir o Mini App…','Наприклад: після відкриття Mini App зник баланс…','E.g. my balance disappeared after opening the Mini App…','Например: после открытия Mini App пропал баланс…'),
-    onChange:event=>setSupportText(event.target.value)}),
+    onChange:(event:any)=>setSupportText(event.target.value)}),
    e('small',{className:'gm-support-length'},supportText.trim().length+' / 3000 · '+tr('mínimo 10 caracteres','мінімум 10 символів','minimum 10 characters','минимум 10 символов')),
-   e('button',{type:'button',className:'gm-support-submit',disabled:demo||supportText.trim().length<10,onClick:createTicket},
-    icon('send',20),tr('Enviar chamado','Створити звернення','Submit ticket','Создать обращение'))),
-  e('div',{className:'gm-support-section-label'},e('b',null,tr('Meus chamados','Мої звернення','My tickets','Мои обращения')),
+   e('button',{type:'button',className:'gm-support-submit',disabled:demo||supportCreating||supportText.trim().length<10,onClick:createTicket},
+    icon('send',20),supportCreating?'Сохраняем…':tr('Enviar chamado','Створити звернення','Submit ticket','Создать обращение'))),
+  e('div',{className:'gm-support-section-label'},e('b',null,isStaff?'Очередь и история обращений':tr('Meus chamados','Мої звернення','My tickets','Мои обращения')),
    e('button',{type:'button',onClick:loadTickets},icon('refresh',17),tr('Atualizar','Оновити','Refresh','Обновить'))),
   rows.length?rows:e('p',{className:'gm-support-empty'},tr('Você ainda não tem chamados. Use o formulário acima.','Звернень поки немає. Скористайся формою вище.','No tickets yet. Use the form above.','Пока нет обращений. Создай обращение через форму выше.')),
-  e('p',{className:'gm-support-foot'},'При серьёзной ошибке баланса выбери «Баланс GM/CR». Не сообщай коды 2FA и секреты бота.')
+  e('p',{className:'gm-support-foot'},'Обращения и ответы сохраняются на сервере. Не отправляй пароли, seed-фразы и коды 2FA.')
  );
 }
 
