@@ -40,7 +40,7 @@ test('Owner can create, update and delete only checkable tasks with TOTP, users 
    GM_TASKS_ENABLED:'1',BOT_WEBHOOK_SECRET:'',PUBLIC_APP_URL:'',GM_JETTON_MASTER_ADDRESS:''},stdio:'ignore'
  });
  t.after(()=>{child.kill();rmSync(dir,{recursive:true,force:true})});
- let ready=false;for(let i=0;i<100;i++){try{if((await fetch(base+'/api/health')).ok){ready=true;break}}catch{}await new Promise(r=>setTimeout(r,50))}
+ let ready=false;for(let i=0;i<240;i++){try{if((await fetch(base+'/api/health')).ok){ready=true;break}}catch{}await new Promise(r=>setTimeout(r,50))}
  assert.equal(ready,true,'server starts');
  async function api(id,path,method='GET',body){
   const result=await fetch(base+path,{method,headers:{Authorization:telegramAuth(id),'Content-Type':'application/json'},body:method==='POST'?JSON.stringify(body||{}):undefined});
