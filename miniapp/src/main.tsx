@@ -32,6 +32,45 @@ function Icon({name,theme,size=24,tile=false,alt='',className=''}:{name:string,t
   width={size} height={size} alt={alt} draggable="false" loading="lazy"
   onError={(event:any)=>{const img=event.currentTarget as HTMLImageElement;if(img.dataset.iconFallback)return;img.dataset.iconFallback='1';img.src=`${A}${theme}/transparent/info.png`;}}/>;
 }
+
+/** Decorative-only Daily Streak flame; its growth follows authenticated game status. */
+function streakStage(days:number){
+ const n=Number.isFinite(days)?Math.max(0,Math.floor(days)):0;
+ return n>=30?5:n>=20?4:n>=10?3:n>=5?2:n>0?1:0;
+}
+function streakDayWord(days:number){
+ const n=Math.max(0,Math.floor(days));
+ return n%10===1&&n%100!==11?'день':n%10>=2&&n%10<=4&&(n%100<12||n%100>14)?'дня':'дней';
+}
+function GrowingStreakFlame({days=0,placement='home'}:{days?:number,placement?:string}){
+ const count=Number.isSafeInteger(days)&&days>0?days:0;
+ const stage=streakStage(count);
+ const outerId='gm-streak-outer-'+placement;
+ const innerId='gm-streak-inner-'+placement;
+ const growth=Math.min(1.2,0.68+Math.min(30,count)*0.018);
+ return <span className={'gm-streak-flame gm-streak-flame-stage-'+stage+' gm-streak-flame-'+placement}
+  style={{'--gm-streak-growth':String(growth)} as any} aria-hidden="true">
+   <span className="gm-streak-flame-glow"/>
+   <svg className="gm-streak-flame-art" viewBox="0 0 74 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+     <linearGradient id={outerId} x1="12" y1="75" x2="59" y2="13" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stopColor="#526b9b"/><stop offset=".44" stopColor="#92c4f5"/>
+      <stop offset=".76" stopColor="#cce5ff"/><stop offset="1" stopColor="#f4f9ff"/>
+     </linearGradient>
+     <linearGradient id={innerId} x1="28" y1="80" x2="46" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stopColor="#eaf8ff"/><stop offset=".57" stopColor="#fffefd"/><stop offset="1" stopColor="#b4d6ff"/>
+     </linearGradient>
+    </defs>
+    <path className="gm-streak-flame-body" d="M37 4C46 18 46 27 43 35C52 30 57 23 55 17C67 32 70 45 66 58C61 75 51 82 37 82C19 82 6 70 7 54C8 41 15 33 24 25C22 36 25 43 31 47C35 37 33 19 37 4Z" fill={'url(#'+outerId+')'}/>
+    <path className="gm-streak-flame-inner" d="M37 35C43 44 47 47 46 55C52 51 52 48 51 44C58 53 59 64 54 73C50 80 44 83 36 83C25 83 19 77 20 66C20 59 25 55 30 52C29 60 31 63 35 65C38 55 35 45 37 35Z" fill={'url(#'+innerId+')'}/>
+    <path className="gm-streak-flame-highlight" d="M27 66C24 58 27 52 30 49" stroke="#fff" strokeOpacity=".75" strokeWidth="2.5" strokeLinecap="round"/>
+   </svg>
+   <span className="gm-streak-flame-spark gm-streak-flame-spark-one"/>
+   <span className="gm-streak-flame-spark gm-streak-flame-spark-two"/>
+   <span className="gm-streak-flame-spark gm-streak-flame-spark-three"/>
+  </span>;
+}
+
 function PlayerAvatar({name='',photoUrl='',size='medium',rank=0}:{name?:string,photoUrl?:string,size?:string,rank?:number}){
  const label=String(name||'GM').trim();
  const initials=label.replace(/^@/,'').split(/[ _-]+/).filter(Boolean).slice(0,2).map(p=>p[0].toUpperCase()).join('')||'GM';
@@ -450,6 +489,13 @@ class AutumnCalendar extends React.Component {
       preview ? 'Вернуться к сегодняшней награде' : received ? 'Сегодня награда получена' : claimedViaDaily ? 'Ежедневная награда уже получена' : 'Забрать награду';
     return e('div', {className:'gm-calendar'},
       this.props.header,
+      e('section',{className:'gm-streak-calendar gm-premium-card','aria-label':'Серия ежедневных наград: '+String(this.props.streak||0)+' дней'},
+        e(GrowingStreakFlame,{days:Number(this.props.streak||0),placement:'calendar'}),
+        e('span',{className:'gm-streak-calendar-copy'},
+          e('small',null,'DAILY STREAK'),
+          e('b',null,String(this.props.streak||0)+' '+streakDayWord(Number(this.props.streak||0))+' подряд'),
+          e('span',null,'Огонёк растёт с каждым днём серии')),
+        e('span',{className:'gm-streak-calendar-badge'},'✦')),
       e('section', {className:'gm-premium-card gm-mining-energy'},
         e('div',{className:'gm-mining-energy-head'},e('b',null,'Прогресс календаря'),e('span',null,data ? completed + ' / 30' : '…')),
         e('div',{className:'gm-mining-energy-track',role:'progressbar','aria-label':'Получено дней','aria-valuenow':completed,'aria-valuemin':0,'aria-valuemax':30},e('span',{style:{width:(completed / 30 * 100)+'%'}}))),
@@ -1087,6 +1133,11 @@ function App(){
  function Home(){
   const e=React.createElement;
   const points=liveState?.points?.points??0;
+  const streakDays=Math.max(0,Math.floor(Number(liveState?.daily?.streak??wallet.streak??0)||0));
+  const nextFlameStage=[1,5,10,20,30].find(n=>streakDays<n);
+  const streakHint=streakDays===0?'Получи сегодняшнюю награду, чтобы зажечь пламя':
+   nextFlameStage?'До усиления огня: '+(nextFlameStage-streakDays)+' '+streakDayWord(nextFlameStage-streakDays):
+   'Элитное пламя · серия продолжается';
   const miningRate=(liveState?.mining?.rate_cents_day!=null?liveState.mining.rate_cents_day/100:gmRate(wallet));
   const level=wallet.level||1;
   const nextLevel=xpThreshold[Math.min(9,level)]||xpThreshold[9];
@@ -1141,8 +1192,16 @@ function App(){
     e('span',null,e('b',null,'Открывай боксы за POINTS'),
       e('small',null,'Твои POINTS: '+nf(points,0)+' · гарантированные награды')),
     icon('chevron-right',21)),
+   e('button',{type:'button',className:'gm-home-streak gm-premium-card',onClick:()=>goto('reward'),
+     'aria-label':'Daily Streak: '+streakDays+' '+streakDayWord(streakDays)+' подряд. Открыть календарь'},
+    e(GrowingStreakFlame,{days:streakDays,placement:'home'}),
+    e('span',{className:'gm-home-streak-copy'},
+      e('small',null,'DAILY STREAK · СЕРИЯ'),
+      e('strong',null,streakDays+' '+streakDayWord(streakDays)+' подряд'),
+      e('span',null,streakHint)),
+    e('span',{className:'gm-home-streak-arrow'},icon('chevron-right',20))),
    e('div',{className:'gm-home-lower'},
-    e('button',{type:'button',onClick:()=>goto('reward')},icon('flame',19),' Daily Reward',icon('chevron-right',15)),
+    e('button',{type:'button',onClick:()=>goto('reward')},icon('gift',19),' Осенний календарь',icon('chevron-right',15)),
     e('button',{type:'button',onClick:()=>goto('more')},icon('info',19),' Как играть',icon('chevron-right',15)))
   );
  }
@@ -1503,7 +1562,7 @@ function Tasks(){
  
  
 function Reward() {
-    return React.createElement(AutumnCalendar, {api, icon, header:top('Осенний календарь', true, 'info'),onOpenBoxes:()=>goto('boxes'),onClaim:refreshLive});
+    return React.createElement(AutumnCalendar, {api, icon, header:top('Осенний календарь', true, 'info'),streak:Math.max(0,Math.floor(Number(liveState?.daily?.streak??wallet.streak??0)||0)),onOpenBoxes:()=>goto('boxes'),onClaim:refreshLive});
   }
   function Splash(){return <div className="splash-view gm-splash-v4" role="status" aria-live="polite">
   <div className="gm-splash-v4-stack">
