@@ -50,6 +50,10 @@ export async function calendarStatus(id) {
        WHERE player_id=$1 AND currency='HP'`,
       [playerId],
     );
+    const gameProfile = await client.query(
+      'SELECT xp,level FROM gm_game.users WHERE id=$1',
+      [playerId],
+    );
     // Legacy Daily Reward and Autumn Calendar share the same UTC-day lock.
     // Expose that day's state so the client never offers an impossible claim.
     const cosmetics=await getHpCosmetics(client,playerId);
@@ -71,6 +75,10 @@ export async function calendarStatus(id) {
       schedule:schedule.rows,
       inventory:availableBoxes,
       hp:Number(hp.rows[0]?.balance??0),
+      // Profile XP/level are always read from the canonical game profile,
+      // not from the separate calendar-only XP wallet.
+      xp:Number(gameProfile.rows[0]?.xp??0),
+      level:Number(gameProfile.rows[0]?.level??1),
       hp_cosmetics:cosmetics,
       daily_claimed_today:daily.rows.length>0
     };
@@ -120,10 +128,24 @@ export async function claimCalendarRewardWithClient(client, playerId) {
       throw new Error('Invalid calendar XP');
     }
     const nextXp = current + amount;
-    await client.query(
-      'UPDATE gm_game.users SET xp=$2,level=$3 WHERE id=$1',
+    const update = await client.query(
+      'UPDATE gm_game.users SET xp=$2,level=$3 WHERE id=$1 RETURNING xp,level',
       [playerId, nextXp, calendarXpLevel(nextXp)],
     );
+    if (update.rows.length !== 1) throw new Error('Calendar XP profile update failed');
+    // Maintain a second, canonical game audit marker alongside the original
+    // private XP ledger. Both are committed or rolled back together.
+    const audit = await client.query(
+      `INSERT INTO gm_game.journal(id,at,actor,kind,info)
+       VALUES ($1,extract(epoch from now())::bigint,$2,'autumn_calendar_xp',$3)
+       ON CONFLICT (id) DO NOTHING RETURNING id`,
+      [
+        'calendar:xp:mirrored:'+String(reward.operation_id),
+        playerId,
+        JSON.stringify({operation_id:reward.operation_id,source:'autumn_calendar',xp:amount}),
+      ],
+    );
+    if (audit.rows.length !== 1) throw new Error('Calendar XP operation already mirrored');
   }
   // Calendar and game daily streak share one unique UTC date. An exception
   // also rolls back both the calendar payout and any XP mirror.
