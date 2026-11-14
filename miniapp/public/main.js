@@ -439,7 +439,7 @@ function App() {
     const webapp = window.Telegram?.WebApp;
     const openBot = (ev) => {
         ev?.preventDefault?.();
-        const url = 'https://t.me/gm_token_test_bot';
+        const url = 'https://t.me/GM_TOKEN_BOT';
         if (webapp?.openTelegramLink) {
             try {
                 webapp.openTelegramLink(url);
@@ -939,7 +939,7 @@ function App() {
         webapp?.expand?.();
         const init = webapp?.initData;
         if (!init) {
-            setBackendStatus('Открой приложение через @gm_token_test_bot в Telegram');
+            setBackendStatus('Открой приложение через @GM_TOKEN_BOT в Telegram');
             return;
         }
         let valid = true;
@@ -1663,7 +1663,7 @@ function App() {
     function Referrals() {
         const e = React.createElement;
         const id = String(webapp?.initDataUnsafe?.user?.id || '');
-        const link = id ? 'https://t.me/gm_token_test_bot?startapp=ref_' + id : '';
+        const link = id ? 'https://t.me/GM_TOKEN_BOT?startapp=ref_' + id : '';
         const copy = async () => {
             if (!link) {
                 flash('Открой через Telegram, чтобы получить ссылку');
@@ -1874,7 +1874,7 @@ function App() {
             return e('section', { className: 'gm-support-ticket gm-premium-card', key: t.id }, e('div', null, e('b', null, '#' + String(t.id).slice(0, 8)), e('span', null, t.category)), e('p', null, clean(t.body || t.text || '')), e('small', null, 'Статус: ' + (labelStatus[t.status] || t.status) + ' · ' + (t.priority || 'P3')), isStaff ? e('small', { className: 'gm-support-player-ref' }, 'Игрок: ' + String(t.user_id)) : null, e('button', { type: 'button', className: 'gm-support-transcript-toggle', onClick: () => toggleSupportThread(t.id),
                 'aria-expanded': expanded }, expanded ? 'Скрыть переписку' : 'История переписки', icon(expanded ? 'chevron-up' : 'chevron-down', 16)), thread, e('div', { className: 'gm-support-actions' }, actions));
         });
-        return e(React.Fragment, null, top(L('support'), true, 'info'), e('div', { className: 'gm-support-hero gm-premium-card' }, icon('shield-check', 43, true), e('div', null, e('b', null, tr('Central de suporte GM TOKEN', 'Центр підтримки GM TOKEN', 'GM TOKEN Support Center', 'Центр поддержки GM TOKEN')), e('p', null, tr('Ajuda com mineração, caixas, ordens, saldo e login no Telegram.', 'Допомога з майнінгом, боксами, угодами, балансом і входом у Telegram.', 'Help with Mining, Boxes, orders, balances and Telegram login.', 'Поможем разобраться с Mining, боксами, сделками, балансом и входом в Telegram.')))), isStaff ? e('section', { className: 'gm-support-staff-banner gm-premium-card' }, e('b', null, 'Очередь поддержки · ' + String(supportTickets.length)), e('p', null, 'Новые заявки, включая автопомощь, доступны всем сотрудникам. Чтобы бот присылал уведомления в Telegram, открой чат с @gm_token_test_bot и нажми /start.'), undelivered ? e('small', null, 'Недоставленные уведомления: ' + undelivered + ' · открой чат с ботом и отправь /start для повторной доставки.') : null) : null, e('section', { className: 'gm-support-form gm-premium-card' }, e('div', { className: 'gm-support-form-head' }, icon('info', 29), e('span', null, e('b', null, tr('Novo chamado', 'Нове звернення', 'New ticket', 'Новое обращение')), e('small', null, tr('Histórico e respostas salvos no servidor', 'Історія й відповіді на сервері', 'Status and replies stored on the server', 'Ответы и статус сохраняются на сервере')))), e('label', null, tr('Assunto', 'Тема звернення', 'Topic', 'Тема обращения')), e('div', { className: 'gm-support-category-grid', role: 'group', 'aria-label': 'Тема обращения' }, categories.map((x, i) => e('button', { type: 'button', key: x, className: 'gm-support-category ' + (supportCategory === x ? 'selected' : ''), 'aria-pressed': supportCategory === x, onClick: () => setSupportCategory(x) }, icon(['info', 'lightning', 'wallet', 'candlesticks', 'coins', 'shield-check', 'friends'][i], 18), labels[i]))), e('label', { htmlFor: 'gm-support-message' }, tr('Descreva o problema', 'Опиши проблему', 'Describe the issue', 'Опиши проблему')), e('textarea', { id: 'gm-support-message', rows: 5, value: supportText, maxLength: 3000,
+        return e(React.Fragment, null, top(L('support'), true, 'info'), e('div', { className: 'gm-support-hero gm-premium-card' }, icon('shield-check', 43, true), e('div', null, e('b', null, tr('Central de suporte GM TOKEN', 'Центр підтримки GM TOKEN', 'GM TOKEN Support Center', 'Центр поддержки GM TOKEN')), e('p', null, tr('Ajuda com mineração, caixas, ordens, saldo e login no Telegram.', 'Допомога з майнінгом, боксами, угодами, балансом і входом у Telegram.', 'Help with Mining, Boxes, orders, balances and Telegram login.', 'Поможем разобраться с Mining, боксами, сделками, балансом и входом в Telegram.')))), isStaff ? e('section', { className: 'gm-support-staff-banner gm-premium-card' }, e('b', null, 'Очередь поддержки · ' + String(supportTickets.length)), e('p', null, 'Новые заявки, включая автопомощь, доступны всем сотрудникам. Чтобы бот присылал уведомления в Telegram, открой чат с @GM_TOKEN_BOT и нажми /start.'), undelivered ? e('small', null, 'Недоставленные уведомления: ' + undelivered + ' · открой чат с ботом и отправь /start для повторной доставки.') : null) : null, e('section', { className: 'gm-support-form gm-premium-card' }, e('div', { className: 'gm-support-form-head' }, icon('info', 29), e('span', null, e('b', null, tr('Novo chamado', 'Нове звернення', 'New ticket', 'Новое обращение')), e('small', null, tr('Histórico e respostas salvos no servidor', 'Історія й відповіді на сервері', 'Status and replies stored on the server', 'Ответы и статус сохраняются на сервере')))), e('label', null, tr('Assunto', 'Тема звернення', 'Topic', 'Тема обращения')), e('div', { className: 'gm-support-category-grid', role: 'group', 'aria-label': 'Тема обращения' }, categories.map((x, i) => e('button', { type: 'button', key: x, className: 'gm-support-category ' + (supportCategory === x ? 'selected' : ''), 'aria-pressed': supportCategory === x, onClick: () => setSupportCategory(x) }, icon(['info', 'lightning', 'wallet', 'candlesticks', 'coins', 'shield-check', 'friends'][i], 18), labels[i]))), e('label', { htmlFor: 'gm-support-message' }, tr('Descreva o problema', 'Опиши проблему', 'Describe the issue', 'Опиши проблему')), e('textarea', { id: 'gm-support-message', rows: 5, value: supportText, maxLength: 3000,
             placeholder: tr('Ex.: meu saldo sumiu após abrir o Mini App…', 'Наприклад: після відкриття Mini App зник баланс…', 'E.g. my balance disappeared after opening the Mini App…', 'Например: после открытия Mini App пропал баланс…'),
             onChange: (event) => setSupportText(event.target.value) }), e('small', { className: 'gm-support-length' }, supportText.trim().length + ' / 3000 · ' + tr('mínimo 10 caracteres', 'мінімум 10 символів', 'minimum 10 characters', 'минимум 10 символов')), e('button', { type: 'button', className: 'gm-support-submit', disabled: demo || supportCreating || supportText.trim().length < 10, onClick: createTicket }, icon('send', 20), supportCreating ? 'Сохраняем…' : tr('Enviar chamado', 'Створити звернення', 'Submit ticket', 'Создать обращение'))), e('div', { className: 'gm-support-section-label' }, e('b', null, isStaff ? 'Очередь и история обращений' : tr('Meus chamados', 'Мої звернення', 'My tickets', 'Мои обращения')), e('button', { type: 'button', onClick: loadTickets }, icon('refresh', 17), tr('Atualizar', 'Оновити', 'Refresh', 'Обновить'))), rows.length ? rows : e('p', { className: 'gm-support-empty' }, tr('Você ainda não tem chamados. Use o formulário acima.', 'Звернень поки немає. Скористайся формою вище.', 'No tickets yet. Use the form above.', 'Пока нет обращений. Создай обращение через форму выше.')), e('p', { className: 'gm-support-foot' }, 'Обращения и ответы сохраняются на сервере. Не отправляй пароли, seed-фразы и коды 2FA.'));
     }
@@ -2158,12 +2158,12 @@ function App() {
                     React.createElement("div", null,
                         React.createElement("strong", null, "\u0422\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044F \u0432\u0445\u043E\u0434 \u0447\u0435\u0440\u0435\u0437 Telegram"),
                         React.createElement("p", null, backendStatus))),
-                React.createElement("a", { className: "auth-cta", href: "https://t.me/gm_token_test_bot", onClick: openBot },
+                React.createElement("a", { className: "auth-cta", href: "https://t.me/GM_TOKEN_BOT", onClick: openBot },
                     React.createElement("span", { className: "auth-cta-icon" },
                         React.createElement(Icon, { name: "telegram", theme: theme, size: 29 })),
                     React.createElement("span", { className: "auth-cta-copy" },
                         React.createElement("strong", null, "\u041E\u0442\u043A\u0440\u044B\u0442\u044C \u0447\u0430\u0442 \u0431\u043E\u0442\u0430"),
-                        React.createElement("small", null, "@gm_token_test_bot")),
+                        React.createElement("small", null, "@GM_TOKEN_BOT")),
                     React.createElement(Icon, { name: "chevron-right", theme: theme, size: 22 })),
                 React.createElement("div", { className: "auth-theme-row" },
                     React.createElement("span", null, "\u041E\u0444\u043E\u0440\u043C\u043B\u0435\u043D\u0438\u0435"),
