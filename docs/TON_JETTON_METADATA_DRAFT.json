@@ -1,0 +1,7 @@
+{
+  "name": "GM TOKEN",
+  "symbol": "GM",
+  "decimals": "9",
+  "description": "Proposed GM TOKEN Jetton metadata. No mainnet contract has been approved. In-game GM balances are virtual and cannot currently be redeemed for Jettons.",
+  "image": "REPLACE_WITH_VERIFIED_PUBLIC_HTTPS_IMAGE_BEFORE_ANY_DEPLOYMENT"
+}

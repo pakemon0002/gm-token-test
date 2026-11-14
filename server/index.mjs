@@ -9,6 +9,7 @@ import {openGamePostgres} from './game-postgres.mjs';
 import {verifyInitData,checkTotp,totp,toCents,gmFunds,crFunds} from './lib.mjs';
 import {makeGame} from './game.mjs';
 import {makeTelegramWebhook} from './webhook.mjs';
+import {publicTonLaunchStatus,denyTonTokenOperation} from './ton-prelaunch.mjs';
 import {makeHolders,HOLDINGS_REFRESH_SECONDS} from './holders.mjs';
 const here=dirname(fileURLToPath(import.meta.url));
 const staticRoot=resolve(here,'../miniapp/public');
@@ -130,6 +131,8 @@ if(process.env.GM_DATABASE_DRIVER==='postgres'){
 const routes=async(req,res)=>{
  const url=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`);const p=url.pathname;const verb=req.method||'GET';
  if(p==='/api/health')return send(res,200,{ok:true,mode:'GM TOKEN server / no real-money operations',time:new Date().toISOString()});
+ // Public read-only proposal data. Never claim that mainnet GM was issued.
+ if(p==='/api/ton/launch-status'&&verb==='GET')return send(res,200,publicTonLaunchStatus());
  if(p==='/api/telegram/webhook' && verb==='POST'){
    if(!telegramWebhook || !telegramWebhook.validateSecret(req.headers['x-telegram-bot-api-secret-token']))return fail(res,403,'forbidden');
    try{const payload=await readBody(req);send(res,200,{ok:true});void telegramWebhook.handleUpdate(payload).catch(err=>console.error('Telegram webhook update failed:',err?.message));}
@@ -142,6 +145,9 @@ const routes=async(req,res)=>{
  try{
   if(!secret)throw Error('BOT_TOKEN must be configured for API authentication');
   const identity=auth(req);id=identity.id;
+  // Deliberately non-operational until a separate approved implementation exists.
+  // No wallet signing, game-balance hold, debit, queue, or real token transfer.
+  if(p==='/api/ton/withdraw'&&verb==='POST')return send(res,503,denyTonTokenOperation());
   if ((p === '/api/autumn-calendar' && verb === 'GET') ||
       (p === '/api/autumn-calendar/claim' && verb === 'POST') ||
       (p === '/api/hp/cosmetics/unlock' && verb === 'POST') ||
