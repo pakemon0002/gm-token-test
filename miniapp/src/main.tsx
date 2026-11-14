@@ -1873,9 +1873,9 @@ function Reward() {
    <section className="gm-history-section gm-premium-card">
     <div className="gm-history-section-head">{icon('shield-check',26,true)}<div><b>История обращений</b><small>Запросы в поддержку и их статусы</small></div></div>
     {!myTicketHistory.length?<p className="gm-history-support-empty">У тебя пока нет обращений в поддержку.</p>:null}
-    {myTicketHistory.map((ticket:any)=><button type="button" className="gm-history-ticket" key={ticket.id} onClick={()=>goto('support')}>
+    {myTicketHistory.map((ticket:any)=><button type="button" className="gm-history-ticket" key={ticket.id} onClick={()=>{setExpandedSupportTicket(ticket.id);goto('support')}}>
       <span className="gm-history-ticket-avatar">{icon('info',22)}</span>
-      <span><b>{ticket.category}</b><small>{new Date(Number(ticket.created_at)*1000).toLocaleDateString(actualLang==='uk'?'uk-UA':'ru-RU')} · {String(ticket.body||'').slice(0,90)}</small></span>
+      <span><b>{ticket.category}</b><small>{new Date(Number(ticket.created_at)*1000).toLocaleDateString(actualLang==='uk'?'uk-UA':'ru-RU')} · {String(ticket.body||'').slice(0,90)} · {Number(ticket.message_count||0)} ответов</small></span>
       <strong className={'gm-history-ticket-status '+ticket.status}>{statusLabels[ticket.status]||ticket.status}</strong>
      </button>)}
     <button type="button" className="gm-history-support-button" onClick={()=>goto('support')}>{icon('shield-check',19)} Открыть поддержку {icon('chevron-right',17)}</button>
