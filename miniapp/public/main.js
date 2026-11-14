@@ -357,7 +357,7 @@ React.createElement = (type, props, ...children) => {
 class AutumnCalendar extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { data: null, busy: false, error: false };
+        this.state = { data: null, busy: false, error: false, feedback: '' };
         this.pending = false;
     }
     componentDidMount() { this.active = true; void this.refresh(); }
@@ -373,9 +373,22 @@ class AutumnCalendar extends React.Component {
         this.pending = true;
         this.setState({ busy: true });
         try {
-            await this.props.api('/api/autumn-calendar/claim', {});
+            const result = await this.props.api('/api/autumn-calendar/claim', {});
+            if (result?.reward_type && Number.isSafeInteger(Number(result.reward_amount))) {
+                const rewardLabels = { xp: 'XP', hp: 'HP', bronze_box: 'бронзовый бокс', silver_box: 'серебряный бокс', gold_box: 'золотой бокс' };
+                const label = rewardLabels[result.reward_type] || 'бонус';
+                const quantity = Number(result.reward_amount);
+                const message = result.reward_type.endsWith('_box')
+                    ? 'Получено: ' + label + ' × ' + quantity
+                    : 'Начислено: +' + quantity + ' ' + label;
+                if (this.active)
+                    this.setState({ feedback: message });
+            }
+            else if (this.active) {
+                this.setState({ feedback: 'Не удалось подтвердить получение. Проверь награды и попробуй снова.' });
+            }
             await this.refresh();
-            if (this.props.onClaim)
+            if (result && this.props.onClaim)
                 await this.props.onClaim();
         }
         finally {
@@ -402,7 +415,7 @@ class AutumnCalendar extends React.Component {
     }
     render() {
         const e = React.createElement;
-        const { data, busy, error, selected } = this.state;
+        const { data, busy, error, selected, feedback } = this.state;
         const progress = data?.progress;
         const next = Number(progress?.next_day || 1);
         const received = !!progress?.claimed_today;
@@ -421,7 +434,7 @@ class AutumnCalendar extends React.Component {
         const preview = data && focusDay !== today;
         const action = error ? 'Повторить загрузку' : !data ? 'Загрузка календаря…' : busy ? 'Получаем…' :
             preview ? 'Вернуться к сегодняшней награде' : received ? 'Сегодня награда получена' : claimedViaDaily ? 'Ежедневная награда уже получена' : 'Забрать награду';
-        return e('div', { className: 'gm-calendar' }, this.props.header, e('section', { className: 'gm-premium-card gm-mining-energy' }, e('div', { className: 'gm-mining-energy-head' }, e('b', null, 'Прогресс календаря'), e('span', null, data ? completed + ' / 30' : '…')), e('div', { className: 'gm-mining-energy-track', role: 'progressbar', 'aria-label': 'Получено дней', 'aria-valuenow': completed, 'aria-valuemin': 0, 'aria-valuemax': 30 }, e('span', { style: { width: (completed / 30 * 100) + '%' } }))), data && e('section', { className: 'gm-premium-card gm-calendar-assets' }, e('strong', null, 'Полученные бонусы'), e('div', { className: 'gm-calendar-assets-row' }, e('span', null, 'HP'), e('b', null, String(data.hp || 0)), e('span', null, 'Боксы'), e('b', null, String(Object.values(data.inventory || {}).reduce((n, value) => n + Number(value || 0), 0)))), e('div', { className: 'gm-hp-collection' }, e('div', { className: 'gm-hp-collection-heading' }, e('b', null, 'Коллекция HP'), e('small', null, 'Постоянные значки профиля · без влияния на добычу GM')), e('div', { className: 'gm-hp-collection-grid' }, (data.hp_cosmetics || []).map(item => e('button', { key: item.id, type: 'button',
+        return e('div', { className: 'gm-calendar' }, this.props.header, e('section', { className: 'gm-premium-card gm-mining-energy' }, e('div', { className: 'gm-mining-energy-head' }, e('b', null, 'Прогресс календаря'), e('span', null, data ? completed + ' / 30' : '…')), e('div', { className: 'gm-mining-energy-track', role: 'progressbar', 'aria-label': 'Получено дней', 'aria-valuenow': completed, 'aria-valuemin': 0, 'aria-valuemax': 30 }, e('span', { style: { width: (completed / 30 * 100) + '%' } }))), data && e('section', { className: 'gm-premium-card gm-calendar-assets' }, e('strong', null, 'Полученные бонусы'), e('div', { className: 'gm-calendar-assets-row' }, e('span', null, 'HP'), e('b', null, String(data.hp || 0)), e('span', null, 'Боксы'), e('b', null, String(Object.values(data.inventory || {}).reduce((n, value) => n + Number(value || 0), 0)))), e('p', { className: 'gm-calendar-xp-summary' }, 'Опыт профиля: ' + String(data.xp ?? 0) + ' XP · Уровень ' + String(data.level ?? 1)), e('div', { className: 'gm-hp-collection' }, e('div', { className: 'gm-hp-collection-heading' }, e('b', null, 'Коллекция HP'), e('small', null, 'Постоянные значки профиля · без влияния на добычу GM')), e('div', { className: 'gm-hp-collection-grid' }, (data.hp_cosmetics || []).map(item => e('button', { key: item.id, type: 'button',
             className: 'gm-hp-collectible' + (item.unlocked ? ' unlocked' : ''),
             disabled: busy || item.unlocked || Number(data.hp || 0) < Number(item.cost),
             onClick: () => this.unlockCosmetic(item.id) }, icon(item.icon || 'star', 24), e('span', null, e('b', null, item.title), e('small', null, item.unlocked ? 'Открыто' : Number(data.hp || 0) < Number(item.cost)
@@ -431,7 +444,7 @@ class AutumnCalendar extends React.Component {
             return e('button', { key: n, type: 'button', 'aria-pressed': focusDay === n,
                 'aria-label': 'День ' + n + ', ' + quantity(row) + (n <= completed ? ', получено' : ''),
                 onClick: () => this.setState({ selected: n }) }, e('b', null, n), icon(glyph(row), 22), n <= completed && e('span', { className: 'gm-calendar-check', 'aria-hidden': true }, '✓'));
-        })), reward && e('div', { className: 'gm-calendar-detail', 'aria-live': 'polite' }, e('b', null, 'День ' + focusDay), e('strong', null, icon(glyph(reward), 18), quantity(reward)))), e('button', { type: 'button', className: 'gm-mining-claim', disabled: busy || (!data && !error) || ((received || claimedViaDaily) && !preview),
+        })), reward && e('div', { className: 'gm-calendar-detail', 'aria-live': 'polite' }, e('b', null, 'День ' + focusDay), e('strong', null, icon(glyph(reward), 18), quantity(reward)))), feedback && e('p', { className: 'gm-calendar-feedback', role: 'status', 'aria-live': 'polite' }, feedback), e('button', { type: 'button', className: 'gm-mining-claim', disabled: busy || (!data && !error) || ((received || claimedViaDaily) && !preview),
             onClick: () => error ? this.refresh() : preview ? this.setState({ selected: null }) : this.claim() }, icon(received && !preview ? 'check' : 'diamond', 23), e('span', null, action), icon('chevron-right', 19)));
     }
 }
