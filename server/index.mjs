@@ -288,7 +288,8 @@ const routes=async(req,res)=>{
     if(!isOwner||ticket.priority!=='P3'||ticket.status!=='auto_support'||ticket.auto_attempts>=2)throw Error('automatic help unavailable');
     const response=ticket.auto_attempts===0?'Проверьте статус операции и историю начислений в Mini App. Если вопрос остался, запросите дополнительную проверку.':'Автоматическая проверка завершена. Обращение передано в очередь модераторов.';
     tx(()=>{
-     stmt('UPDATE tickets SET auto_attempts=auto_attempts+1,updated_at=?,status=CASE WHEN auto_attempts+1>=2 THEN \'open\' ELSE \'auto_support\' END WHERE id=?').run(t,ticketId);
+     const updated=stmt("UPDATE tickets SET auto_attempts=auto_attempts+1,updated_at=?,status=CASE WHEN auto_attempts+1>=2 THEN 'open' ELSE 'auto_support' END WHERE id=? AND status='auto_support' AND assigned_to IS NULL").run(t,ticketId);
+     if(!updated.changes)throw Error('automatic help unavailable');
      addTicketMessage(ticketId,'auto',response,t);
      if(ticket.auto_attempts+1>=2)supportNotifier.queueStaff(ticketId,'escalated',
        'GM TOKEN · обращение #'+ticketId.slice(0,8)+' передано сотрудникам после автопомощи. Открой Mini App → Поддержка.',ticket.user_id);
@@ -301,6 +302,7 @@ const routes=async(req,res)=>{
     if(!changed.changes)throw Error('already assigned');log(id,'ticket_claimed',{user:ticket.user_id,ticket:ticketId});return send(res,200,{claimed:true});
    }
    if(action==='reply'){
+    if(['resolved','closed'].includes(ticket.status))throw Error('reopen ticket before replying');
     const body=String(data.body||'').trim();if(body.length<1||body.length>3000)throw Error('invalid reply');
     if(stmt('SELECT COUNT(*) AS n FROM ticket_messages WHERE author=? AND created_at>?').get(id,t-60).n>=(isMod?30:12))throw Error('support reply rate limit reached');
     if(isMod&&ticket.assigned_to!==id&&current.role!=='owner'&&current.role!=='coowner')throw Error('ticket is not assigned to you');
@@ -330,6 +332,7 @@ const routes=async(req,res)=>{
    }
    if(action==='reopen'){
     if(!isOwner)throw Error('only ticket author can reopen');
+    if(!['resolved','closed'].includes(ticket.status))throw Error('ticket is already open');
     tx(()=>{
      stmt("UPDATE tickets SET status='open',resolved_at=NULL,assigned_to=NULL,claimed_at=NULL,first_reply_at=NULL,updated_at=? WHERE id=?").run(t,ticketId);
      supportNotifier.queueStaff(ticketId,'reopened:'+t,
