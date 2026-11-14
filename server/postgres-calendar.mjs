@@ -27,18 +27,41 @@ export async function registerPlayer({ id, username = '', displayName = '' }) {
 export async function calendarStatus(id) {
   const playerId = validId(id);
   return withTransaction(async client => {
-    const [progress, schedule] = await Promise.all([
-      client.query(
-        `SELECT cycle_number,next_day,last_claim_date, last_claim_date = (now() at time zone 'UTC')::date as claimed_today,best_day,total_claims
-         FROM gm_internal.autumn_calendar_progress WHERE player_telegram_id=$1`,
-        [playerId],
-      ),
-      client.query(
-        `SELECT calendar_day,reward_type,reward_amount
-         FROM gm_internal.autumn_reward_schedule ORDER BY calendar_day`,
-      ),
-    ]);
-    return { progress: progress.rows[0] ?? null, schedule: schedule.rows };
+    // Use one PG connection sequentially; status is read-only.
+    const progress = await client.query(
+      `SELECT cycle_number,next_day,last_claim_date,
+              last_claim_date = (now() at time zone 'UTC')::date as claimed_today,
+              best_day,total_claims
+       FROM gm_internal.autumn_calendar_progress WHERE player_telegram_id=$1`,
+      [playerId],
+    );
+    const schedule = await client.query(
+      `SELECT calendar_day,reward_type,reward_amount
+       FROM gm_internal.autumn_reward_schedule ORDER BY calendar_day`,
+    );
+    const inventory = await client.query(
+      `SELECT tier,quantity FROM gm_internal.box_inventory
+       WHERE player_id=$1`,
+      [playerId],
+    );
+    const hp = await client.query(
+      `SELECT balance FROM gm_internal.wallets
+       WHERE player_id=$1 AND currency='HP'`,
+      [playerId],
+    );
+    const availableBoxes = {bronze:0,silver:0,gold:0};
+    for (const row of inventory.rows) {
+      if (Object.hasOwn(availableBoxes,row.tier)) {
+        const amount = Number(row.quantity);
+        if (Number.isSafeInteger(amount) && amount >= 0) availableBoxes[row.tier]=amount;
+      }
+    }
+    return {
+      progress:progress.rows[0]??null,
+      schedule:schedule.rows,
+      inventory:availableBoxes,
+      hp:Number(hp.rows[0]?.balance??0)
+    };
   });
 }
 
@@ -51,6 +74,9 @@ export function calendarXpLevel(xp) {
 }
 
 export async function claimCalendarRewardWithClient(client, playerId) {
+  // Use the same PostgreSQL advisory lock as the game worker to protect XP
+  // against concurrent mining/task writes (and maintain a consistent lock order).
+  await client.query("SELECT pg_advisory_xact_lock(hashtext('gm_game_writer'))");
   // Lock the user's game profile *before* recording the claim so a successful
   // claim can never exist without the corresponding game XP.
   const profile = await client.query(
@@ -94,8 +120,8 @@ export async function claimCalendarRewardWithClient(client, playerId) {
      VALUES ($1,(now() at time zone 'UTC')::date::text)`,
     [playerId],
   );
-  // HP and box inventory remain recorded in gm_internal; game features that
-  // consume those rewards must be integrated separately before public launch.
+  // HP is a persistent non-transferable in-game resource; earned box
+  // inventory is redeemable through the authenticated game box-opening path.
   return reward;
 }
 

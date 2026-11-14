@@ -453,14 +453,24 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
     if(!Number.isInteger(count)||![1,3,5,10].includes(count))throw Error('invalid GM Box opening count');
     if(!['bronze','silver','gold'].every(x=>Number.isSafeInteger(table[x])&&table[x]>0))
      throw Error('box rewards awaiting owners approval');
-    const cost=unitCost*count;
+    const calendarGift=body.source==='calendar';
+    if(calendarGift && process.env.GM_DATABASE_DRIVER!=='postgres')
+      throw Error('Calendar gifts require the connected game database');
+    if(body.source!==undefined && body.source!=='calendar' && body.source!=='points')
+      throw Error('Invalid box payment source');
+    const cost=calendarGift?0:unitCost*count;
     const n=table[kind]*100*count;
     if(!Number.isSafeInteger(cost)||!Number.isSafeInteger(n))throw Error('box quantity overflow');
     const today=day(now()),cap=Math.max(0,Number(process.env.BOX_DAILY_GM_CAP||1000))*100;
     const used=stmt('SELECT gm_cents FROM box_day WHERE day=? AND user_id=?').get(today,id)?.gm_cents||0;
     if(used+n>cap)throw Error('GM Boxes daily payout limit reached; try tomorrow');
-    if(!stmt('UPDATE points_account SET points=points-? WHERE user_id=? AND points>=?').run(cost,id,cost).changes)
-     throw Error('not enough POINTS');
+    if(calendarGift){
+      // Rewards were granted by the 30-day calendar. Deduct the owned box
+      // in the same transaction as the BOXES reserve and GM payout.
+      if(!stmt('UPDATE gm_internal.box_inventory SET quantity=quantity-? WHERE player_id=? AND tier=? AND quantity>=?').run(count,id,kind,count).changes)
+        throw Error('Not enough gifted boxes');
+    } else if(!stmt('UPDATE points_account SET points=points-? WHERE user_id=? AND points>=?').run(cost,id,cost).changes)
+      throw Error('not enough POINTS');
     const totalXp=boxBonusEnabled?boxXp[kind]*count:0;
     const before=boxBonusEnabled?collection(id):null;
     if(!Number.isSafeInteger(totalXp)||totalXp<0)throw Error('invalid XP reward amount');
@@ -480,9 +490,9 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
       .map(frame=>({id:frame.id,title:frame.title}));
     }
     stmt('INSERT INTO box_day(day,user_id,gm_cents) VALUES(?,?,?) ON CONFLICT(day,user_id) DO UPDATE SET gm_cents=gm_cents+excluded.gm_cents').run(today,id,n);
-    log(id,'gm_box_open',{user:id,kind,count,spent_points:cost,gm_cents:n,
+    log(id,'gm_box_open',{user:id,kind,count,source:calendarGift?'calendar':'points',spent_points:cost,gm_cents:n,
      xp:totalXp,unlocked_frames:unlocked.map(frame=>frame.id)});
-    return {kind,count,spent_points:cost,gm_cents:n,unit_reward_gm:table[kind],
+    return {kind,count,source:calendarGift?'calendar':'points',spent_points:cost,gm_cents:n,unit_reward_gm:table[kind],
      xp:totalXp,unit_xp:boxBonusEnabled?boxXp[kind]:0,unlocked_frames:unlocked,
      wallet:wal(id),level:stmt('SELECT level FROM users WHERE id=?').get(id)?.level};
    });

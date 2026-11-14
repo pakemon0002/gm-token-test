@@ -7,7 +7,7 @@ const has=(code,fragment)=>code.replace(/\s+/g,'').includes(fragment.replace(/\s
 test('Trade desk and order sheet are themed and warn before insufficient-funds submissions',()=>{
  const source=read('../miniapp/src/main.tsx'),served=read('../miniapp/public/main.js'),styles=read('../miniapp/public/styles.css');
  for(const code of [source,served]){
-  for(const phrase of ['function Trading()','function TradeOrderModal()','const tradeIssue=()=>','Недостаточно GM','Недостаточно CR','trade-wallet-balances','trade-cta-row','trade-review','trade-sheet-primary','TEST SPOT','Доступно для торговли']){
+  for(const phrase of ['function Trading()','function TradeOrderModal()','const tradeIssue=()=>','Недостаточно GM','Недостаточно CR','trade-wallet-balances','trade-cta-row','trade-review','trade-sheet-primary','ИГРОВОЙ SPOT','Доступно для торговли']){
    assert.ok(has(code,phrase),'missing '+phrase);
   }
   assert.ok(has(code,'tradeIssue();if(issue)'), 'submit and confirmation must validate balances');

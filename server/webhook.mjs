@@ -52,9 +52,9 @@ export function makeTelegramWebhook({token, publicUrl, webhookSecret, botUsernam
       const match=message.text.match(/^\/start\s+ref_(\d{5,20})(?:\s|$)/);
       const buttons=[[{text:'Открыть GM TOKEN',web_app:{url:baseUrl}}]];
       if(match)buttons.push([{text:'Открыть по приглашению',url:`https://t.me/${botUsername}?startapp=ref_${match[1]}`}]);
-      await api('sendMessage',{chat_id:chatId,text:'GM TOKEN — игровая Mini App с виртуальными GM и CR. Никаких реальных денежных операций.',reply_markup:{inline_keyboard:buttons}});
+      await api('sendMessage',{chat_id:chatId,text:'GM TOKEN — майнинг, задания, календарь наград и сундуки в одном приложении. GM и CR пока являются игровыми единицами, а не TON-токенами.',reply_markup:{inline_keyboard:buttons}});
     } else if(/^\/help(?:\s|$)/.test(message.text)) {
-      await api('sendMessage',{chat_id:chatId,text:'Правила и обращения: Mini App → Profile → Support. Никому не передавайте коды 2FA и токен бота.'});
+      await api('sendMessage',{chat_id:chatId,text:'Открой Mini App, чтобы посмотреть награды, баланс и задания. Вопросы: Профиль → Поддержка. Никому не передавай пароли, seed-фразы и коды 2FA.'});
     }
   };
   return {configure,validateSecret,handleUpdate,baseUrl};

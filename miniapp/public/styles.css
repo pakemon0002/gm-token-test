@@ -2881,3 +2881,17 @@ html,body,.application,.application button,.application input,.application texta
 .gm-calendar-check {position:absolute;right:3px;top:3px;border-radius:50%;width:12px;height:12px;line-height:12px;background:#727786;color:white;font-size:9px}
 .gm-calendar-detail {display:flex;align-items:center;justify-content:space-between;gap:6px;border-top:1px solid #858b9a40;margin-top:14px;padding:13px 1px 0;font-size:14px}
 .gm-calendar-detail strong {display:flex;align-items:center;gap:5px}
+
+/* Calendar assets and gifted chests reuse the light/dark premium card surfaces. */
+.gm-calendar-assets,.gm-calendar-gifts{display:grid;gap:12px;padding:15px;border-radius:18px;color:var(--ink)}
+.gm-calendar-assets>strong,.gm-calendar-gifts>strong{font-size:15px;font-weight:800}
+.gm-calendar-assets-row{display:grid;grid-template-columns:1fr auto 1fr auto;gap:9px;align-items:center;font-size:13px}
+.gm-calendar-assets-row span,.gm-calendar-gifts p{font-size:12px;color:var(--muted)}
+.gm-calendar-assets-row b{font-size:15px;color:var(--ink)}
+.gm-calendar-to-boxes{border:1px solid var(--border);border-radius:12px;padding:11px;background:var(--surface);color:var(--ink);font-weight:700}
+.gm-calendar-gifts{margin:12px 0}
+.gm-calendar-gifts p{margin:0;line-height:1.5}
+.gm-calendar-gifts-count{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.gm-calendar-gifts-count span{padding:10px 3px;text-align:center;font-size:11px;font-weight:750;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--ink)}
+.gm-calendar-gifts .gm-chests-open{width:100%;min-height:48px;border-radius:14px}
+.gm-calendar-gifts .gm-chests-open:disabled{opacity:.55}
