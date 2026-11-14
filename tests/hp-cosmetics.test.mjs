@@ -5,10 +5,11 @@ import {
   HP_COSMETICS,getHpCosmetics,unlockHpCosmeticWithClient,unlockHpCosmetic
 } from '../server/hp-cosmetics.mjs';
 
-function mock(initial=290){
+function mock(initial=290,status='active'){
   const state={balance:initial,operations:new Set(),debits:0,inserts:0,queries:[]};
   const client={async query(sql,params){
     state.queries.push(sql);
+    if(sql.includes('SELECT status FROM gm_internal.players'))return {rows:[{status}]};
     if(sql.includes('SELECT balance FROM gm_internal.wallets'))return {rows:state.balance==null?[]:[{balance:state.balance}]};
     if(sql.includes('SELECT 1 FROM gm_internal.ledger'))return {rows:state.operations.has(params[1])?[{}]:[]};
     if(sql.includes('UPDATE gm_internal.wallets')) {
@@ -37,13 +38,22 @@ test('HP cosmetics deduct once and persist a permanent ledger unlock',async()=>{
   const first=await unlockHpCosmeticWithClient(client,'12345','autumn_spark');
   assert.deepEqual(first,{id:'autumn_spark',hp:260,alreadyUnlocked:false});
   assert.equal(state.debits,1);assert.equal(state.inserts,1);
-  assert.match(state.queries[0],/FOR UPDATE/);
+  assert.match(state.queries[0],/SELECT status FROM gm_internal.players/);
+  assert.match(state.queries[1],/FOR UPDATE/);
   const second=await unlockHpCosmeticWithClient(client,'12345','autumn_spark');
   assert.deepEqual(second,{id:'autumn_spark',hp:260,alreadyUnlocked:true});
   assert.equal(state.debits,1);assert.equal(state.inserts,1);
   const list=await getHpCosmetics(client,'12345');
   assert.equal(list.filter(x=>x.unlocked).length,1);
   assert.equal(list.find(x=>x.id==='autumn_spark').unlocked,true);
+});
+
+test('blocked accounts cannot spend HP even when a balance exists',async()=>{
+  const {client,state}=mock(290,'blocked');
+  await assert.rejects(unlockHpCosmeticWithClient(client,'12345','autumn_spark'),
+    /player not found or inactive/);
+  assert.equal(state.debits,0);
+  assert.equal(state.inserts,0);
 });
 
 test('HP cannot go below zero, including on short balance or missing wallet',async()=>{
