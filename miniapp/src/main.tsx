@@ -404,6 +404,18 @@ class AutumnCalendar extends React.Component {
       if (this.active) this.setState({busy:false});
     }
   }
+  async unlockCosmetic(itemId) {
+    if (this.pending) return;
+    this.pending=true;
+    this.setState({busy:true});
+    try {
+      const result=await this.props.api('/api/hp/cosmetics/unlock',{itemId});
+      if (result) await this.refresh();
+    } finally {
+      this.pending=false;
+      if (this.active) this.setState({busy:false});
+    }
+  }
   render() {
     const e = React.createElement;
     const {data, busy, error, selected} = this.state;
@@ -435,6 +447,21 @@ class AutumnCalendar extends React.Component {
         e('div',{className:'gm-calendar-assets-row'},
           e('span',null,'HP'),e('b',null,String(data.hp||0)),
           e('span',null,'Боксы'),e('b',null,String(Object.values(data.inventory||{}).reduce((n:number,value:any)=>n+Number(value||0),0)))),
+        e('div',{className:'gm-hp-collection'},
+          e('div',{className:'gm-hp-collection-heading'},
+            e('b',null,'Коллекция HP'),
+            e('small',null,'Постоянные значки профиля · без влияния на добычу GM')),
+          e('div',{className:'gm-hp-collection-grid'},
+            (data.hp_cosmetics||[]).map(item=>
+              e('button',{key:item.id,type:'button',
+                className:'gm-hp-collectible'+(item.unlocked?' unlocked':''),
+                disabled:busy||item.unlocked||Number(data.hp||0)<Number(item.cost),
+                onClick:()=>this.unlockCosmetic(item.id)},
+                icon(item.icon||'star',24),
+                e('span',null,e('b',null,item.title),
+                  e('small',null,item.unlocked?'Открыто':Number(data.hp||0)<Number(item.cost)
+                    ?'Нужно '+item.cost+' HP':'Открыть за '+item.cost+' HP')),
+                item.unlocked&&icon('check',15))))),
         Object.values(data.inventory||{}).some((n:any)=>Number(n)>0) &&
           e('button',{type:'button',className:'gm-calendar-to-boxes',onClick:this.props.onOpenBoxes},
             'Открыть подаренные боксы →')),
@@ -605,7 +632,7 @@ function App(){
  const [staffReply,setStaffReply]=React.useState('');
  const [supportCategory,setSupportCategory]=React.useState('Общий вопрос');
  const [liveState,setLiveState]=React.useState(null as any);
- const [calendarAssets,setCalendarAssets]=React.useState({hp:0,inventory:{bronze:0,silver:0,gold:0}} as any);
+ const [calendarAssets,setCalendarAssets]=React.useState({hp:0,hp_cosmetics:[],inventory:{bronze:0,silver:0,gold:0}} as any);
  const [liveOrders,setLiveOrders]=React.useState([] as any[]);
  const [liveBook,setLiveBook]=React.useState(null as any);
  const [liveTicker,setLiveTicker]=React.useState(null as any);
@@ -860,13 +887,13 @@ function App(){
 
  const refreshCalendarAssets=async()=>{
   const d=await api('/api/autumn-calendar',undefined,true);
-  if(d)setCalendarAssets({hp:Number(d.hp||0),inventory:d.inventory||{bronze:0,silver:0,gold:0}});
+  if(d)setCalendarAssets({hp:Number(d.hp||0),hp_cosmetics:d.hp_cosmetics||[],inventory:d.inventory||{bronze:0,silver:0,gold:0}});
   return d;
  };
  const refreshLive=async()=>{if(!webapp?.initData)return;const d=await api('/api/game/status',undefined,true);if(!d)return;setLiveState(d);setW((w:Wallet)=>({...w,gm:d.wallet.gm/100,cr:d.wallet.cr/100,vault:d.wallet.vault/100,storage:d.mining.pending_cents/100,level:d.user?.level||w.level,xp:d.user?.xp??w.xp}));const [orders,book,tasks,achievements,refs,ranks,ticker,chart,trades]=await Promise.all([api('/api/exchange/orders',undefined,true),api('/api/exchange/book',undefined,true),api('/api/tasks',undefined,true),api('/api/achievements',undefined,true),api('/api/referrals/me',undefined,true),api('/api/leaderboard',undefined,true),api('/api/market/ticker',undefined,true),api('/api/market/ohlcv?interval='+period,undefined,true),api('/api/exchange/trades',undefined,true)]);if(orders)setLiveOrders(orders.orders||[]);if(book)setLiveBook(book);if(tasks)setLiveTasks(tasks.tasks||[]);if(achievements)setLiveAchievements(achievements.achievements||[]);if(refs)setLiveReferrals(refs);if(ranks)setLiveRanks(ranks);if(ticker)setLiveTicker(ticker);if(chart)setLiveCandles(chart.candles||[]);if(trades)setRecentTrades((trades.trades||[]).filter((t:any)=>!t.suspect).slice(0,10));setW((w:Wallet)=>({...w,streak:d.daily?.streak||0,lastClaim:d.daily?.last_claim_day||''}))};
  const gameAction=async(path:string,payload:any={})=>{const result=await api(path,{operationId:cryptoId(),...payload});if(result){if(result.wallet)setW((w:Wallet)=>({...w,gm:result.wallet.gm/100,cr:result.wallet.cr/100,vault:result.wallet.vault/100}));await refreshLive()}return result};
  React.useEffect(()=>{if(demo)return;refreshLive();const timer=setInterval(()=>{refreshLive()},12000);return()=>clearInterval(timer)},[demo,period]);
- React.useEffect(()=>{if(demo||!['reward','boxes'].includes(screen))return;void refreshCalendarAssets()},[demo,screen]);
+ React.useEffect(()=>{if(demo||!['reward','boxes','profile'].includes(screen))return;void refreshCalendarAssets()},[demo,screen]);
  const nav=(s:any)=>goto(s);
  const adminRequest=async(path:string,payload?:any)=>{
    if(demo||!webapp?.initData){flash('Только после Telegram-авторизации владельца');return;}
@@ -1341,6 +1368,7 @@ function Tasks(){
   const cosmetics=liveState?.cosmetics||{founder_slot:null,frames:[]};
   const frames=[{id:'standard',title:'GM Classic',claimed:true},...(cosmetics.frames||[]).filter((f:any)=>!f.type||f.type==='frame')];
   const boxCollectibles=(cosmetics.frames||[]).filter((f:any)=>f.category==='box'&&f.type&&f.type!=='frame');
+  const hpCollectibles=(calendarAssets?.hp_cosmetics||[]).filter((f:any)=>f.unlocked);
   const chosen=frames.find((f:any)=>f.id===selectedFrame&&f.claimed)?selectedFrame:'standard';
   const league=liveState?.league||{name:'Bronze',min_xp:0};
   const leagues=liveState?.leagues||[];
@@ -1364,6 +1392,16 @@ function Tasks(){
     e('small',null,nextLeague?'→ '+nextLeague.name+' · '+nf(Math.max(0,nextXp-wallet.xp),0)+' XP': 'GM IMMORTAL · MAX')),
    e('div',{className:'stats-grid'},
     [['friends',String(liveReferrals?.referred?.length||0),L('friends')],['wallet',nf(wallet.gm,0),L('balance')],['lightning',String(wallet.streak),L('streak')]].map(([i,n,label])=>e('div',{className:'stat-card',key:label},icon(i,23),e('b',null,n),e('small',null,label)))),
+   e('section',{className:'gm-hp-profile gm-premium-card'},
+     e('div',{className:'gm-hp-profile-heading'},
+       e('strong',null,'Значки HP'),e('b',null,String(calendarAssets?.hp||0)+' HP')),
+     hpCollectibles.length
+       ?e('div',{className:'gm-hp-profile-grid'},
+          hpCollectibles.map((item:any)=>e('span',{key:item.id,className:'gm-hp-profile-badge'},
+            icon(item.icon||'star',19),item.title)))
+       :e('small',null,'Значки открываются за HP, полученные в календаре.'),
+     e('button',{type:'button',className:'gm-calendar-to-boxes',onClick:()=>goto('reward')},
+       'Коллекция HP в календаре')),
    e('section',{className:'gm-frames-section gm-premium-card'},
     e('h3',null,L('frames')),
     e('p',null,L('achievementsLocked')),
