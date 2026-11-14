@@ -410,6 +410,7 @@ class AutumnCalendar extends React.Component {
     const progress = data?.progress;
     const next = Number(progress?.next_day || 1);
     const received = !!progress?.claimed_today;
+    const claimedViaDaily = !!data?.daily_claimed_today;
     const completed = received && next === 1 ? 30 : next - 1;
     const today = received ? completed : next;
     const rows = data?.schedule || [];
@@ -423,7 +424,7 @@ class AutumnCalendar extends React.Component {
     const icon = this.props.icon;
     const preview = data && focusDay !== today;
     const action = error ? 'Повторить загрузку' : !data ? 'Загрузка календаря…' : busy ? 'Получаем…' :
-      preview ? 'Вернуться к сегодняшней награде' : received ? 'Сегодня награда получена' : 'Забрать награду';
+      preview ? 'Вернуться к сегодняшней награде' : received ? 'Сегодня награда получена' : claimedViaDaily ? 'Ежедневная награда уже получена' : 'Забрать награду';
     return e('div', {className:'gm-calendar'},
       this.props.header,
       e('section', {className:'gm-premium-card gm-mining-energy'},
@@ -449,7 +450,7 @@ class AutumnCalendar extends React.Component {
         })),
         reward && e('div',{className:'gm-calendar-detail','aria-live':'polite'},
           e('b',null,'День '+focusDay),e('strong',null,icon(glyph(reward),18),quantity(reward)))),
-      e('button',{type:'button',className:'gm-mining-claim',disabled:busy||(!data&&!error)||(received&&!preview),
+      e('button',{type:'button',className:'gm-mining-claim',disabled:busy||(!data&&!error)||((received||claimedViaDaily)&&!preview),
         onClick:()=>error ? this.refresh() : preview ? this.setState({selected:null}) : this.claim()},
         icon(received&&!preview?'check':'diamond',23),e('span',null,action),icon('chevron-right',19)));
   }
