@@ -150,6 +150,13 @@ const routes=async(req,res)=>{
     if (!process.env.DATABASE_URL) return fail(res, 503, 'Calendar unavailable');
     try {
       const calendar = await import('./postgres-calendar.mjs');
+      // Calendar requests are authenticated, but can arrive before bootstrap
+      // (for example after the Mini App is reopened on another device).
+      // Create the normal game profile before allowing any calendar payout.
+      if (!stmt('SELECT id FROM users WHERE id=?').get(id)) {
+        upsertUser(identity);
+        game.ensure(id);
+      }
       await calendar.registerPlayer(identity);
       const result = verb === 'POST'
         ? await calendar.claimCalendarReward(id)
