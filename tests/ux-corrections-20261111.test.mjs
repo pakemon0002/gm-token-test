@@ -39,10 +39,10 @@ test('game market supports segmented buy/sell, inline quantity and separate orde
 });
 test('Support uses themed category chips, loads tickets on entering and shows specific confirmation',()=>{
  const source=read('miniapp/src/main.tsx');
- assert.ok(source.includes("screen==='support')void loadTickets()"));
+ assert.ok(source.includes("if(demo||screen!=='support')return;"));
  const support=source.slice(source.indexOf('function Support(){'),source.indexOf('function AdminTestGrants(){'));
  assert.ok(support.includes('gm-support-category-grid'));
  assert.ok(!support.includes("e('select'"),'no native category drop-down');
- assert.ok(source.includes("flash('Обращение создано')"));
+ assert.ok(source.includes("flash('Обращение создано и сохранено')"));
  assert.ok(!source.includes("flash('Операция выполнена')"));
 });
