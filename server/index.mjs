@@ -389,7 +389,14 @@ const routes=async(req,res)=>{
    roleCheck({id},['owner','coowner']);const body=await readBody(req);require2FA({id},body);
    const target=String(body.telegramId||'').trim();if(!/^\d{5,20}$/.test(target))throw Error('invalid Telegram ID');
    const user=stmt('SELECT role FROM users WHERE id=?').get(target);if(!user||['owner','coowner'].includes(user.role))throw Error('target not found or protected');
-   const desired=body.action==='revoke'?'player':'moderator';stmt('UPDATE users SET role=? WHERE id=?').run(desired,target);log(id,'role_change',{user:target,role:desired});return send(res,200,{updated:true,user:target,role:desired});
+   const desired=body.action==='revoke'?'player':'moderator';
+   tx(()=>{
+    stmt('UPDATE users SET role=? WHERE id=?').run(desired,target);
+    log(id,'role_change',{user:target,role:desired});
+    if(desired==='moderator')supportNotifier.queueExisting();
+    else stmt("UPDATE support_notifications SET status='failed',last_error='staff role revoked' WHERE recipient_id=? AND event LIKE 'staff:%' AND status IN ('pending','blocked')").run(target);
+   });
+   return send(res,200,{updated:true,user:target,role:desired});
   }
   if(p==='/api/admin/restrictions'&&verb==='POST'){
    roleCheck({id},['owner','coowner','moderator']);const data=await readBody(req);
