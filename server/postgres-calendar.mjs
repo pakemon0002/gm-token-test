@@ -2,6 +2,7 @@
 // Telegram initData must be validated by the HTTP layer before calling these methods.
 import { withTransaction } from './postgres.mjs';
 import { xpLevels } from './game.mjs';
+import { getHpCosmetics } from './hp-cosmetics.mjs';
 
 const validId = value => {
   const id = String(value ?? '');
@@ -51,6 +52,7 @@ export async function calendarStatus(id) {
     );
     // Legacy Daily Reward and Autumn Calendar share the same UTC-day lock.
     // Expose that day's state so the client never offers an impossible claim.
+    const cosmetics=await getHpCosmetics(client,playerId);
     const daily = await client.query(
       `SELECT 1 FROM gm_game.daily_claim
        WHERE user_id=$1 AND day=(now() at time zone 'UTC')::date::text
@@ -69,6 +71,7 @@ export async function calendarStatus(id) {
       schedule:schedule.rows,
       inventory:availableBoxes,
       hp:Number(hp.rows[0]?.balance??0),
+      hp_cosmetics:cosmetics,
       daily_claimed_today:daily.rows.length>0
     };
   });

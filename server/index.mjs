@@ -144,6 +144,7 @@ const routes=async(req,res)=>{
   const identity=auth(req);id=identity.id;
   if ((p === '/api/autumn-calendar' && verb === 'GET') ||
       (p === '/api/autumn-calendar/claim' && verb === 'POST') ||
+      (p === '/api/hp/cosmetics/unlock' && verb === 'POST') ||
       // Compatibility with old reward buttons: same new calendar transaction,
       // never a second payout from the legacy DAILY pool.
       (p === '/api/daily/claim' && verb === 'POST' && process.env.GM_DATABASE_DRIVER === 'postgres')) {
@@ -158,12 +159,16 @@ const routes=async(req,res)=>{
         game.ensure(id);
       }
       await calendar.registerPlayer(identity);
-      const result = verb === 'POST'
-        ? await calendar.claimCalendarReward(id)
-        : await calendar.calendarStatus(id);
+      const result = p === '/api/hp/cosmetics/unlock'
+        ? await (await import('./hp-cosmetics.mjs')).unlockHpCosmetic(id,(await readBody(req))?.itemId)
+        : verb === 'POST'
+          ? await calendar.claimCalendarReward(id)
+          : await calendar.calendarStatus(id);
       return send(res, 200, result);
     } catch (error) {
       if (error.message === 'already claimed today') return fail(res, 409, 'already claimed today');
+      if (error.message === 'Not enough HP') return fail(res, 409, 'Недостаточно HP');
+      if (error.message === 'Invalid HP cosmetic') return fail(res, 400, 'Неверная награда HP');
       if (error.message === 'player not found or inactive') return fail(res, 403, 'Player inactive');
       console.error('Calendar request failed', error.code || error.name);
       return fail(res, 503, 'Calendar unavailable');

@@ -2895,3 +2895,24 @@ html,body,.application,.application button,.application input,.application texta
 .gm-calendar-gifts-count span{padding:10px 3px;text-align:center;font-size:11px;font-weight:750;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--ink)}
 .gm-calendar-gifts .gm-chests-open{width:100%;min-height:48px;border-radius:14px}
 .gm-calendar-gifts .gm-chests-open:disabled{opacity:.55}
+
+/* Permanent HP cosmetics: integrated with both GM TOKEN themes. */
+.gm-hp-collection{display:grid;gap:11px;padding-top:12px;border-top:1px solid var(--border)}
+.gm-hp-collection-heading{display:grid;gap:4px}
+.gm-hp-collection-heading>b{font-size:14px;color:var(--ink)}
+.gm-hp-collection-heading>small{font-size:11px;color:var(--muted);line-height:1.5}
+.gm-hp-collection-grid{display:grid;gap:8px}
+.gm-hp-collectible{border:1px solid var(--border);border-radius:12px;padding:11px;min-height:60px;background:var(--surface);color:var(--ink);font:inherit;display:flex;align-items:center;text-align:left;gap:9px}
+.gm-hp-collectible span{display:grid;gap:2px;flex:1;min-width:0}
+.gm-hp-collectible span b{font-size:12px;font-weight:800}
+.gm-hp-collectible span small{font-size:11px;color:var(--muted)}
+.gm-hp-collectible.unlocked{border-color:var(--ink)}
+.gm-hp-collectible:disabled:not(.unlocked){opacity:.62}
+.gm-hp-collectible:focus-visible,.gm-calendar-to-boxes:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.gm-hp-profile{display:grid;gap:12px;margin:10px 0;padding:15px}
+.gm-hp-profile-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.gm-hp-profile-heading strong{font-size:15px;color:var(--ink)}
+.gm-hp-profile-heading b{font-size:13px;color:var(--ink)}
+.gm-hp-profile>small{color:var(--muted);font-size:12px}
+.gm-hp-profile-grid{display:flex;flex-wrap:wrap;gap:7px}
+.gm-hp-profile-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:22px;padding:8px 10px;background:var(--surface);color:var(--ink);font-size:11px;font-weight:750}
