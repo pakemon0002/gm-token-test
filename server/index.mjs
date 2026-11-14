@@ -234,12 +234,12 @@ const routes=async(req,res)=>{
   if(p==='/api/me'&&verb==='GET'){const r=stmt('SELECT end_at,reason,issued_at FROM restrictions WHERE user_id=?').get(id);return send(res,200,{user:current,wallet:stmt('SELECT * FROM wallets WHERE user_id=?').get(id),restriction:r&&(!r.end_at||r.end_at>now())?r:null})}
   if(p==='/api/history'&&verb==='GET')return send(res,200,{events:stmt('SELECT * FROM journal WHERE info LIKE ? ORDER BY at DESC LIMIT 50').all(`%"user":"${id}"%`)});
   if(p==='/api/tickets/my'&&verb==='GET'){
-   const rows=stmt('SELECT id,category,body,status,priority,created_at,updated_at,resolved_at FROM tickets WHERE user_id=? ORDER BY created_at DESC LIMIT 100').all(id);
+   const rows=stmt('SELECT id,user_id,category,body,status,priority,assigned_to,auto_attempts,created_at,updated_at,resolved_at,(SELECT COUNT(*) FROM ticket_messages WHERE ticket_id=tickets.id) AS message_count FROM tickets WHERE user_id=? ORDER BY created_at DESC LIMIT 100').all(id);
    return send(res,200,{tickets:rows});
   }
   if(p==='/api/tickets'&&verb==='GET'){
    cleanTickets();const mod=['owner','coowner','moderator'].includes(current.role);
-   const rows=['owner','coowner'].includes(current.role)&&url.searchParams.get('all')==='1'?stmt('SELECT * FROM tickets ORDER BY CASE priority WHEN \'P1\' THEN 1 WHEN \'P2\' THEN 2 ELSE 3 END,created_at ASC LIMIT 100').all():mod?stmt('SELECT * FROM tickets WHERE status!=\'auto_support\' ORDER BY CASE priority WHEN \'P1\' THEN 1 WHEN \'P2\' THEN 2 ELSE 3 END,created_at ASC LIMIT 100').all():stmt('SELECT * FROM tickets WHERE user_id=? ORDER BY created_at DESC LIMIT 100').all(id);
+   const rows=mod?stmt("SELECT * FROM tickets ORDER BY CASE status WHEN 'open' THEN 1 WHEN 'auto_support' THEN 2 WHEN 'in_review' THEN 3 WHEN 'resolved' THEN 4 ELSE 5 END, CASE priority WHEN 'P1' THEN 1 WHEN 'P2' THEN 2 ELSE 3 END,created_at DESC LIMIT 100").all():stmt('SELECT * FROM tickets WHERE user_id=? ORDER BY created_at DESC LIMIT 100').all(id);
    return send(res,200,{tickets:rows});
   }
   if(p==='/api/tickets'&&verb==='POST'){
@@ -251,12 +251,12 @@ const routes=async(req,res)=>{
    const openCount=stmt("SELECT COUNT(*) n FROM tickets WHERE user_id=? AND status IN ('open','in_review','auto_support')").get(id).n;
    const isUrgent=priority!=='P3';
    if(dailyCount>=(isUrgent?20:10)||openCount>=10)throw Error('too many support tickets; use an existing ticket or wait');
-   tx(()=>{stmt('INSERT INTO tickets(id,user_id,category,body,status,priority,updated_at,created_at) VALUES(?,?,?,?,?,?,?,?)').run(ticket,id,category,body,priority==='P3'?'auto_support':'open',priority,t,t);log(id,'ticket_created',{user:id,ticket,category})});
-   // The two owners are notified by the existing Telegram bot and can reply in the Mini App.
-   for(const ownerId of new Set(ownerIds)){
-    if(ownerId===id)continue;
-    sendTelegram(ownerId,'GM TOKEN · новое обращение #'+ticket.slice(0,8)+'\nКатегория: '+category+'\nПриоритет: '+priority+'\n'+body.slice(0,300)+'\nОткройте GM TOKEN → Поддержка для ответа.');
-   }
+   tx(()=>{
+    stmt('INSERT INTO tickets(id,user_id,category,body,status,priority,updated_at,created_at) VALUES(?,?,?,?,?,?,?,?)').run(ticket,id,category,body,priority==='P3'?'auto_support':'open',priority,t,t);
+    log(id,'ticket_created',{user:id,ticket,category});
+    supportNotifier.queueStaff(ticket,'created',
+      'GM TOKEN · новое обращение #'+ticket.slice(0,8)+'\nКатегория: '+category+'\nПриоритет: '+priority+'\nОткрой Mini App → Поддержка.',id);
+   });
    return send(res,201,{ticket,priority,autoSupport:priority==='P3'?'2 attempts maximum':'manual review immediately'});
   }
   const match=p.match(/^\/api\/tickets\/([a-f0-9-]+)\/(auto|claim|reply|resolve|reopen)$/);
@@ -267,14 +267,19 @@ const routes=async(req,res)=>{
    if(!isMod&&!isOwner)throw Error('permission denied');
    const data=await readBody(req),t=now();
    if(action==='auto'){
-    if(!isOwner||ticket.priority!=='P3'||ticket.auto_attempts>=2)throw Error('automatic help unavailable');
+    if(!isOwner||ticket.priority!=='P3'||ticket.status!=='auto_support'||ticket.auto_attempts>=2)throw Error('automatic help unavailable');
     const response=ticket.auto_attempts===0?'Проверьте статус операции и историю начислений в Mini App. Если вопрос остался, запросите дополнительную проверку.':'Автоматическая проверка завершена. Обращение передано в очередь модераторов.';
-    tx(()=>{stmt('UPDATE tickets SET auto_attempts=auto_attempts+1,updated_at=?,status=CASE WHEN auto_attempts+1>=2 THEN \'open\' ELSE \'auto_support\' END WHERE id=?').run(t,ticketId);stmt('INSERT INTO ticket_messages(id,ticket_id,author,body,created_at) VALUES(?,?,?,?,?)').run(crypto.randomUUID(),ticketId,'auto',response,t)});
+    tx(()=>{
+     stmt('UPDATE tickets SET auto_attempts=auto_attempts+1,updated_at=?,status=CASE WHEN auto_attempts+1>=2 THEN \'open\' ELSE \'auto_support\' END WHERE id=?').run(t,ticketId);
+     stmt('INSERT INTO ticket_messages(id,ticket_id,author,body,created_at) VALUES(?,?,?,?,?)').run(crypto.randomUUID(),ticketId,'auto',response,t);
+     if(ticket.auto_attempts+1>=2)supportNotifier.queueStaff(ticketId,'escalated',
+       'GM TOKEN · обращение #'+ticketId.slice(0,8)+' передано сотрудникам после автопомощи. Открой Mini App → Поддержка.',ticket.user_id);
+    });
     return send(res,200,{answer:response,attempts:ticket.auto_attempts+1,escalated:ticket.auto_attempts+1>=2});
    }
    if(action==='claim'){
     if(!isMod)throw Error('moderator role required');
-    const changed=stmt('UPDATE tickets SET assigned_to=?,claimed_at=?,updated_at=?,status=\'in_review\' WHERE id=? AND assigned_to IS NULL AND status=\'open\'').run(id,t,t,ticketId);
+    const changed=stmt("UPDATE tickets SET assigned_to=?,claimed_at=?,updated_at=?,status='in_review' WHERE id=? AND assigned_to IS NULL AND status IN ('open','auto_support')").run(id,t,t,ticketId);
     if(!changed.changes)throw Error('already assigned');log(id,'ticket_claimed',{user:ticket.user_id,ticket:ticketId});return send(res,200,{claimed:true});
    }
    if(action==='reply'){
