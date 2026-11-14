@@ -16,7 +16,7 @@ test('calendar claim never acknowledges a failed server request as a success',()
  assert.match(calendar,/const result = await this\.props\.api\('\/api\/autumn-calendar\/claim', \{\}\)/);
  assert.match(calendar,/if \(result\?\.reward_type && Number\.isSafeInteger\(Number\(result\.reward_amount\)\)\)/);
  assert.match(calendar,/result\.reward_type\.endsWith\('_box'\)/);
- assert.match(calendar,/Начислено: '\+quantity\+' '\+label/);
+ assert.ok(calendar.includes("'Начислено: +'+quantity+' '+label"));
  assert.match(calendar,/Не удалось подтвердить получение/);
  assert.match(calendar,/if \(result && this\.props\.onClaim\) await this\.props\.onClaim\(\)/);
  assert.match(calendar,/role:'status','aria-live':'polite'/);
