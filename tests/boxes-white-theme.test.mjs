@@ -50,5 +50,5 @@ test('guide points to selected chest card; daily economy and batch endpoints sta
  assert.ok(src.includes("api('/api/boxes/open'"));
  assert.ok(src.includes("disabled:demo||!enabled||!reward||boxBusy||points<totalCost"));
  assert.ok(src.includes('[1,3,5,10].map(count'));
- assert.ok(src.includes("'gm_tour_v24_'+authenticatedUserId+'_'+section"));
+ assert.ok(src.includes("'gm_tour_v25_gmtokenapp_'+authenticatedUserId+'_'+section"));
 });
