@@ -5,9 +5,9 @@ const read=(name)=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
 test('new Telegram username appears in all Mini App entry points and referral deep links',()=>{
  const source=read('miniapp/src/main.tsx');
  assert.ok(!source.includes('gm_token_test_bot'), 'No outdated public links in Mini App source');
- assert.match(source,/https:\/\/t\.me\/GM_TOKEN_BOT\?startapp=ref_/);
- assert.match(source,/https:\/\/t\.me\/GM_TOKEN_BOT'/);
- assert.match(source,/@GM_TOKEN_BOT/);
+ assert.match(source,/https:\/\/t\.me\/GmTokenApp\?startapp=ref_/);
+ assert.match(source,/https:\/\/t\.me\/GmTokenApp'/);
+ assert.match(source,/@GmTokenApp/);
 });
 test('server defaults use new username but verify BotFather getMe identity before webhook setup',()=>{
  const index=read('server/index.mjs');
@@ -15,9 +15,9 @@ test('server defaults use new username but verify BotFather getMe identity befor
  const standalone=read('server/bot.mjs');
  for(const source of [index,webhook,standalone]){
   assert.ok(!source.includes('gm_token_test_bot'));
-  assert.match(source,/GM_TOKEN_BOT/);
+  assert.match(source,/GmTokenApp/);
  }
- assert.match(index,/botUsername:process\.env\.BOT_USERNAME\|\|'GM_TOKEN_BOT'/);
+ assert.match(index,/botUsername:process\.env\.BOT_USERNAME\|\|'GmTokenApp'/);
  assert.match(webhook,/const actual=String\(bot\?\.username/);
  assert.match(webhook,/actual!==expected/);
  assert.match(webhook,/setWebhook/);
@@ -26,5 +26,5 @@ test('server defaults use new username but verify BotFather getMe identity befor
 test('migration does not change existing Mini App address or TON Connect domain',()=>{
  const manifest=JSON.parse(read('miniapp/public/tonconnect-manifest.json'));
  assert.equal(manifest.url,'https://gm-token-test-iprj.onrender.com');
- assert.match(read('docs/BOT_USERNAME_MIGRATION_RU.md'),/не мерджить и не деплоить/i);
+ assert.match(read('docs/BOT_USERNAME_MIGRATION_RU.md'),/GmTokenApp/);
 });
