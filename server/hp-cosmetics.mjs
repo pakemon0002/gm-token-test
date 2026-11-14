@@ -32,6 +32,10 @@ export async function unlockHpCosmeticWithClient(client,playerId,itemId){
   const chosen=byId.get(itemId);
   if(!chosen)throw new Error('Invalid HP cosmetic');
 
+  const player=await client.query(
+    `SELECT status FROM gm_internal.players WHERE telegram_id=$1`,[uid]);
+  if(player.rows[0]?.status!=='active')throw new Error('player not found or inactive');
+
   // Serialise all purchases on the player's HP row before checking the ledger.
   // This prevents two simultaneous HTTP requests from spending the same HP.
   const wallet=await client.query(
