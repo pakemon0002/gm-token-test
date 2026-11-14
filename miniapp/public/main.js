@@ -390,6 +390,7 @@ class AutumnCalendar extends React.Component {
         const progress = data?.progress;
         const next = Number(progress?.next_day || 1);
         const received = !!progress?.claimed_today;
+        const claimedViaDaily = !!data?.daily_claimed_today;
         const completed = received && next === 1 ? 30 : next - 1;
         const today = received ? completed : next;
         const rows = data?.schedule || [];
@@ -403,14 +404,14 @@ class AutumnCalendar extends React.Component {
         const icon = this.props.icon;
         const preview = data && focusDay !== today;
         const action = error ? 'Повторить загрузку' : !data ? 'Загрузка календаря…' : busy ? 'Получаем…' :
-            preview ? 'Вернуться к сегодняшней награде' : received ? 'Сегодня награда получена' : 'Забрать награду';
+            preview ? 'Вернуться к сегодняшней награде' : received ? 'Сегодня награда получена' : claimedViaDaily ? 'Ежедневная награда уже получена' : 'Забрать награду';
         return e('div', { className: 'gm-calendar' }, this.props.header, e('section', { className: 'gm-premium-card gm-mining-energy' }, e('div', { className: 'gm-mining-energy-head' }, e('b', null, 'Прогресс календаря'), e('span', null, data ? completed + ' / 30' : '…')), e('div', { className: 'gm-mining-energy-track', role: 'progressbar', 'aria-label': 'Получено дней', 'aria-valuenow': completed, 'aria-valuemin': 0, 'aria-valuemax': 30 }, e('span', { style: { width: (completed / 30 * 100) + '%' } }))), data && e('section', { className: 'gm-premium-card gm-calendar-assets' }, e('strong', null, 'Полученные бонусы'), e('div', { className: 'gm-calendar-assets-row' }, e('span', null, 'HP'), e('b', null, String(data.hp || 0)), e('span', null, 'Боксы'), e('b', null, String(Object.values(data.inventory || {}).reduce((n, value) => n + Number(value || 0), 0)))), Object.values(data.inventory || {}).some((n) => Number(n) > 0) &&
             e('button', { type: 'button', className: 'gm-calendar-to-boxes', onClick: this.props.onOpenBoxes }, 'Открыть подаренные боксы →')), data && e('section', { className: 'gm-premium-card gm-calendar-panel' }, e('h3', null, 'Награды за 30 дней'), e('div', { className: 'gm-calendar-grid' }, rows.map(row => {
             const n = Number(row.calendar_day);
             return e('button', { key: n, type: 'button', 'aria-pressed': focusDay === n,
                 'aria-label': 'День ' + n + ', ' + quantity(row) + (n <= completed ? ', получено' : ''),
                 onClick: () => this.setState({ selected: n }) }, e('b', null, n), icon(glyph(row), 22), n <= completed && e('span', { className: 'gm-calendar-check', 'aria-hidden': true }, '✓'));
-        })), reward && e('div', { className: 'gm-calendar-detail', 'aria-live': 'polite' }, e('b', null, 'День ' + focusDay), e('strong', null, icon(glyph(reward), 18), quantity(reward)))), e('button', { type: 'button', className: 'gm-mining-claim', disabled: busy || (!data && !error) || (received && !preview),
+        })), reward && e('div', { className: 'gm-calendar-detail', 'aria-live': 'polite' }, e('b', null, 'День ' + focusDay), e('strong', null, icon(glyph(reward), 18), quantity(reward)))), e('button', { type: 'button', className: 'gm-mining-claim', disabled: busy || (!data && !error) || ((received || claimedViaDaily) && !preview),
             onClick: () => error ? this.refresh() : preview ? this.setState({ selected: null }) : this.claim() }, icon(received && !preview ? 'check' : 'diamond', 23), e('span', null, action), icon('chevron-right', 19)));
     }
 }
