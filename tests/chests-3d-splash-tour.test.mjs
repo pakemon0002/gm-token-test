@@ -28,7 +28,7 @@ test('boxes step tutorial points at five controls that exist in current UI',()=>
  for(const k of ['boxes.points','boxes.choose','boxes.preview','boxes.quantity','boxes.claim']){
   assert.ok(source.includes("'"+k+"':{"),k+' copy missing');
  }
- assert.ok(source.includes("'gm_tour_v24_'+authenticatedUserId+'_'+section"));
+ assert.ok(source.includes("'gm_tour_v25_gmtokenapp_'+authenticatedUserId+'_'+section"));
  assert.ok(source.includes("setAuthenticatedUserId(String(d.user?.id||''))"));
  assert.ok(section.includes("onClick:()=>openGuide('boxes')"));
 });
