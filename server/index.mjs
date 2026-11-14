@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS used_admin_2fa(owner_id TEXT NOT NULL,step INTEGER NO
  CREATE INDEX IF NOT EXISTS idx_admin_2fa_failures ON admin_2fa_failures(owner_id,at);
 CREATE TABLE IF NOT EXISTS holding_buckets(name TEXT PRIMARY KEY, gm INTEGER NOT NULL DEFAULT 0 CHECK(gm>=0));
 CREATE TABLE IF NOT EXISTS restrictions(user_id TEXT PRIMARY KEY REFERENCES users(id),end_at INTEGER,reason TEXT,issued_by TEXT NOT NULL,issued_at INTEGER NOT NULL);
-CREATE TABLE IF NOT EXISTS ticket_messages(id TEXT PRIMARY KEY,ticket_id TEXT NOT NULL REFERENCES tickets(id),author TEXT NOT NULL,body TEXT NOT NULL,created_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS ticket_messages(id TEXT PRIMARY KEY,ticket_id TEXT NOT NULL REFERENCES tickets(id),author TEXT NOT NULL,body TEXT NOT NULL,created_at INTEGER NOT NULL,ordinal INTEGER NOT NULL DEFAULT 0);
 CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status,priority,created_at);
 CREATE TABLE IF NOT EXISTS support_notifications(
  id TEXT PRIMARY KEY,ticket_id TEXT NOT NULL REFERENCES tickets(id),recipient_id TEXT NOT NULL,
@@ -115,6 +115,11 @@ function cleanTickets(){
  const t=now();
  stmt('UPDATE tickets SET status=\'open\',assigned_to=NULL,claimed_at=NULL,updated_at=? WHERE status=\'in_review\' AND first_reply_at IS NULL AND claimed_at<?').run(t,t-12*3600);
  stmt('UPDATE tickets SET status=\'closed\',updated_at=? WHERE status=\'resolved\' AND priority=\'P3\' AND resolved_at<?').run(t,t-48*3600);
+}
+function addTicketMessage(ticketId,author,body,at){
+ const ordinal=stmt('SELECT COALESCE(MAX(ordinal),0)+1 AS n FROM ticket_messages WHERE ticket_id=?').get(ticketId).n;
+ stmt('INSERT INTO ticket_messages(id,ticket_id,author,body,created_at,ordinal) VALUES(?,?,?,?,?,?)')
+  .run(crypto.randomUUID(),ticketId,author,body,at,ordinal);
 }
 function publicPools(){return stmt('SELECT name,gm,cr FROM pools ORDER BY name').all()}
 function sendTelegram(id,message){if(!secret)return;fetch(`https://api.telegram.org/bot${secret}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:id,text:message.slice(0,1000)})}).catch(()=>{})}
@@ -252,7 +257,7 @@ const routes=async(req,res)=>{
    if(!ticket)return fail(res,404,'ticket not found');
    if(ticket.user_id!==id&&!['owner','coowner','moderator'].includes(current.role))
     return fail(res,403,'permission denied');
-   const messages=stmt('SELECT id,ticket_id,author,body,created_at FROM ticket_messages WHERE ticket_id=? ORDER BY created_at ASC,id ASC LIMIT 200').all(ticket.id);
+   const messages=stmt('SELECT id,ticket_id,author,body,created_at,ordinal FROM ticket_messages WHERE ticket_id=? ORDER BY ordinal ASC,created_at ASC,id ASC LIMIT 200').all(ticket.id);
    return send(res,200,{ticket:ticket.id,messages});
   }
   if(p==='/api/tickets'&&verb==='POST'){
@@ -284,7 +289,7 @@ const routes=async(req,res)=>{
     const response=ticket.auto_attempts===0?'Проверьте статус операции и историю начислений в Mini App. Если вопрос остался, запросите дополнительную проверку.':'Автоматическая проверка завершена. Обращение передано в очередь модераторов.';
     tx(()=>{
      stmt('UPDATE tickets SET auto_attempts=auto_attempts+1,updated_at=?,status=CASE WHEN auto_attempts+1>=2 THEN \'open\' ELSE \'auto_support\' END WHERE id=?').run(t,ticketId);
-     stmt('INSERT INTO ticket_messages(id,ticket_id,author,body,created_at) VALUES(?,?,?,?,?)').run(crypto.randomUUID(),ticketId,'auto',response,t);
+     addTicketMessage(ticketId,'auto',response,t);
      if(ticket.auto_attempts+1>=2)supportNotifier.queueStaff(ticketId,'escalated',
        'GM TOKEN · обращение #'+ticketId.slice(0,8)+' передано сотрудникам после автопомощи. Открой Mini App → Поддержка.',ticket.user_id);
     });
@@ -301,7 +306,7 @@ const routes=async(req,res)=>{
     if(isMod&&ticket.assigned_to!==id&&current.role!=='owner'&&current.role!=='coowner')throw Error('ticket is not assigned to you');
     const messageId=crypto.randomUUID();
     tx(()=>{
-     stmt('INSERT INTO ticket_messages(id,ticket_id,author,body,created_at) VALUES(?,?,?,?,?)').run(messageId,ticketId,id,body,t);
+     addTicketMessage(ticketId,id,body,t);
      stmt('UPDATE tickets SET first_reply_at=COALESCE(first_reply_at,?),updated_at=?,status=? WHERE id=?')
       .run(isMod?t:null,t,isMod?'in_review':'open',ticketId);
      if(isMod)supportNotifier.queuePlayer(ticketId,'reply:'+messageId,ticket.user_id,
