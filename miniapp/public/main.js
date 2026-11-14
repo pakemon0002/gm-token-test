@@ -384,6 +384,22 @@ class AutumnCalendar extends React.Component {
                 this.setState({ busy: false });
         }
     }
+    async unlockCosmetic(itemId) {
+        if (this.pending)
+            return;
+        this.pending = true;
+        this.setState({ busy: true });
+        try {
+            const result = await this.props.api('/api/hp/cosmetics/unlock', { itemId });
+            if (result)
+                await this.refresh();
+        }
+        finally {
+            this.pending = false;
+            if (this.active)
+                this.setState({ busy: false });
+        }
+    }
     render() {
         const e = React.createElement;
         const { data, busy, error, selected } = this.state;
@@ -405,7 +421,11 @@ class AutumnCalendar extends React.Component {
         const preview = data && focusDay !== today;
         const action = error ? 'Повторить загрузку' : !data ? 'Загрузка календаря…' : busy ? 'Получаем…' :
             preview ? 'Вернуться к сегодняшней награде' : received ? 'Сегодня награда получена' : claimedViaDaily ? 'Ежедневная награда уже получена' : 'Забрать награду';
-        return e('div', { className: 'gm-calendar' }, this.props.header, e('section', { className: 'gm-premium-card gm-mining-energy' }, e('div', { className: 'gm-mining-energy-head' }, e('b', null, 'Прогресс календаря'), e('span', null, data ? completed + ' / 30' : '…')), e('div', { className: 'gm-mining-energy-track', role: 'progressbar', 'aria-label': 'Получено дней', 'aria-valuenow': completed, 'aria-valuemin': 0, 'aria-valuemax': 30 }, e('span', { style: { width: (completed / 30 * 100) + '%' } }))), data && e('section', { className: 'gm-premium-card gm-calendar-assets' }, e('strong', null, 'Полученные бонусы'), e('div', { className: 'gm-calendar-assets-row' }, e('span', null, 'HP'), e('b', null, String(data.hp || 0)), e('span', null, 'Боксы'), e('b', null, String(Object.values(data.inventory || {}).reduce((n, value) => n + Number(value || 0), 0)))), Object.values(data.inventory || {}).some((n) => Number(n) > 0) &&
+        return e('div', { className: 'gm-calendar' }, this.props.header, e('section', { className: 'gm-premium-card gm-mining-energy' }, e('div', { className: 'gm-mining-energy-head' }, e('b', null, 'Прогресс календаря'), e('span', null, data ? completed + ' / 30' : '…')), e('div', { className: 'gm-mining-energy-track', role: 'progressbar', 'aria-label': 'Получено дней', 'aria-valuenow': completed, 'aria-valuemin': 0, 'aria-valuemax': 30 }, e('span', { style: { width: (completed / 30 * 100) + '%' } }))), data && e('section', { className: 'gm-premium-card gm-calendar-assets' }, e('strong', null, 'Полученные бонусы'), e('div', { className: 'gm-calendar-assets-row' }, e('span', null, 'HP'), e('b', null, String(data.hp || 0)), e('span', null, 'Боксы'), e('b', null, String(Object.values(data.inventory || {}).reduce((n, value) => n + Number(value || 0), 0)))), e('div', { className: 'gm-hp-collection' }, e('div', { className: 'gm-hp-collection-heading' }, e('b', null, 'Коллекция HP'), e('small', null, 'Постоянные значки профиля · без влияния на добычу GM')), e('div', { className: 'gm-hp-collection-grid' }, (data.hp_cosmetics || []).map(item => e('button', { key: item.id, type: 'button',
+            className: 'gm-hp-collectible' + (item.unlocked ? ' unlocked' : ''),
+            disabled: busy || item.unlocked || Number(data.hp || 0) < Number(item.cost),
+            onClick: () => this.unlockCosmetic(item.id) }, icon(item.icon || 'star', 24), e('span', null, e('b', null, item.title), e('small', null, item.unlocked ? 'Открыто' : Number(data.hp || 0) < Number(item.cost)
+            ? 'Нужно ' + item.cost + ' HP' : 'Открыть за ' + item.cost + ' HP')), item.unlocked && icon('check', 15))))), Object.values(data.inventory || {}).some((n) => Number(n) > 0) &&
             e('button', { type: 'button', className: 'gm-calendar-to-boxes', onClick: this.props.onOpenBoxes }, 'Открыть подаренные боксы →')), data && e('section', { className: 'gm-premium-card gm-calendar-panel' }, e('h3', null, 'Награды за 30 дней'), e('div', { className: 'gm-calendar-grid' }, rows.map(row => {
             const n = Number(row.calendar_day);
             return e('button', { key: n, type: 'button', 'aria-pressed': focusDay === n,
@@ -577,7 +597,7 @@ function App() {
     const [staffReply, setStaffReply] = React.useState('');
     const [supportCategory, setSupportCategory] = React.useState('Общий вопрос');
     const [liveState, setLiveState] = React.useState(null);
-    const [calendarAssets, setCalendarAssets] = React.useState({ hp: 0, inventory: { bronze: 0, silver: 0, gold: 0 } });
+    const [calendarAssets, setCalendarAssets] = React.useState({ hp: 0, hp_cosmetics: [], inventory: { bronze: 0, silver: 0, gold: 0 } });
     const [liveOrders, setLiveOrders] = React.useState([]);
     const [liveBook, setLiveBook] = React.useState(null);
     const [liveTicker, setLiveTicker] = React.useState(null);
@@ -961,7 +981,7 @@ function App() {
     const refreshCalendarAssets = async () => {
         const d = await api('/api/autumn-calendar', undefined, true);
         if (d)
-            setCalendarAssets({ hp: Number(d.hp || 0), inventory: d.inventory || { bronze: 0, silver: 0, gold: 0 } });
+            setCalendarAssets({ hp: Number(d.hp || 0), hp_cosmetics: d.hp_cosmetics || [], inventory: d.inventory || { bronze: 0, silver: 0, gold: 0 } });
         return d;
     };
     const refreshLive = async () => { if (!webapp?.initData)
@@ -983,7 +1003,7 @@ function App() {
     } return result; };
     React.useEffect(() => { if (demo)
         return; refreshLive(); const timer = setInterval(() => { refreshLive(); }, 12000); return () => clearInterval(timer); }, [demo, period]);
-    React.useEffect(() => { if (demo || !['reward', 'boxes'].includes(screen))
+    React.useEffect(() => { if (demo || !['reward', 'boxes', 'profile'].includes(screen))
         return; void refreshCalendarAssets(); }, [demo, screen]);
     const nav = (s) => goto(s);
     const adminRequest = async (path, payload) => {
@@ -1418,6 +1438,7 @@ function App() {
         const cosmetics = liveState?.cosmetics || { founder_slot: null, frames: [] };
         const frames = [{ id: 'standard', title: 'GM Classic', claimed: true }, ...(cosmetics.frames || []).filter((f) => !f.type || f.type === 'frame')];
         const boxCollectibles = (cosmetics.frames || []).filter((f) => f.category === 'box' && f.type && f.type !== 'frame');
+        const hpCollectibles = (calendarAssets?.hp_cosmetics || []).filter((f) => f.unlocked);
         const chosen = frames.find((f) => f.id === selectedFrame && f.claimed) ? selectedFrame : 'standard';
         const league = liveState?.league || { name: 'Bronze', min_xp: 0 };
         const leagues = liveState?.leagues || [];
@@ -1426,7 +1447,9 @@ function App() {
         const nextXp = nextLeague?.min_xp ?? previousXp;
         const progress = nextLeague ? Math.min(100, Math.max(0, (wallet.xp - previousXp) / Math.max(1, nextXp - previousXp) * 100)) : 100;
         const user = webapp?.initDataUnsafe?.user;
-        return e(React.Fragment, null, top(L('profile'), false, 'settings'), e('div', { className: 'profile-hero gm-profile-v2' }, e('div', { className: 'gm-profile-avatar ' + (chosen === 'standard' ? '' : 'gm-profile-avatar-special') }, e(PlayerAvatar, { name: user?.username || user?.first_name || 'GM PLAYER', photoUrl: user?.photo_url || '', size: 'large' })), e('h2', null, user?.username || user?.first_name || 'GM PLAYER'), e('p', null, '#' + String(user?.id || '')), cosmetics.founder_slot ? e('span', { className: 'gm-founders-medal' }, icon('crown', 18), ' FOUNDERS #' + cosmetics.founder_slot) : null), e('div', { className: 'gm-league-card gm-premium-card' }, e('div', { className: 'gm-league-head' }, e('div', null, e('small', null, 'GM LEAGUE'), e('h3', null, league.name)), e('b', null, nf(wallet.xp, 0) + ' XP')), e('div', { className: 'gm-upgrades-progress' }, e('span', { style: { width: progress + '%' } })), e('small', null, nextLeague ? '→ ' + nextLeague.name + ' · ' + nf(Math.max(0, nextXp - wallet.xp), 0) + ' XP' : 'GM IMMORTAL · MAX')), e('div', { className: 'stats-grid' }, [['friends', String(liveReferrals?.referred?.length || 0), L('friends')], ['wallet', nf(wallet.gm, 0), L('balance')], ['lightning', String(wallet.streak), L('streak')]].map(([i, n, label]) => e('div', { className: 'stat-card', key: label }, icon(i, 23), e('b', null, n), e('small', null, label)))), e('section', { className: 'gm-frames-section gm-premium-card' }, e('h3', null, L('frames')), e('p', null, L('achievementsLocked')), e('div', { className: 'gm-frame-preview-detail' }, e('div', { className: 'gm-frame-preview-showcase' }, e('span', { className: 'gm-frame-art gm-frame-art-big ' + (framePreview === 'standard' ? 'gm-frame-standard' : framePreview.startsWith('founder') ? 'gm-frame-founder' : 'gm-frame-milestone'),
+        return e(React.Fragment, null, top(L('profile'), false, 'settings'), e('div', { className: 'profile-hero gm-profile-v2' }, e('div', { className: 'gm-profile-avatar ' + (chosen === 'standard' ? '' : 'gm-profile-avatar-special') }, e(PlayerAvatar, { name: user?.username || user?.first_name || 'GM PLAYER', photoUrl: user?.photo_url || '', size: 'large' })), e('h2', null, user?.username || user?.first_name || 'GM PLAYER'), e('p', null, '#' + String(user?.id || '')), cosmetics.founder_slot ? e('span', { className: 'gm-founders-medal' }, icon('crown', 18), ' FOUNDERS #' + cosmetics.founder_slot) : null), e('div', { className: 'gm-league-card gm-premium-card' }, e('div', { className: 'gm-league-head' }, e('div', null, e('small', null, 'GM LEAGUE'), e('h3', null, league.name)), e('b', null, nf(wallet.xp, 0) + ' XP')), e('div', { className: 'gm-upgrades-progress' }, e('span', { style: { width: progress + '%' } })), e('small', null, nextLeague ? '→ ' + nextLeague.name + ' · ' + nf(Math.max(0, nextXp - wallet.xp), 0) + ' XP' : 'GM IMMORTAL · MAX')), e('div', { className: 'stats-grid' }, [['friends', String(liveReferrals?.referred?.length || 0), L('friends')], ['wallet', nf(wallet.gm, 0), L('balance')], ['lightning', String(wallet.streak), L('streak')]].map(([i, n, label]) => e('div', { className: 'stat-card', key: label }, icon(i, 23), e('b', null, n), e('small', null, label)))), e('section', { className: 'gm-hp-profile gm-premium-card' }, e('div', { className: 'gm-hp-profile-heading' }, e('strong', null, 'Значки HP'), e('b', null, String(calendarAssets?.hp || 0) + ' HP')), hpCollectibles.length
+            ? e('div', { className: 'gm-hp-profile-grid' }, hpCollectibles.map((item) => e('span', { key: item.id, className: 'gm-hp-profile-badge' }, icon(item.icon || 'star', 19), item.title)))
+            : e('small', null, 'Значки открываются за HP, полученные в календаре.'), e('button', { type: 'button', className: 'gm-calendar-to-boxes', onClick: () => goto('reward') }, 'Коллекция HP в календаре')), e('section', { className: 'gm-frames-section gm-premium-card' }, e('h3', null, L('frames')), e('p', null, L('achievementsLocked')), e('div', { className: 'gm-frame-preview-detail' }, e('div', { className: 'gm-frame-preview-showcase' }, e('span', { className: 'gm-frame-art gm-frame-art-big ' + (framePreview === 'standard' ? 'gm-frame-standard' : framePreview.startsWith('founder') ? 'gm-frame-founder' : 'gm-frame-milestone'),
             style: { '--frame-hue': String(String(framePreview).split('').reduce((n, c) => n + c.charCodeAt(0), 0) % 360) + 'deg' } }, e('span', { className: 'gm-frame-inner' }, e(PlayerAvatar, { name: user?.username || user?.first_name || 'GM PLAYER', photoUrl: user?.photo_url || '', size: 'large' })))), e('div', { className: 'gm-frame-preview-copy' }, e('b', null, frames.find((f) => f.id === framePreview)?.title || 'GM Classic'), e('small', null, frames.find((f) => f.id === framePreview)?.claimed ? 'Рамка открыта · можно использовать' : 'Рамка пока закрыта · предпросмотр'), e('button', { type: 'button', disabled: !frames.find((f) => f.id === framePreview)?.claimed,
             onClick: () => { setSelectedFrame(framePreview); store.setItem('gm_profile_frame', framePreview); } }, framePreview === chosen ? 'Используется' : 'Применить рамку'))), e('div', { className: 'gm-frame-grid' }, frames.map((f) => e('button', { key: f.id, type: 'button',
             className: 'gm-frame-card ' + (f.claimed ? 'unlocked' : 'locked') + (framePreview === f.id ? ' active' : ''),
