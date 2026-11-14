@@ -5,9 +5,10 @@ const app=readFileSync(new URL('../miniapp/src/main.tsx',import.meta.url),'utf8'
 
 test('new @GmTokenApp first-run experience does not reuse old bot localStorage flags',()=>{
  const intro=app.match(/const onboardingKey=\(\)=>authenticatedUserId\?'([^']+)'\+authenticatedUserId:'';/);
- const tour=app.match(/const tutorialKey=\(section:string\)=>'([^']+)'\+authenticatedUserId\+'_ '\+section;/);
+ const tour=app.match(/const tutorialKey=\(section:string\)=>'([^']+)'\+authenticatedUserId\+'_\'\+section;/);
  assert.ok(intro&&intro[1].includes('gmtokenapp'),'onboarding key must be bot scoped');
- assert.match(app,/const tutorialKey=\(section:string\)=>'gm_tour_v25_gmtokenapp_'\+authenticatedUserId\+'_ '\+section;/);
+ assert.ok(tour&&tour[1].includes('gmtokenapp'),'tour completion must be bot scoped');
+ assert.match(app,/const tutorialKey=\(section:string\)=>'gm_tour_v25_gmtokenapp_'\+authenticatedUserId\+'_\'\+section;/);
  assert.ok(!app.includes("'gm_tour_v24_'+authenticatedUserId"));
  assert.ok(!app.includes("'gm_intro_v24_'+authenticatedUserId"));
  assert.match(app,/store\.getItem\(onboardingKey\(\)\)\?'home':'intro'/);
