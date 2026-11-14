@@ -214,7 +214,7 @@ const EXTRA_LANGUAGE = {
     "МОЙ БАЛАНС": { pt: "MEU SALDO", uk: "МІЙ БАЛАНС", en: "MY BALANCE" },
     "Перейти в Mining": { pt: "Abrir mineração", uk: "Перейти до майнінгу", en: "Go to mining" },
     "Перейти на рынок": { pt: "Abrir mercado", uk: "Перейти на ринок", en: "Go to market" },
-    "РЫНОК · ТЕСТОВЫЙ GM/CR": { pt: "MERCADO · TESTE GM/CR", uk: "РИНОК · ТЕСТОВИЙ GM/CR", en: "MARKET · TEST GM/CR" },
+    "РЫНОК · ТЕСТОВЫЙ GM/CR": { ru: "ИГРОВОЙ РЫНОК GM/CR", pt: "MERCADO GM/CR", uk: "ІГРОВИЙ РИНОК GM/CR", en: "IN-GAME GM/CR MARKET" },
     "Нет цены": { pt: "Preço indisponível", uk: "Немає ціни", en: "No price" },
     "Только реальные игровые сделки · без искусственного графика": { pt: "Somente negociações reais do jogo", uk: "Лише справжні ігрові угоди", en: "Only real in-game trades" },
     "График появится после нескольких сделок": { pt: "Gráfico disponível após algumas negociações", uk: "Графік з'явиться після кількох угод", en: "Chart appears after some trades" },
@@ -355,72 +355,65 @@ React.createElement = (type, props, ...children) => {
     return gmNativeCreateElement(type, props, ...mapped);
 };
 class AutumnCalendar extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {data:null, busy:false, error:false};
-    this.pending = false;
-  }
-  componentDidMount() { this.active = true; void this.refresh(); }
-  componentWillUnmount() { this.active = false; }
-  async refresh() {
-    const data = await this.props.api('/api/autumn-calendar', undefined, true);
-    if (this.active) this.setState({data, error:!data});
-  }
-  async claim() {
-    if (this.pending) return;
-    this.pending = true;
-    this.setState({busy:true});
-    try {
-      await this.props.api('/api/autumn-calendar/claim', {});
-      await this.refresh();
-    } finally {
-      this.pending = false;
-      if (this.active) this.setState({busy:false});
+    constructor(props) {
+        super(props);
+        this.state = { data: null, busy: false, error: false };
+        this.pending = false;
     }
-  }
-  render() {
-    const e = React.createElement;
-    const {data, busy, error, selected} = this.state;
-    const progress = data?.progress;
-    const next = Number(progress?.next_day || 1);
-    const received = !!progress?.claimed_today;
-    const completed = received && next === 1 ? 30 : next - 1;
-    const today = received ? completed : next;
-    const rows = data?.schedule || [];
-    const names = {xp:'XP', hp:'HP', bronze_box:'Бронзовый бокс', silver_box:'Серебряный бокс', gold_box:'Золотой бокс'};
-    const focusDay = selected || today;
-    const reward = rows.find(row => Number(row.calendar_day) === focusDay);
-    const quantity = row => row.reward_type.endsWith('_box')
-      ? names[row.reward_type] + ' × ' + row.reward_amount
-      : '+' + row.reward_amount + ' ' + names[row.reward_type];
-    const glyph = row => row.reward_type === 'hp' ? 'lightning' : row.reward_type === 'xp' ? 'database' : 'gift';
-    const icon = this.props.icon;
-    const preview = data && focusDay !== today;
-    const action = error ? 'Повторить загрузку' : !data ? 'Загрузка календаря…' : busy ? 'Получаем…' :
-      preview ? 'Вернуться к сегодняшней награде' : received ? 'Сегодня награда получена' : 'Забрать награду';
-    return e('div', {className:'gm-calendar'},
-      this.props.header,
-      e('section', {className:'gm-premium-card gm-mining-energy'},
-        e('div',{className:'gm-mining-energy-head'},e('b',null,'Прогресс календаря'),e('span',null,data ? completed + ' / 30' : '…')),
-        e('div',{className:'gm-mining-energy-track',role:'progressbar','aria-label':'Получено дней','aria-valuenow':completed,'aria-valuemin':0,'aria-valuemax':30},e('span',{style:{width:(completed / 30 * 100)+'%'}}))),
-      data && e('section',{className:'gm-premium-card gm-calendar-panel'},
-        e('h3',null,'Награды за 30 дней'),
-        e('div',{className:'gm-calendar-grid'},rows.map(row => {
-          const n = Number(row.calendar_day);
-          return e('button',{key:n,type:'button','aria-pressed':focusDay===n,
-            'aria-label':'День '+n+', '+quantity(row)+(n<=completed?', получено':''),
-            onClick:()=>this.setState({selected:n})},
-            e('b',null,n),icon(glyph(row),22),
-            n<=completed && e('span',{className:'gm-calendar-check','aria-hidden':true},'✓'));
-        })),
-        reward && e('div',{className:'gm-calendar-detail','aria-live':'polite'},
-          e('b',null,'День '+focusDay),e('strong',null,icon(glyph(reward),18),quantity(reward)))),
-      e('button',{type:'button',className:'gm-mining-claim',disabled:busy||(!data&&!error)||(received&&!preview),
-        onClick:()=>error ? this.refresh() : preview ? this.setState({selected:null}) : this.claim()},
-        icon(received&&!preview?'check':'diamond',23),e('span',null,action),icon('chevron-right',19)));
-  }
+    componentDidMount() { this.active = true; void this.refresh(); }
+    componentWillUnmount() { this.active = false; }
+    async refresh() {
+        const data = await this.props.api('/api/autumn-calendar', undefined, true);
+        if (this.active)
+            this.setState({ data, error: !data });
+    }
+    async claim() {
+        if (this.pending)
+            return;
+        this.pending = true;
+        this.setState({ busy: true });
+        try {
+            await this.props.api('/api/autumn-calendar/claim', {});
+            await this.refresh();
+            if (this.props.onClaim)
+                await this.props.onClaim();
+        }
+        finally {
+            this.pending = false;
+            if (this.active)
+                this.setState({ busy: false });
+        }
+    }
+    render() {
+        const e = React.createElement;
+        const { data, busy, error, selected } = this.state;
+        const progress = data?.progress;
+        const next = Number(progress?.next_day || 1);
+        const received = !!progress?.claimed_today;
+        const completed = received && next === 1 ? 30 : next - 1;
+        const today = received ? completed : next;
+        const rows = data?.schedule || [];
+        const names = { xp: 'XP', hp: 'HP', bronze_box: 'Бронзовый бокс', silver_box: 'Серебряный бокс', gold_box: 'Золотой бокс' };
+        const focusDay = selected || today;
+        const reward = rows.find(row => Number(row.calendar_day) === focusDay);
+        const quantity = row => row.reward_type.endsWith('_box')
+            ? names[row.reward_type] + ' × ' + row.reward_amount
+            : '+' + row.reward_amount + ' ' + names[row.reward_type];
+        const glyph = row => row.reward_type === 'hp' ? 'lightning' : row.reward_type === 'xp' ? 'database' : 'gift';
+        const icon = this.props.icon;
+        const preview = data && focusDay !== today;
+        const action = error ? 'Повторить загрузку' : !data ? 'Загрузка календаря…' : busy ? 'Получаем…' :
+            preview ? 'Вернуться к сегодняшней награде' : received ? 'Сегодня награда получена' : 'Забрать награду';
+        return e('div', { className: 'gm-calendar' }, this.props.header, e('section', { className: 'gm-premium-card gm-mining-energy' }, e('div', { className: 'gm-mining-energy-head' }, e('b', null, 'Прогресс календаря'), e('span', null, data ? completed + ' / 30' : '…')), e('div', { className: 'gm-mining-energy-track', role: 'progressbar', 'aria-label': 'Получено дней', 'aria-valuenow': completed, 'aria-valuemin': 0, 'aria-valuemax': 30 }, e('span', { style: { width: (completed / 30 * 100) + '%' } }))), data && e('section', { className: 'gm-premium-card gm-calendar-assets' }, e('strong', null, 'Полученные бонусы'), e('div', { className: 'gm-calendar-assets-row' }, e('span', null, 'HP'), e('b', null, String(data.hp || 0)), e('span', null, 'Боксы'), e('b', null, String(Object.values(data.inventory || {}).reduce((n, value) => n + Number(value || 0), 0)))), Object.values(data.inventory || {}).some((n) => Number(n) > 0) &&
+            e('button', { type: 'button', className: 'gm-calendar-to-boxes', onClick: this.props.onOpenBoxes }, 'Открыть подаренные боксы →')), data && e('section', { className: 'gm-premium-card gm-calendar-panel' }, e('h3', null, 'Награды за 30 дней'), e('div', { className: 'gm-calendar-grid' }, rows.map(row => {
+            const n = Number(row.calendar_day);
+            return e('button', { key: n, type: 'button', 'aria-pressed': focusDay === n,
+                'aria-label': 'День ' + n + ', ' + quantity(row) + (n <= completed ? ', получено' : ''),
+                onClick: () => this.setState({ selected: n }) }, e('b', null, n), icon(glyph(row), 22), n <= completed && e('span', { className: 'gm-calendar-check', 'aria-hidden': true }, '✓'));
+        })), reward && e('div', { className: 'gm-calendar-detail', 'aria-live': 'polite' }, e('b', null, 'День ' + focusDay), e('strong', null, icon(glyph(reward), 18), quantity(reward)))), e('button', { type: 'button', className: 'gm-mining-claim', disabled: busy || (!data && !error) || (received && !preview),
+            onClick: () => error ? this.refresh() : preview ? this.setState({ selected: null }) : this.claim() }, icon(received && !preview ? 'check' : 'diamond', 23), e('span', null, action), icon('chevron-right', 19)));
+    }
 }
-
 function App() {
     const webapp = window.Telegram?.WebApp;
     const openBot = (ev) => {
@@ -496,7 +489,7 @@ function App() {
         'mining.upgrades': { ru: 'Здесь показаны 200 уровней, цена каждого и бонус к скорости. По договорённости уровни будут связаны с подтверждённым внешним кошельком. Пока контракт GM не проверен, оплата и покупка отключены, игровые GM не списываются.', uk: 'Тут 200 рівнів, ціни та бонуси. Оплата через зовнішній гаманець поки недоступна — контракт GM ще не підтверджений.', pt: 'Aqui estão 200 níveis e seus bônus. Compras com carteira externa estão desativadas até verificar o contrato GM.', en: 'Explore all 200 levels and bonuses. Wallet-based purchases remain disabled until the GM contract is verified.' },
         'mining.purchase': { ru: 'Это кнопка перехода к следующему уровню. Пока подтверждение внешних GM не настроено, она недоступна. Никаких игровых GM здесь списывать нельзя; после проверки контракта будет показан понятный способ получения улучшения.', uk: 'Це кнопка наступного рівня. До перевірки контракту вона неактивна й не списує ігрові GM.', pt: 'Este botão será usado para subir de nível. Fica desativado até a verificação do contrato GM; GM do jogo não serão gastos.', en: 'This is the upgrade control. It remains disabled until external GM ownership can be verified; no in-game GM is charged.' },
         'mining.storage': { ru: 'Полоса показывает, сколько GM накоплено относительно вместимости. Когда хранилище заполнено, новые начисления останавливаются до сбора. Ниже указана текущая скорость за час.', uk: 'Смуга показує наповнення сховища. Коли воно повне, зберіть GM, щоб звільнити місце.', pt: 'A barra mostra o armazenamento atual. Colete GM para liberar espaço quando estiver cheio.', en: 'The bar shows storage capacity. Claim stored GM when the container is full.' },
-        'trade.price': { ru: 'Здесь указана рыночная цена GM/CR. Для тестового рынка она берётся из реально исполненных игровых заявок; мы не рисуем вымышленные сделки.', uk: 'Тут ціна GM/CR за виконаними ігровими угодами, без штучних свічок.', pt: 'O preço GM/CR vem de negociações reais dentro do jogo, sem dados inventados.', en: 'The GM/CR price reflects executed in-game trades; no synthetic market data.' },
+        'trade.price': { ru: 'Здесь указана рыночная цена GM/CR. Она берётся из исполненных игровых заявок; график не содержит вымышленных сделок.', uk: 'Тут ціна GM/CR за виконаними ігровими угодами, без штучних свічок.', pt: 'O preço GM/CR vem de negociações reais dentro do jogo, sem dados inventados.', en: 'The GM/CR price reflects executed in-game trades; no synthetic market data.' },
         'trade.chart': { ru: 'Выбирай интервал свечей — от минуты до дня. График показывает историю исполненных игровых сделок, а пустые интервалы остаются пустыми.', uk: 'Обери інтервал від хвилини до дня. Порожні періоди не домальовуються.', pt: 'Escolha o intervalo do gráfico. Períodos sem negociações permanecem vazios.', en: 'Choose a candle interval. Periods without executed in-game trades stay empty.' },
         'trade.balance': { ru: 'Тут доступны твои игровые GM и CR. Открытые заявки могут резервировать часть средств; перед отправкой заявки проверь остаток.', uk: 'Тут доступні ігрові GM і CR. Відкриті ордери можуть резервувати кошти.', pt: 'Aqui estão seus GM e CR do jogo. Ordens abertas podem reservar saldo.', en: 'Your in-game GM and CR balances are shown here. Open orders reserve funds.' },
         'trade.actions': { ru: 'Выбери «Купить GM» или «Продать GM». Кнопки переключают форму ниже, не отправляя заявку. Это тренировочный игровой рынок, не биржа настоящих денег.', uk: 'Обери «Купити» або «Продати». Перемикач змінює форму, але нічого не надсилає.', pt: 'Escolha Comprar ou Vender. Os botões apenas alternam o formulário, sem enviar ordem.', en: 'Select Buy or Sell. These buttons only switch the form; they do not place an order.' },
@@ -583,6 +576,7 @@ function App() {
     const [staffReply, setStaffReply] = React.useState('');
     const [supportCategory, setSupportCategory] = React.useState('Общий вопрос');
     const [liveState, setLiveState] = React.useState(null);
+    const [calendarAssets, setCalendarAssets] = React.useState({ hp: 0, inventory: { bronze: 0, silver: 0, gold: 0 } });
     const [liveOrders, setLiveOrders] = React.useState([]);
     const [liveBook, setLiveBook] = React.useState(null);
     const [liveTicker, setLiveTicker] = React.useState(null);
@@ -963,6 +957,12 @@ function App() {
             return null;
         }
     };
+    const refreshCalendarAssets = async () => {
+        const d = await api('/api/autumn-calendar', undefined, true);
+        if (d)
+            setCalendarAssets({ hp: Number(d.hp || 0), inventory: d.inventory || { bronze: 0, silver: 0, gold: 0 } });
+        return d;
+    };
     const refreshLive = async () => { if (!webapp?.initData)
         return; const d = await api('/api/game/status', undefined, true); if (!d)
         return; setLiveState(d); setW((w) => ({ ...w, gm: d.wallet.gm / 100, cr: d.wallet.cr / 100, vault: d.wallet.vault / 100, storage: d.mining.pending_cents / 100, level: d.user?.level || w.level, xp: d.user?.xp ?? w.xp })); const [orders, book, tasks, achievements, refs, ranks, ticker, chart, trades] = await Promise.all([api('/api/exchange/orders', undefined, true), api('/api/exchange/book', undefined, true), api('/api/tasks', undefined, true), api('/api/achievements', undefined, true), api('/api/referrals/me', undefined, true), api('/api/leaderboard', undefined, true), api('/api/market/ticker', undefined, true), api('/api/market/ohlcv?interval=' + period, undefined, true), api('/api/exchange/trades', undefined, true)]); if (orders)
@@ -982,6 +982,8 @@ function App() {
     } return result; };
     React.useEffect(() => { if (demo)
         return; refreshLive(); const timer = setInterval(() => { refreshLive(); }, 12000); return () => clearInterval(timer); }, [demo, period]);
+    React.useEffect(() => { if (demo || !['reward', 'boxes'].includes(screen))
+        return; void refreshCalendarAssets(); }, [demo, screen]);
     const nav = (s) => goto(s);
     const adminRequest = async (path, payload) => {
         if (demo || !webapp?.initData) {
@@ -1090,18 +1092,19 @@ function App() {
             setUpgradeBusy(false);
         }
     };
-    const openBox = async (kind, count = boxCount) => {
+    const openBox = async (kind, count = boxCount, source = 'points') => {
         if (boxBusy || demo)
             return;
         setBoxBusy(true);
         try {
-            const result = await api('/api/boxes/open', { kind, count, operationId: cryptoId() });
+            const result = await api('/api/boxes/open', { kind, count, source, operationId: cryptoId() });
             if (result?.gm_cents != null) {
                 setBoxReveal({ kind, gm: result.gm_cents / 100, count: result.count || count,
                     unit: Number(result.unit_reward_gm || 0), spent: Number(result.spent_points || 0),
                     xp: Number(result.xp || 0), unitXp: Number(result.unit_xp || 0),
                     unlocked: Array.isArray(result.unlocked_frames) ? result.unlocked_frames : [] });
                 await refreshLive();
+                await refreshCalendarAssets();
                 setModal('boxReveal');
             }
         }
@@ -1214,7 +1217,7 @@ function App() {
         React.createElement("strong", null, title),
         React.createElement("button", { className: "header-icon", onClick: () => right === 'settings' ? goto('settings') : right === 'info' ? openGuide(screen) : goto('more'), "aria-label": right === 'info' ? L('instruction') : "Дополнительные действия" }, icon(right, 23)));
     const menuItems = [['home', 'home', lang('home')], ['trade', 'candlesticks', lang('market')], ['mining', 'lightning', lang('mining')], ['boxes', 'gift', lang('boxes')], ['more', 'more', lang('more')]];
-    const bottom = () => React.createElement("nav", { className: "bottom-nav", "aria-label": "\u041E\u0441\u043D\u043E\u0432\u043D\u044B\u0435 \u0440\u0430\u0437\u0434\u0435\u043B\u044B" }, menuItems.map(([s, i, t]) => React.createElement(BarButton, { key: s, name: i, theme: theme, title: t, selected: screen === s || (s==='more' && ['reward','streak'].includes(screen)) || (isLight && s === 'earn' && screen === 'tasks') || (!isLight && s === 'earn' && screen === 'tasks'), onClick: () => goto(s === 'earn' && isLight ? 'tasks' : s) })));
+    const bottom = () => React.createElement("nav", { className: "bottom-nav", "aria-label": "\u041E\u0441\u043D\u043E\u0432\u043D\u044B\u0435 \u0440\u0430\u0437\u0434\u0435\u043B\u044B" }, menuItems.map(([s, i, t]) => React.createElement(BarButton, { key: s, name: i, theme: theme, title: t, selected: screen === s || (s === 'more' && ['reward', 'streak'].includes(screen)) || (isLight && s === 'earn' && screen === 'tasks') || (!isLight && s === 'earn' && screen === 'tasks'), onClick: () => goto(s === 'earn' && isLight ? 'tasks' : s) })));
     function Home() {
         const e = React.createElement;
         const points = liveState?.points?.points ?? 0;
@@ -1256,7 +1259,7 @@ function App() {
         const quickPriceCents = Number((pre ? liveTicker?.indicative?.price : side === 'buy' ? liveTicker?.best_ask : liveTicker?.best_bid) || liveTicker?.last_price || 0);
         const quickQty = Number(String(amount).replace(',', '.'));
         const quickTotal = Number.isFinite(quickQty) && quickQty > 0 && quickPriceCents > 0 ? nf(quickQty * quickPriceCents / 100, 2) + ' CR' : '—';
-        const tradeName = pre ? 'PREMARKET' : liveTicker?.trade_test_mode ? 'TEST SPOT' : 'SPOT';
+        const tradeName = pre ? 'PREMARKET' : liveTicker?.trade_test_mode ? 'ИГРОВОЙ SPOT' : 'SPOT';
         const timeframe = ['1m', '5m', '15m', '1h', '4h', '1d'];
         const tabNames = [['book', 'Стакан'], ['recent', 'Сделки'], ['orders', 'Мои ордера']];
         const depthRows = (orders, kind) => orders.length ?
@@ -1412,8 +1415,8 @@ function App() {
     function Profile() {
         const e = React.createElement;
         const cosmetics = liveState?.cosmetics || { founder_slot: null, frames: [] };
-        const frames = [{ id: 'standard', title: 'GM Classic', claimed: true }, ...(cosmetics.frames || []).filter(f => !f.type || f.type === 'frame')];
-        const boxCollectibles = (cosmetics.frames || []).filter(f => f.category === 'box' && f.type && f.type !== 'frame');
+        const frames = [{ id: 'standard', title: 'GM Classic', claimed: true }, ...(cosmetics.frames || []).filter((f) => !f.type || f.type === 'frame')];
+        const boxCollectibles = (cosmetics.frames || []).filter((f) => f.category === 'box' && f.type && f.type !== 'frame');
         const chosen = frames.find((f) => f.id === selectedFrame && f.claimed) ? selectedFrame : 'standard';
         const league = liveState?.league || { name: 'Bronze', min_xp: 0 };
         const leagues = liveState?.leagues || [];
@@ -1428,19 +1431,14 @@ function App() {
             className: 'gm-frame-card ' + (f.claimed ? 'unlocked' : 'locked') + (framePreview === f.id ? ' active' : ''),
             'aria-pressed': framePreview === f.id,
             onClick: () => setFramePreview(f.id) }, e('span', { className: 'gm-frame-art gm-frame-thumb ' + (f.category === 'founder' ? 'gm-frame-founder' : f.category === 'milestone' ? 'gm-frame-milestone' : f.category === 'box' ? 'gm-frame-box' : 'gm-frame-standard'),
-            style: { '--frame-hue': String(String(f.id).split('').reduce((n, c) => n + c.charCodeAt(0), 0) % 360) + 'deg' } }, e('span', { className: 'gm-frame-inner' }, e(PlayerAvatar, { name: user?.username || 'GM', size: 'small' }))), e('span', null, f.title), f.claimed ? icon('check', 16) : icon('minus', 16))))), boxCollectibles.length ? e('section', { className: 'gm-profile-collection gm-premium-card' },
-            e('h3', null, 'Коллекция сундуков'),
-            e('p', null, 'Значки, фоны, титулы и медали за открытия сундуков.'),
-            e('div', { className: 'gm-profile-collection-grid' }, boxCollectibles.map(f => e('div', {
-                key: f.id, className: 'gm-profile-collection-item ' + (f.claimed ? 'unlocked' : 'locked')
-            }, icon(f.type === 'badge' ? 'award' : f.type === 'background' ? 'image' : f.type === 'title' ? 'type' : 'medal', 21),
-                e('span', null, e('b', null, f.title), e('small', null, ({ badge: 'Значок', background: 'Фон', title: 'Титул', medal: 'Медаль' })[f.type] || 'Награда')),
-                e('strong', null, f.claimed ? 'Получено' : 'Закрыто'))))) : null, e('div', { className: 'profile-menu' }, [['trophy', L('achievements'), 'achievements'], ['friends', L('referrals'), 'referrals'], ['clock', L('history'), 'history'], ['wallet', L('wallet'), 'wallet'], ['settings', L('customize'), 'settings'], ['info', L('support'), 'support']].map(([i, t, route]) => e('button', { key: route, onClick: () => goto(route) }, icon(i, 21), e('span', null, t), icon('chevron-right', 18)))), e('button', { type: 'button', className: 'gm-settings-onboard gm-premium-card', onClick: () => openGuide('profile') }, icon('info', 22), L('startTour'), icon('chevron-right', 18)));
+            style: { '--frame-hue': String(String(f.id).split('').reduce((n, c) => n + c.charCodeAt(0), 0) % 360) + 'deg' } }, e('span', { className: 'gm-frame-inner' }, e(PlayerAvatar, { name: user?.username || 'GM', size: 'small' }))), e('span', null, f.title), f.claimed ? icon('check', 16) : icon('minus', 16))))), boxCollectibles.length ? e('section', { className: 'gm-profile-collection gm-premium-card' }, e('h3', null, 'Коллекция сундуков'), e('p', null, 'Значки, фоны, титулы и медали за открытия сундуков. Полученные предметы сохраняются в коллекции.'), e('div', { className: 'gm-profile-collection-grid' }, boxCollectibles.map((f) => e('div', {
+            key: f.id, className: 'gm-profile-collection-item ' + (f.claimed ? 'unlocked' : 'locked')
+        }, icon(f.type === 'badge' ? 'award' : f.type === 'background' ? 'image' : f.type === 'title' ? 'type' : 'medal', 21), e('span', null, e('b', null, f.title), e('small', null, { badge: 'Значок', background: 'Фон', title: 'Титул', medal: 'Медаль' }[f.type] || 'Награда')), e('strong', null, f.claimed ? 'Получено' : 'Закрыто'))))) : null, e('div', { className: 'profile-menu' }, [['trophy', L('achievements'), 'achievements'], ['friends', L('referrals'), 'referrals'], ['clock', L('history'), 'history'], ['wallet', L('wallet'), 'wallet'], ['settings', L('customize'), 'settings'], ['info', L('support'), 'support']].map(([i, t, route]) => e('button', { key: route, onClick: () => goto(route) }, icon(i, 21), e('span', null, t), icon('chevron-right', 18)))), e('button', { type: 'button', className: 'gm-settings-onboard gm-premium-card', onClick: () => openGuide('profile') }, icon('info', 22), L('startTour'), icon('chevron-right', 18)));
     }
     function Reward() {
-    return React.createElement(AutumnCalendar, {api, icon, header:top('Осенний календарь', true, 'info')});
-  }
-  function Splash() {
+        return React.createElement(AutumnCalendar, { api, icon, header: top('Осенний календарь', true, 'info'), onOpenBoxes: () => goto('boxes'), onClaim: refreshLive });
+    }
+    function Splash() {
         return React.createElement("div", { className: "splash-view gm-splash-v4", role: "status", "aria-live": "polite" },
             React.createElement("div", { className: "gm-splash-v4-stack" },
                 React.createElement("div", { className: "gm-splash-v4-eyebrow" },
@@ -1541,6 +1539,8 @@ function App() {
         const bonusEnabled = Boolean(liveState?.config?.box_bonus_enabled);
         const collection = liveState?.box_collection || {};
         const frameRewards = liveState?.config?.box_frame_rewards || [];
+        const earnedBoxes = calendarAssets?.inventory || { bronze: 0, silver: 0, gold: 0 };
+        const giftCount = Number(earnedBoxes[boxKind] || 0);
         const catalog = [
             { kind: 'bronze', name: 'Бронзовый сундук', tag: 'Базовые награды', cost: 300 },
             { kind: 'silver', name: 'Серебряный сундук', tag: 'Улучшенные награды', cost: 750 },
@@ -1550,13 +1550,12 @@ function App() {
         const reward = Number(payouts[selected.kind] || 0), totalCost = selected.cost * boxCount, totalReward = reward * boxCount;
         const totalXp = bonusEnabled ? Number(xpRewards[selected.kind] || 0) * boxCount : 0;
         const picture = (kind) => './assets/chests/gm-chest-badge-' + kind + '.svg';
-        return e('div', { className: 'gm-boxes-v9 gm-flat-boxes' }, top('Боксы', true, 'info'),
-
-        e('header', { className: 'gm-flat-heading' }, e('h2', null, 'Сундуки GM'), e('p', null, bonusEnabled ? 'Открывай сундуки и получай GM, XP и коллекционные рамки. Все призы гарантированы.' : 'Открывай сундуки и получай виртуальные GM. Награды фиксированные.')), e('div', { className: 'gm-boxes-points gm-flat-wallet' }, e('span', { className: 'gm-flat-point-icon' }, icon('diamond', 26, true)), e('div', { className: 'gm-flat-wallet-balance' }, e('small', null, 'Ваши POINTS'), e('strong', null, nf(points, 0) + ' POINTS')), e('button', { type: 'button', className: 'gm-flat-points-help',
+        return e('div', { className: 'gm-boxes-v9 gm-flat-boxes' }, top('Боксы', true, 'info'), e('header', { className: 'gm-flat-heading' }, e('h2', null, 'Сундуки GM'), e('p', null, bonusEnabled ? 'Открывай сундуки и получай GM, XP и коллекционные рамки. Все призы гарантированы.' : 'Открывай сундуки и получай виртуальные GM. Награды фиксированные.')), e('div', { className: 'gm-boxes-points gm-flat-wallet' }, e('span', { className: 'gm-flat-point-icon' }, icon('diamond', 26, true)), e('div', { className: 'gm-flat-wallet-balance' }, e('small', null, 'Ваши POINTS'), e('strong', null, nf(points, 0) + ' POINTS')), e('button', { type: 'button', className: 'gm-flat-points-help',
             onClick: () => { setPointsGuideOpen(true); openGuide('points'); } }, icon('book-open', 18), 'Как получить POINTS?', icon('chevron-right', 16))), e('div', { className: 'gm-flat-tour-buttons' }, e('button', { type: 'button', className: 'gm-chests-tutorial', onClick: () => openGuide('boxes') }, icon('info', 15), 'Инструкция по сундукам'), e('button', { type: 'button', className: 'gm-chests-points-tour', onClick: () => {
                 setPointsGuideOpen(true);
                 openGuide('points');
-            } }, icon('book-open', 15), 'Инструкция POINTS')), pointsGuideOpen ? e('section', { className: 'gm-points-guide gm-flat-points-detail' }, e('p', null, 'POINTS начисляются за подтверждённый игровой торговый объём с учётом лимитов и проверок.'), e('button', { type: 'button', className: 'gm-points-guide-action', onClick: () => goto('trade') }, 'Перейти на рынок', icon('chevron-right', 16))) : null, e('div', { className: 'gm-chests-list gm-flat-catalog', role: 'group', 'aria-label': 'Выбор сундука' }, catalog.map(x => {
+            } }, icon('book-open', 15), 'Инструкция POINTS')), pointsGuideOpen ? e('section', { className: 'gm-points-guide gm-flat-points-detail' }, e('p', null, 'POINTS начисляются за подтверждённый игровой торговый объём с учётом лимитов и проверок.'), e('button', { type: 'button', className: 'gm-points-guide-action', onClick: () => goto('trade') }, 'Перейти на рынок', icon('chevron-right', 16))) : null, e('section', { className: 'gm-calendar-gifts gm-premium-card' }, e('strong', null, 'Подарочные сундуки'), e('div', { className: 'gm-calendar-gifts-count' }, ['bronze', 'silver', 'gold'].map(kind => e('span', { key: kind }, String(earnedBoxes[kind] || 0) + ' ' + { bronze: 'бронза', silver: 'серебро', gold: 'золото' }[kind]))), e('p', null, 'Сундуки из календаря можно открывать без POINTS. Награды списываются из игрового фонда BOXES.'), e('button', { type: 'button', className: 'gm-chests-open', disabled: demo || !enabled || !reward || boxBusy || giftCount < 1,
+            onClick: () => openBox(selected.kind, 1, 'calendar') }, icon('gift', 18), giftCount > 0 ? 'Открыть подарочный ' + selected.name : 'Нет подарочных сундуков этого типа')), e('div', { className: 'gm-chests-list gm-flat-catalog', role: 'group', 'aria-label': 'Выбор сундука' }, catalog.map(x => {
             const active = boxKind === x.kind;
             return e('button', { key: x.kind, type: 'button',
                 className: 'gm-chest-choice gm-flat-card ' + x.kind + (active ? ' selected' : ''),
@@ -1565,28 +1564,10 @@ function App() {
                 const value = Number(collection[x.kind] || 0);
                 return milestone ? value >= milestone.required ? 'Рамка открыта' : 'Рамка: ' + value + '/' + milestone.required : 'Бонус опыта';
             })())) : null), active ? e('span', { className: 'gm-flat-card-check', 'aria-label': 'Выбран' }, icon('check', 17)) : null);
-        })), e('section', { className: 'gm-chest-prize-preview', 'aria-label': 'Предпросмотр наград выбранного сундука' },
-            e('div', { className: 'gm-chest-prize-head' },
-                e('div', null, e('small', null, 'СОДЕРЖИМОЕ СУНДУКА'), e('h3', null, 'Что внутри?')),
-                e('span', { className: 'gm-chest-prize-kind' }, selected.name)),
-            e('div', { className: 'gm-chest-prize-grid' },
-                e('div', { className: 'gm-chest-prize-item' },
-                    e('span', { className: 'gm-chest-prize-icon' }, icon('coins', 23, true)),
-                    e('span', null, e('b', null, 'GM TOKEN'), e('small', null, 'Гарантированная награда')),
-                    e('strong', null, reward > 0 ? '+' + nf(reward, 0) + ' GM' : '—')),
-                bonusEnabled ? e('div', { className: 'gm-chest-prize-item' },
-                    e('span', { className: 'gm-chest-prize-icon' }, icon('sparkles', 23, true)),
-                    e('span', null, e('b', null, 'Опыт XP'), e('small', null, 'За каждое открытие')),
-                    e('strong', null, '+' + nf(Number(xpRewards[selected.kind] || 0), 0) + ' XP')) : null,
-                ...frameRewards.filter(f => f.kind === selected.kind).map(f => {
-                    const progress = Number(collection[selected.kind] || 0), required = Number(f.required || 0);
-                    return e('div', { className: 'gm-chest-prize-item gm-chest-prize-frame', key: String(f.id || f.title) },
-                        e('span', { className: 'gm-chest-prize-icon' }, icon('award', 23, true)),
-                        e('span', null, e('b', null, String(f.title || 'Коллекционная рамка')),
-                            e('small', null, required > 0 ? 'За ' + required + ' открытий этого сундука' : 'Коллекционная награда')),
-                        e('strong', null, required > 0 ? (progress >= required ? 'Получена' : progress + '/' + required) : 'Бонус'));
-                })),
-            e('p', { className: 'gm-chest-prize-note' }, 'Награды и прогресс берутся из настроек игры. Рамки выдаются за достижения, а не случайным образом.')), e('section', { className: 'gm-flat-opening' }, e('h3', null, 'Сколько открыть?'), e('div', { className: 'gm-chests-qty', role: 'group', 'aria-label': 'Количество открытий' }, [1, 3, 5, 10].map(count => e('button', { type: 'button', key: count,
+        })), e('section', { className: 'gm-chest-prize-preview', 'aria-label': 'Предпросмотр наград выбранного сундука' }, e('div', { className: 'gm-chest-prize-head' }, e('div', null, e('small', null, 'СОДЕРЖИМОЕ СУНДУКА'), e('h3', null, 'Что внутри?')), e('span', { className: 'gm-chest-prize-kind' }, selected.name)), e('div', { className: 'gm-chest-prize-grid' }, e('div', { className: 'gm-chest-prize-item' }, e('span', { className: 'gm-chest-prize-icon' }, icon('coins', 23, true)), e('span', null, e('b', null, 'GM TOKEN'), e('small', null, 'Гарантированная награда')), e('strong', null, reward > 0 ? '+' + nf(reward, 0) + ' GM' : '—')), bonusEnabled ? e('div', { className: 'gm-chest-prize-item' }, e('span', { className: 'gm-chest-prize-icon' }, icon('sparkles', 23, true)), e('span', null, e('b', null, 'Опыт XP'), e('small', null, 'За каждое открытие')), e('strong', null, '+' + nf(Number(xpRewards[selected.kind] || 0), 0) + ' XP')) : null, ...frameRewards.filter((f) => f.kind === selected.kind).map((f) => {
+            const progress = Number(collection[selected.kind] || 0), required = Number(f.required || 0);
+            return e('div', { className: 'gm-chest-prize-item gm-chest-prize-frame', key: String(f.id || f.title) }, e('span', { className: 'gm-chest-prize-icon' }, icon('award', 23, true)), e('span', null, e('b', null, String(f.title || 'Коллекционная награда')), e('small', null, required > 0 ? 'За ' + required + ' открытий этого сундука' : 'Коллекционная награда')), e('strong', null, required > 0 ? (progress >= required ? 'Получена' : progress + '/' + required) : 'Бонус'));
+        })), e('p', { className: 'gm-chest-prize-note' }, 'Награды и прогресс берутся из настроек игры. Рамки выдаются за достижения, а не случайным образом.')), e('section', { className: 'gm-flat-opening' }, e('h3', null, 'Сколько открыть?'), e('div', { className: 'gm-chests-qty', role: 'group', 'aria-label': 'Количество открытий' }, [1, 3, 5, 10].map(count => e('button', { type: 'button', key: count,
             'aria-pressed': boxCount === count, className: boxCount === count ? 'active' : '',
             onClick: () => setBoxCount(count) }, '×' + count))), e('div', { className: 'gm-chests-subtotal' }, e('span', null, 'Итого: ', e('b', null, '+' + nf(totalReward, 0) + ' GM')), e('span', null, nf(totalCost, 0) + ' POINTS')), bonusEnabled ? e('div', { className: 'gm-box-total-bonuses' }, icon('sparkles', 17), 'Дополнительно: +' + nf(totalXp, 0) + ' XP', e('span', null, 'Рамки за открытия 5/5/5 и 30 всего')) : null, e('div', { className: 'gm-chests-actions' }, e('button', { type: 'button', className: 'gm-chests-open',
             disabled: demo || !enabled || !reward || boxBusy || points < totalCost,
@@ -1911,7 +1892,7 @@ function App() {
                 React.createElement("small", null, a),
                 React.createElement("b", null, b),
                 React.createElement("small", null, "\u0421\u0435\u0440\u0432\u0435\u0440\u043D\u044B\u0435 \u0434\u0430\u043D\u043D\u044B\u0435")))),
-            AdminTestGrants(),
+            liveState?.config?.test_economy ? AdminTestGrants() : null,
             AdminTaskCatalog(),
             React.createElement("h3", { className: "section-title" }, "\u0423\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0438\u0435"),
             React.createElement("div", { className: "admin-actions pearl-card" },
@@ -2100,7 +2081,7 @@ function App() {
                             "\u0422\u0451\u043C\u043D\u0430\u044F"))),
                 React.createElement("div", { className: "auth-privacy" },
                     React.createElement(Icon, { name: "shield-check", theme: theme, size: 22 }),
-                    React.createElement("span", null, "\u0418\u0433\u0440\u043E\u0432\u044B\u0435 \u0434\u0430\u043D\u043D\u044B\u0435 \u043F\u043E\u044F\u0432\u044F\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u043F\u043E\u0441\u043B\u0435 \u0437\u0430\u0449\u0438\u0449\u0451\u043D\u043D\u043E\u0433\u043E \u0432\u0445\u043E\u0434\u0430. \u0414\u0435\u043C\u043E\u0431\u0430\u043B\u0430\u043D\u0441\u043E\u0432 \u0437\u0434\u0435\u0441\u044C \u043D\u0435\u0442."))));
+                    React.createElement("span", null, "\u0418\u0433\u0440\u043E\u0432\u044B\u0435 \u0434\u0430\u043D\u043D\u044B\u0435 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u044B \u0442\u043E\u043B\u044C\u043A\u043E \u043F\u043E\u0441\u043B\u0435 \u0437\u0430\u0449\u0438\u0449\u0451\u043D\u043D\u043E\u0433\u043E \u0432\u0445\u043E\u0434\u0430 \u0447\u0435\u0440\u0435\u0437 Telegram."))));
     }
     let view;
     switch (screen) {
@@ -2187,7 +2168,7 @@ function App() {
         React.createElement("div", { className: "device-stage" },
             React.createElement("div", { className: 'phone-frame' + (screen === 'splash' ? ' gm-splash-frame' : '') },
                 React.createElement("div", { className: 'phone-scroll ' + ((screen === 'splash') ? 'no-scroll gm-splash-host' : '') }, view),
-                !['splash','intro'].includes(screen) && bottom(),
+                !['splash', 'intro'].includes(screen) && bottom(),
                 React.createElement("div", { className: "home-indicator" })),
             React.createElement("div", { className: "underphone" },
                 React.createElement("span", { className: "demo-pill" }, 'Серверная авторизация · виртуальные GM/CR'),
