@@ -487,7 +487,7 @@ function App(){
  const webapp=(window as any).Telegram?.WebApp;
  const openBot=(ev:any)=>{
    ev?.preventDefault?.();
-   const url='https://t.me/gm_token_test_bot';
+   const url='https://t.me/GM_TOKEN_BOT';
    if(webapp?.openTelegramLink){
      try {webapp.openTelegramLink(url);
        if(typeof webapp.close==='function')window.setTimeout(()=>{try{webapp.close()}catch{}},700);
@@ -865,7 +865,7 @@ function App(){
  React.useEffect(()=>{
   webapp?.ready?.();webapp?.expand?.();
   const init=webapp?.initData;
-  if(!init){setBackendStatus('Открой приложение через @gm_token_test_bot в Telegram');return;}
+  if(!init){setBackendStatus('Открой приложение через @GM_TOKEN_BOT в Telegram');return;}
   let valid=true;
   gmFetchJson('/api/bootstrap',{headers:{Authorization:'tma '+init}},2)
    .then(d=>{if(!valid)return;
@@ -1814,7 +1814,7 @@ function Reward() {
  function Referrals(){
  const e=React.createElement;
  const id=String(webapp?.initDataUnsafe?.user?.id||'');
- const link=id?'https://t.me/gm_token_test_bot?startapp=ref_'+id:'';
+ const link=id?'https://t.me/GM_TOKEN_BOT?startapp=ref_'+id:'';
  const copy=async()=>{
   if(!link){flash('Открой через Telegram, чтобы получить ссылку');return}
   try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(link);
@@ -2018,7 +2018,7 @@ function Support(){
     e('p',null,tr('Ajuda com mineração, caixas, ordens, saldo e login no Telegram.','Допомога з майнінгом, боксами, угодами, балансом і входом у Telegram.','Help with Mining, Boxes, orders, balances and Telegram login.','Поможем разобраться с Mining, боксами, сделками, балансом и входом в Telegram.')))),
   isStaff?e('section',{className:'gm-support-staff-banner gm-premium-card'},
     e('b',null,'Очередь поддержки · '+String(supportTickets.length)),
-    e('p',null,'Новые заявки, включая автопомощь, доступны всем сотрудникам. Чтобы бот присылал уведомления в Telegram, открой чат с @gm_token_test_bot и нажми /start.'),
+    e('p',null,'Новые заявки, включая автопомощь, доступны всем сотрудникам. Чтобы бот присылал уведомления в Telegram, открой чат с @GM_TOKEN_BOT и нажми /start.'),
     undelivered?e('small',null,'Недоставленные уведомления: '+undelivered+' · открой чат с ботом и отправь /start для повторной доставки.'):null):null,
   e('section',{className:'gm-support-form gm-premium-card'},
    e('div',{className:'gm-support-form-head'},icon('info',29),e('span',null,e('b',null,tr('Novo chamado','Нове звернення','New ticket','Новое обращение')),e('small',null,tr('Histórico e respostas salvos no servidor','Історія й відповіді на сервері','Status and replies stored on the server','Ответы и статус сохраняются на сервере')))),
@@ -2272,9 +2272,9 @@ function Streak(){return <>{top('Daily Streak',true,'flame')}<div className="ref
    <div className="auth-brand"><Brand theme={theme} size={78}/><div className="auth-brand-copy"><span>TELEGRAM MINI APP</span><h1 id="auth-title">GM TOKEN</h1></div></div>
    <div className="auth-divider"/>
    <div className="auth-status" role="status"><span className="auth-status-dot" aria-hidden="true"/><div><strong>Требуется вход через Telegram</strong><p>{backendStatus}</p></div></div>
-   <a className="auth-cta" href="https://t.me/gm_token_test_bot" onClick={openBot}>
+   <a className="auth-cta" href="https://t.me/GM_TOKEN_BOT" onClick={openBot}>
     <span className="auth-cta-icon"><Icon name="telegram" theme={theme} size={29}/></span>
-    <span className="auth-cta-copy"><strong>Открыть чат бота</strong><small>@gm_token_test_bot</small></span>
+    <span className="auth-cta-copy"><strong>Открыть чат бота</strong><small>@GM_TOKEN_BOT</small></span>
     <Icon name="chevron-right" theme={theme} size={22}/>
    </a>
    <div className="auth-theme-row"><span>Оформление</span><div className="auth-theme-toggle" role="group" aria-label="Выбор темы">

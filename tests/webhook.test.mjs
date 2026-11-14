@@ -4,7 +4,7 @@ import {makeTelegramWebhook} from '../server/webhook.mjs';
 const secret='gm_token_webhook_test_key_123456';
 test('Telegram webhook setup uses HTTPS and secret header, no token in public URL',async()=>{
  const calls=[];
- const webhook=makeTelegramWebhook({token:'EXAMPLE_TEST_TOKEN',publicUrl:'https://gm-token-test.onrender.com/',webhookSecret:secret,fetchImpl:async(url,options)=>{calls.push({url,options});return {ok:true,json:async()=>({ok:true,result:url.endsWith('getMe')?{username:'gm_token_test_bot'}:{}})}}});
+ const webhook=makeTelegramWebhook({token:'EXAMPLE_TEST_TOKEN',publicUrl:'https://gm-token-test.onrender.com/',webhookSecret:secret,fetchImpl:async(url,options)=>{calls.push({url,options});return {ok:true,json:async()=>({ok:true,result:url.endsWith('getMe')?{username:'GM_TOKEN_BOT'}:{}})}}});
  assert.equal(webhook.validateSecret(secret),true);
  assert.equal(webhook.validateSecret('wrong'),false);
  await webhook.configure();
