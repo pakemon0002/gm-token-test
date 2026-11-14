@@ -628,7 +628,13 @@ function App(){
  const [shopAmount,setShopAmount]=React.useState('');
  const [vaultAmount,setVaultAmount]=React.useState('');
  const [supportText,setSupportText]=React.useState('');
- const [supportTickets,setSupportTickets]=React.useState([]);
+ const [supportTickets,setSupportTickets]=React.useState([] as any[]);
+ const [supportThreads,setSupportThreads]=React.useState({} as Record<string,any[]>);
+ const [supportDrafts,setSupportDrafts]=React.useState({} as Record<string,string>);
+ const [expandedSupportTicket,setExpandedSupportTicket]=React.useState('');
+ const [supportDeliveries,setSupportDeliveries]=React.useState([] as any[]);
+ const [supportCreating,setSupportCreating]=React.useState(false);
+ const supportCreateLock=React.useRef(false);
  const [staffReply,setStaffReply]=React.useState('');
  const [supportCategory,setSupportCategory]=React.useState('Общий вопрос');
  const [liveState,setLiveState]=React.useState(null as any);
@@ -1006,16 +1012,56 @@ function App(){
   setModalText((side==='buy'?'Покупка ':'Продажа ')+nf(n)+' GM. '+(orderType==='limit'?'Лимит '+nf(price)+' CR/GM.':'Market с защитой 3% от проскальзывания.')+' Комиссия при исполнении: 0,5% для каждой стороны. Подтверждение отправляет заявку на сервер.');
   setTradeReady(true);setModal('order');
  };
- const loadTickets=async()=>{
-  try{const r=await fetch('/api/tickets',{headers:{Authorization:'tma '+webapp?.initData}});const x=await r.json();if(!r.ok)throw Error(x.error);setSupportTickets(x.tickets||[])}catch(e:any){flash('Ошибка получения тикетов: '+e.message)}
+ const loadSupportThread=async(ticketId:string)=>{
+  const response=await api('/api/tickets/'+ticketId+'/messages',undefined,true);
+  if(response?.messages)setSupportThreads((old:any)=>({...old,[ticketId]:response.messages||[]}));
+  return response;
  };
- React.useEffect(()=>{if(!demo&&screen==='support')void loadTickets()},[screen,demo]);
+ const loadTickets=async()=>{
+  try{
+   const response=await fetch('/api/tickets',{headers:{Authorization:'tma '+webapp?.initData},cache:'no-store'});
+   const data=await response.json();
+   if(!response.ok)throw Error(data.error||'Поддержка недоступна');
+   setSupportTickets(data.tickets||[]);
+   if(['owner','coowner','moderator'].includes(liveRole)){
+    const notices=await api('/api/tickets/notifications',undefined,true);
+    if(notices?.deliveries)setSupportDeliveries(notices.deliveries);
+   }
+   if(expandedSupportTicket)await loadSupportThread(expandedSupportTicket);
+  }catch(error:any){flash('Ошибка загрузки поддержки: '+String(error?.message||error))}
+ };
+ React.useEffect(()=>{
+  if(demo||screen!=='support')return;
+  void loadTickets();
+  const timer=setInterval(()=>void loadTickets(),25000);
+  return()=>clearInterval(timer);
+ },[screen,demo,liveRole,expandedSupportTicket]);
+ const toggleSupportThread=async(ticketId:string)=>{
+  if(expandedSupportTicket===ticketId){setExpandedSupportTicket('');return;}
+  setExpandedSupportTicket(ticketId);
+  await loadSupportThread(ticketId);
+ };
  const ticketAction=async(id:string,action:string,payload:any={})=>{
-  const x=await adminRequest(`/api/tickets/${id}/${action}`,payload);if(x)loadTickets();
+  const response=await adminRequest(`/api/tickets/${id}/${action}`,payload);
+  if(response){
+   if(action==='reply')setSupportDrafts((old:any)=>({...old,[id]:''}));
+   await loadTickets();
+   await loadSupportThread(id);
+   if(action==='reply')flash('Ответ сохранён');
+  }
  };
  const createTicket=async()=>{
+  if(supportCreateLock.current)return;
   if(supportText.trim().length<10){flash('Опиши проблему минимум в 10 символах');return;}
-  const x=await adminRequest('/api/tickets',{category:supportCategory,body:supportText});if(x){setSupportText('');flash('Обращение создано');await loadTickets()}
+  supportCreateLock.current=true;setSupportCreating(true);
+  try{
+   const response=await adminRequest('/api/tickets',{category:supportCategory,body:supportText});
+   if(response?.ticket){
+    setSupportText('');setExpandedSupportTicket(response.ticket);
+    flash('Обращение создано и сохранено');await loadTickets();
+    await loadSupportThread(response.ticket);
+   }
+  }finally{supportCreateLock.current=false;setSupportCreating(false)}
  };
  const icon=(n:string,size=23,tile=false)=> <Icon name={n} theme={theme} size={size} tile={tile}/>;
  const isLight=theme==='light';
