@@ -460,8 +460,9 @@ function App() {
     const [introStep, setIntroStep] = React.useState(0);
     // Tutorial completion belongs to the authenticated Telegram account, not the device.
     const [authenticatedUserId, setAuthenticatedUserId] = React.useState('');
-    const tutorialKey = (section) => 'gm_tour_v24_' + authenticatedUserId + '_' + section;
-    const onboardingKey = () => authenticatedUserId ? 'gm_intro_v24_' + authenticatedUserId : '';
+    // Old and new bots use the same Mini App origin. Keep their guide completions separate.
+    const tutorialKey = (section) => 'gm_tour_v25_gmtokenapp_' + authenticatedUserId + '_' + section;
+    const onboardingKey = () => authenticatedUserId ? 'gm_intro_v25_gmtokenapp_' + authenticatedUserId : '';
     const telegramLanguage = String(webapp?.initDataUnsafe?.user?.language_code || navigator.language || 'en').toLowerCase().split(/[-_]/)[0];
     const actualLang = locale === 'auto' ? telegramLanguage : locale;
     gmActiveLocale = actualLang;
@@ -477,7 +478,7 @@ function App() {
     const [languageSearch, setLanguageSearch] = React.useState('');
     // Each tutorial entry points at a real, visible control rather than a generic icon.
     const guideCatalog = {
-        home: [['wallet', 'balance', '.gm-home-wallet', 'home.balance'], ['lightning', 'mining', '.gm-home-shortcuts button', 'home.shortcuts'], ['gift', 'boxes', '.gm-home-offer', 'home.reward']],
+        home: [['wallet', 'balance', '.gm-home-wallet', 'home.balance'], ['lightning', 'mining', '.gm-home-shortcuts button', 'home.shortcuts'], ['gift', 'boxes', '.gm-home-offer[data-guide="boxes"]', 'home.reward']],
         mining: [['gm-coin-orbit', 'mining', '.gm-mining-coin-wrap', 'mining.coin'], ['diamond', 'claim', '.gm-mining-claim', 'mining.claim'], ['lightning', 'miningUpgrades', '.gm-mining-upgrades', 'mining.upgrades'], ['coins', 'upgrade', '.gm-upgrades-purchase', 'mining.purchase'], ['clock', 'speed', '.gm-mining-energy', 'mining.storage']],
         trade: [['candlesticks', 'market', '.terminal-quote', 'trade.price'], ['candlesticks', 'market', '.terminal-periods', 'trade.chart'], ['wallet', 'balance', '.terminal-wallet-line', 'trade.balance'], ['coins', 'market', '.terminal-buy-sell', 'trade.actions'], ['shield-check', 'next', '.gm-trade-quick-card', 'trade.quantity'], ['coins', 'next', '.gm-trade-quick-continue', 'trade.review']],
         boxes: [
@@ -554,7 +555,7 @@ function App() {
         const selector = String(step[2] || '');
         let handle;
         const align = () => {
-            const element = document.querySelector(selector);
+            const element = document.querySelector('.phone-scroll')?.querySelector(selector);
             if (!element) {
                 setGuideSpot(null);
                 return;
@@ -570,7 +571,7 @@ function App() {
             const cardTop = (above >= 12 ? above : below + cardHeight <= height - 10 ? below : Math.max(12, height - cardHeight - 12));
             setGuideSpot({ top, left: x, width: right - x, height: spotHeight, cardTop });
         };
-        const element = document.querySelector(selector);
+        const element = document.querySelector('.phone-scroll')?.querySelector(selector);
         element?.scrollIntoView?.({ behavior: 'smooth', block: 'center', inline: 'nearest' });
         const timer = window.setTimeout(align, 320);
         window.addEventListener('resize', align);
@@ -906,6 +907,8 @@ function App() {
                 navStack.current.shift();
         }
         resetGuide();
+        if (route === 'intro')
+            setIntroStep(0);
         setScreen(route);
         setModal('');
         try {
@@ -1304,7 +1307,7 @@ function App() {
             fill: 'none', stroke: theme === 'light' ? '#485465' : '#c3cedc', strokeWidth: 2.5, strokeLinecap: 'round', strokeLinejoin: 'round' }))
             : e('div', { className: 'gm-home-market-empty' }, icon('candlesticks', 21), e('span', null, 'График появится после нескольких сделок'));
         const quick = [['lightning', 'Майнинг', 'mining'], ['gift', 'Боксы', 'boxes'], ['tasks', 'Задания', 'tasks'], ['friends', 'Друзья', 'referrals']];
-        return e('div', { className: 'gm-home-v8' }, e('header', { className: 'gm-home-topline' }, e('div', { className: 'gm-home-brand' }, e(Brand, { theme, size: 37 }), e('div', null, e('b', null, 'GM TOKEN'), e('small', null, 'PREMIUM EDITION'))), e('button', { className: 'gm-home-settings', type: 'button', onClick: () => goto('settings'), 'aria-label': 'Настройки' }, icon('settings', 23))), e('div', { className: 'gm-home-level' }, e('div', null, e('span', null, 'Твой прогресс'), e('b', null, 'Уровень ' + level)), e('div', { className: 'gm-home-level-right' }, nf(wallet.xp, 0) + ' / ' + nf(nextLevel, 0) + ' XP'), e('div', { className: 'gm-home-level-track' }, e('span', { style: { width: progress + '%' } }))), e('section', { className: 'gm-home-wallet gm-premium-card' }, e('div', { className: 'gm-home-wallet-head' }, e('span', null, 'МОЙ БАЛАНС'), e('span', null, icon('shield-check', 16), ' Подтверждён')), e('div', { className: 'gm-home-balance-row' }, e('span', { className: 'gm-home-balance-icon' }, e(Brand, { theme, size: 33 })), e('div', null, e('small', null, 'GM'), e('strong', null, nf(wallet.gm))), e('button', { type: 'button', onClick: () => setGmBalanceMenu(true), 'aria-label': 'Варианты получения GM' }, icon('plus', 21))), e('div', { className: 'gm-home-balance-row' }, e('span', { className: 'gm-home-balance-icon' }, icon('coins', 31)), e('div', null, e('small', null, 'CR'), e('strong', null, nf(wallet.cr))), e('button', { type: 'button', onClick: () => goto('trade'), 'aria-label': 'Перейти на рынок' }, icon('chevron-right', 21)))), e('button', { type: 'button', className: 'gm-home-chart gm-premium-card', onClick: () => goto('trade') }, e('div', { className: 'gm-home-chart-top' }, e('div', null, e('small', null, 'РЫНОК · GM/CR'), e('b', null, liveTicker?.last_price ? nf(liveTicker.last_price / 100) + ' CR' : 'Нет цены')), icon('chevron-right', 21)), spark, e('small', { className: 'gm-home-chart-note' }, 'Только реальные игровые сделки · без искусственного графика')), e('div', { className: 'gm-home-shortcuts' }, quick.map(([img, label, route]) => e('button', { type: 'button', key: route, onClick: () => goto(route), className: 'gm-home-shortcut' }, e('span', null, icon(img, 30, true)), e('b', null, label)))), e('button', { type: 'button', className: 'gm-home-offer gm-premium-card', onClick: () => goto('mining') }, e('span', { className: 'gm-home-offer-coin' }, e(Brand, { theme, size: 51 })), e('span', null, e('b', null, 'Майнинг работает'), e('small', null, nf(miningRate, 0) + ' GM/сутки · накоплено ' + nf(wallet.storage) + ' GM')), icon('chevron-right', 21)), e('button', { type: 'button', className: 'gm-home-offer gm-premium-card', onClick: () => goto('boxes') }, e('span', { className: 'gm-home-offer-coin' }, icon('gift', 45, true)), e('span', null, e('b', null, 'Открывай боксы за POINTS'), e('small', null, 'Твои POINTS: ' + nf(points, 0) + ' · гарантированные награды')), icon('chevron-right', 21)), e('div', { className: 'gm-home-lower' }, e('button', { type: 'button', onClick: () => goto('reward') }, icon('flame', 19), ' Daily Reward', icon('chevron-right', 15)), e('button', { type: 'button', onClick: () => goto('more') }, icon('info', 19), ' Как играть', icon('chevron-right', 15))));
+        return e('div', { className: 'gm-home-v8' }, e('header', { className: 'gm-home-topline' }, e('div', { className: 'gm-home-brand' }, e(Brand, { theme, size: 37 }), e('div', null, e('b', null, 'GM TOKEN'), e('small', null, 'PREMIUM EDITION'))), e('button', { className: 'gm-home-settings', type: 'button', onClick: () => goto('settings'), 'aria-label': 'Настройки' }, icon('settings', 23))), e('div', { className: 'gm-home-level' }, e('div', null, e('span', null, 'Твой прогресс'), e('b', null, 'Уровень ' + level)), e('div', { className: 'gm-home-level-right' }, nf(wallet.xp, 0) + ' / ' + nf(nextLevel, 0) + ' XP'), e('div', { className: 'gm-home-level-track' }, e('span', { style: { width: progress + '%' } }))), e('section', { className: 'gm-home-wallet gm-premium-card' }, e('div', { className: 'gm-home-wallet-head' }, e('span', null, 'МОЙ БАЛАНС'), e('span', null, icon('shield-check', 16), ' Подтверждён')), e('div', { className: 'gm-home-balance-row' }, e('span', { className: 'gm-home-balance-icon' }, e(Brand, { theme, size: 33 })), e('div', null, e('small', null, 'GM'), e('strong', null, nf(wallet.gm))), e('button', { type: 'button', onClick: () => setGmBalanceMenu(true), 'aria-label': 'Варианты получения GM' }, icon('plus', 21))), e('div', { className: 'gm-home-balance-row' }, e('span', { className: 'gm-home-balance-icon' }, icon('coins', 31)), e('div', null, e('small', null, 'CR'), e('strong', null, nf(wallet.cr))), e('button', { type: 'button', onClick: () => goto('trade'), 'aria-label': 'Перейти на рынок' }, icon('chevron-right', 21)))), e('button', { type: 'button', className: 'gm-home-chart gm-premium-card', onClick: () => goto('trade') }, e('div', { className: 'gm-home-chart-top' }, e('div', null, e('small', null, 'РЫНОК · GM/CR'), e('b', null, liveTicker?.last_price ? nf(liveTicker.last_price / 100) + ' CR' : 'Нет цены')), icon('chevron-right', 21)), spark, e('small', { className: 'gm-home-chart-note' }, 'Только реальные игровые сделки · без искусственного графика')), e('div', { className: 'gm-home-shortcuts' }, quick.map(([img, label, route]) => e('button', { type: 'button', key: route, onClick: () => goto(route), className: 'gm-home-shortcut' }, e('span', null, icon(img, 30, true)), e('b', null, label)))), e('button', { type: 'button', className: 'gm-home-offer gm-premium-card', 'data-guide': 'mining', onClick: () => goto('mining') }, e('span', { className: 'gm-home-offer-coin' }, e(Brand, { theme, size: 51 })), e('span', null, e('b', null, 'Майнинг работает'), e('small', null, nf(miningRate, 0) + ' GM/сутки · накоплено ' + nf(wallet.storage) + ' GM')), icon('chevron-right', 21)), e('button', { type: 'button', className: 'gm-home-offer gm-premium-card', 'data-guide': 'boxes', onClick: () => goto('boxes') }, e('span', { className: 'gm-home-offer-coin' }, icon('gift', 45, true)), e('span', null, e('b', null, 'Открывай боксы за POINTS'), e('small', null, 'Твои POINTS: ' + nf(points, 0) + ' · гарантированные награды')), icon('chevron-right', 21)), e('div', { className: 'gm-home-lower' }, e('button', { type: 'button', onClick: () => goto('reward') }, icon('flame', 19), ' Daily Reward', icon('chevron-right', 15)), e('button', { type: 'button', onClick: () => goto('more') }, icon('info', 19), ' Как играть', icon('chevron-right', 15))));
     }
     function Trading() {
         const e = React.createElement;
