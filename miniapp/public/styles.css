@@ -763,8 +763,8 @@ html,body,button,input,textarea,select{font-family:'Exo 2',system-ui,-apple-syst
  50%{transform:scaleX(1.055) translateY(-1px);opacity:1}
 }
 @keyframes gm-flame-halo{
- 0%,100%{transform:scale(.89);opacity:.55}
- 50%{transform:scale(1.14);opacity:.95}
+ 0%,100%{transform:scale(.89)}
+ 50%{transform:scale(1.14)}
 }
 @keyframes gm-flame-spark{
  0%,24%{transform:translateY(8px) scale(.6);opacity:0}
