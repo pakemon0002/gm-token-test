@@ -242,6 +242,19 @@ const routes=async(req,res)=>{
    const rows=mod?stmt("SELECT * FROM tickets ORDER BY CASE status WHEN 'open' THEN 1 WHEN 'auto_support' THEN 2 WHEN 'in_review' THEN 3 WHEN 'resolved' THEN 4 ELSE 5 END, CASE priority WHEN 'P1' THEN 1 WHEN 'P2' THEN 2 ELSE 3 END,created_at DESC LIMIT 100").all():stmt('SELECT * FROM tickets WHERE user_id=? ORDER BY created_at DESC LIMIT 100').all(id);
    return send(res,200,{tickets:rows});
   }
+  if(p==='/api/tickets/notifications'&&verb==='GET'){
+   roleCheck({id},['owner','coowner','moderator']);
+   return send(res,200,{deliveries:supportNotifier.statusForStaff(id)});
+  }
+  const transcriptRoute=p.match(/^\/api\/tickets\/([a-f0-9-]+)\/messages$/);
+  if(transcriptRoute&&verb==='GET'){
+   const ticket=stmt('SELECT id,user_id FROM tickets WHERE id=?').get(transcriptRoute[1]);
+   if(!ticket)return fail(res,404,'ticket not found');
+   if(ticket.user_id!==id&&!['owner','coowner','moderator'].includes(current.role))
+    return fail(res,403,'permission denied');
+   const messages=stmt('SELECT id,ticket_id,author,body,created_at FROM ticket_messages WHERE ticket_id=? ORDER BY created_at ASC,id ASC LIMIT 200').all(ticket.id);
+   return send(res,200,{ticket:ticket.id,messages});
+  }
   if(p==='/api/tickets'&&verb==='POST'){
    const data=await readBody(req);const body=String(data.body||'').trim();const category=String(data.category||'Общий вопрос').slice(0,45);
    if(body.length<10||body.length>3000)throw Error('description length 10..3000');
@@ -286,21 +299,37 @@ const routes=async(req,res)=>{
     const body=String(data.body||'').trim();if(body.length<1||body.length>3000)throw Error('invalid reply');
     if(stmt('SELECT COUNT(*) AS n FROM ticket_messages WHERE author=? AND created_at>?').get(id,t-60).n>=(isMod?30:12))throw Error('support reply rate limit reached');
     if(isMod&&ticket.assigned_to!==id&&current.role!=='owner'&&current.role!=='coowner')throw Error('ticket is not assigned to you');
-    tx(()=>{stmt('INSERT INTO ticket_messages(id,ticket_id,author,body,created_at) VALUES(?,?,?,?,?)').run(crypto.randomUUID(),ticketId,id,body,t);stmt('UPDATE tickets SET first_reply_at=COALESCE(first_reply_at,?),updated_at=?,status=? WHERE id=?').run(isMod?t:null,t,isMod?'in_review':'open',ticketId)});
-    if(isMod)sendTelegram(ticket.user_id,'GM TOKEN Support: новый ответ в обращении '+ticketId);
-    else for(const ownerId of new Set(ownerIds)){if(ownerId!==id)sendTelegram(ownerId,'GM TOKEN Support: игрок ответил в обращении #'+ticketId.slice(0,8)+'\n'+body.slice(0,300));}
+    const messageId=crypto.randomUUID();
+    tx(()=>{
+     stmt('INSERT INTO ticket_messages(id,ticket_id,author,body,created_at) VALUES(?,?,?,?,?)').run(messageId,ticketId,id,body,t);
+     stmt('UPDATE tickets SET first_reply_at=COALESCE(first_reply_at,?),updated_at=?,status=? WHERE id=?')
+      .run(isMod?t:null,t,isMod?'in_review':'open',ticketId);
+     if(isMod)supportNotifier.queuePlayer(ticketId,'reply:'+messageId,ticket.user_id,
+       'GM TOKEN · новый ответ поддержки по обращению #'+ticketId.slice(0,8)+'. Открой Mini App → Поддержка.');
+     else supportNotifier.queueStaff(ticketId,'reply:'+messageId,
+       'GM TOKEN · игрок ответил в обращении #'+ticketId.slice(0,8)+'. Открой Mini App → Поддержка.',ticket.user_id);
+    });
     return send(res,200,{sent:true});
    }
    if(action==='resolve'){
     if(!isMod)throw Error('moderator role required');
     if(current.role==='moderator'&&ticket.assigned_to!==id)throw Error('ticket is not assigned to you');
     if(ticket.priority!=='P3'&&current.role==='moderator')throw Error('serious tickets require owner review');
-    stmt('UPDATE tickets SET status=\'resolved\',resolved_at=?,updated_at=? WHERE id=?').run(t,t,ticketId);log(id,'ticket_resolved',{ticket:ticketId,user:ticket.user_id});sendTelegram(ticket.user_id,'GM TOKEN Support: обращение решено '+ticketId);return send(res,200,{resolved:true,autoCloseAfterHours:ticket.priority==='P3'?48:null});
+    tx(()=>{
+     stmt("UPDATE tickets SET status='resolved',resolved_at=?,updated_at=? WHERE id=?").run(t,t,ticketId);
+     log(id,'ticket_resolved',{ticket:ticketId,user:ticket.user_id});
+     supportNotifier.queuePlayer(ticketId,'resolved:'+t,ticket.user_id,
+       'GM TOKEN · обращение #'+ticketId.slice(0,8)+' отмечено как решённое. История доступна в Mini App → Поддержка.');
+    });
+    return send(res,200,{resolved:true,autoCloseAfterHours:ticket.priority==='P3'?48:null});
    }
    if(action==='reopen'){
     if(!isOwner)throw Error('only ticket author can reopen');
-    stmt('UPDATE tickets SET status=\'open\',resolved_at=NULL,assigned_to=NULL,claimed_at=NULL,first_reply_at=NULL,updated_at=? WHERE id=?').run(t,ticketId);
-    for(const ownerId of new Set(ownerIds)){if(ownerId!==id)sendTelegram(ownerId,'GM TOKEN Support: обращение #'+ticketId.slice(0,8)+' открыто повторно.');}
+    tx(()=>{
+     stmt("UPDATE tickets SET status='open',resolved_at=NULL,assigned_to=NULL,claimed_at=NULL,first_reply_at=NULL,updated_at=? WHERE id=?").run(t,ticketId);
+     supportNotifier.queueStaff(ticketId,'reopened:'+t,
+       'GM TOKEN · обращение #'+ticketId.slice(0,8)+' открыто повторно. Открой Mini App → Поддержка.',id);
+    });
     return send(res,200,{reopened:true});
    }
   }
@@ -544,6 +573,9 @@ if (process.env.RENDER === 'true' && process.env.npm_lifecycle_event === 'start'
     process.exit(1);
   }
 }
+// Restore pending notices for existing unresolved requests after an upgrade.
+// UNIQUE(ticket_id,recipient_id,event) prevents duplicate startup queue entries.
+try {supportNotifier.queueExisting()} catch(e) {console.error('Support backlog notification init failed:',e?.message)}
 app.listen(port,'0.0.0.0',()=>{
  console.log(`GM TOKEN server on :${port} | ${secret?'Telegram auth enabled':'Telegram auth requires BOT_TOKEN'} | ${isDev?'development':'production'}`);
  if(telegramWebhook)void telegramWebhook.configure().catch(err=>console.error('Telegram webhook setup failed:',err?.message));
