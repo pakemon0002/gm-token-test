@@ -502,8 +502,9 @@ function App(){
  const [introStep,setIntroStep]=React.useState(0);
  // Tutorial completion belongs to the authenticated Telegram account, not the device.
  const [authenticatedUserId,setAuthenticatedUserId]=React.useState('');
- const tutorialKey=(section:string)=>'gm_tour_v24_'+authenticatedUserId+'_'+section;
- const onboardingKey=()=>authenticatedUserId?'gm_intro_v24_'+authenticatedUserId:'';
+ // Old and new bots use the same Mini App origin. Keep their guide completions separate.
+ const tutorialKey=(section:string)=>'gm_tour_v25_gmtokenapp_'+authenticatedUserId+'_'+section;
+ const onboardingKey=()=>authenticatedUserId?'gm_intro_v25_gmtokenapp_'+authenticatedUserId:'';
  const telegramLanguage=String(webapp?.initDataUnsafe?.user?.language_code||navigator.language||'en').toLowerCase().split(/[-_]/)[0];
  const actualLang=locale==='auto'?telegramLanguage:locale;
  gmActiveLocale=actualLang;
@@ -519,7 +520,7 @@ function App(){
  const [languageSearch,setLanguageSearch]=React.useState('');
  // Each tutorial entry points at a real, visible control rather than a generic icon.
  const guideCatalog:any={
-  home:[['wallet','balance','.gm-home-wallet','home.balance'],['lightning','mining','.gm-home-shortcuts button','home.shortcuts'],['gift','boxes','.gm-home-offer','home.reward']],
+  home:[['wallet','balance','.gm-home-wallet','home.balance'],['lightning','mining','.gm-home-shortcuts button','home.shortcuts'],['gift','boxes','.gm-home-offer[data-guide="boxes"]','home.reward']],
   mining:[['gm-coin-orbit','mining','.gm-mining-coin-wrap','mining.coin'],['diamond','claim','.gm-mining-claim','mining.claim'],['lightning','miningUpgrades','.gm-mining-upgrades','mining.upgrades'],['coins','upgrade','.gm-upgrades-purchase','mining.purchase'],['clock','speed','.gm-mining-energy','mining.storage']],
   trade:[['candlesticks','market','.terminal-quote','trade.price'],['candlesticks','market','.terminal-periods','trade.chart'],['wallet','balance','.terminal-wallet-line','trade.balance'],['coins','market','.terminal-buy-sell','trade.actions'],['shield-check','next','.gm-trade-quick-card','trade.quantity'],['coins','next','.gm-trade-quick-continue','trade.review']],
   boxes:[
@@ -589,7 +590,7 @@ function App(){
   const selector=String(step[2]||'');
   let handle:any;
   const align=()=>{
-   const element=document.querySelector(selector) as HTMLElement|null;
+   const element=document.querySelector('.phone-scroll')?.querySelector(selector) as HTMLElement|null;
    if(!element){setGuideSpot(null);return}
    const rect=element.getBoundingClientRect();
    const height=window.visualViewport?.height||window.innerHeight;
@@ -602,7 +603,7 @@ function App(){
    const cardTop=(above>=12?above:below+cardHeight<=height-10?below:Math.max(12,height-cardHeight-12));
    setGuideSpot({top,left:x,width:right-x,height:spotHeight,cardTop});
   };
-  const element=document.querySelector(selector) as HTMLElement|null;
+  const element=document.querySelector('.phone-scroll')?.querySelector(selector) as HTMLElement|null;
   element?.scrollIntoView?.({behavior:'smooth',block:'center',inline:'nearest'});
   const timer=window.setTimeout(align,320);
   window.addEventListener('resize',align);
@@ -845,7 +846,7 @@ function App(){
   setGmBalanceMenu(false);
   const route=String(s||'home');
   if(route!==screen){navStack.current.push(screen);if(navStack.current.length>30)navStack.current.shift();}
-  resetGuide();setScreen(route);setModal('');
+  resetGuide();if(route==='intro')setIntroStep(0);setScreen(route);setModal('');
   try{history.pushState({gmScreen:route},'','#'+route)}catch{}
   document.querySelector('.phone-scroll')?.scrollTo(0,0);
  };
@@ -1117,12 +1118,12 @@ function App(){
    e('div',{className:'gm-home-shortcuts'},quick.map(([img,label,route])=>
     e('button',{type:'button',key:route,onClick:()=>goto(route),className:'gm-home-shortcut'},
       e('span',null,icon(img,30,true)),e('b',null,label)))),
-   e('button',{type:'button',className:'gm-home-offer gm-premium-card',onClick:()=>goto('mining')},
+   e('button',{type:'button',className:'gm-home-offer gm-premium-card','data-guide':'mining',onClick:()=>goto('mining')},
     e('span',{className:'gm-home-offer-coin'},e(Brand,{theme,size:51})),
     e('span',null,e('b',null,'Майнинг работает'),
       e('small',null,nf(miningRate,0)+' GM/сутки · накоплено '+nf(wallet.storage)+' GM')),
     icon('chevron-right',21)),
-   e('button',{type:'button',className:'gm-home-offer gm-premium-card',onClick:()=>goto('boxes')},
+   e('button',{type:'button',className:'gm-home-offer gm-premium-card','data-guide':'boxes',onClick:()=>goto('boxes')},
     e('span',{className:'gm-home-offer-coin'},icon('gift',45,true)),
     e('span',null,e('b',null,'Открывай боксы за POINTS'),
       e('small',null,'Твои POINTS: '+nf(points,0)+' · гарантированные награды')),
