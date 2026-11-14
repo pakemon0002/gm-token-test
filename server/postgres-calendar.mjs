@@ -49,6 +49,14 @@ export async function calendarStatus(id) {
        WHERE player_id=$1 AND currency='HP'`,
       [playerId],
     );
+    // Legacy Daily Reward and Autumn Calendar share the same UTC-day lock.
+    // Expose that day's state so the client never offers an impossible claim.
+    const daily = await client.query(
+      `SELECT 1 FROM gm_game.daily_claim
+       WHERE user_id=$1 AND day=(now() at time zone 'UTC')::date::text
+       LIMIT 1`,
+      [playerId],
+    );
     const availableBoxes = {bronze:0,silver:0,gold:0};
     for (const row of inventory.rows) {
       if (Object.hasOwn(availableBoxes,row.tier)) {
@@ -60,7 +68,8 @@ export async function calendarStatus(id) {
       progress:progress.rows[0]??null,
       schedule:schedule.rows,
       inventory:availableBoxes,
-      hp:Number(hp.rows[0]?.balance??0)
+      hp:Number(hp.rows[0]?.balance??0),
+      daily_claimed_today:daily.rows.length>0
     };
   });
 }
