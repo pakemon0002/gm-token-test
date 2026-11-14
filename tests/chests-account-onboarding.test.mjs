@@ -17,7 +17,7 @@ test('new Telegram accounts do not inherit another account onboarding completion
  assert.ok(s.includes("store.setItem(tutorialKey(guideScreen),'1')"));
  assert.ok(s.includes("store.getItem(onboardingKey())"));
  assert.ok(s.includes("store.setItem(onboardingKey(),'1')"));
- assert.ok(s.includes("resetGuide();setScreen(route);"),
+ assert.ok(s.includes("resetGuide();if(route==='intro')setIntroStep(0);setScreen(route);"),
   'navigation between screens must not prematurely mark unfinished tours as completed');
  // The same WebView should have independent completion keys per Telegram account.
  const key=(id,section)=>'gm_tour_v25_gmtokenapp_'+id+'_'+section;
