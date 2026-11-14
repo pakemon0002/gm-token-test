@@ -242,7 +242,7 @@ const EXTRA_LANGUAGE:Record<string,Record<string,string>> = {
  "МОЙ БАЛАНС":{pt:"MEU SALDO",uk:"МІЙ БАЛАНС",en:"MY BALANCE"},
  "Перейти в Mining":{pt:"Abrir mineração",uk:"Перейти до майнінгу",en:"Go to mining"},
  "Перейти на рынок":{pt:"Abrir mercado",uk:"Перейти на ринок",en:"Go to market"},
- "РЫНОК · ТЕСТОВЫЙ GM/CR":{pt:"MERCADO · TESTE GM/CR",uk:"РИНОК · ТЕСТОВИЙ GM/CR",en:"MARKET · TEST GM/CR"},
+ "РЫНОК · ТЕСТОВЫЙ GM/CR":{ru:"ИГРОВОЙ РЫНОК GM/CR",pt:"MERCADO GM/CR",uk:"ІГРОВИЙ РИНОК GM/CR",en:"IN-GAME GM/CR MARKET"},
  "Нет цены":{pt:"Preço indisponível",uk:"Немає ціни",en:"No price"},
  "Только реальные игровые сделки · без искусственного графика":{pt:"Somente negociações reais do jogo",uk:"Лише справжні ігрові угоди",en:"Only real in-game trades"},
  "График появится после нескольких сделок":{pt:"Gráfico disponível após algumas negociações",uk:"Графік з'явиться після кількох угод",en:"Chart appears after some trades"},
@@ -524,7 +524,7 @@ function App(){
   'mining.upgrades':{ru:'Здесь показаны 200 уровней, цена каждого и бонус к скорости. По договорённости уровни будут связаны с подтверждённым внешним кошельком. Пока контракт GM не проверен, оплата и покупка отключены, игровые GM не списываются.',uk:'Тут 200 рівнів, ціни та бонуси. Оплата через зовнішній гаманець поки недоступна — контракт GM ще не підтверджений.',pt:'Aqui estão 200 níveis e seus bônus. Compras com carteira externa estão desativadas até verificar o contrato GM.',en:'Explore all 200 levels and bonuses. Wallet-based purchases remain disabled until the GM contract is verified.'},
   'mining.purchase':{ru:'Это кнопка перехода к следующему уровню. Пока подтверждение внешних GM не настроено, она недоступна. Никаких игровых GM здесь списывать нельзя; после проверки контракта будет показан понятный способ получения улучшения.',uk:'Це кнопка наступного рівня. До перевірки контракту вона неактивна й не списує ігрові GM.',pt:'Este botão será usado para subir de nível. Fica desativado até a verificação do contrato GM; GM do jogo não serão gastos.',en:'This is the upgrade control. It remains disabled until external GM ownership can be verified; no in-game GM is charged.'},
   'mining.storage':{ru:'Полоса показывает, сколько GM накоплено относительно вместимости. Когда хранилище заполнено, новые начисления останавливаются до сбора. Ниже указана текущая скорость за час.',uk:'Смуга показує наповнення сховища. Коли воно повне, зберіть GM, щоб звільнити місце.',pt:'A barra mostra o armazenamento atual. Colete GM para liberar espaço quando estiver cheio.',en:'The bar shows storage capacity. Claim stored GM when the container is full.'},
-  'trade.price':{ru:'Здесь указана рыночная цена GM/CR. Для тестового рынка она берётся из реально исполненных игровых заявок; мы не рисуем вымышленные сделки.',uk:'Тут ціна GM/CR за виконаними ігровими угодами, без штучних свічок.',pt:'O preço GM/CR vem de negociações reais dentro do jogo, sem dados inventados.',en:'The GM/CR price reflects executed in-game trades; no synthetic market data.'},
+  'trade.price':{ru:'Здесь указана рыночная цена GM/CR. Она берётся из исполненных игровых заявок; график не содержит вымышленных сделок.',uk:'Тут ціна GM/CR за виконаними ігровими угодами, без штучних свічок.',pt:'O preço GM/CR vem de negociações reais dentro do jogo, sem dados inventados.',en:'The GM/CR price reflects executed in-game trades; no synthetic market data.'},
   'trade.chart':{ru:'Выбирай интервал свечей — от минуты до дня. График показывает историю исполненных игровых сделок, а пустые интервалы остаются пустыми.',uk:'Обери інтервал від хвилини до дня. Порожні періоди не домальовуються.',pt:'Escolha o intervalo do gráfico. Períodos sem negociações permanecem vazios.',en:'Choose a candle interval. Periods without executed in-game trades stay empty.'},
   'trade.balance':{ru:'Тут доступны твои игровые GM и CR. Открытые заявки могут резервировать часть средств; перед отправкой заявки проверь остаток.',uk:'Тут доступні ігрові GM і CR. Відкриті ордери можуть резервувати кошти.',pt:'Aqui estão seus GM e CR do jogo. Ordens abertas podem reservar saldo.',en:'Your in-game GM and CR balances are shown here. Open orders reserve funds.'},
   'trade.actions':{ru:'Выбери «Купить GM» или «Продать GM». Кнопки переключают форму ниже, не отправляя заявку. Это тренировочный игровой рынок, не биржа настоящих денег.',uk:'Обери «Купити» або «Продати». Перемикач змінює форму, але нічого не надсилає.',pt:'Escolha Comprar ou Vender. Os botões apenas alternam o formulário, sem enviar ordem.',en:'Select Buy or Sell. These buttons only switch the form; they do not place an order.'},
@@ -1082,7 +1082,7 @@ function App(){
   const quickPriceCents=Number((pre?liveTicker?.indicative?.price:side==='buy'?liveTicker?.best_ask:liveTicker?.best_bid)||liveTicker?.last_price||0);
   const quickQty=Number(String(amount).replace(',','.'));
   const quickTotal=Number.isFinite(quickQty)&&quickQty>0&&quickPriceCents>0?nf(quickQty*quickPriceCents/100,2)+' CR':'—';
-  const tradeName=pre?'PREMARKET':liveTicker?.trade_test_mode?'TEST SPOT':'SPOT';
+  const tradeName=pre?'PREMARKET':liveTicker?.trade_test_mode?'ИГРОВОЙ SPOT':'SPOT';
   const timeframe=['1m','5m','15m','1h','4h','1d'];
   const tabNames=[['book','Стакан'],['recent','Сделки'],['orders','Мои ордера']];
   const depthRows=(orders,kind)=>orders.length?
@@ -2027,7 +2027,7 @@ function AdminTestGrants(){
  if(!demo&&!isOwner) return <>{top('Admin Panel',true,'shield-check')}<div className="empty-state">{icon('shield-check',70,true)}<h2>Доступ ограничен</h2><p>Только Owner и Co-Owner могут использовать административную панель. Роли проверяются сервером.</p></div></>;
  return <>{top('Admin Panel',true,'settings')}<div className="admin-banner pearl-card">{icon('crown',49,true)}<div><b>{liveRole.toUpperCase()}</b><small>Вход подтверждён Telegram; критические операции требуют TOTP</small></div></div>
  <div className="admin-numbers">{[['Users',adminStats?.users??'—'],['Orders',adminStats?.orders??'—'],['Trades (24h)',adminStats?.trades_24h??'—'],['Open tickets',adminStats?.open_tickets??'—']].map(([a,b])=><div className="pearl-card" key={a}><small>{a}</small><b>{b}</b><small>Серверные данные</small></div>)}</div>
- {AdminTestGrants()}
+ {liveState?.config?.test_economy?AdminTestGrants():null}
  {AdminTaskCatalog()}
  <h3 className="section-title">Управление</h3>
  <div className="admin-actions pearl-card"><button onClick={async()=>{const x=await adminRequest('/api/admin/team');if(x)setAdminTeam(x.team||[])}}>{icon('friends',21)} Обновить список ролей</button><button onClick={async()=>{const x=await adminRequest('/api/admin/pools');if(x)setAdminFunds(x.pools||[]);const st=await adminRequest('/api/admin/stats');if(st)setAdminStats(st)}}>{icon('database',21)} Остатки фондов</button></div>
@@ -2159,7 +2159,7 @@ function Streak(){return <>{top('Daily Streak',true,'flame')}<div className="ref
     <button type="button" className={theme==='light'?'active':''} aria-pressed={theme==='light'} onClick={()=>setTheme('light')}><Icon name="diamond" theme={theme} size={17}/>Светлая</button>
     <button type="button" className={theme==='dark'?'active':''} aria-pressed={theme==='dark'} onClick={()=>setTheme('dark')}><Icon name="gm-coin-orbit" theme={theme} size={17}/>Тёмная</button>
    </div></div>
-   <div className="auth-privacy"><Icon name="shield-check" theme={theme} size={22}/><span>Игровые данные появятся только после защищённого входа. Демобалансов здесь нет.</span></div>
+   <div className="auth-privacy"><Icon name="shield-check" theme={theme} size={22}/><span>Игровые данные доступны только после защищённого входа через Telegram.</span></div>
   </section>
  </main>}
  let view:any;
