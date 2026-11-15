@@ -450,8 +450,8 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
    return once(op(),id,'box_open',()=>{
     const table=JSON.parse(v('box_rewards_json'));
     const kind=String(body.kind||'').toLowerCase();
+    if(!Object.hasOwn(BOX_POINT_COSTS,kind))throw Error('invalid GM Box type');
     const unitCost=BOX_POINT_COSTS[kind];
-    if(!unitCost)throw Error('invalid GM Box type');
     const count=body.count===undefined?1:body.count;
     if(!Number.isInteger(count)||![1,3,5,10].includes(count))throw Error('invalid GM Box opening count');
     if(!['bronze','silver','gold'].every(x=>Number.isSafeInteger(table[x])&&table[x]>0))
