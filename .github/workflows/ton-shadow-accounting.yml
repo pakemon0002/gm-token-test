@@ -26,6 +26,8 @@ jobs:
         run: node --check server/ton-shadow-projection.mjs
       - name: Verify funded transfers and no synthetic mint
         run: node --test tests/ton-shadow-projection.test.mjs
+      - name: Reject Mainnet and fake Jetton Master in TON Testnet preflight
+        run: node --test tests/ton-testnet-preflight.test.mjs
   postgres-shadow:
     name: PostgreSQL ledger negative tests (ephemeral database only)
     runs-on: ubuntu-latest
