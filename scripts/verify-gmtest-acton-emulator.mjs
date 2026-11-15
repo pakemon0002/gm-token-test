@@ -81,9 +81,15 @@ assert.equal(process.env.JETTON_DESCRIPTION,
  'Testnet disclaimer must be explicit in CI');
 const minter=read('contracts/JettonMinter.tolk');
 const wallet=read('contracts/JettonWallet.tolk');
-assert.ok(minter.length>2000&&wallet.length>2000,'Official contract source is suspiciously small');
+assert.ok(minter.length>2000&&wallet.length>2000,'Jetton contract source is suspiciously small');
+assert.ok(minter.includes('GMTEST_MAX_OUTSTANDING_RAW = 150000000000000000'),'GMTEST 150m limit absent');
+assert.ok(minter.includes('throw Errors.MintCapExceeded'),'TVM cap enforcement absent');
+assert.ok(minter.includes('throw Errors.UpgradeDisabled'),'Admin-upgrade lock absent');
+assert.ok(!minter.includes('contract.setCodePostponed('),'Admin can bypass cap by replacing code');
+assert.ok(existsSync(join(project,'tests/gmtest-cap.test.tolk')),'Dedicated cap tests missing');
 assert.ok(!process.env.TON_PRIVATE_KEY&&!process.env.TON_MNEMONIC&&!process.env.JETTON_ADMIN_ADDRESS,'Contract emulator MUST NOT receive wallet secrets');
 console.info('GMTEST metadata: verified; official JettonMinter/Wallet source: present');
 console.info('Acton emulator security scenarios present:',expectedTestNames.reduce((n,x)=>n+x[1].length,0));
-console.info('This does not impose the proposed 150M cap on the official Jetton contract; that requires separate audited design.');
+console.info('Local GMTEST variant: 150m maximum outstanding supply plus blocked admin upgrades; not a lifetime issuance counter.');
+console.info('Custom logic has NOT undergone independent contract security audit or on-chain deployment.');
 console.info('No network deployment or wallet signing requested.');
