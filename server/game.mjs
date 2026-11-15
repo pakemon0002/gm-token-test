@@ -412,7 +412,7 @@ const gameGmUpgradesEnabled=()=>['game_gm','virtual_test'].includes(process.env.
    ensure(id);settle();
    return once(op(),id,'mining_upgrade',()=>{
     const state=upgradeState(id);
-    if(!gameGmUpgradesEnabled())throw Error('in-game GM upgrades are disabled; real token payments have not been integrated');
+    if(!gameGmUpgradesEnabled())throw Error('wallet-backed upgrades are not enabled; in-game GM purchases are disabled until launch configuration is approved');
     if(state.level>=MAX_MINING_UPGRADE_LEVEL)throw Error('maximum mining upgrade level reached');
     if(!Number.isInteger(body.level)||body.level!==state.level+1)throw Error('upgrade levels must be purchased sequentially');
     const costCents=miningUpgradeCost(body.level)*100;
