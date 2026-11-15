@@ -20,7 +20,7 @@ function initData() {
 test('mining upgrades: atomic purchase, idempotency, sequential levels, no XP overwrite',async t=>{
  const temp=mkdtempSync(join(tmpdir(),'gm-upgrades-')),dbPath=join(temp,'gm.sqlite');
  const port=37000+Math.floor(Math.random()*1000),base='http://127.0.0.1:'+port;
- const env={...process.env,BOT_TOKEN:BOT,PORT:String(port),DB_PATH:dbPath,GM_MINING_FAST_TRACK:'0',GM_ADMIN_TEST_GRANTS:'0',GM_UPGRADE_PAYMENT_MODE:'virtual_test'};
+ const env={...process.env,BOT_TOKEN:BOT,PORT:String(port),DB_PATH:dbPath,GM_MINING_FAST_TRACK:'0',GM_ADMIN_TEST_GRANTS:'0',GM_UPGRADE_PAYMENT_MODE:'game_gm'};
  const server=spawn(process.execPath,['--experimental-sqlite','server/index.mjs'],{cwd:new URL('..',import.meta.url).pathname,env,stdio:'ignore'});
  t.after(()=>{server.kill();rmSync(temp,{recursive:true,force:true})});
  let ready=false;for(let i=0;i<100;i++){try{if((await fetch(base+'/api/health')).ok){ready=true;break}}catch{}await new Promise(r=>setTimeout(r,50))}
@@ -32,6 +32,8 @@ test('mining upgrades: atomic purchase, idempotency, sequential levels, no XP ov
  assert.equal((await request('/api/bootstrap')).status,200);
  const before=await request('/api/game/status');
  assert.equal(before.body.mining.upgrade.level,1);
+ assert.equal(before.body.mining.upgrade.payment_mode,'game_gm','upgrades must be bought with earned game GM, not external coins');
+ assert.equal(before.body.mining.upgrade.purchasable,true);
  const rateBefore=before.body.mining.rate_cents_day;
  assert.equal(before.body.mining.upgrade.bonus_pct,5);
  const list=await request('/api/mining/upgrades');
