@@ -71,10 +71,6 @@ jobs:
           node-version: '22.16.0'
       - name: Install test-only Node PostgreSQL driver
         run: npm install --no-audit --no-fund --ignore-scripts
-      - name: Check concurrent overspend, replay and dropped session
-        env:
-          TON_SHADOW_CI_POSTGRES: postgres://test_only:local_ci_password@127.0.0.1:5432/gm_shadow_ci
-        run: node scripts/ton-shadow-concurrency-ci.mjs
 
       - name: Initialize real gm_game schema from existing PostgreSQL migration
         shell: bash
@@ -84,3 +80,8 @@ jobs:
         env:
           TON_SHADOW_CI_POSTGRES: postgres://test_only:local_ci_password@127.0.0.1:5432/gm_shadow_ci
         run: node scripts/ton-shadow-stage-bridge-ci.mjs
+
+      - name: Check concurrent overspend, replay and dropped session
+        env:
+          TON_SHADOW_CI_POSTGRES: postgres://test_only:local_ci_password@127.0.0.1:5432/gm_shadow_ci
+        run: node scripts/ton-shadow-concurrency-ci.mjs
