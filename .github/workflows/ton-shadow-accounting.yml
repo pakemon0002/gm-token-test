@@ -6,6 +6,8 @@ on:
     branches: [main]
     paths:
       - 'server/ton-shadow-projection.mjs'
+      - 'server/ton-reserve-diagnostic.mjs'
+      - 'tests/ton-reserve-diagnostic.test.mjs'
       - 'tests/ton-shadow-projection.test.mjs'
       - 'docs/ton-v4/**'
       - '.github/workflows/ton-shadow-accounting.yml'
@@ -30,6 +32,8 @@ jobs:
         run: npm install --no-audit --no-fund --ignore-scripts
       - name: Reject Mainnet and fake Jetton Master in TON Testnet preflight
         run: node --test tests/ton-testnet-preflight.test.mjs
+      - name: Fail closed on fake reserve attestations, double-counted wallets or unfunded game GM
+        run: node --test tests/ton-reserve-diagnostic.test.mjs
       - name: Validate GMTEST supply, metadata, network and deployment guard
         run: |
           node --test tests/gm-testnet-release.test.mjs
