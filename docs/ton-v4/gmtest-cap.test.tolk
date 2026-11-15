@@ -140,6 +140,54 @@ get fun `test GMTEST immutable supply: full mint then revoke admin, burn cannot 
     expect(wallet.getJettonBalance()).toEqual(GMTEST_CAP - amountToBurn);
 }
 
+get fun `test GMTEST immutable admin: pending successor cannot claim after authority revoked`() {
+    val (minter, deployer, notDeployer) = setupTest();
+    val pending = minter.sendChangeMinterAdmin(
+        deployer.address,
+        0,
+        notDeployer.address,
+        { bounce: false, value: grams("0.05") },
+    );
+    expect(pending).toHaveSuccessfulTx<ChangeMinterAdmin>({
+        from: deployer.address,
+        to: minter.address,
+    });
+    expect(minter.getAdminAddress()).toEqual(deployer.address);
+    val revoke = minter.sendDropMinterAdmin(
+        deployer.address,
+        0,
+        { bounce: false, value: grams("0.05") },
+    );
+    expect(revoke).toHaveSuccessfulTx<DropMinterAdmin>({
+        from: deployer.address,
+        to: minter.address,
+    });
+    expect(minter.getAdminAddress()).toEqual(null);
+    val claim = minter.sendClaimMinterAdmin(
+        notDeployer.address,
+        0,
+        { bounce: false, value: grams("0.05") },
+    );
+    expect(claim).toHaveFailedTx<ClaimMinterAdmin>({
+        from: notDeployer.address,
+        to: minter.address,
+        exitCode: 7,
+    });
+    expect(minter.getAdminAddress()).toEqual(null);
+    val regain = minter.sendChangeMinterAdmin(
+        deployer.address,
+        0,
+        deployer.address,
+        { bounce: false, value: grams("0.05") },
+    );
+    expect(regain).toHaveFailedTx<ChangeMinterAdmin>({
+        from: deployer.address,
+        to: minter.address,
+        exitCode: 7,
+    });
+    expect(minter.getAdminAddress()).toEqual(null);
+}
+
 get fun `test GMTEST cap: dropped admin cannot mint`() {
     val (minter, deployer, _) = setupTest();
     val dropped = minter.sendDropMinterAdmin(
