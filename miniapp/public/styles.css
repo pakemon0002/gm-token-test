@@ -727,6 +727,7 @@ html,body,button,input,textarea,select{font-family:'Exo 2',system-ui,-apple-syst
 .gm-streak-day-mark:after{content:"";position:absolute;inset:4px;border:1px solid #aabbd24b;border-radius:13px;pointer-events:none}
 .gm-streak-day-mark>b{font:850 clamp(19px,5vw,25px) 'Montserrat',Inter,sans-serif;letter-spacing:-.05em;line-height:1.15;white-space:nowrap}
 .gm-streak-day-mark>small{font:800 8px Inter,sans-serif;letter-spacing:.13em;color:#687992}
+.theme-light .gm-streak-day-mark{background:linear-gradient(145deg,#fff,#dce5f2);border-color:#bfcbdc}
 .theme-dark .gm-streak-day-mark{color:#f0f3f8;background:linear-gradient(145deg,#566175,#293240 76%,#1c2430);border-color:#677589;box-shadow:inset 0 1px 1px #ffffff33,0 6px 14px #0006}
 .theme-dark .gm-streak-day-mark:after{border-color:#cdd6ea20}
 .theme-dark .gm-streak-day-mark>small{color:#acb9ca}
