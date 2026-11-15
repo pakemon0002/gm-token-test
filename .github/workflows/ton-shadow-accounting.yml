@@ -34,6 +34,15 @@ jobs:
         run: |
           node --test tests/gm-testnet-release.test.mjs
           node scripts/gm-testnet-status.mjs
+      - name: Verify existing GM metallic logo is really served as PNG by the live app
+        shell: bash
+        run: |
+          curl --fail --show-error --silent --location --retry 2 --connect-timeout 10 --max-time 25 \
+            'https://gm-token-test-iprj.onrender.com/assets/brand-original-reference/gm-lettermark-metallic-transparent.png' \
+            -o /tmp/gmtest-logo.png
+          test "$(file --brief --mime-type /tmp/gmtest-logo.png)" = "image/png"
+          test "$(wc -c </tmp/gmtest-logo.png)" -gt 10000
+          echo "Public testnet-logo image is a valid PNG"
   postgres-shadow:
     name: PostgreSQL ledger negative tests (ephemeral database only)
     runs-on: ubuntu-latest
