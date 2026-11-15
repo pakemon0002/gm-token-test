@@ -1,0 +1,28 @@
+name: TON shadow accounting validation (test only)
+on:
+  push:
+    branches: [feature/ton-ledger-audit-20261115]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'server/ton-shadow-projection.mjs'
+      - 'tests/ton-shadow-projection.test.mjs'
+      - 'docs/ton-v4/**'
+      - '.github/workflows/ton-shadow-accounting.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  projection:
+    name: Pure game accounting tests (no keys, no live DB)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: Check module syntax
+        run: node --check server/ton-shadow-projection.mjs
+      - name: Verify funded transfers and no synthetic mint
+        run: node --test tests/ton-shadow-projection.test.mjs
