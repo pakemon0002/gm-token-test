@@ -53,6 +53,22 @@ test('Daily Streak flame switches between Silver and Graphite palettes without c
   assert.ok(css.includes(selector),selector);
 });
 
+test('zero-day fire remains visible in both themes and obsolete styles are isolated',()=>{
+ const begin=css.indexOf('/* GM TOKEN 3.0: verified daily streak');
+ const end=css.indexOf('/* GM TOKEN 3.0 mobile depth book',begin);
+ assert.ok(begin>=0&&end>begin);
+ const legacy=css.slice(begin,end);
+ assert.ok(legacy.includes('.gm-daily-v9 .gm-streak-flame{--flame-size:110px'));
+ assert.ok(legacy.includes('.gm-daily-v9 .gm-streak-flame svg{'));
+ assert.doesNotMatch(legacy,/(^|\n)\.gm-streak-flame(?:\{|::before| svg\{)/);
+ assert.ok(css.includes('.gm-streak-flame-stage-0 .gm-streak-flame-art{opacity:.93}'));
+ assert.ok(css.includes('.theme-light .gm-streak-flame-stage-0 .gm-streak-flame-art'));
+ assert.ok(css.includes('.theme-dark .gm-streak-flame-stage-0 .gm-streak-flame-art'));
+ assert.ok(!css.includes('.gm-streak-flame-stage-0 .gm-streak-flame-art{opacity:.48;filter:grayscale('));
+ const published=readFileSync(new URL('../miniapp/public/styles.css',import.meta.url),'utf8');
+ assert.equal(css,published);
+});
+
 test('visual flame introduces no new rewards, payment routes or balances',()=>{
  const count=(needle)=>(app.match(new RegExp(needle,'g'))||[]).length;
  assert.ok(count('GrowingStreakFlame')>=3);

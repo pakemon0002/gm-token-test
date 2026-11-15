@@ -750,8 +750,10 @@ html,body,button,input,textarea,select{font-family:'Exo 2',system-ui,-apple-syst
 .gm-streak-flame-spark-one{left:23%;top:42%;animation-delay:-.2s}
 .gm-streak-flame-spark-two{left:72%;top:56%;animation-delay:-1.2s}
 .gm-streak-flame-spark-three{left:44%;top:20%;animation-delay:-2s}
-.gm-streak-flame-stage-0 .gm-streak-flame-art{opacity:.48;filter:grayscale(.8) drop-shadow(0 0 2px #9bb3cf55)}
-.gm-streak-flame-stage-0 .gm-streak-flame-glow{opacity:.12}
+.gm-streak-flame-stage-0 .gm-streak-flame-art{opacity:.93}
+.theme-light .gm-streak-flame-stage-0 .gm-streak-flame-art{filter:drop-shadow(0 3px 5px #60758b99)}
+.theme-dark .gm-streak-flame-stage-0 .gm-streak-flame-art{filter:drop-shadow(0 0 7px #91a4c0ae)}
+.gm-streak-flame-stage-0 .gm-streak-flame-glow{opacity:.22}
 .gm-streak-flame-stage-0 .gm-streak-flame-spark{display:none}
 .gm-streak-flame-stage-1 .gm-streak-flame-glow{opacity:.33}
 .gm-streak-flame-stage-1 .gm-streak-flame-spark-two,.gm-streak-flame-stage-1 .gm-streak-flame-spark-three{display:none}
@@ -2077,20 +2079,20 @@ html,body,.application,.application button,.application input,.application texta
 .gm-daily-v9 .gm-daily-intro{display:grid;justify-items:center;text-align:center;gap:9px;padding-top:6px}
 .gm-daily-v9 .gm-daily-intro>h1{margin:0;font:900 21px 'Unbounded','Montserrat',sans-serif;line-height:1.4}
 .gm-daily-v9 .gm-daily-intro>p{max-width:270px;margin:0;font-size:11px;line-height:1.55;color:var(--muted)}
-.gm-streak-flame{--flame-size:110px;position:relative;display:grid;place-items:center;width:172px;
+.gm-daily-v9 .gm-streak-flame{--flame-size:110px;position:relative;display:grid;place-items:center;width:172px;
  height:176px;isolation:isolate;margin:3px auto 0}
-.gm-streak-flame::before{content:"";position:absolute;inset:8px 13px;border-radius:50%;
+.gm-daily-v9 .gm-streak-flame::before{content:"";position:absolute;inset:8px 13px;border-radius:50%;
  background:radial-gradient(ellipse,#a8caff68,transparent 66%);filter:blur(10px);
  animation:gm-streak-pulse 2.7s ease-in-out infinite}
-.gm-streak-flame svg{position:relative;z-index:1;width:var(--flame-size);height:calc(var(--flame-size) * 1.15);
+.gm-daily-v9 .gm-streak-flame svg{position:relative;z-index:1;width:var(--flame-size);height:calc(var(--flame-size) * 1.15);
  overflow:visible;filter:drop-shadow(0 10px 11px #07152b93) drop-shadow(0 0 9px #d4e7ff70);
  transform-origin:center 86%;animation:gm-streak-ignite 2.7s ease-in-out infinite}
-.gm-streak-flame.gm-flame-1{--flame-size:91px}
-.gm-streak-flame.gm-flame-2{--flame-size:105px}
-.gm-streak-flame.gm-flame-3{--flame-size:119px}
-.gm-streak-flame.gm-flame-4{--flame-size:131px}
-.gm-streak-flame.gm-flame-5{--flame-size:143px}
-.gm-streak-flame.gm-flame-5::before{background:radial-gradient(ellipse,#e6f4ffb0,transparent 69%)}
+.gm-daily-v9 .gm-streak-flame.gm-flame-1{--flame-size:91px}
+.gm-daily-v9 .gm-streak-flame.gm-flame-2{--flame-size:105px}
+.gm-daily-v9 .gm-streak-flame.gm-flame-3{--flame-size:119px}
+.gm-daily-v9 .gm-streak-flame.gm-flame-4{--flame-size:131px}
+.gm-daily-v9 .gm-streak-flame.gm-flame-5{--flame-size:143px}
+.gm-daily-v9 .gm-streak-flame.gm-flame-5::before{background:radial-gradient(ellipse,#e6f4ffb0,transparent 69%)}
 .gm-streak-fire-count{position:absolute;z-index:3;bottom:5px;left:50%;transform:translateX(-50%);
  background:linear-gradient(145deg,#f4f8ff,#8d9cb1);color:#152131;border-radius:22px;
  border:1px solid #d5e3f4;padding:5px 13px;font-size:11px;font-weight:850;white-space:nowrap;
@@ -2124,7 +2126,7 @@ html,body,.application,.application button,.application input,.application texta
 @keyframes gm-streak-ignite{0%,100%{transform:scale(1) rotate(-1deg)}50%{transform:scale(1.045) rotate(1.5deg)}}
 @media(max-width:365px){.gm-daily-milestones-grid{gap:5px}.gm-daily-milestone{min-height:76px;padding:8px 3px}
  .gm-daily-milestone>b{font-size:11px}}
-@media(prefers-reduced-motion:reduce){.gm-streak-flame::before,.gm-streak-flame svg{animation:none!important}}
+@media(prefers-reduced-motion:reduce){.gm-daily-v9 .gm-streak-flame::before,.gm-daily-v9 .gm-streak-flame svg{animation:none!important}}
 
 
 /* GM TOKEN 3.0 mobile depth book: compact exchange-style bid/ask columns */
