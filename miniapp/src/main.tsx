@@ -188,6 +188,10 @@ const gmWords={
 const gmKeys=['home','market','mining','boxes','more','language','settings','next','start','skip'];
 
 const UI_TRANSLATIONS:Record<string,Record<string,string>> = {
+  "economy.crVirtual":{"ru":"CR — виртуальная валюта","uk":"CR — віртуальна валюта","en":"CR is virtual currency","es":"CR es una moneda virtual","de":"CR ist eine virtuelle Währung","fr":"CR est une monnaie virtuelle","tr":"CR sanal oyun para birimidir","pt":"CR é uma moeda virtual","pl":"CR to waluta wirtualna","it":"CR è una valuta virtuale"},
+ "economy.tradePoints":{"ru":"POINTS начисляются за подтверждённые сделки и расходуются на боксы.","uk":"POINTS нараховуються за підтверджені угоди й витрачаються на бокси.","en":"POINTS come from eligible completed trades and pay for boxes.","es":"Los POINTS se obtienen por operaciones válidas y se usan para cajas.","de":"POINTS gibt es für gültige abgeschlossene Trades und Boxen.","fr":"Les POINTS récompensent les échanges valides et ouvrent des coffres.","tr":"POINTS geçerli tamamlanan işlemlerden kazanılır ve kutular için kullanılır.","pt":"POINTS vêm de negociações válidas e servem para abrir caixas.","pl":"POINTS zdobywasz za prawidłowe transakcje i wydajesz na skrzynki.","it":"I POINTS si ottengono dagli scambi validi e si usano per i box."},
+ "economy.boxesPoints":{"ru":"Боксы за POINTS","uk":"Бокси за POINTS","en":"Boxes cost POINTS","es":"Cajas por POINTS","de":"Boxen für POINTS","fr":"Coffres contre POINTS","tr":"POINTS ile kutular","pt":"Caixas por POINTS","pl":"Skrzynki za POINTS","it":"Box con POINTS"},
+ "economy.boxesCr":{"ru":"CR используется на внутреннем рынке GM/CR. POINTS нельзя переводить или выводить.","uk":"CR використовується на внутрішньому ринку GM/CR. POINTS не можна переказувати чи виводити.","en":"CR is for the in-game GM/CR market. POINTS cannot be transferred or withdrawn.","es":"CR se usa en el mercado GM/CR del juego. Los POINTS no se transfieren ni retiran.","de":"CR gilt nur im internen GM/CR-Markt. POINTS sind nicht übertragbar.","fr":"CR sert au marché GM/CR du jeu. Les POINTS ne sont ni transférables ni retirables.","tr":"CR oyun içi GM/CR pazarı içindir. POINTS aktarılamaz veya çekilemez.","pt":"CR é para o mercado GM/CR do jogo. POINTS não podem ser transferidos ou sacados.","pl":"CR służy do rynku GM/CR w grze. POINTS nie można przesyłać ani wypłacać.","it":"CR serve al mercato GM/CR nel gioco. I POINTS non si trasferiscono né prelevano."},
  "profile":{ru:"Профиль",uk:"Профіль",en:"Profile",es:"Perfil",de:"Profil",fr:"Profil",tr:"Profil",pt:"Perfil",pl:"Profil",it:"Profilo"},
  "achievements":{ru:"Достижения",uk:"Досягнення",en:"Achievements",es:"Logros",de:"Erfolge",fr:"Succès",tr:"Başarılar",pt:"Conquistas",pl:"Osiągnięcia",it:"Obiettivi"},
  "history":{ru:"История операций",uk:"Історія операцій",en:"Transaction history",es:"Historial",de:"Verlauf",fr:"Historique",tr:"İşlem geçmişi",pt:"Histórico de transações",pl:"Historia",it:"Cronologia"},
@@ -686,6 +690,7 @@ function App(){
  const [staffReply,setStaffReply]=React.useState('');
  const [supportCategory,setSupportCategory]=React.useState('Общий вопрос');
  const [liveState,setLiveState]=React.useState(null as any);
+ const [economyPolicy,setEconomyPolicy]=React.useState(null as any);
  const [calendarAssets,setCalendarAssets]=React.useState({hp:0,hp_cosmetics:[],inventory:{bronze:0,silver:0,gold:0}} as any);
  const [liveOrders,setLiveOrders]=React.useState([] as any[]);
  const [liveBook,setLiveBook]=React.useState(null as any);
@@ -939,6 +944,15 @@ function App(){
   catch(error){if(!silent)flash('Ошибка: '+String(error?.message||error));return null}
  };
 
+  // The read-only currency policy is loaded when the related screens are opened.
+ React.useEffect(()=>{
+  if(demo||!['trade','boxes'].includes(screen))return;
+  let current=true;
+  void api('/api/game/economy',undefined,true).then(policy=>{
+   if(current&&policy?.assets?.CR?.blockchain_asset===false&&policy?.boxes?.payment_currency==='POINTS')setEconomyPolicy(policy);
+  });
+  return()=>{current=false};
+ },[demo,screen]);
  const refreshCalendarAssets=async()=>{
   const d=await api('/api/autumn-calendar',undefined,true);
   if(d)setCalendarAssets({hp:Number(d.hp||0),hp_cosmetics:d.hp_cosmetics||[],inventory:d.inventory||{bronze:0,silver:0,gold:0}});
@@ -1282,7 +1296,8 @@ function App(){
      e('div',{className:'terminal-wallet-amounts'},
       e('span',null,e('b',null,nf(wallet.gm)),' GM'),
       e('span',null,e('b',null,nf(wallet.cr)),' CR'))),
-    e('div',{className:'trade-cta-row terminal-buy-sell',role:'group','aria-label':'Купить или продать игровые GM'},
+         e('aside',{className:'gm-economy-note gm-economy-note-trade',role:'note','aria-label':'Правила CR и POINTS'},e('span',{className:'gm-economy-note-icon'},icon('shield-check',19)),e('span',{className:'gm-economy-note-copy'},e('b',null,L('economy.crVirtual')),e('small',null,L('economy.tradePoints')))),
+     e('div',{className:'trade-cta-row terminal-buy-sell',role:'group','aria-label':'Купить или продать игровые GM'},
      e('button',{type:'button',className:'trade-cta buy '+(side==='buy'?'active':''),'aria-pressed':side==='buy',onClick:()=>setSide('buy')},
       icon('plus',19),e('span',null,e('b',null,tr('COMPRAR GM','КУПИТИ GM','BUY GM','КУПИТЬ GM')),e('small',null,tr('Por CR do jogo','За ігрові CR','For in-game CR','За игровые CR')))),
      e('button',{type:'button',className:'trade-cta sell '+(side==='sell'?'active':''),'aria-pressed':side==='sell',onClick:()=>setSide('sell')},
@@ -1730,10 +1745,15 @@ function Reward() {
  const frameRewards=liveState?.config?.box_frame_rewards||[];
  const earnedBoxes=calendarAssets?.inventory||{bronze:0,silver:0,gold:0};
  const giftCount=Number(earnedBoxes[boxKind]||0);
+  // Read-only game policy, with the unchanged fixed costs on older servers.
+  const pointPrice=(kind:string,fallback:number)=>{
+   const policyPrice=Number(economyPolicy?.boxes?.point_costs?.[kind]);
+   return Number.isSafeInteger(policyPrice)&&policyPrice>0&&policyPrice<=100000?policyPrice:fallback;
+  };
  const catalog=[
-  {kind:'bronze',name:'Бронзовый сундук',tag:'Базовые награды',cost:300},
-  {kind:'silver',name:'Серебряный сундук',tag:'Улучшенные награды',cost:750},
-  {kind:'gold',name:'Золотой сундук',tag:'Максимальные награды',cost:1500}];
+  {kind:'bronze',name:'Бронзовый сундук',tag:'Базовые награды',cost:pointPrice('bronze',300)},
+  {kind:'silver',name:'Серебряный сундук',tag:'Улучшенные награды',cost:pointPrice('silver',750)},
+  {kind:'gold',name:'Золотой сундук',tag:'Максимальные награды',cost:pointPrice('gold',1500)}];
  const selected=catalog.find(x=>x.kind===boxKind)||catalog[0];
  const reward=Number(payouts[selected.kind]||0),totalCost=selected.cost*boxCount,totalReward=reward*boxCount;
  const totalXp=bonusEnabled?Number(xpRewards[selected.kind]||0)*boxCount:0;
@@ -1756,7 +1776,8 @@ function Reward() {
    e('button',{type:'button',className:'gm-flat-points-help',
     onClick:()=>{setPointsGuideOpen(true);openGuide('points')}},
     icon('book-open',18),'Как получить POINTS?',icon('chevron-right',16))),
-  e('div',{className:'gm-flat-tour-buttons'},
+     e('aside',{className:'gm-economy-note gm-economy-note-boxes',role:'note','aria-label':'Валюты и стоимость боксов'},e('span',{className:'gm-economy-note-icon'},icon('shield-check',19)),e('span',{className:'gm-economy-note-copy'},e('b',null,L('economy.boxesPoints')),e('small',null,L('economy.boxesCr')))),
+   e('div',{className:'gm-flat-tour-buttons'},
    e('button',{type:'button',className:'gm-chests-tutorial',onClick:()=>openGuide('boxes')},
     icon('info',15),'Инструкция по сундукам'),
    e('button',{type:'button',className:'gm-chests-points-tour',onClick:()=>{

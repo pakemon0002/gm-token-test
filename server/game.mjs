@@ -2,6 +2,7 @@
 // ECONOMY_PENDING settings are intentionally disabled until both co-owners approve them.
 import crypto from 'node:crypto';
 import {toCents} from './lib.mjs';
+import {BOX_POINT_COSTS,publicGameCurrencyPolicy} from './game-currency-policy.mjs';
 import {MAX_MINING_UPGRADE_LEVEL,miningUpgradeCost,miningUpgradeBonusPct,miningUpgradeBonusBps,miningUpgradeTotalCost,miningUpgradeTable,leagueForXp,GM_LEAGUES} from './mining-progression.mjs';
 import {makeCandles,tradingSnapshot,indicativeAuction,INTERVALS} from './market-data.mjs';
 const DAY=86400, HOUR=3600, MICRO=1000000;
@@ -314,6 +315,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
   const p=stmt('SELECT * FROM points_account WHERE user_id=?').get(id),oldVol=p.day===d?p.daily_volume_cents:0,oldEarn=p.day===d?p.daily_points:0;
   const vol=oldVol+allowed,totalPoints=Math.min(1000,Math.floor(vol/1000000)*10),award=Math.max(0,totalPoints-oldEarn);
   stmt('UPDATE points_account SET day=?,daily_volume_cents=?,daily_points=?,points=points+? WHERE user_id=?').run(d,vol,totalPoints,award,id);
+  if(award)log(id,'trade_points_awarded',{user:id,counterparty:otherId,points:award,eligible_gm_cents:allowed,currency:'POINTS',origin:'eligible_executed_GM_CR_trade'});
  }
  // Protected index is the rolling volume-weighted median of trusted trades.
  // Reject >15% price dislocations only once minimum history is available.
@@ -396,6 +398,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
   if(p==='/api/achievements'&&verb==='GET')return response(200,{achievements:catalogStatus(id,'achievements')});
   if(p==='/api/tasks/claim'&&verb==='POST')return response(200,claimCatalog(id,'tasks',await read()));
   if(p==='/api/achievements/claim'&&verb==='POST')return response(200,claimCatalog(id,'achievements',await read()));
+  if(p==='/api/game/economy'&&verb==='GET')return response(200,publicGameCurrencyPolicy());
   if(p==='/api/game/status'&&verb==='GET')return response(200,tx(()=>{ensure(id);settle();const m=stmt('SELECT * FROM mining_state WHERE user_id=?').get(id),h=stmt('SELECT * FROM holding_state WHERE user_id=?').get(id);return {user:stmt('SELECT level,xp,username FROM users WHERE id=?').get(id),wallet:wal(id),mining:{...m,rate_cents_day:rate({...stmt('SELECT level FROM users WHERE id=?').get(id),upgrade_level:upgradeLevel(id)},wal(id)),upgrade:upgradeState(id)},league:leagueForXp(stmt('SELECT xp FROM users WHERE id=?').get(id).xp),leagues:GM_LEAGUES,cosmetics:cosmetics(id),holding:h,points:stmt('SELECT * FROM points_account WHERE user_id=?').get(id),
    box_collection:boxBonusEnabled?collection(id):null,daily:dailyProfile(id),auction:{end_at:Number(v('auction_end')),done:v('auction_done')==='1'},config:{test_economy:testEconomy,holding_enabled:Number(v('holding_daily_bps'))>0,daily_enabled:Number(v('daily_gm_cents'))>0,shop_enabled:v('shop_rate_mode')!=='disabled',boxes_enabled:Object.keys(JSON.parse(v('box_rewards_json'))).length===3,box_rewards:JSON.parse(v('box_rewards_json')),
    box_bonus_enabled:boxBonusEnabled,box_xp_rewards:boxBonusEnabled?boxXp:{},
@@ -447,8 +450,8 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
    return once(op(),id,'box_open',()=>{
     const table=JSON.parse(v('box_rewards_json'));
     const kind=String(body.kind||'').toLowerCase();
-    const unitCost={bronze:300,silver:750,gold:1500}[kind];
-    if(!unitCost)throw Error('invalid GM Box type');
+    if(!Object.hasOwn(BOX_POINT_COSTS,kind))throw Error('invalid GM Box type');
+    const unitCost=BOX_POINT_COSTS[kind];
     const count=body.count===undefined?1:body.count;
     if(!Number.isInteger(count)||![1,3,5,10].includes(count))throw Error('invalid GM Box opening count');
     if(!['bronze','silver','gold'].every(x=>Number.isSafeInteger(table[x])&&table[x]>0))
