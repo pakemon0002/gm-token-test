@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/gmtest-contract-emulator.yml'
       - 'scripts/verify-gmtest-acton-emulator.mjs'
+      - 'scripts/apply-gmtest-emulator-cap.mjs'
       - 'server/gm-testnet-release.mjs'
       - 'docs/ton-v4/**'
   pull_request:
@@ -48,6 +49,8 @@ jobs:
           test -f gmtest-acton/contracts/JettonMinter.tolk
           test -f gmtest-acton/contracts/JettonWallet.tolk
           test -f gmtest-acton/Acton.toml
+      - name: Harden disposable GMTEST master with 150m outstanding cap and disabled upgrades
+        run: node scripts/apply-gmtest-emulator-cap.mjs gmtest-acton
       - name: Check GMTEST metadata and required emulator scenarios
         run: node scripts/verify-gmtest-acton-emulator.mjs gmtest-acton
       - name: Compile official master and jetton wallet
