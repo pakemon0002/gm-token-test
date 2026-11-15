@@ -1,0 +1,7 @@
+{
+  "name": "GM TOKEN TESTNET",
+  "symbol": "GMTEST",
+  "decimals": "9",
+  "description": "GM TOKEN development Jetton for TON Testnet ONLY. No monetary value, no connection to a live token, no deposits, redemptions or exchanges. In-game GM and virtual CR/POINTS remain separate.",
+  "image": "https://gm-token-test-iprj.onrender.com/assets/brand-original-reference/gm-lettermark-metallic-transparent.png"
+}
