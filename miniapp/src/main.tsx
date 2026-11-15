@@ -470,30 +470,44 @@ class AutumnCalendar extends React.Component {
       e('section', {className:'gm-premium-card gm-mining-energy'},
         e('div',{className:'gm-mining-energy-head'},e('b',null,'Прогресс календаря'),e('span',null,data ? completed + ' / 30' : '…')),
         e('div',{className:'gm-mining-energy-track',role:'progressbar','aria-label':'Получено дней','aria-valuenow':completed,'aria-valuemin':0,'aria-valuemax':30},e('span',{style:{width:(completed / 30 * 100)+'%'}}))),
-      data && e('section',{className:'gm-premium-card gm-calendar-assets'},
-        e('strong',null,'Полученные бонусы'),
+      data && e('section',{className:'gm-premium-card gm-calendar-assets gm-premium-bonus-panel'},
+        e('div',{className:'gm-bonus-heading'},
+          e('div',null,e('strong',null,'Полученные бонусы'),e('small',null,'Твой прогресс и награды')),
+          e('span',{className:'gm-bonus-heading-art','aria-hidden':true},icon('gift',38,true))),
         e('div',{className:'gm-calendar-assets-row'},
-          e('span',null,'HP'),e('b',null,String(data.hp||0)),
-          e('span',null,'Боксы'),e('b',null,String(Object.values(data.inventory||{}).reduce((n:number,value:any)=>n+Number(value||0),0)))),
-        e('p',{className:'gm-calendar-xp-summary'},'Опыт профиля: '+String(data.xp??0)+' XP · Уровень '+String(data.level??1)),
+          e('div',{className:'gm-bonus-stat gm-bonus-stat-hp'},
+            e('span',{className:'gm-bonus-stat-icon gm-bonus-hp-emblem','aria-hidden':true},'HP'),
+            e('span',null,'HP'),e('strong',null,String(data.hp||0))),
+          e('div',{className:'gm-bonus-stat gm-bonus-stat-box'},
+            e('span',{className:'gm-bonus-stat-icon','aria-hidden':true},icon('gift',29,true)),
+            e('span',null,'Боксы'),
+            e('strong',null,String(Object.values(data.inventory||{}).reduce((n:number,value:any)=>n+Number(value||0),0))))),
+        e('div',{className:'gm-calendar-xp-summary'},
+          e('span',{className:'gm-xp-emblem','aria-hidden':true},'XP'),
+          e('span',null,'Опыт профиля: '+String(data.xp??0)+' XP · Уровень '+String(data.level??1))),
         e('div',{className:'gm-hp-collection'},
           e('div',{className:'gm-hp-collection-heading'},
             e('b',null,'Коллекция HP'),
             e('small',null,'Постоянные значки профиля · без влияния на добычу GM')),
           e('div',{className:'gm-hp-collection-grid'},
-            (data.hp_cosmetics||[]).map(item=>
-              e('button',{key:item.id,type:'button',
-                className:'gm-hp-collectible'+(item.unlocked?' unlocked':''),
-                disabled:busy||item.unlocked||Number(data.hp||0)<Number(item.cost),
+            (data.hp_cosmetics||[]).map(item=>{
+              const unlocked=Boolean(item.unlocked);
+              const canUnlock=!unlocked&&Number(data.hp||0)>=Number(item.cost);
+              const cosmeticIcon=item.id==='autumn_spark'?'diamond':item.id==='autumn_star'?'star':'crown';
+              return e('button',{key:item.id,type:'button',
+                className:'gm-hp-collectible'+(unlocked?' unlocked':canUnlock?' available':' locked'),
+                disabled:busy||!canUnlock,
+                'aria-label':String(item.title)+'. '+(unlocked?'Открыто':canUnlock?'Открыть за '+item.cost+' HP':'Нужно '+item.cost+' HP'),
                 onClick:()=>this.unlockCosmetic(item.id)},
-                icon(item.icon||'star',24),
-                e('span',null,e('b',null,item.title),
-                  e('small',null,item.unlocked?'Открыто':Number(data.hp||0)<Number(item.cost)
-                    ?'Нужно '+item.cost+' HP':'Открыть за '+item.cost+' HP')),
-                item.unlocked&&icon('check',15))))),
+                e('span',{className:'gm-hp-collectible-art','aria-hidden':true},icon(cosmeticIcon,28,true)),
+                e('span',{className:'gm-hp-collectible-copy'},e('b',null,item.title),
+                  e('small',null,unlocked?'Открыто':canUnlock?'Открыть за '+item.cost+' HP':'Нужно '+item.cost+' HP')),
+                e('span',{className:'gm-hp-collectible-state','aria-hidden':true},
+                  unlocked?icon('check',17):canUnlock?icon('chevron-right',17):e('span',{className:'gm-hp-lock'})));
+            }))),
         Object.values(data.inventory||{}).some((n:any)=>Number(n)>0) &&
           e('button',{type:'button',className:'gm-calendar-to-boxes',onClick:this.props.onOpenBoxes},
-            'Открыть подаренные боксы →')),
+            icon('gift',18),'Открыть подаренные боксы',icon('chevron-right',18))),
       data && e('section',{className:'gm-premium-card gm-calendar-panel'},
         e('h3',null,'Награды за 30 дней'),
         e('div',{className:'gm-calendar-grid'},rows.map(row => {
@@ -1721,6 +1735,12 @@ function Reward() {
  const reward=Number(payouts[selected.kind]||0),totalCost=selected.cost*boxCount,totalReward=reward*boxCount;
  const totalXp=bonusEnabled?Number(xpRewards[selected.kind]||0)*boxCount:0;
  const picture=(kind:string)=>'./assets/chests/gm-chest-badge-'+kind+'.svg';
+ const prizeFrameIcon=(title:string)=>{
+  const t=title.toLocaleLowerCase('ru-RU');
+  return t.includes('искател')?'layers':t.includes('нович')?'trending-up':
+   t.includes('шахт')?'bar-chart':t.includes('бронз')?'diamond':
+   t.includes('коллекцион')?'database':t.includes('медал')?'star':'trophy';
+ };
  return e('div',{className:'gm-boxes-v9 gm-flat-boxes'},
   top('Боксы',true,'info'),
 
@@ -1774,28 +1794,30 @@ function Reward() {
       })())):null),
      active?e('span',{className:'gm-flat-card-check','aria-label':'Выбран'},icon('check',17)):null)
    })),
-  e('section',{className:'gm-chest-prize-preview','aria-label':'Предпросмотр наград выбранного сундука'},
+  e('section',{className:'gm-chest-prize-preview gm-premium-prize-preview','aria-label':'Предпросмотр наград выбранного сундука'},
    e('div',{className:'gm-chest-prize-head'},
     e('div',null,e('small',null,'СОДЕРЖИМОЕ СУНДУКА'),e('h3',null,'Что внутри?')),
-    e('span',{className:'gm-chest-prize-kind'},selected.name)),
+    e('span',{className:'gm-chest-prize-kind'},
+      e('img',{src:picture(selected.kind),alt:'','aria-hidden':true,draggable:false}),e('span',null,selected.name))),
    e('div',{className:'gm-chest-prize-grid'},
-    e('div',{className:'gm-chest-prize-item'},
+    e('div',{className:'gm-chest-prize-item gm-chest-prize-guaranteed'},
      e('span',{className:'gm-chest-prize-icon'},icon('coins',23,true)),
-     e('span',null,e('b',null,'GM TOKEN'),e('small',null,'Гарантированная награда')),
-     e('strong',null,reward>0?'+'+nf(reward,0)+' GM':'—')),
-    bonusEnabled?e('div',{className:'gm-chest-prize-item'},
-     e('span',{className:'gm-chest-prize-icon'},icon('sparkles',23,true)),
-     e('span',null,e('b',null,'Опыт XP'),e('small',null,'За каждое открытие')),
-     e('strong',null,'+'+nf(Number(xpRewards[selected.kind]||0),0)+' XP')):null,
+     e('span',{className:'gm-chest-prize-copy'},e('b',null,'GM TOKEN'),e('small',null,'Гарантированная награда')),
+     e('strong',{className:'gm-chest-prize-value gm-prize-value-gm'},reward>0?'+'+nf(reward,0)+' GM':'—')),
+    bonusEnabled?e('div',{className:'gm-chest-prize-item gm-chest-prize-xp'},
+     e('span',{className:'gm-chest-prize-icon'},e('b',{className:'gm-prize-xp-mark'},'XP')),
+     e('span',{className:'gm-chest-prize-copy'},e('b',null,'Опыт XP'),e('small',null,'За каждое открытие')),
+     e('strong',{className:'gm-chest-prize-value gm-prize-value-xp'},'+'+nf(Number(xpRewards[selected.kind]||0),0)+' XP')):null,
     ...frameRewards.filter((f:any)=>f.kind===selected.kind).map((f:any)=>{
      const progress=Number(collection[selected.kind]||0),required=Number(f.required||0);
      return e('div',{className:'gm-chest-prize-item gm-chest-prize-frame',key:String(f.id||f.title)},
-      e('span',{className:'gm-chest-prize-icon'},icon('award',23,true)),
-      e('span',null,e('b',null,String(f.title||'Коллекционная награда')),
+      e('span',{className:'gm-chest-prize-icon'},icon(prizeFrameIcon(String(f.title||'')),23,true)),
+      e('span',{className:'gm-chest-prize-copy'},e('b',null,String(f.title||'Коллекционная награда')),
        e('small',null,required>0?'За '+required+' открытий этого сундука':'Коллекционная награда')),
-      e('strong',null,required>0?(progress>=required?'Получена':progress+'/'+required):'Бонус'));
+      e('strong',{className:'gm-chest-prize-progress'},required>0?(progress>=required?'Получена':progress+' / '+required):'Бонус'));
     })),
-   e('p',{className:'gm-chest-prize-note'},'Награды и прогресс берутся из настроек игры. Рамки выдаются за достижения, а не случайным образом.')),
+   e('p',{className:'gm-chest-prize-note'},icon('info',17),
+    e('span',null,'Награды и прогресс берутся из настроек игры. Рамки выдаются за достижения, а не случайным образом.'))),
   e('section',{className:'gm-flat-opening'},
    e('h3',null,'Сколько открыть?'),
    e('div',{className:'gm-chests-qty',role:'group','aria-label':'Количество открытий'},
