@@ -686,6 +686,7 @@ function App(){
  const [staffReply,setStaffReply]=React.useState('');
  const [supportCategory,setSupportCategory]=React.useState('Общий вопрос');
  const [liveState,setLiveState]=React.useState(null as any);
+ const [economyPolicy,setEconomyPolicy]=React.useState(null as any);
  const [calendarAssets,setCalendarAssets]=React.useState({hp:0,hp_cosmetics:[],inventory:{bronze:0,silver:0,gold:0}} as any);
  const [liveOrders,setLiveOrders]=React.useState([] as any[]);
  const [liveBook,setLiveBook]=React.useState(null as any);
@@ -939,6 +940,15 @@ function App(){
   catch(error){if(!silent)flash('Ошибка: '+String(error?.message||error));return null}
  };
 
+  // The read-only currency policy is loaded when the related screens are opened.
+ React.useEffect(()=>{
+  if(demo||!['trade','boxes'].includes(screen))return;
+  let current=true;
+  void api('/api/game/economy',undefined,true).then(policy=>{
+   if(current&&policy?.assets?.CR?.blockchain_asset===false&&policy?.boxes?.payment_currency==='POINTS')setEconomyPolicy(policy);
+  });
+  return()=>{current=false};
+ },[demo,screen]);
  const refreshCalendarAssets=async()=>{
   const d=await api('/api/autumn-calendar',undefined,true);
   if(d)setCalendarAssets({hp:Number(d.hp||0),hp_cosmetics:d.hp_cosmetics||[],inventory:d.inventory||{bronze:0,silver:0,gold:0}});
@@ -1282,7 +1292,15 @@ function App(){
      e('div',{className:'terminal-wallet-amounts'},
       e('span',null,e('b',null,nf(wallet.gm)),' GM'),
       e('span',null,e('b',null,nf(wallet.cr)),' CR'))),
-    e('div',{className:'trade-cta-row terminal-buy-sell',role:'group','aria-label':'Купить или продать игровые GM'},
+         e('aside',{className:'gm-economy-note gm-economy-note-trade',role:'note','aria-label':'Правила CR и POINTS'},
+      e('span',{className:'gm-economy-note-icon'},icon('shield-check',19)),
+      e('span',{className:'gm-economy-note-copy'},
+       e('b',null,tr('CR é uma moeda virtual do jogo','CR — віртуальна ігрова валюта','CR is virtual game currency','CR — виртуальная валюта')),
+       e('small',null,tr('POINTS só por negociações concluídas e válidas; use-os para abrir caixas.',
+        'POINTS лише за підтверджені угоди; ними відкривають бокси.',
+        'POINTS come from eligible completed trades and can be used for boxes.',
+        'POINTS начисляются за подтверждённые сделки и расходуются на боксы.')))),
+     e('div',{className:'trade-cta-row terminal-buy-sell',role:'group','aria-label':'Купить или продать игровые GM'},
      e('button',{type:'button',className:'trade-cta buy '+(side==='buy'?'active':''),'aria-pressed':side==='buy',onClick:()=>setSide('buy')},
       icon('plus',19),e('span',null,e('b',null,tr('COMPRAR GM','КУПИТИ GM','BUY GM','КУПИТЬ GM')),e('small',null,tr('Por CR do jogo','За ігрові CR','For in-game CR','За игровые CR')))),
      e('button',{type:'button',className:'trade-cta sell '+(side==='sell'?'active':''),'aria-pressed':side==='sell',onClick:()=>setSide('sell')},
@@ -1730,10 +1748,15 @@ function Reward() {
  const frameRewards=liveState?.config?.box_frame_rewards||[];
  const earnedBoxes=calendarAssets?.inventory||{bronze:0,silver:0,gold:0};
  const giftCount=Number(earnedBoxes[boxKind]||0);
+  // Read-only game policy, with the unchanged fixed costs on older servers.
+  const pointPrice=(kind:string,fallback:number)=>{
+   const policyPrice=Number(economyPolicy?.boxes?.point_costs?.[kind]);
+   return Number.isSafeInteger(policyPrice)&&policyPrice>0&&policyPrice<=100000?policyPrice:fallback;
+  };
  const catalog=[
-  {kind:'bronze',name:'Бронзовый сундук',tag:'Базовые награды',cost:300},
-  {kind:'silver',name:'Серебряный сундук',tag:'Улучшенные награды',cost:750},
-  {kind:'gold',name:'Золотой сундук',tag:'Максимальные награды',cost:1500}];
+  {kind:'bronze',name:'Бронзовый сундук',tag:'Базовые награды',cost:pointPrice('bronze',300)},
+  {kind:'silver',name:'Серебряный сундук',tag:'Улучшенные награды',cost:pointPrice('silver',750)},
+  {kind:'gold',name:'Золотой сундук',tag:'Максимальные награды',cost:pointPrice('gold',1500)}];
  const selected=catalog.find(x=>x.kind===boxKind)||catalog[0];
  const reward=Number(payouts[selected.kind]||0),totalCost=selected.cost*boxCount,totalReward=reward*boxCount;
  const totalXp=bonusEnabled?Number(xpRewards[selected.kind]||0)*boxCount:0;
@@ -1756,7 +1779,16 @@ function Reward() {
    e('button',{type:'button',className:'gm-flat-points-help',
     onClick:()=>{setPointsGuideOpen(true);openGuide('points')}},
     icon('book-open',18),'Как получить POINTS?',icon('chevron-right',16))),
-  e('div',{className:'gm-flat-tour-buttons'},
+     e('aside',{className:'gm-economy-note gm-economy-note-boxes',role:'note','aria-label':'Валюты и стоимость боксов'},
+    e('span',{className:'gm-economy-note-icon'},icon('shield-check',19)),
+    e('span',{className:'gm-economy-note-copy'},
+     e('b',null,walletLanguage('Caixas por POINTS','Бокси за POINTS','Boxes cost POINTS','Боксы за POINTS')),
+     e('small',null,walletLanguage(
+      'CR é virtual para o mercado GM/CR. Pontos são internos e não podem ser transferidos.',
+      'CR — внутрішня валюта ринку GM/CR. POINTS — ігрові очки без переказів.',
+      'CR is used only in the in-game GM/CR market. POINTS are non-transferable rewards.',
+      'CR используется только на внутреннем рынке GM/CR. POINTS нельзя переводить или выводить.')))),
+   e('div',{className:'gm-flat-tour-buttons'},
    e('button',{type:'button',className:'gm-chests-tutorial',onClick:()=>openGuide('boxes')},
     icon('info',15),'Инструкция по сундукам'),
    e('button',{type:'button',className:'gm-chests-points-tour',onClick:()=>{
