@@ -21,8 +21,8 @@ test('animated fire grows through 0/1-4/5-9/10-19/20-29/30+ stages',()=>{
 test('flame uses only server-verified daily claim streak, not calendar grid day',()=>{
  assert.ok(app.includes('liveState?.daily?.streak??wallet.streak??0'));
  assert.ok(app.includes('streak:Math.max(0,Math.floor(Number(liveState?.daily?.streak??wallet.streak??0)||0))'));
- assert.ok(app.includes("e(GrowingStreakFlame,{days:streakDays,placement:'home'})"));
- assert.ok(app.includes("e(GrowingStreakFlame,{days:Number(this.props.streak||0),placement:'calendar'})"));
+ assert.ok(app.includes("e(GrowingStreakFlame,{days:streakDays,placement:'home',theme})"));
+ assert.ok(app.includes("e(GrowingStreakFlame,{days:Number(this.props.streak||0),placement:'calendar',theme:this.props.theme})"));
  assert.ok(app.includes("onClick:()=>goto('reward')"));
  assert.ok(game.includes('const active=claimed||last===yesterday'));
  assert.ok(game.includes('const streak=active?current:0;'));
