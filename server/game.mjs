@@ -185,9 +185,12 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
   return {founder_slot:slot,frames};
  };
 
+ // 'game_gm' opts in to purchases using earned in-game GM only.
+// Real Jetton payments and deposits are deliberately NOT implemented here.
+const gameGmUpgradesEnabled=()=>['game_gm','virtual_test'].includes(process.env.GM_UPGRADE_PAYMENT_MODE);
  const upgradeState=(id)=>{
   const level=upgradeLevel(id),next=level<MAX_MINING_UPGRADE_LEVEL?level+1:null;
-  return {level,max_level:MAX_MINING_UPGRADE_LEVEL,bonus_pct:miningUpgradeBonusPct(level),payment_mode:process.env.GM_UPGRADE_PAYMENT_MODE==='virtual_test'?'virtual_test':'wallet_pending',purchasable:process.env.GM_UPGRADE_PAYMENT_MODE==='virtual_test',total_spent_gm:miningUpgradeTotalCost(level),
+  return {level,max_level:MAX_MINING_UPGRADE_LEVEL,bonus_pct:miningUpgradeBonusPct(level),payment_mode:gameGmUpgradesEnabled()?'game_gm':'wallet_pending',purchasable:gameGmUpgradesEnabled(),total_spent_gm:miningUpgradeTotalCost(level),
    next_level:next,next_cost_gm:next?miningUpgradeCost(next):null,next_bonus_pct:next?miningUpgradeBonusPct(next):null};
  };
  const pool=(name,col='gm')=>stmt(`SELECT ${col} as balance FROM pools WHERE name=?`).get(name)?.balance??0;
@@ -409,7 +412,7 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
    ensure(id);settle();
    return once(op(),id,'mining_upgrade',()=>{
     const state=upgradeState(id);
-    if(process.env.GM_UPGRADE_PAYMENT_MODE!=='virtual_test')throw Error('wallet-backed upgrades await verified GM token contract; in-game GM cannot buy upgrades');
+    if(!gameGmUpgradesEnabled())throw Error('in-game GM upgrades are disabled; real token payments have not been integrated');
     if(state.level>=MAX_MINING_UPGRADE_LEVEL)throw Error('maximum mining upgrade level reached');
     if(!Number.isInteger(body.level)||body.level!==state.level+1)throw Error('upgrade levels must be purchased sequentially');
     const costCents=miningUpgradeCost(body.level)*100;
