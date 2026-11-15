@@ -3104,10 +3104,10 @@ html,body,.application,.application button,.application input,.application texta
 .application.theme-dark .gm-calendar .gm-premium-bonus-panel .gm-calendar-xp-summary{background:linear-gradient(145deg,#30384a,#121a26);border-color:#8e9ab0;box-shadow:inset 0 1px #ffffff50,0 0 9px #b7c9ea43}
 .application.theme-dark .gm-calendar .gm-premium-bonus-panel .gm-hp-collectible{background:linear-gradient(145deg,#1b2230,#0c1019);border-color:#4e5868}
 .application.theme-dark .gm-calendar .gm-premium-bonus-panel .gm-hp-collectible-art{background:linear-gradient(145deg,#343e4f,#131b28);border-color:#67738a}
-.application.theme-dark .gm-flat-boxes .gm-premium-prize-preview{background:radial-gradient(ellipse at 0 0,#303346,transparent 44%),linear-gradient(155deg,#212736,#0c101a 72%);border-color:#616c80;box-shadow:inset 0 1px #ffffff2c,0 14px 29px #0006}
-.application.theme-dark .gm-flat-boxes .gm-premium-prize-preview .gm-chest-prize-item{background:linear-gradient(145deg,#1e2634,#111720);border-color:#455062}
-.application.theme-dark .gm-flat-boxes .gm-premium-prize-preview .gm-chest-prize-guaranteed{background:linear-gradient(145deg,#374358,#192436);border-color:#afbdd4;box-shadow:inset 0 1px #ffffff72,0 0 12px #abc5ed75}
-.application.theme-dark .gm-flat-boxes .gm-premium-prize-preview .gm-chest-prize-value{background:linear-gradient(145deg,#697a96,#354156);border-color:#b8c6da;box-shadow:inset 0 1px #ffffff74,0 0 10px #bfcee87a}
+.theme-dark .gm-flat-boxes .gm-premium-prize-preview{background:radial-gradient(ellipse at 0 0,#303346,transparent 44%),linear-gradient(155deg,#212736,#0c101a 72%);border-color:#616c80;box-shadow:inset 0 1px #ffffff2c,0 14px 29px #0006}
+.theme-dark .gm-flat-boxes .gm-premium-prize-preview .gm-chest-prize-item{background:linear-gradient(145deg,#1e2634,#111720);border-color:#455062}
+.theme-dark .gm-flat-boxes .gm-premium-prize-preview .gm-chest-prize-guaranteed{background:linear-gradient(145deg,#374358,#192436);border-color:#afbdd4;box-shadow:inset 0 1px #ffffff72,0 0 12px #abc5ed75}
+.theme-dark .gm-flat-boxes .gm-premium-prize-preview .gm-chest-prize-value{background:linear-gradient(145deg,#697a96,#354156);border-color:#b8c6da;box-shadow:inset 0 1px #ffffff74,0 0 10px #bfcee87a}
 .application.theme-light .gm-calendar .gm-premium-bonus-panel{background:radial-gradient(ellipse at 85% 0,#edf0ff,transparent 38%),linear-gradient(145deg,#fff,#eef3fc 80%,#e6eafa);border-color:#c4cce1;box-shadow:inset 0 1px #fff,0 12px 27px #6377aa24}
 .application.theme-light .gm-calendar .gm-premium-bonus-panel .gm-bonus-stat-hp{background:linear-gradient(145deg,#f9f7ff,#e5e8fb);border-color:#afa8d8;box-shadow:inset 0 1px white,0 0 10px #b5a7e348}
 .application.theme-light .gm-calendar .gm-premium-bonus-panel .gm-bonus-stat-box{background:linear-gradient(145deg,#fff,#e9eef8);border-color:#ced7e7}
