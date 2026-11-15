@@ -8,6 +8,7 @@ on:
       - 'server/ton-shadow-projection.mjs'
       - 'server/ton-reserve-diagnostic.mjs'
       - 'tests/ton-reserve-diagnostic.test.mjs'
+      - 'scripts/ton-backing-readiness-ci.mjs'
       - 'tests/ton-shadow-projection.test.mjs'
       - 'docs/ton-v4/**'
       - '.github/workflows/ton-shadow-accounting.yml'
@@ -34,6 +35,14 @@ jobs:
         run: node --test tests/ton-testnet-preflight.test.mjs
       - name: Fail closed on fake reserve attestations, double-counted wallets or unfunded game GM
         run: node --test tests/ton-reserve-diagnostic.test.mjs
+      - name: Generate explicit UNVERIFIED 1-to-1 readiness report from in-repo game funds
+        run: node scripts/ton-backing-readiness-ci.mjs
+      - name: Archive test-only readiness report (not a certificate of real reserves)
+        uses: actions/upload-artifact@v4
+        with:
+          name: gmtest-backing-readiness-unverified
+          path: gmtest-backing-readiness-ci.json
+          retention-days: 7
       - name: Validate GMTEST supply, metadata, network and deployment guard
         run: |
           node --test tests/gm-testnet-release.test.mjs
