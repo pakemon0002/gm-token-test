@@ -3036,7 +3036,7 @@ html,body,.application,.application button,.application input,.application texta
 .application.theme-dark .gm-hp-collectible.unlocked{border-color:#607e9e!important}
 .application.theme-dark .gm-calendar-to-boxes{border-color:#616e81;background:#262d3b;color:#e6eef9}
 .application.theme-dark .gm-calendar .gm-mining-claim{background:linear-gradient(145deg,#6a7a95,#374154);border:1px solid #a4b3c9;color:white;box-shadow:inset 0 1px #ffffff40,0 7px 16px #0003}
-.application.theme-dark .gm-flat-boxes .gm-premium-prize-preview{background:linear-gradient(150deg,#242a37,#0c1019 67%,#090c13);border:1px solid #596274;box-shadow:inset 0 1px #ffffff2d,0 10px 28px #0006;color:#e9eef6}
+.theme-dark .gm-flat-boxes .gm-premium-prize-preview{background:linear-gradient(150deg,#242a37,#0c1019 67%,#090c13);border:1px solid #596274;box-shadow:inset 0 1px #ffffff2d,0 10px 28px #0006;color:#e9eef6}
 .application.theme-dark .gm-premium-prize-preview .gm-chest-prize-kind{background:linear-gradient(145deg,#393f4e,#202737);border-color:#525e72;color:#e2e6ef}
 .application.theme-dark .gm-premium-prize-preview .gm-chest-prize-item{background:linear-gradient(130deg,#202633,#0d121c);border-color:#404959}
 .application.theme-dark .gm-premium-prize-preview .gm-chest-prize-guaranteed{background:linear-gradient(135deg,#3a4556,#192332);border-color:#a5b7ce;box-shadow:inset 0 1px #ffffff55,0 0 8px #aebed44a}

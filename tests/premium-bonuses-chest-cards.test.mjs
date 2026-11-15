@@ -22,7 +22,7 @@ test('bonus cards and chest preview keep real rewards and get original monochrom
  assert.equal(styles,servedStyles,'source stylesheet is the one served in Telegram');
  for(const token of ['.application.theme-dark .gm-premium-bonus-panel',
   '.application.theme-light .gm-premium-bonus-panel',
-  '.application.theme-dark .gm-flat-boxes .gm-premium-prize-preview',
+  '.theme-dark .gm-flat-boxes .gm-premium-prize-preview',
   '.application.theme-light .gm-flat-boxes .gm-premium-prize-preview',
   '.gm-hp-lock','.gm-hp-collectible-state','.gm-chest-prize-value']){
   assert.ok(styles.includes(token),'missing '+token);
