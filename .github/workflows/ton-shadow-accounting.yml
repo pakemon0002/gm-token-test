@@ -26,3 +26,43 @@ jobs:
         run: node --check server/ton-shadow-projection.mjs
       - name: Verify funded transfers and no synthetic mint
         run: node --test tests/ton-shadow-projection.test.mjs
+  postgres-shadow:
+    name: PostgreSQL ledger negative tests (ephemeral database only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: gm_shadow_ci
+          POSTGRES_USER: test_only
+          POSTGRES_PASSWORD: local_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test_only -d gm_shadow_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: test_only
+      PGPASSWORD: local_ci_password
+      PGDATABASE: gm_shadow_ci
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Supabase-compatible local roles
+        run: |
+          psql -v ON_ERROR_STOP=1 -c 'CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;'
+      - name: Install isolated draft schema and enforcement triggers
+        run: |
+          psql -v ON_ERROR_STOP=1 -f docs/ton-v4/postgres_shadow_ledger_staging.sql
+          psql -v ON_ERROR_STOP=1 -f docs/ton-v4/postgres_shadow_guards_staging.sql
+      - name: Verify valid transfer and six rejected invalid transitions then roll back all tests
+        shell: bash
+        run: |
+          { printf 'BEGIN;\n'; cat docs/ton-v4/postgres_shadow_negative_tests_staging.sql; printf '\nROLLBACK;\n'; } | psql -v ON_ERROR_STOP=1
+          count=$(psql -tAc 'SELECT COUNT(*) FROM gm_ton_shadow.journal_entries')
+          test "$count" = "0"
+          echo "No staging test entries persisted"
