@@ -26,6 +26,8 @@ jobs:
         run: node --check server/ton-shadow-projection.mjs
       - name: Verify funded transfers and no synthetic mint
         run: node --test tests/ton-shadow-projection.test.mjs
+      - name: Install pinned TON verifier dependency (no scripts, no secrets)
+        run: npm install --no-audit --no-fund --ignore-scripts
       - name: Reject Mainnet and fake Jetton Master in TON Testnet preflight
         run: node --test tests/ton-testnet-preflight.test.mjs
   postgres-shadow:
