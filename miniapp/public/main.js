@@ -30,49 +30,16 @@ function Icon({ name, theme, size = 24, tile = false, alt = '', className = '' }
     return React.createElement("img", { className: 'gm-icon ' + className, src: `${A}${theme}/${tile ? 'tiles' : 'transparent'}/${asset}.png`, width: size, height: size, alt: alt, draggable: "false", loading: "lazy", onError: (event) => { const img = event.currentTarget; if (img.dataset.iconFallback)
             return; img.dataset.iconFallback = '1'; img.src = `${A}${theme}/transparent/info.png`; } });
 }
-/** Decorative-only Daily Streak flame; its growth follows authenticated game status. */
-function streakStage(days) {
-    const n = Number.isFinite(days) ? Math.max(0, Math.floor(days)) : 0;
-    return n >= 30 ? 5 : n >= 20 ? 4 : n >= 10 ? 3 : n >= 5 ? 2 : n > 0 ? 1 : 0;
-}
 function streakDayWord(days) {
     const n = Math.max(0, Math.floor(days));
     return n % 10 === 1 && n % 100 !== 11 ? 'день' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'дня' : 'дней';
 }
-function GrowingStreakFlame({ days = 0, placement = 'home', theme = 'light' }) {
-    const count = Number.isSafeInteger(days) && days > 0 ? days : 0;
-    const stage = streakStage(count);
-    const outerId = 'gm-streak-outer-' + placement;
-    const innerId = 'gm-streak-inner-' + placement;
-    const growth = Math.min(1.2, 0.68 + Math.min(30, count) * 0.018);
-    // Silver/Graphite palettes are independent. Streak only controls growth.
-    const palette = theme === 'dark' ? {
-        outer: ['#253044', '#3d506b', '#657a97', '#a5b5c8'],
-        inner: ['#566e8d', '#bac9d8', '#4c6485']
-    } : {
-        outer: ['#728aa6', '#b4cee5', '#e0edfa', '#ffffff'],
-        inner: ['#d9ecff', '#ffffff', '#b3d2f0']
-    };
-    return React.createElement("span", { className: 'gm-streak-flame gm-streak-flame-stage-' + stage + ' gm-streak-flame-' + placement, style: { '--gm-streak-growth': String(growth) }, "aria-hidden": "true" },
-        React.createElement("span", { className: "gm-streak-flame-glow" }),
-        React.createElement("svg", { className: "gm-streak-flame-art", viewBox: "0 0 74 88", fill: "none", xmlns: "http://www.w3.org/2000/svg" },
-            React.createElement("defs", null,
-                React.createElement("linearGradient", { id: outerId, x1: "12", y1: "75", x2: "59", y2: "13", gradientUnits: "userSpaceOnUse" },
-                    React.createElement("stop", { offset: "0", stopColor: palette.outer[0] }),
-                    React.createElement("stop", { offset: ".44", stopColor: palette.outer[1] }),
-                    React.createElement("stop", { offset: ".76", stopColor: palette.outer[2] }),
-                    React.createElement("stop", { offset: "1", stopColor: palette.outer[3] })),
-                React.createElement("linearGradient", { id: innerId, x1: "28", y1: "80", x2: "46", y2: "32", gradientUnits: "userSpaceOnUse" },
-                    React.createElement("stop", { offset: "0", stopColor: palette.inner[0] }),
-                    React.createElement("stop", { offset: ".57", stopColor: palette.inner[1] }),
-                    React.createElement("stop", { offset: "1", stopColor: palette.inner[2] }))),
-            React.createElement("path", { className: "gm-streak-flame-body", d: "M37 4C46 18 46 27 43 35C52 30 57 23 55 17C67 32 70 45 66 58C61 75 51 82 37 82C19 82 6 70 7 54C8 41 15 33 24 25C22 36 25 43 31 47C35 37 33 19 37 4Z", fill: 'url(#' + outerId + ')' }),
-            React.createElement("path", { className: "gm-streak-flame-inner", d: "M37 35C43 44 47 47 46 55C52 51 52 48 51 44C58 53 59 64 54 73C50 80 44 83 36 83C25 83 19 77 20 66C20 59 25 55 30 52C29 60 31 63 35 65C38 55 35 45 37 35Z", fill: 'url(#' + innerId + ')' }),
-            React.createElement("path", { className: "gm-streak-flame-highlight", d: "M27 66C24 58 27 52 30 49", stroke: theme === 'dark' ? '#c5d0df' : '#fff', strokeOpacity: ".75", strokeWidth: "2.5", strokeLinecap: "round" })),
-        React.createElement("span", { className: "gm-streak-flame-spark gm-streak-flame-spark-one" }),
-        React.createElement("span", { className: "gm-streak-flame-spark gm-streak-flame-spark-two" }),
-        React.createElement("span", { className: "gm-streak-flame-spark gm-streak-flame-spark-three" }));
+function StreakDaysBadge({ days = 0 }) {
+    const n = Math.max(0, Math.floor(Number(days) || 0));
+    return React.createElement("span", { className: "gm-streak-day-mark", "aria-hidden": "true" },
+        React.createElement("b", null, n), React.createElement("small", null, "ДНЕЙ"));
 }
+
 function PlayerAvatar({ name = '', photoUrl = '', size = 'medium', rank = 0 }) {
     const label = String(name || 'GM').trim();
     const initials = label.replace(/^@/, '').split(/[ _-]+/).filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('') || 'GM';
@@ -477,7 +444,7 @@ class AutumnCalendar extends React.Component {
         const preview = data && focusDay !== today;
         const action = error ? 'Повторить загрузку' : !data ? 'Загрузка календаря…' : busy ? 'Получаем…' :
             preview ? 'Вернуться к сегодняшней награде' : received ? 'Сегодня награда получена' : claimedViaDaily ? 'Ежедневная награда уже получена' : 'Забрать награду';
-        return e('div', { className: 'gm-calendar' }, this.props.header, e('section', { className: 'gm-streak-calendar gm-premium-card', 'aria-label': 'Серия ежедневных наград: ' + String(this.props.streak || 0) + ' дней' }, e(GrowingStreakFlame, { days: Number(this.props.streak || 0), placement: 'calendar', theme: this.props.theme }), e('span', { className: 'gm-streak-calendar-copy' }, e('small', null, 'DAILY STREAK'), e('b', null, String(this.props.streak || 0) + ' ' + streakDayWord(Number(this.props.streak || 0)) + ' подряд'), e('span', null, 'Огонёк растёт с каждым днём серии')), e('span', { className: 'gm-streak-calendar-badge' }, '✦')), e('section', { className: 'gm-premium-card gm-mining-energy' }, e('div', { className: 'gm-mining-energy-head' }, e('b', null, 'Прогресс календаря'), e('span', null, data ? completed + ' / 30' : '…')), e('div', { className: 'gm-mining-energy-track', role: 'progressbar', 'aria-label': 'Получено дней', 'aria-valuenow': completed, 'aria-valuemin': 0, 'aria-valuemax': 30 }, e('span', { style: { width: (completed / 30 * 100) + '%' } }))), data && e('section', { className: 'gm-premium-card gm-calendar-assets' }, e('strong', null, 'Полученные бонусы'), e('div', { className: 'gm-calendar-assets-row' }, e('span', null, 'HP'), e('b', null, String(data.hp || 0)), e('span', null, 'Боксы'), e('b', null, String(Object.values(data.inventory || {}).reduce((n, value) => n + Number(value || 0), 0)))), e('p', { className: 'gm-calendar-xp-summary' }, 'Опыт профиля: ' + String(data.xp ?? 0) + ' XP · Уровень ' + String(data.level ?? 1)), e('div', { className: 'gm-hp-collection' }, e('div', { className: 'gm-hp-collection-heading' }, e('b', null, 'Коллекция HP'), e('small', null, 'Постоянные значки профиля · без влияния на добычу GM')), e('div', { className: 'gm-hp-collection-grid' }, (data.hp_cosmetics || []).map(item => e('button', { key: item.id, type: 'button',
+        return e('div', { className: 'gm-calendar' }, this.props.header, e('section', { className: 'gm-streak-calendar gm-premium-card', 'aria-label': 'Серия ежедневных наград: ' + String(this.props.streak || 0) + ' дней' }, e(StreakDaysBadge, { days: Number(this.props.streak || 0) }), e('span', { className: 'gm-streak-calendar-copy' }, e('small', null, 'DAILY STREAK'), e('b', null, String(this.props.streak || 0) + ' ' + streakDayWord(Number(this.props.streak || 0)) + ' подряд'), e('span', null, 'Заходи ежедневно и сохраняй серию')), e('span', { className: 'gm-streak-calendar-badge' }, '✦')), e('section', { className: 'gm-premium-card gm-mining-energy' }, e('div', { className: 'gm-mining-energy-head' }, e('b', null, 'Прогресс календаря'), e('span', null, data ? completed + ' / 30' : '…')), e('div', { className: 'gm-mining-energy-track', role: 'progressbar', 'aria-label': 'Получено дней', 'aria-valuenow': completed, 'aria-valuemin': 0, 'aria-valuemax': 30 }, e('span', { style: { width: (completed / 30 * 100) + '%' } }))), data && e('section', { className: 'gm-premium-card gm-calendar-assets' }, e('strong', null, 'Полученные бонусы'), e('div', { className: 'gm-calendar-assets-row' }, e('span', null, 'HP'), e('b', null, String(data.hp || 0)), e('span', null, 'Боксы'), e('b', null, String(Object.values(data.inventory || {}).reduce((n, value) => n + Number(value || 0), 0)))), e('p', { className: 'gm-calendar-xp-summary' }, 'Опыт профиля: ' + String(data.xp ?? 0) + ' XP · Уровень ' + String(data.level ?? 1)), e('div', { className: 'gm-hp-collection' }, e('div', { className: 'gm-hp-collection-heading' }, e('b', null, 'Коллекция HP'), e('small', null, 'Постоянные значки профиля · без влияния на добычу GM')), e('div', { className: 'gm-hp-collection-grid' }, (data.hp_cosmetics || []).map(item => e('button', { key: item.id, type: 'button',
             className: 'gm-hp-collectible' + (item.unlocked ? ' unlocked' : ''),
             disabled: busy || item.unlocked || Number(data.hp || 0) < Number(item.cost),
             onClick: () => this.unlockCosmetic(item.id) }, icon(item.icon || 'star', 24), e('span', null, e('b', null, item.title), e('small', null, item.unlocked ? 'Открыто' : Number(data.hp || 0) < Number(item.cost)
@@ -1352,10 +1319,10 @@ function App() {
         const e = React.createElement;
         const points = liveState?.points?.points ?? 0;
         const streakDays = Math.max(0, Math.floor(Number(liveState?.daily?.streak ?? wallet.streak ?? 0) || 0));
-        const nextFlameStage = [1, 5, 10, 20, 30].find(n => streakDays < n);
-        const streakHint = streakDays === 0 ? 'Получи сегодняшнюю награду, чтобы зажечь пламя' :
-            nextFlameStage ? 'До усиления огня: ' + (nextFlameStage - streakDays) + ' ' + streakDayWord(nextFlameStage - streakDays) :
-                'Элитное пламя · серия продолжается';
+        const nextMilestone = [1, 5, 10, 20, 30].find(n => streakDays < n);
+        const streakHint = streakDays === 0 ? 'Забери первую награду и начни серию' :
+            nextMilestone ? 'До следующей отметки: ' + (nextMilestone - streakDays) + ' ' + streakDayWord(nextMilestone - streakDays) :
+                'Серия продолжается · отличная регулярность';
         const miningRate = (liveState?.mining?.rate_cents_day != null ? liveState.mining.rate_cents_day / 100 : gmRate(wallet));
         const level = wallet.level || 1;
         const nextLevel = xpThreshold[Math.min(9, level)] || xpThreshold[9];
@@ -1369,7 +1336,7 @@ function App() {
             : e('div', { className: 'gm-home-market-empty' }, icon('candlesticks', 21), e('span', null, 'График появится после нескольких сделок'));
         const quick = [['lightning', 'Майнинг', 'mining'], ['gift', 'Боксы', 'boxes'], ['tasks', 'Задания', 'tasks'], ['friends', 'Друзья', 'referrals']];
         return e('div', { className: 'gm-home-v8' }, e('header', { className: 'gm-home-topline' }, e('div', { className: 'gm-home-brand' }, e(Brand, { theme, size: 37 }), e('div', null, e('b', null, 'GM TOKEN'), e('small', null, 'PREMIUM EDITION'))), e('button', { className: 'gm-home-settings', type: 'button', onClick: () => goto('settings'), 'aria-label': 'Настройки' }, icon('settings', 23))), e('div', { className: 'gm-home-level' }, e('div', null, e('span', null, 'Твой прогресс'), e('b', null, 'Уровень ' + level)), e('div', { className: 'gm-home-level-right' }, nf(wallet.xp, 0) + ' / ' + nf(nextLevel, 0) + ' XP'), e('div', { className: 'gm-home-level-track' }, e('span', { style: { width: progress + '%' } }))), e('section', { className: 'gm-home-wallet gm-premium-card' }, e('div', { className: 'gm-home-wallet-head' }, e('span', null, 'МОЙ БАЛАНС'), e('span', null, icon('shield-check', 16), ' Подтверждён')), e('div', { className: 'gm-home-balance-row' }, e('span', { className: 'gm-home-balance-icon' }, e(Brand, { theme, size: 33 })), e('div', null, e('small', null, 'GM'), e('strong', null, nf(wallet.gm))), e('button', { type: 'button', onClick: () => setGmBalanceMenu(true), 'aria-label': 'Варианты получения GM' }, icon('plus', 21))), e('div', { className: 'gm-home-balance-row' }, e('span', { className: 'gm-home-balance-icon' }, icon('coins', 31)), e('div', null, e('small', null, 'CR'), e('strong', null, nf(wallet.cr))), e('button', { type: 'button', onClick: () => goto('trade'), 'aria-label': 'Перейти на рынок' }, icon('chevron-right', 21)))), e('button', { type: 'button', className: 'gm-home-chart gm-premium-card', onClick: () => goto('trade') }, e('div', { className: 'gm-home-chart-top' }, e('div', null, e('small', null, 'РЫНОК · GM/CR'), e('b', null, liveTicker?.last_price ? nf(liveTicker.last_price / 100) + ' CR' : 'Нет цены')), icon('chevron-right', 21)), spark, e('small', { className: 'gm-home-chart-note' }, 'Только реальные игровые сделки · без искусственного графика')), e('div', { className: 'gm-home-shortcuts' }, quick.map(([img, label, route]) => e('button', { type: 'button', key: route, onClick: () => goto(route), className: 'gm-home-shortcut' }, e('span', null, icon(img, 30, true)), e('b', null, label)))), e('button', { type: 'button', className: 'gm-home-offer gm-premium-card', 'data-guide': 'mining', onClick: () => goto('mining') }, e('span', { className: 'gm-home-offer-coin' }, e(Brand, { theme, size: 51 })), e('span', null, e('b', null, 'Майнинг работает'), e('small', null, nf(miningRate, 0) + ' GM/сутки · накоплено ' + nf(wallet.storage) + ' GM')), icon('chevron-right', 21)), e('button', { type: 'button', className: 'gm-home-offer gm-premium-card', 'data-guide': 'boxes', onClick: () => goto('boxes') }, e('span', { className: 'gm-home-offer-coin' }, icon('gift', 45, true)), e('span', null, e('b', null, 'Открывай боксы за POINTS'), e('small', null, 'Твои POINTS: ' + nf(points, 0) + ' · гарантированные награды')), icon('chevron-right', 21)), e('button', { type: 'button', className: 'gm-home-streak gm-premium-card', onClick: () => goto('reward'),
-            'aria-label': 'Daily Streak: ' + streakDays + ' ' + streakDayWord(streakDays) + ' подряд. Открыть календарь' }, e(GrowingStreakFlame, { days: streakDays, placement: 'home', theme }), e('span', { className: 'gm-home-streak-copy' }, e('small', null, 'DAILY STREAK · СЕРИЯ'), e('strong', null, streakDays + ' ' + streakDayWord(streakDays) + ' подряд'), e('span', null, streakHint)), e('span', { className: 'gm-home-streak-arrow' }, icon('chevron-right', 20))), e('div', { className: 'gm-home-lower' }, e('button', { type: 'button', onClick: () => goto('reward') }, icon('gift', 19), ' Осенний календарь', icon('chevron-right', 15)), e('button', { type: 'button', onClick: () => goto('more') }, icon('info', 19), ' Как играть', icon('chevron-right', 15))));
+            'aria-label': 'Daily Streak: ' + streakDays + ' ' + streakDayWord(streakDays) + ' подряд. Открыть календарь' }, e(StreakDaysBadge, { days: streakDays }), e('span', { className: 'gm-home-streak-copy' }, e('small', null, 'DAILY STREAK · СЕРИЯ'), e('strong', null, streakDays + ' ' + streakDayWord(streakDays) + ' подряд'), e('span', null, streakHint)), e('span', { className: 'gm-home-streak-arrow' }, icon('chevron-right', 20))), e('div', { className: 'gm-home-lower' }, e('button', { type: 'button', onClick: () => goto('reward') }, icon('gift', 19), ' Осенний календарь', icon('chevron-right', 15)), e('button', { type: 'button', onClick: () => goto('more') }, icon('info', 19), ' Как играть', icon('chevron-right', 15))));
     }
     function Trading() {
         const e = React.createElement;
@@ -2199,15 +2166,18 @@ function App() {
                             guideStep + 1 >= steps.length ? L('finish') : L('next'),
                             icon('chevron-right', 18))))));
     }
-    function Streak() { return React.createElement(React.Fragment, null,
-        top('Daily Streak', true, 'flame'),
-        React.createElement("div", { className: "referral-hero pearl-card" },
-            icon('flame', 90, true),
-            React.createElement("h1", null,
-                wallet.streak,
-                " \u0434\u043D\u0435\u0439"),
-            React.createElement("p", null, "\u0421\u0435\u0440\u0438\u044F \u0435\u0436\u0435\u0434\u043D\u0435\u0432\u043D\u044B\u0445 \u043F\u043E\u0441\u0435\u0449\u0435\u043D\u0438\u0439. \u041F\u043E\u0432\u0442\u043E\u0440\u043D\u043E\u0435 \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435 \u043D\u0430\u0433\u0440\u0430\u0434\u044B \u0432 \u043E\u0434\u0438\u043D \u0434\u0435\u043D\u044C \u0437\u0430\u043F\u0440\u0435\u0449\u0435\u043D\u043E.")),
-        React.createElement(GButton, { theme: theme, onClick: () => goto('reward') }, "\u0415\u0436\u0435\u0434\u043D\u0435\u0432\u043D\u0430\u044F \u043D\u0430\u0433\u0440\u0430\u0434\u0430")); }
+    function Streak() {
+        const n = Math.max(0, Math.floor(Number(liveState?.daily?.streak ?? wallet.streak ?? 0) || 0));
+        return React.createElement(React.Fragment, null,
+            top('Серия дней', true, 'clock'),
+            React.createElement("section", { className: "gm-streak-overview gm-premium-card" },
+                React.createElement(StreakDaysBadge, { days: n }),
+                React.createElement("div", null,
+                    React.createElement("small", null, "DAILY STREAK"),
+                    React.createElement("h1", null, n + ' ' + streakDayWord(n) + ' подряд'),
+                    React.createElement("p", null, "Получай ежедневную награду и сохраняй серию. Повторное начисление за один день недоступно."))),
+            React.createElement(GButton, { theme: theme, onClick: () => goto('reward') }, "Открыть календарь наград"));
+    }
     if (demo) {
         return React.createElement("main", { className: 'application auth-page theme-' + theme },
             React.createElement("div", { className: "auth-ambient", "aria-hidden": "true" }),
