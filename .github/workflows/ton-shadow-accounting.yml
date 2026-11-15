@@ -66,3 +66,12 @@ jobs:
           count=$(psql -tAc 'SELECT COUNT(*) FROM gm_ton_shadow.journal_entries')
           test "$count" = "0"
           echo "No staging test entries persisted"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: Install test-only Node PostgreSQL driver
+        run: npm install --no-audit --no-fund --ignore-scripts
+      - name: Check concurrent overspend, replay and dropped session
+        env:
+          TON_SHADOW_CI_POSTGRES: postgres://test_only:local_ci_password@127.0.0.1:5432/gm_shadow_ci
+        run: node scripts/ton-shadow-concurrency-ci.mjs
