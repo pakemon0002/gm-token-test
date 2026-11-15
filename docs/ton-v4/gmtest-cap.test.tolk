@@ -105,6 +105,7 @@ get fun `test GMTEST cap: dropped admin cannot mint`() {
     expect(res).toHaveFailedTx<MintNewJettons>({
         from: deployer.address,
         to: minter.address,
+        exitCode: 7,
     });
     expect(minter.getTotalSupply()).toEqual(0);
 }
