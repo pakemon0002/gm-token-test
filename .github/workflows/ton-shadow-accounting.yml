@@ -87,6 +87,13 @@ jobs:
           count=$(psql -tAc 'SELECT COUNT(*) FROM gm_ton_shadow.journal_entries')
           test "$count" = "0"
           echo "No staging test entries persisted"
+      - name: Reject unsupported on-chain backing claims and tampering with reconciliation records
+        shell: bash
+        run: |
+          { printf 'BEGIN;\n'; cat docs/ton-v4/postgres_reserve_claims_negative_tests_staging.sql; printf '\nROLLBACK;\n'; } | psql -v ON_ERROR_STOP=1
+          count=$(psql -tAc 'SELECT COUNT(*) FROM gm_ton_shadow.reconciliation_snapshots')
+          test "$count" = "0"
+          echo "No simulated reserve claims persisted"
       - uses: actions/setup-node@v4
         with:
           node-version: '22.16.0'
