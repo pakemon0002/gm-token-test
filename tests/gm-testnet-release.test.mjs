@@ -40,7 +40,7 @@ test('rejects Mainnet, misleading ticker, incorrect decimal and untrusted metada
  assert.throws(()=>verifyGmTestnetMetadata({...metadata,decimals:'6'}),/9 decimal/);
  assert.throws(()=>verifyGmTestnetMetadata({...metadata,description:'Get rich'}),/disclaimers/);
  for(const image of ['http://gm-token-test-iprj.onrender.com/a.png',
-   'https://example.com/a.png','https://gm-token-test-iprj.onrender.com:443/a.png',
+   'https://example.com/a.png','https://gm-token-test-iprj.onrender.com:8443/a.png',
    'https://gm-token-test-iprj.onrender.com/a.png#fragment',
    'https://localhost/a.png','not a url']){
    assert.throws(()=>verifyGmTestnetMetadata({...metadata,image}),/HTTPS|Public immutable|origin/);
