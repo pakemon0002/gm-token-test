@@ -77,7 +77,7 @@ for(const [key,value] of [
  assert.equal(process.env[key],value,'GMTEST fixture metadata mismatch: '+key);
 }
 assert.equal(process.env.JETTON_DESCRIPTION,
- 'GM TOKEN development Jetton for TON Testnet ONLY. No monetary value, no connection to a live token, no deposits, redemptions or exchanges.',
+ 'GM TOKEN development Jetton for TON Testnet ONLY. No monetary value, no connection to a live token, no deposits, redemptions or exchanges. In-game GM and virtual CR/POINTS remain separate.',
  'Testnet disclaimer must be explicit in CI');
 const minter=read('contracts/JettonMinter.tolk');
 const wallet=read('contracts/JettonWallet.tolk');
