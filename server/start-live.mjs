@@ -3,6 +3,9 @@ for (const key of ['GM_TEST_STARTER_FUNDS','GM_ADMIN_TEST_GRANTS','GM_TEST_OPEN_
   process.env[key]='0';
 }
 if (process.env.GM_UPGRADE_PAYMENT_MODE === 'virtual_test') delete process.env.GM_UPGRADE_PAYMENT_MODE;
+if(process.env.PUBLIC_APP_URL){
+ try{console.info('GM TOKEN Telegram menu app origin:',new URL(process.env.PUBLIC_APP_URL).origin)}catch{}
+}
 process.env.GM_DATABASE_DRIVER='postgres';
 if (!process.env.DATABASE_URL || !process.env.BOT_TOKEN) throw new Error('DATABASE_URL and BOT_TOKEN are required');
 await import('./index.mjs');
