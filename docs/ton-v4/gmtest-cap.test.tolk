@@ -91,6 +91,55 @@ get fun `test GMTEST cap: admin cannot replace code and data to bypass cap`() {
     expect(minter.getTotalSupply()).toEqual(0);
 }
 
+get fun `test GMTEST immutable supply: full mint then revoke admin, burn cannot reopen mint`() {
+    val (minter, deployer, _) = setupTest();
+    val wallet = mintTo(minter, deployer, deployer.address, GMTEST_CAP);
+    expect(minter.getTotalSupply()).toEqual(GMTEST_CAP);
+    expect(wallet.getJettonBalance()).toEqual(GMTEST_CAP);
+
+    val revoke = minter.sendDropMinterAdmin(
+        deployer.address,
+        0,
+        { bounce: false, value: grams("0.05") },
+    );
+    expect(revoke).toHaveSuccessfulTx<DropMinterAdmin>({
+        from: deployer.address,
+        to: minter.address,
+    });
+    expect(minter.getAdminAddress()).toEqual(null);
+
+    val amountToBurn = grams("1");
+    val burn = wallet.sendAskToBurn(
+        deployer.address,
+        0,
+        amountToBurn,
+        deployer.address,
+        null,
+        { bounce: false, value: DEFAULT_BURN_MSG_VALUE },
+    );
+    expect(burn).toHaveSuccessfulTx<AskToBurn>({
+        from: deployer.address,
+        to: wallet.address,
+    });
+    expect(minter.getTotalSupply()).toEqual(GMTEST_CAP - amountToBurn);
+
+    // The available circulating headroom is NOT a license to mint again.
+    val blocked = minter.sendMint(
+        deployer.address,
+        deployer.address,
+        amountToBurn,
+        grams("0.05"),
+        grams("0.3"),
+    );
+    expect(blocked).toHaveFailedTx<MintNewJettons>({
+        from: deployer.address,
+        to: minter.address,
+        exitCode: 7,
+    });
+    expect(minter.getTotalSupply()).toEqual(GMTEST_CAP - amountToBurn);
+    expect(wallet.getJettonBalance()).toEqual(GMTEST_CAP - amountToBurn);
+}
+
 get fun `test GMTEST cap: dropped admin cannot mint`() {
     val (minter, deployer, _) = setupTest();
     val dropped = minter.sendDropMinterAdmin(
