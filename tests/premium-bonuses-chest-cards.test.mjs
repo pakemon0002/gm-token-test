@@ -9,7 +9,7 @@ const servedStyles=readFileSync(new URL('../miniapp/public/styles.css',import.me
 test('bonus cards and chest preview keep real rewards and get original monochrome icons in both builds',()=>{
  for(const code of [source,served]){
   for(const token of ['gm-premium-bonus-panel','gm-premium-prize-preview','gm-bonus-stat-hp','gm-bonus-stat-box',
-   'gm-hp-collectible-art','gm-hp-collectible-state','gm-prize-xp-mark','gm-chest-prize-guaranteed',
+   'gm-hp-collectible-art','gm-hp-collectible-state','ChromeAsset','gm-chest-prize-guaranteed',
    'gm-chest-prize-progress','prizeFrameIcon']){
    assert.ok(code.includes(token),'missing '+token);
   }
@@ -17,6 +17,7 @@ test('bonus cards and chest preview keep real rewards and get original monochrom
   assert.ok(code.includes("reward>0?")||code.includes("reward > 0 ?"));
   assert.ok(code.includes("collection[selected.kind]")||code.includes("collection[selected.kind]"));
   assert.ok(code.includes("data.inventory"));
+  assert.ok(code.includes("name:'xp'")||code.includes("name: 'xp'"),'XP should use metallic artwork');
   assert.doesNotMatch(code,/icon\(['"]award['"],\s*23|icon\(['"]sparkles['"],\s*23/);
  }
  assert.equal(styles,servedStyles,'source stylesheet is the one served in Telegram');

@@ -30,8 +30,9 @@ test('v4 CSS is responsive and disables inherited giant ring pseudo-element',()=
 test('Telegram loads versioned entry assets without stale HTML/JS/CSS cache',()=>{
  const html=read('miniapp/public/preview.html');
  const server=read('server/index.mjs');
- assert.ok(html.includes('styles.css?v=boxes-extras-20261112'));
- assert.ok(html.includes('main.js?v=boxes-extras-20261112'));
+ assert.ok(html.includes('styles.css?v=gm-chrome-20261115-v5'));
+ assert.ok(html.includes('main.js?v=gm-chrome-20261115-v5'));
+ assert.ok(!html.includes('boxes-extras-20261112'),'old bundle IDs must not be reused');
  assert.ok(html.includes('http-equiv="Cache-Control"'));
  assert.ok(server.includes("const noCache=ext==='.html'||ext==='.js'||ext==='.css';"));
  assert.ok(server.includes("'Cache-Control':'no-store, max-age=0, must-revalidate'"));
