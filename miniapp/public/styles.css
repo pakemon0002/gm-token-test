@@ -734,6 +734,14 @@ html,body,button,input,textarea,select{font-family:'Exo 2',system-ui,-apple-syst
 .theme-dark .gm-streak-calendar{border-color:#49566c;background:linear-gradient(140deg,#262d3c,#0b0e17)}
 .gm-streak-flame{position:relative;width:67px;height:74px;flex:none;display:grid;place-items:center;isolation:isolate}
 .gm-streak-flame-calendar{width:58px;height:64px}
+.theme-light .gm-streak-flame-glow{background:radial-gradient(ellipse at 50% 55%,#b9d2eeb3,transparent 72%)}
+.theme-dark .gm-streak-flame-glow{background:radial-gradient(ellipse at 50% 55%,#607999b3,transparent 72%)}
+.theme-light .gm-streak-flame-art{filter:drop-shadow(0 1px 3px #526f96b0)}
+.theme-dark .gm-streak-flame-art{filter:drop-shadow(0 0 7px #7286a8a6)}
+.theme-dark .gm-streak-flame-spark{background:#c2ccda;box-shadow:0 0 7px 2px #7185a7}
+.theme-dark .gm-streak-flame-stage-4 .gm-streak-flame-art{filter:drop-shadow(0 0 10px #8b9fbd)}
+.theme-dark .gm-streak-flame-stage-5 .gm-streak-flame-glow{background:radial-gradient(ellipse,#7e92b7b8,transparent 72%)}
+.theme-dark .gm-streak-flame-stage-5 .gm-streak-flame-art{filter:drop-shadow(0 0 13px #a9b8cf)}
 .gm-streak-flame-glow{position:absolute;inset:20% 10% 6%;border-radius:50%;background:radial-gradient(ellipse at 50% 55%,#8cbcff9e,transparent 70%);filter:blur(11px);opacity:.75;animation:gm-flame-halo 3.5s ease-in-out infinite}
 .gm-streak-flame-art{position:relative;z-index:2;width:100%;height:100%;transform-origin:50% 88%;transform:scale(var(--gm-streak-growth));filter:drop-shadow(0 0 6px #a9ceefaa);animation:gm-flame-sway 2.6s ease-in-out infinite}
 .gm-streak-flame-inner{transform-origin:50% 83%;animation:gm-flame-inner 2s ease-in-out infinite}

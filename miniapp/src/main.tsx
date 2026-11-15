@@ -42,28 +42,36 @@ function streakDayWord(days:number){
  const n=Math.max(0,Math.floor(days));
  return n%10===1&&n%100!==11?'день':n%10>=2&&n%10<=4&&(n%100<12||n%100>14)?'дня':'дней';
 }
-function GrowingStreakFlame({days=0,placement='home'}:{days?:number,placement?:string}){
+function GrowingStreakFlame({days=0,placement='home',theme='light'}:{days?:number,placement?:string,theme?:Theme}){
  const count=Number.isSafeInteger(days)&&days>0?days:0;
  const stage=streakStage(count);
  const outerId='gm-streak-outer-'+placement;
  const innerId='gm-streak-inner-'+placement;
  const growth=Math.min(1.2,0.68+Math.min(30,count)*0.018);
+ // Silver/Graphite palettes are independent. Streak only controls growth.
+ const palette=theme==='dark'?{
+  outer:['#253044','#3d506b','#657a97','#a5b5c8'],
+  inner:['#566e8d','#bac9d8','#4c6485']
+ }:{
+  outer:['#728aa6','#b4cee5','#e0edfa','#ffffff'],
+  inner:['#d9ecff','#ffffff','#b3d2f0']
+ };
  return <span className={'gm-streak-flame gm-streak-flame-stage-'+stage+' gm-streak-flame-'+placement}
   style={{'--gm-streak-growth':String(growth)} as any} aria-hidden="true">
    <span className="gm-streak-flame-glow"/>
    <svg className="gm-streak-flame-art" viewBox="0 0 74 88" fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
      <linearGradient id={outerId} x1="12" y1="75" x2="59" y2="13" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stopColor="#526b9b"/><stop offset=".44" stopColor="#92c4f5"/>
-      <stop offset=".76" stopColor="#cce5ff"/><stop offset="1" stopColor="#f4f9ff"/>
+      <stop offset="0" stopColor={palette.outer[0]}/><stop offset=".44" stopColor={palette.outer[1]}/>
+      <stop offset=".76" stopColor={palette.outer[2]}/><stop offset="1" stopColor={palette.outer[3]}/>
      </linearGradient>
      <linearGradient id={innerId} x1="28" y1="80" x2="46" y2="32" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stopColor="#eaf8ff"/><stop offset=".57" stopColor="#fffefd"/><stop offset="1" stopColor="#b4d6ff"/>
+      <stop offset="0" stopColor={palette.inner[0]}/><stop offset=".57" stopColor={palette.inner[1]}/><stop offset="1" stopColor={palette.inner[2]}/>
      </linearGradient>
     </defs>
     <path className="gm-streak-flame-body" d="M37 4C46 18 46 27 43 35C52 30 57 23 55 17C67 32 70 45 66 58C61 75 51 82 37 82C19 82 6 70 7 54C8 41 15 33 24 25C22 36 25 43 31 47C35 37 33 19 37 4Z" fill={'url(#'+outerId+')'}/>
     <path className="gm-streak-flame-inner" d="M37 35C43 44 47 47 46 55C52 51 52 48 51 44C58 53 59 64 54 73C50 80 44 83 36 83C25 83 19 77 20 66C20 59 25 55 30 52C29 60 31 63 35 65C38 55 35 45 37 35Z" fill={'url(#'+innerId+')'}/>
-    <path className="gm-streak-flame-highlight" d="M27 66C24 58 27 52 30 49" stroke="#fff" strokeOpacity=".75" strokeWidth="2.5" strokeLinecap="round"/>
+    <path className="gm-streak-flame-highlight" d="M27 66C24 58 27 52 30 49" stroke={theme==='dark'?'#c5d0df':'#fff'} strokeOpacity=".75" strokeWidth="2.5" strokeLinecap="round"/>
    </svg>
    <span className="gm-streak-flame-spark gm-streak-flame-spark-one"/>
    <span className="gm-streak-flame-spark gm-streak-flame-spark-two"/>
@@ -490,7 +498,7 @@ class AutumnCalendar extends React.Component {
     return e('div', {className:'gm-calendar'},
       this.props.header,
       e('section',{className:'gm-streak-calendar gm-premium-card','aria-label':'Серия ежедневных наград: '+String(this.props.streak||0)+' дней'},
-        e(GrowingStreakFlame,{days:Number(this.props.streak||0),placement:'calendar'}),
+        e(GrowingStreakFlame,{days:Number(this.props.streak||0),placement:'calendar',theme:this.props.theme}),
         e('span',{className:'gm-streak-calendar-copy'},
           e('small',null,'DAILY STREAK'),
           e('b',null,String(this.props.streak||0)+' '+streakDayWord(Number(this.props.streak||0))+' подряд'),
@@ -1194,7 +1202,7 @@ function App(){
     icon('chevron-right',21)),
    e('button',{type:'button',className:'gm-home-streak gm-premium-card',onClick:()=>goto('reward'),
      'aria-label':'Daily Streak: '+streakDays+' '+streakDayWord(streakDays)+' подряд. Открыть календарь'},
-    e(GrowingStreakFlame,{days:streakDays,placement:'home'}),
+    e(GrowingStreakFlame,{days:streakDays,placement:'home',theme}),
     e('span',{className:'gm-home-streak-copy'},
       e('small',null,'DAILY STREAK · СЕРИЯ'),
       e('strong',null,streakDays+' '+streakDayWord(streakDays)+' подряд'),
@@ -1562,7 +1570,7 @@ function Tasks(){
  
  
 function Reward() {
-    return React.createElement(AutumnCalendar, {api, icon, header:top('Осенний календарь', true, 'info'),streak:Math.max(0,Math.floor(Number(liveState?.daily?.streak??wallet.streak??0)||0)),onOpenBoxes:()=>goto('boxes'),onClaim:refreshLive});
+    return React.createElement(AutumnCalendar, {api, icon, header:top('Осенний календарь', true, 'info'),theme,streak:Math.max(0,Math.floor(Number(liveState?.daily?.streak??wallet.streak??0)||0)),onOpenBoxes:()=>goto('boxes'),onClaim:refreshLive});
   }
   function Splash(){return <div className="splash-view gm-splash-v4" role="status" aria-live="polite">
   <div className="gm-splash-v4-stack">

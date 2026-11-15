@@ -41,6 +41,18 @@ test('animated silver fire works on both premium themes with limited brightness 
  assert.ok(app.includes("'aria-label':'Серия ежедневных наград: '"));
 });
 
+test('Daily Streak flame switches between Silver and Graphite palettes without changing animation',()=>{
+ assert.ok(app.includes("const palette=theme==='dark'?"));
+ for(const color of ['#253044','#3d506b','#a5b5c8','#728aa6','#e0edfa','#ffffff'])
+  assert.ok(app.includes(color),'theme palette '+color);
+ assert.ok(app.includes("e(GrowingStreakFlame,{days:streakDays,placement:'home',theme})"));
+ assert.ok(app.includes("e(GrowingStreakFlame,{days:Number(this.props.streak||0),placement:'calendar',theme:this.props.theme})"));
+ assert.ok(app.includes("header:top('Осенний календарь', true, 'info'),theme,streak:"));
+ for(const selector of ['.theme-light .gm-streak-flame-art','.theme-dark .gm-streak-flame-art',
+  '.theme-dark .gm-streak-flame-glow','.theme-light .gm-streak-flame-glow'])
+  assert.ok(css.includes(selector),selector);
+});
+
 test('visual flame introduces no new rewards, payment routes or balances',()=>{
  const count=(needle)=>(app.match(new RegExp(needle,'g'))||[]).length;
  assert.ok(count('GrowingStreakFlame')>=3);
