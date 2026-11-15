@@ -75,3 +75,12 @@ jobs:
         env:
           TON_SHADOW_CI_POSTGRES: postgres://test_only:local_ci_password@127.0.0.1:5432/gm_shadow_ci
         run: node scripts/ton-shadow-concurrency-ci.mjs
+
+      - name: Initialize real gm_game schema from existing PostgreSQL migration
+        shell: bash
+        run: |
+          { printf 'BEGIN;\n'; cat migrations/20261113_game_postgres.sql; printf '\nCOMMIT;\n'; } | psql -v ON_ERROR_STOP=1
+      - name: Check atomic game mutations and shadow entries in one PostgreSQL transaction
+        env:
+          TON_SHADOW_CI_POSTGRES: postgres://test_only:local_ci_password@127.0.0.1:5432/gm_shadow_ci
+        run: node scripts/ton-shadow-stage-bridge-ci.mjs
