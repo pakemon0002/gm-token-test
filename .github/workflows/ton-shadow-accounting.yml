@@ -30,6 +30,10 @@ jobs:
         run: npm install --no-audit --no-fund --ignore-scripts
       - name: Reject Mainnet and fake Jetton Master in TON Testnet preflight
         run: node --test tests/ton-testnet-preflight.test.mjs
+      - name: Validate GMTEST supply, metadata, network and deployment guard
+        run: |
+          node --test tests/gm-testnet-release.test.mjs
+          node scripts/gm-testnet-status.mjs
   postgres-shadow:
     name: PostgreSQL ledger negative tests (ephemeral database only)
     runs-on: ubuntu-latest
