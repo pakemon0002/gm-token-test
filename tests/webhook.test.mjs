@@ -41,3 +41,34 @@ test('wrong bot token is rejected before Telegram webhook registration',async()=
  assert.equal(calls.length,1);
  assert.ok(calls[0].endsWith('getMe'));
 });
+
+test('Telegram GM /start shows rules and economy, and inline callbacks return real help content',async()=>{
+ const calls=[];
+ const webhook=makeTelegramWebhook({
+  token:'EXAMPLE_TEST_TOKEN',publicUrl:'https://gm-token-test.onrender.com/',
+  webhookSecret:secret,botUsername:'GmTokenApp',
+  newsChannelUrl:'https://t.me/GmTokenNews',
+  fetchImpl:async(url,options)=>{
+   calls.push({method:url.split('/').pop(),body:JSON.parse(options.body)});
+   return {ok:true,json:async()=>({ok:true,result:{}})};
+  }
+ });
+ await webhook.handleUpdate({message:{chat:{id:777},text:'/start ref_1234567'}});
+ const sent=calls[0].body;
+ assert.equal(calls[0].method,'sendMessage');
+ assert.equal(sent.parse_mode,'HTML');
+ assert.match(sent.text,/Добро пожаловать в GM TOKEN/);
+ assert.equal(sent.reply_markup.inline_keyboard[0][0].web_app.url,'https://gm-token-test.onrender.com/');
+ assert.equal(sent.reply_markup.inline_keyboard[1][0].callback_data,'gm:rules');
+ assert.equal(sent.reply_markup.inline_keyboard[1][1].callback_data,'gm:economy');
+ assert.equal(sent.reply_markup.inline_keyboard[3][0].url,'https://t.me/GmTokenNews');
+ assert.equal(sent.reply_markup.inline_keyboard[4][0].url,'https://t.me/GmTokenApp?startapp=ref_1234567');
+ await webhook.handleUpdate({callback_query:{id:'cb-one',data:'gm:rules',message:{chat:{id:777}}}});
+ assert.equal(calls[1].method,'answerCallbackQuery');
+ assert.equal(calls[1].body.callback_query_id,'cb-one');
+ assert.equal(calls[2].method,'sendMessage');
+ assert.match(calls[2].body.text,/Правила и ресурсы/);
+ assert.equal(calls[2].body.chat_id,777);
+ await webhook.handleUpdate({callback_query:{id:'cb-no',data:'gm:unrecognized',message:{chat:{id:777}}}});
+ assert.equal(calls.length,3,'unknown callbacks must not send messages');
+});
