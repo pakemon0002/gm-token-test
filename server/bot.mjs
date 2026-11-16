@@ -2,7 +2,8 @@ import {telegramWelcomeCard,telegramWelcomeInfo} from './telegram-welcome.mjs';
 // Optional Telegram bot worker for GM TOKEN test Mini App.
 // Required: BOT_TOKEN, PUBLIC_APP_URL=https://... ; never commit actual secrets.
 const token=process.env.BOT_TOKEN,url=process.env.PUBLIC_APP_URL,user=process.env.BOT_USERNAME||'GmTokenApp';
-const newsChannelUrl=process.env.GM_NEWS_CHANNEL_URL||null;
+const officialChannelUrl=process.env.GM_OFFICIAL_CHANNEL_URL||process.env.GM_NEWS_CHANNEL_URL||null;
+const communityChatUrl=process.env.GM_COMMUNITY_CHAT_URL||null;
 if(!token||!url||!url.startsWith('https://'))throw Error('BOT_TOKEN and HTTPS PUBLIC_APP_URL required');
 const endpoint=`https://api.telegram.org/bot${token}/`;
 const pause=(ms)=>new Promise(r=>setTimeout(r,ms));
@@ -25,7 +26,7 @@ async function startBot(){
    const m=update.message;if(!m?.chat?.id||typeof m.text!=='string')continue;
    const start=m.text.match(/^\/start(?:\s+ref_(\d{5,20}))?(?:\s|$)/);
    if(start){
-    await api('sendMessage',{chat_id:m.chat.id,...telegramWelcomeCard({appUrl:url,botUsername:user,referralId:start[1],newsChannelUrl})});
+    await api('sendMessage',{chat_id:m.chat.id,...telegramWelcomeCard({appUrl:url,botUsername:user,referralId:start[1],officialChannelUrl,communityChatUrl})});
    }else if(/^\/help/.test(m.text)){await api('sendMessage',{chat_id:m.chat.id,text:'Открой Mini App, чтобы посмотреть награды, баланс и задания. Вопросы: Профиль → Поддержка. Никому не передавай пароли, seed-фразы и коды 2FA.'});}
   }
  }catch(e){console.error('Telegram polling:',e.message);await pause(3500)}}
