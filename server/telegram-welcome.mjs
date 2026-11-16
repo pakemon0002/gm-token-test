@@ -12,30 +12,42 @@ export const GM_WELCOME_TEXT = [
   '<i>GM и CR — игровые единицы. Реальный TON-токен пока не запущен.</i>'
 ].join('\n');
 
-function validNewsChannelUrl(value) {
+// A Telegram community URL must be supplied by the project owner, never guessed.
+function validTelegramCommunityUrl(value) {
   if(!value)return null;
   try {
     const url=new URL(value);
-    if(url.protocol!=='https:' || url.hostname!=='t.me' || url.port || url.username || url.password || url.search || url.hash)return null;
-    if(!/^\/[A-Za-z][A-Za-z0-9_]{4,31}\/?$/.test(url.pathname))return null;
+    if(url.protocol!=='https:' || url.hostname!=='t.me' || url.port ||
+       url.username || url.password || url.search || url.hash)return null;
+    // Public usernames and Telegram invite links; no redirects or arbitrary hosts.
+    if(!(/^\/[A-Za-z][A-Za-z0-9_]{4,31}\/?$/.test(url.pathname) ||
+         /^\/\+[A-Za-z0-9_-]{8,}\/?$/.test(url.pathname)))return null;
     return url.toString();
   }catch{return null}
 }
 
-export function telegramWelcomeCard({appUrl,botUsername='GmTokenApp',referralId=null,newsChannelUrl=null}) {
+export function telegramWelcomeCard({
+ appUrl,botUsername='GmTokenApp',referralId=null,
+ officialChannelUrl=null,communityChatUrl=null,newsChannelUrl=null
+}) {
   const parsed=new URL(appUrl);
-  if(parsed.protocol!=='https:' || parsed.username || parsed.password)throw Error('Mini App HTTPS URL required');
+  if(parsed.protocol!=='https:' || parsed.username || parsed.password || parsed.search || parsed.hash)
+    throw Error('Mini App HTTPS URL required');
+  const channel=validTelegramCommunityUrl(officialChannelUrl || newsChannelUrl);
+  const chat=validTelegramCommunityUrl(communityChatUrl);
+  // The links are optional until the owner provides the REAL channel/chat URLs.
+  // No placeholder links, fake community addresses, or dead buttons.
+  const communityRow=[];
+  if(channel)communityRow.push({text:'Официальный канал',url:channel});
+  if(chat)communityRow.push({text:'Чат сообщества',url:chat});
   const buttons=[
-    [{text:'⛏ Открыть GM TOKEN',web_app:{url:appUrl}}],
+    [{text:'Открыть фармилку',web_app:{url:appUrl}}],
+    ...(communityRow.length?[communityRow]:[]),
     [
-      {text:'📜 Правила и ресурсы',callback_data:'gm:rules'},
-      {text:'💠 Экономика',callback_data:'gm:economy'}
+      {text:'Правила',callback_data:'gm:rules'},
+      {text:'Экономика',callback_data:'gm:economy'}
     ]
   ];
-  const support=[{text:'🛡 Поддержка',callback_data:'gm:support'}];
-  buttons.push(support);
-  const channel=validNewsChannelUrl(newsChannelUrl);
-  if(channel)buttons.push([{text:'📣 Новостной канал',url:channel}]);
   const username=String(botUsername).replace(/^@/,'');
   if(/^\d{5,20}$/.test(String(referralId??'')) && /^[A-Za-z0-9_]{5,32}$/.test(username))
     buttons.push([{text:'Открыть по приглашению',url:`https://t.me/${username}?startapp=ref_${referralId}`}]);
