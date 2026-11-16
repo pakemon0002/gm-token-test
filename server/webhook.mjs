@@ -1,9 +1,10 @@
 // Telegram HTTPS webhook for a sleeping/free test web service.
 // Requires BOT_TOKEN, PUBLIC_APP_URL and BOT_WEBHOOK_SECRET in the private host environment.
 // Does not handle real-money transactions; only opens the GM TOKEN virtual-game mini app.
+import {telegramWelcomeCard,telegramWelcomeInfo} from './telegram-welcome.mjs';
 const isSafeSecret = x => typeof x === 'string' && /^[a-zA-Z0-9_-]{16,256}$/.test(x);
 
-export function makeTelegramWebhook({token, publicUrl, webhookSecret, botUsername='GmTokenApp', fetchImpl=fetch, logger=console, onStart=null}) {
+export function makeTelegramWebhook({token, publicUrl, webhookSecret, botUsername='GmTokenApp', newsChannelUrl=process.env.GM_NEWS_CHANNEL_URL||null, fetchImpl=fetch, logger=console, onStart=null}) {
   if (!token || !/^https:\/\//.test(publicUrl || '') || !isSafeSecret(webhookSecret)) {
     throw new Error('Telegram webhook requires BOT_TOKEN, HTTPS PUBLIC_APP_URL, and BOT_WEBHOOK_SECRET (16+ characters)');
   }
@@ -38,21 +39,28 @@ export function makeTelegramWebhook({token, publicUrl, webhookSecret, botUsernam
       throw new Error('BOT_TOKEN belongs to @'+(actual||'unknown')+' but GM TOKEN expects @'+expected+'. Please check Render BOT_TOKEN without sharing it.');
     }
     logger.log('Telegram bot identity verified: @'+actual);
-    await api('setWebhook',{url:new URL('/api/telegram/webhook',baseUrl).toString(),secret_token:webhookSecret,allowed_updates:['message'],drop_pending_updates:false});
+    await api('setWebhook',{url:new URL('/api/telegram/webhook',baseUrl).toString(),secret_token:webhookSecret,allowed_updates:['message','callback_query'],drop_pending_updates:false});
     await api('setChatMenuButton',{menu_button:{type:'web_app',text:'Открыть GM TOKEN',web_app:{url:baseUrl}}});
     await api('setMyCommands',{commands:[{command:'start',description:'Открыть GM TOKEN'},{command:'help',description:'Помощь и правила'}]});
     logger.log('Telegram webhook configured.');
   };
   const validateSecret = received => typeof received === 'string' && received === webhookSecret;
   const handleUpdate = async update => {
+    const callback = update?.callback_query;
+    if(callback) {
+      const reply=telegramWelcomeInfo(callback.data);
+      const callbackChatId=callback.message?.chat?.id;
+      if(!reply || typeof callback.id!=='string' || !Number.isSafeInteger(callbackChatId))return;
+      await api('answerCallbackQuery',{callback_query_id:callback.id});
+      await api('sendMessage',{chat_id:callbackChatId,...reply});
+      return;
+    }
     const message = update?.message;
     if (!message || !Number.isSafeInteger(message.chat?.id) || typeof message.text !== 'string') return;
     const chatId=message.chat.id;
     if (/^\/start(?:\s|$)/.test(message.text)) {
       const match=message.text.match(/^\/start\s+ref_(\d{5,20})(?:\s|$)/);
-      const buttons=[[{text:'Открыть GM TOKEN',web_app:{url:baseUrl}}]];
-      if(match)buttons.push([{text:'Открыть по приглашению',url:`https://t.me/${botUsername}?startapp=ref_${match[1]}`}]);
-      await api('sendMessage',{chat_id:chatId,text:'GM TOKEN — майнинг, задания, календарь наград и сундуки в одном приложении. GM и CR пока являются игровыми единицами, а не TON-токенами.',reply_markup:{inline_keyboard:buttons}});
+      await api('sendMessage',{chat_id:chatId,...telegramWelcomeCard({appUrl:baseUrl,botUsername,referralId:match?.[1],newsChannelUrl})});
       if(typeof onStart==='function')await onStart(chatId);
     } else if(/^\/help(?:\s|$)/.test(message.text)) {
       await api('sendMessage',{chat_id:chatId,text:'Открой Mini App, чтобы посмотреть награды, баланс и задания. Вопросы: Профиль → Поддержка. Никому не передавай пароли, seed-фразы и коды 2FA.'});
