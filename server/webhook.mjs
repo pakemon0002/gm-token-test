@@ -4,7 +4,7 @@
 import {telegramWelcomeCard,telegramWelcomeInfo} from './telegram-welcome.mjs';
 const isSafeSecret = x => typeof x === 'string' && /^[a-zA-Z0-9_-]{16,256}$/.test(x);
 
-export function makeTelegramWebhook({token, publicUrl, webhookSecret, botUsername='GmTokenApp', newsChannelUrl=process.env.GM_NEWS_CHANNEL_URL||null, fetchImpl=fetch, logger=console, onStart=null}) {
+export function makeTelegramWebhook({token, publicUrl, webhookSecret, botUsername='GmTokenApp', officialChannelUrl=process.env.GM_OFFICIAL_CHANNEL_URL||process.env.GM_NEWS_CHANNEL_URL||null, communityChatUrl=process.env.GM_COMMUNITY_CHAT_URL||null, fetchImpl=fetch, logger=console, onStart=null}) {
   if (!token || !/^https:\/\//.test(publicUrl || '') || !isSafeSecret(webhookSecret)) {
     throw new Error('Telegram webhook requires BOT_TOKEN, HTTPS PUBLIC_APP_URL, and BOT_WEBHOOK_SECRET (16+ characters)');
   }
@@ -60,7 +60,7 @@ export function makeTelegramWebhook({token, publicUrl, webhookSecret, botUsernam
     const chatId=message.chat.id;
     if (/^\/start(?:\s|$)/.test(message.text)) {
       const match=message.text.match(/^\/start\s+ref_(\d{5,20})(?:\s|$)/);
-      await api('sendMessage',{chat_id:chatId,...telegramWelcomeCard({appUrl:baseUrl,botUsername,referralId:match?.[1],newsChannelUrl})});
+      await api('sendMessage',{chat_id:chatId,...telegramWelcomeCard({appUrl:baseUrl,botUsername,referralId:match?.[1],officialChannelUrl,communityChatUrl})});
       if(typeof onStart==='function')await onStart(chatId);
     } else if(/^\/help(?:\s|$)/.test(message.text)) {
       await api('sendMessage',{chat_id:chatId,text:'Открой Mini App, чтобы посмотреть награды, баланс и задания. Вопросы: Профиль → Поддержка. Никому не передавай пароли, seed-фразы и коды 2FA.'});
