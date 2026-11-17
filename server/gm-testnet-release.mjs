@@ -9,7 +9,7 @@ export const GM_TESTNET_CANDIDATE=Object.freeze({
   chainId:TON_TESTNET_CHAIN_ID,
   name:'GM TOKEN TESTNET',
   symbol:'GMTEST',
-  decimals:'9',
+  decimals:'6',
   proposedSupplyGM:'150000000',
   proposedRawSupply:proposedSupplyBaseUnits.toString(),
   purpose:'development_only',
@@ -31,7 +31,7 @@ export function verifyGmTestnetMetadata(metadata,{network=TON_TESTNET_CHAIN_ID}=
     throw new TypeError('Jetton metadata object required');
   if(metadata.name!==GM_TESTNET_CANDIDATE.name||metadata.symbol!==GM_TESTNET_CANDIDATE.symbol)
     throw new Error('Test token must be visibly different from the proposed Mainnet GM');
-  if(String(metadata.decimals)!=='9')throw new Error('9 decimal digits required for candidate test token');
+  if(String(metadata.decimals)!=='6')throw new Error('6 decimal digits required for candidate test token');
   const description=metadata.description;
   if(typeof description!=='string'||description.length<30||description.length>600
      || !/testnet/i.test(description)|| !/no monetary value/i.test(description))
@@ -53,7 +53,7 @@ export function verifyGmTestnetMetadata(metadata,{network=TON_TESTNET_CHAIN_ID}=
     chainId:TON_TESTNET_CHAIN_ID,
     name:metadata.name,
     symbol:metadata.symbol,
-    decimals:'9',
+    decimals:'6',
     gameSupplyGM:sum.toString(),
     proposedJettonSupplyRaw:proposedSupplyBaseUnits.toString(),
     imageUrl:url.href,
