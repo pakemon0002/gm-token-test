@@ -17,7 +17,7 @@ const response=(overrides={})=>({ok:true,result:{
 
 test('TON testnet is the only allowed network, raw supply uses BigInt',()=>{
   assert.equal(proposal.chainId,TON_TESTNET_CHAIN_ID);
-  assert.equal(proposal.expectedRawSupply,'150000000000000000');
+  assert.equal(proposal.expectedRawSupply,'150000000000000');
   assert.equal(proposal.masterAddress,MASTER);
   assert.throws(()=>gmTokenTestnetExpectation({masterAddress:MASTER,chainId:'-239'}),/Testnet-only/);
   assert.throws(()=>gmTokenTestnetExpectation({masterAddress:MASTER,chainId:'-100'}),/Testnet-only/);
