@@ -18,7 +18,7 @@ test('Canonical 150m game funds have exact cents and hypothetical raw units, nev
   assert.equal(a.funds.find(x=>x.fund==='HOLDING').gm,'23000000');
   assert.equal(a.funds.find(x=>x.fund==='FOUNDER').gm,'10000000');
   assert.equal(a.funds.reduce((n,x)=>n+BigInt(x.gm),0n),150000000n);
-  assert.equal(a.funds.reduce((n,x)=>n+BigInt(x.hypotheticalJettonRaw),0n),150000000000000000n);
+  assert.equal(a.funds.reduce((n,x)=>n+BigInt(x.hypotheticalJettonRaw),0n),150000000000000n);
   assert.equal(a.productionDistributionApproved,false);
   assert.equal(a.realBackingVerified,false);
   assert.equal(a.onchainDistributionEnabled,false);
@@ -30,7 +30,7 @@ test('Simulation reserves once, pending cannot be spent again',()=>{
     request('req:00000002','u1','100')
   ]);
   assert.equal(o.results[0].status,'SIMULATED_RESERVED_PENDING');
-  assert.equal(o.results[0].hypotheticalJettonRaw,'2000000000');
+  assert.equal(o.results[0].hypotheticalJettonRaw,'2000000');
   assert.equal(o.results[1].status,'SIMULATED_REJECTED_INSUFFICIENT_BALANCE');
   assert.deepEqual(o.wallets[0],{
     userId:'u1',simulatedAvailableGmCents:'50',simulatedReservedGmCents:'200',
