@@ -20,9 +20,9 @@ const removeSupersededTest=(path,name,nextName)=>{
  if(a<0||b<0||b-a>9000)throw Error('Expected Acton test missing: '+name);
  writeFileSync(file,s.slice(0,a)+'// The uncapped-template test below is replaced by gmtest-cap.test.tolk.\n\n'+s.slice(b));
 };
-// 150m whole GMTEST x 10^9 decimals. Maximum OUTSTANDING supply (not lifetime minted).
+// 150m whole GMTEST x 10^6 decimals. Maximum OUTSTANDING supply (not lifetime minted).
 update('contracts/JettonMinter.tolk','contract JettonMinter {',
- 'const GMTEST_MAX_OUTSTANDING_RAW = 150000000000000000\n\ncontract JettonMinter {');
+ 'const GMTEST_MAX_OUTSTANDING_RAW = 150000000000000\n\ncontract JettonMinter {');
 update('contracts/errors.tolk','    WrongWorkchain = 333',
  '    MintCapExceeded = 75\n    UpgradeDisabled = 76\n    WrongWorkchain = 333');
 update('contracts/JettonMinter.tolk',
