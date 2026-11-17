@@ -7,6 +7,8 @@ on:
     paths:
       - 'server/ton-shadow-projection.mjs'
       - 'server/ton-reserve-diagnostic.mjs'
+      - 'server/ton-staging-withdrawal-sim.mjs'
+      - 'tests/ton-staging-withdrawal-sim.test.mjs'
       - 'tests/ton-reserve-diagnostic.test.mjs'
       - 'scripts/ton-backing-readiness-ci.mjs'
       - 'tests/ton-shadow-projection.test.mjs'
@@ -35,6 +37,8 @@ jobs:
         run: node --test tests/ton-testnet-preflight.test.mjs
       - name: Fail closed on fake reserve attestations, double-counted wallets or unfunded game GM
         run: node --test tests/ton-reserve-diagnostic.test.mjs
+      - name: Test exact 150m game allocation and synthetic queue (NO real withdrawals)
+        run: node --test tests/ton-staging-withdrawal-sim.test.mjs
       - name: Generate explicit UNVERIFIED 1-to-1 readiness report from in-repo game funds
         run: node scripts/ton-backing-readiness-ci.mjs
       - name: Archive test-only readiness report (not a certificate of real reserves)
