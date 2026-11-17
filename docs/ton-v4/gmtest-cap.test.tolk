@@ -1,5 +1,5 @@
 // GMTEST has no monetary value. Tests run in the offline TON TVM emulator only.
-// 150,000,000 GMTEST * 10^9 raw units: maximum outstanding supply.
+// 150,000,000 GMTEST * 10^6 raw units: maximum outstanding supply.
 import "@acton/build"
 import "@acton/emulation/network"
 import "@acton/emulation/testing"
@@ -13,7 +13,7 @@ import "@wrappers/JettonWallet.gen"
 import "@wrappers/utils"
 import "test-utils"
 
-const GMTEST_CAP = 150000000000000000
+const GMTEST_CAP = 150000000000000
 
 get fun `test GMTEST cap: exactly 150m can be minted by admin`() {
     val (minter, deployer, _) = setupTest();
@@ -108,7 +108,7 @@ get fun `test GMTEST immutable supply: full mint then revoke admin, burn cannot 
     });
     expect(minter.getAdminAddress()).toEqual(null);
 
-    val amountToBurn = grams("1");
+    val amountToBurn = 1000000; // 1 GMTEST at six decimal places
     val burn = wallet.sendAskToBurn(
         deployer.address,
         0,
