@@ -5,7 +5,7 @@
 ## Что реально запускалось
 
 - Версионированный официальный **Acton 1.2.1** и встроенный шаблон `jetton` из исходного релиза [v1.2.1](https://github.com/ton-blockchain/acton/releases/tag/v1.2.1), основанного на коммите `13594911b09b0a9bc68910111e0bb88a74161f5b`.
-- GitHub Actions создаёт временный проект `gmtest-acton`, проверяет `JettonMinter.tolk` и `JettonWallet.tolk`, сверяет `GM TOKEN TESTNET / GMTEST / 9 decimals` с файлом `GM_TESTNET_METADATA_DRAFT.json`.
+- GitHub Actions создаёт временный проект `gmtest-acton`, проверяет `JettonMinter.tolk` и `JettonWallet.tolk`, сверяет `GM TOKEN TESTNET / GMTEST / 6 decimals (новый тестовый вариант; старые отчёты от 15 ноября были с 9 decimals)` с файлом `GM_TESTNET_METADATA_DRAFT.json`.
 - Затем выполняет **`acton build`**, **`acton test`** (встроенный локальный TVM-эмулятор, без TON-сети), **`acton check`**.
 - Тестовая среда не содержит seed-фраз, приватных ключей, реального кошелька, операций деплоя, mint в Testnet/Mainnet или исходящих финансовых действий.
 - Скомпилированные build-артефакты доступны в workflow как `gmtest-acton-1.2.1-emulator` (временное хранение 7 дней). Сам шаблон генерируется в CI из закреплённой версии Acton; **не сохранён в production Mini App**.
