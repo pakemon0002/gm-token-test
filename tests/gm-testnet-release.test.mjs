@@ -8,7 +8,7 @@ const masterResponse=(overrides={})=>({ok:true,result:{
  '@type':'ext.tokens.jettonMasterData',
  contract_type:'jetton_master',
  address,
- total_supply:'150000000000000000',
+ total_supply:'150000000000000',
  mintable:true,
  admin_address:admin,
  jetton_content:{type:'offchain'},
@@ -20,12 +20,12 @@ test('GM test token is unambiguously testnet-only and not a mainnet GM Jetton',(
  assert.equal(GM_TESTNET_CANDIDATE.realMoneyValue,false);
  assert.equal(GM_TESTNET_CANDIDATE.realTradingEnabled,false);
  assert.equal(GM_TESTNET_CANDIDATE.realJettonDeployed,false);
- assert.equal(GM_TESTNET_CANDIDATE.proposedRawSupply,'150000000000000000');
+ assert.equal(GM_TESTNET_CANDIDATE.proposedRawSupply,'150000000000000');
 });
 test('test token metadata matches provisional 150m game supply but is NOT deploy-approved',()=>{
  const checked=verifyGmTestnetMetadata(metadata);
  assert.equal(checked.network,'testnet');
- assert.equal(checked.proposedJettonSupplyRaw,'150000000000000000');
+ assert.equal(checked.proposedJettonSupplyRaw,'150000000000000');
  assert.equal(checked.gameSupplyGM,'150000000');
  assert.equal(checked.imageReachabilityVerified,false);
  assert.equal(checked.contractDeployed,false);
@@ -37,7 +37,7 @@ test('rejects Mainnet, misleading ticker, incorrect decimal and untrusted metada
  assert.throws(()=>verifyGmTestnetMetadata(metadata,{network:'-239'}),/Testnet-only/);
  assert.throws(()=>verifyGmTestnetMetadata({...metadata,symbol:'GM'}),/visibly different/);
  assert.throws(()=>verifyGmTestnetMetadata({...metadata,name:'GM TOKEN'}),/visibly different/);
- assert.throws(()=>verifyGmTestnetMetadata({...metadata,decimals:'6'}),/9 decimal/);
+ assert.throws(()=>verifyGmTestnetMetadata({...metadata,decimals:'9'}),/6 decimal/);
  assert.throws(()=>verifyGmTestnetMetadata({...metadata,description:'Get rich'}),/disclaimers/);
  for(const image of ['http://gm-token-test-iprj.onrender.com/a.png',
    'https://example.com/a.png','https://gm-token-test-iprj.onrender.com:8443/a.png',
