@@ -65,7 +65,7 @@ for(const [path,cases] of expectedTestNames){
 const metadata=JSON.parse(readFileSync(join(root,'docs/ton-v4/GM_TESTNET_METADATA_DRAFT.json'),'utf8'));
 assert.equal(metadata.name,'GM TOKEN TESTNET');
 assert.equal(metadata.symbol,'GMTEST');
-assert.equal(metadata.decimals,'9');
+assert.equal(metadata.decimals,'6');
 assert.match(metadata.description,/testnet/i);
 assert.match(metadata.description,/no monetary value/i);
 for(const [key,value] of [
@@ -81,7 +81,7 @@ assert.equal(process.env.JETTON_DESCRIPTION,metadata.description,
 const minter=read('contracts/JettonMinter.tolk');
 const wallet=read('contracts/JettonWallet.tolk');
 assert.ok(minter.length>2000&&wallet.length>2000,'Jetton contract source is suspiciously small');
-assert.ok(minter.includes('GMTEST_MAX_OUTSTANDING_RAW = 150000000000000000'),'GMTEST 150m limit absent');
+assert.ok(minter.includes('GMTEST_MAX_OUTSTANDING_RAW = 150000000000000'),'GMTEST 150m limit absent');
 assert.ok(minter.includes('throw Errors.MintCapExceeded'),'TVM cap enforcement absent');
 assert.ok(minter.includes('throw Errors.UpgradeDisabled'),'Admin-upgrade lock absent');
 assert.ok(!minter.includes('contract.setCodePostponed('),'Admin can bypass cap by replacing code');
