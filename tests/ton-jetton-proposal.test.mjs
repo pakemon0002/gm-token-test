@@ -14,9 +14,9 @@ test('150m GM preliminary proposal matches every virtual budget bucket exactly',
   assert.deepEqual(TON_GAME_ALLOCATION,gmFunds);
   assert.equal(
     Object.values(TON_GAME_ALLOCATION).reduce((a,n)=>a+BigInt(n),0n),150_000_000n);
-  assert.equal(proposedSupplyBaseUnits,150_000_000_000_000_000n);
-  assert.equal(Number.isSafeInteger(Number(proposedSupplyBaseUnits)),false);
-  assert.equal(TON_JETTON_PROPOSAL.decimals_candidate,9);
+  assert.equal(proposedSupplyBaseUnits,150_000_000_000_000n);
+  assert.equal(Number.isSafeInteger(Number(proposedSupplyBaseUnits)),true);
+  assert.equal(TON_JETTON_PROPOSAL.decimals_candidate,6);
   assert.equal(TON_JETTON_PROPOSAL.approved_for_issuance,false);
   assert.equal(TON_JETTON_PROPOSAL.distribution_approved_for_chain,false);
   assert.equal(TON_JETTON_PROPOSAL.conversion_ratio_approved,false);
@@ -75,7 +75,7 @@ test('draft TEP-64 metadata is intentionally not deployable until separately app
   const draft=JSON.parse(source('docs/TON_JETTON_METADATA_DRAFT.json'));
   assert.equal(draft.name,'GM TOKEN');
   assert.equal(draft.symbol,'GM');
-  assert.equal(draft.decimals,'9');
+  assert.equal(draft.decimals,'6');
   assert.match(draft.image,/^REPLACE_WITH_VERIFIED_PUBLIC/);
   assert.match(draft.description,/not currently be redeemed/);
   const docs=source('docs/TON_JETTON_LAUNCH_PLAN_RU.md');
