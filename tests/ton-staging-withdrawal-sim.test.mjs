@@ -24,6 +24,20 @@ test('Canonical 150m game funds have exact cents and hypothetical raw units, nev
   assert.equal(a.onchainDistributionEnabled,false);
 });
 
+test('Six decimals: 0.01 GM is 10,000 raw; 1 GM is 1,000,000 raw; 150m has exact cap',()=>{
+  const allocation=previewGmAllocation();
+  assert.equal(allocation.funds.reduce((n,x)=>n+BigInt(x.hypotheticalJettonRaw),0n),150000000000000n);
+  const o=run([user('u1','101')],[
+    request('six-decimals-cent','u1','1'),
+    request('six-decimals-gm','u1','100')
+  ]);
+  assert.equal(o.results[0].hypotheticalJettonRaw,'10000');
+  assert.equal(o.results[1].hypotheticalJettonRaw,'1000000');
+  assert.equal(o.wallets[0].simulatedAvailableGmCents,'0');
+  assert.equal(o.networkCalls,0);
+  assert.equal(o.realWithdrawalsEnabled,false);
+});
+
 test('Simulation reserves once, pending cannot be spent again',()=>{
   const o=run([user('u1','250')],[
     request('req:00000001','u1','200'),
