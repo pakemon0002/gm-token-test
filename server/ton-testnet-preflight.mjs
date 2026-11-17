@@ -19,7 +19,7 @@ const uint=(value,label)=>{
   return BigInt(value);
 };
 
-export function gmTokenTestnetExpectation({masterAddress,chainId=TON_TESTNET_CHAIN_ID,decimals=9,supplyGM='150000000'}={}) {
+export function gmTokenTestnetExpectation({masterAddress,chainId=TON_TESTNET_CHAIN_ID,decimals=6,supplyGM='150000000'}={}) {
   if(String(chainId)!==TON_TESTNET_CHAIN_ID)throw new Error('Testnet-only verifier: TON Mainnet and other networks are forbidden');
   if(!Number.isSafeInteger(decimals)||decimals<2||decimals>18)throw new Error('Invalid Jetton decimals');
   const address=normalize(masterAddress);
