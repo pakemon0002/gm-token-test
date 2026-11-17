@@ -66,7 +66,7 @@ test('Synthetic mint, duplicate account, fraction and negative values are reject
 });
 
 test('Supply check never mistakes accounting equality for real TON backing',()=>{
-  const game=snapshotGameAccounts({pools:[{name:'MINING',gm:'15000000',cr:'100000000'}]});
+  const game=snapshotGameAccounts({pools:[{name:'MINING',gm:'15000000000',cr:'100000000000'}]});
   assert.equal(requireGameSupply(game),true);
   assert.throws(()=>requireGameSupply(state()),/supply mismatch/);
   assert.equal(Object.hasOwn(game,'onchainSupply'),false);
