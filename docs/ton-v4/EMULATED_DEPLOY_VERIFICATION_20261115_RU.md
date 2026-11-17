@@ -13,7 +13,7 @@ CI запускает **официальный Acton 1.2.1**, создаёт в�
    - `JETTON MINTABLE=true` (эмиссия до её окончательного отключения разрешена);
    - `JETTON METADATA_name=GM TOKEN TESTNET`;
    - `JETTON METADATA_symbol=GMTEST`;
-   - `JETTON METADATA_decimals=9`;
+   - `JETTON METADATA_decimals=6`;
    - admin — временный кошелёк, существующий **только в эмуляторе**.
 4. Дополнительно CI сохраняет локальные SHA256 собранных файлов и log виртуального deploy, не включая seed, закрытые ключи, сохранённые сессии или адреса реальных кошельков.
 
