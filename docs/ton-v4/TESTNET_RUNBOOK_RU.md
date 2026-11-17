@@ -2,8 +2,8 @@
 Дата: 15 ноября 2026. Статус: **подготовка без выпуска и без подписания**.
 
 ## Что готово в GitHub
-- `docs/ton-v4/GM_TESTNET_METADATA_DRAFT.json`: отдельные **GM TOKEN TESTNET / GMTEST**, 9 decimals. Настоящий тикер **GM** не занят этим тестовым выпуском.
-- `server/gm-testnet-release.mjs`: сверка предварительной эмиссии **150 000 000 GM** = **150000000000000000** raw units, проверка сети `-3`, метаданных и admin/master без записи в блокчейн.
+- `docs/ton-v4/GM_TESTNET_METADATA_DRAFT.json`: отдельные **GM TOKEN TESTNET / GMTEST**, 6 decimals. Настоящий тикер **GM** не занят этим тестовым выпуском.
+- `server/gm-testnet-release.mjs`: сверка предварительной эмиссии **150 000 000 GM** = **150000000000000** raw units, проверка сети `-3`, метаданных и admin/master без записи в блокчейн.
 - `scripts/gm-testnet-status.mjs`: проверка готовности без адреса; после тестового развёртывания — только чтение Master из **TON Testnet**, без транзакций.
 - `tests/gm-testnet-release.test.mjs`: проверки ложного Mainnet, чужого Master, неподходящего администратора, порчи эмиссии и вводящих в заблуждение метаданных.
 - Приложение Mini App, рабочая Supabase и Render не менялись. Никаких реальных средств и токенов не переведено.
@@ -25,7 +25,7 @@ acton run deploy-emulation
 ```
 JETTON_NAME="GM TOKEN TESTNET"
 JETTON_SYMBOL="GMTEST"
-JETTON_DECIMALS="9"
+JETTON_DECIMALS="6"
 JETTON_DESCRIPTION="GM TOKEN development Jetton for TON Testnet ONLY. No monetary value, no connection to a live token, no deposits, redemptions or exchanges. In-game GM and virtual CR/POINTS remain separate."
 JETTON_IMAGE="https://gm-token-test-iprj.onrender.com/assets/brand-original-reference/gm-lettermark-metallic-transparent.png"
 ```
