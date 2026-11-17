@@ -5,8 +5,8 @@ import {Address} from '@ton/ton';
 import {requireGameSupply} from './ton-shadow-projection.mjs';
 
 export const GMTEST_DIAGNOSTIC_CHAIN='-3';
-export const GM_CENT_TO_JETTON_RAW=10000000n; // proposed 9 decimals, game uses cents
-export const GMTEST_CANDIDATE_RAW_CAP=150000000000000000n;
+export const GM_CENT_TO_JETTON_RAW=10000n; // user-stated 6 decimals, game uses cents
+export const GMTEST_CANDIDATE_RAW_CAP=150000000000000n;
 
 function raw(value,label) {
   if (typeof value!=='string'||!/^(0|[1-9][0-9]*)$/.test(value)||value.length>78)
@@ -57,7 +57,7 @@ export function evaluateSyntheticGmtestCoverage(snapshot,observation) {
     throw new TypeError('Synthetic Testnet observation required');
   if(observation.fixtureType!=='synthetic_testnet_only'||observation.chainId!==GMTEST_DIAGNOSTIC_CHAIN)
     throw new Error('Only explicitly synthetic TON Testnet observations are accepted');
-  if(observation.decimals!==9)throw new Error('GMTEST test fixture must use 9 decimals');
+  if(observation.decimals!==6)throw new Error('GMTEST test fixture must use 6 decimals');
   const master=address(observation.masterAddress,'Jetton master');
   const supply=raw(observation.masterSupplyRaw,'master supply');
   if(supply>GMTEST_CANDIDATE_RAW_CAP)throw new Error('Synthetic master supply exceeds GMTEST candidate cap');
