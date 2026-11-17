@@ -19,7 +19,7 @@
 | FOUNDER | 10 000 000 | доля создателей, **не распределять автоматически** |
 | **Всего** | **150 000 000** | **только игровой бюджет** |
 
-`previewGmAllocation()` возвращает эти значения с точной математикой BigInt в GM, в сотых GM и в **гипотетических** raw-единицах Jetton (9 decimals). Результат всегда содержит `realBackingVerified:false`, `productionDistributionApproved:false` и `onchainDistributionEnabled:false`.
+`previewGmAllocation()` возвращает эти значения с точной математикой BigInt в GM, в сотых GM и в **гипотетических** raw-единицах Jetton (6 decimals). Результат всегда содержит `realBackingVerified:false`, `productionDistributionApproved:false` и `onchainDistributionEnabled:false`.
 
 ## 2. Что проверяется в автоматических заявках
 
