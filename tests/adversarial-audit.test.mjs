@@ -69,7 +69,7 @@ test('XP award does not retroactively raise Mining rate over elapsed hours',asyn
  assert.equal((await a(333333,'/api/tasks/claim','POST',{id:'daily_milestone',operationId:op()})).status,200);
  const state=(await a(333333,'/api/game/status')).data;
  assert.equal(state.user.level,10);
- assert.ok(state.mining.pending_cents>=160&&state.mining.pending_cents<=175,'past 4h accrual remains at LVL 1 rate; no retroactive Level 10');
+ assert.ok(state.mining.pending_cents>=1100&&state.mining.pending_cents<=1130,'past 4h accrual remains at the new LVL 1 rate (67.20 GM/day), no retroactive Level 10');
  assert.equal((await a(111111,'/api/bootstrap')).status,200);
  assert.equal((await a(111111,'/api/admin/supply-audit')).data.ok,true);
 });
