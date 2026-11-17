@@ -21,7 +21,7 @@ const game=snapshotGameAccounts({
 });
 const fixture=(overrides={})=>({
  fixtureType:'synthetic_testnet_only',
- chainId:'-3',decimals:9,masterAddress:MASTER,masterSupplyRaw:cap,
+ chainId:'-3',decimals:6,masterAddress:MASTER,masterSupplyRaw:cap,
  custodyWallets:[{walletAddress:WALLET_A,masterAddress:MASTER,balanceRaw:cap}],
  ...overrides
 });
@@ -29,7 +29,7 @@ const fixture=(overrides={})=>({
 test('game GM supply uses all canonical accounts including vault/mining/holding/open orders, never counts CR as TON',()=>{
  assert.equal(game.gmCents,15_000_000_000n);
  assert.equal(game.crCents,100_000_000_000n);
- assert.equal(GM_CENT_TO_JETTON_RAW,10000000n);
+ assert.equal(GM_CENT_TO_JETTON_RAW,10000n);
  const s=gmBackingReadiness(game);
  assert.equal(s.proposedCoverageRequiredRaw,cap);
  assert.equal(s.gameSupplyReconciled,true);
@@ -64,9 +64,9 @@ test('even synthetic 1:1 matching master supply and custody MUST NOT enable with
 
 test('synthetic partial coverage and no wallets explicitly expose shortfall rather than falsely saying backed',()=>{
  const sub=evaluateSyntheticGmtestCoverage(game,fixture({custodyWallets:[
-  {walletAddress:WALLET_A,masterAddress:MASTER,balanceRaw:'149000000000000000'}
+  {walletAddress:WALLET_A,masterAddress:MASTER,balanceRaw:'149000000000000'}
  ]}));
- assert.equal(sub.simulatedCoverage.syntheticShortfallRaw,'1000000000000000');
+ assert.equal(sub.simulatedCoverage.syntheticShortfallRaw,'1000000000000');
  assert.equal(sub.simulatedCoverage.arithmeticCoverageOnly,false);
  const missing=evaluateSyntheticGmtestCoverage(game,fixture({custodyWallets:[]}));
  assert.equal(missing.simulatedCoverage.syntheticShortfallRaw,cap);
@@ -77,7 +77,7 @@ test('synthetic partial coverage and no wallets explicitly expose shortfall rath
 test('reject Mainnet, missing fixture label, incorrect decimals and fake master address',()=>{
  for(const x of [
   {chainId:'-239'}, {chainId:'1'}, {fixtureType:'independent_audit'},
-  {fixtureType:null},{decimals:6},{masterAddress:'not-a-ton-address'}
+  {fixtureType:null},{decimals:9},{masterAddress:'not-a-ton-address'}
  ]) assert.throws(()=>evaluateSyntheticGmtestCoverage(game,fixture(x)),/synthetic|Testnet|decimals|address|Invalid/i);
 });
 
@@ -98,11 +98,11 @@ test('reject duplicate custody wallets even when address encodings differ, fake 
 });
 
 test('reject overstated master, duplicated ownership beyond total supply and unbalanced game accounting',()=>{
- assert.throws(()=>evaluateSyntheticGmtestCoverage(game,fixture({masterSupplyRaw:'150000000000000001'})),/exceeds GMTEST candidate cap/);
+ assert.throws(()=>evaluateSyntheticGmtestCoverage(game,fixture({masterSupplyRaw:'150000000000001'})),/exceeds GMTEST candidate cap/);
  assert.throws(()=>evaluateSyntheticGmtestCoverage(game,fixture({masterSupplyRaw:'1'})),/cannot exceed master total supply/);
  assert.throws(()=>evaluateSyntheticGmtestCoverage(game,fixture({custodyWallets:[
-  {walletAddress:WALLET_A,masterAddress:MASTER,balanceRaw:'90000000000000000'},
-  {walletAddress:WALLET_B,masterAddress:MASTER,balanceRaw:'90000000000000000'}
+  {walletAddress:WALLET_A,masterAddress:MASTER,balanceRaw:'90000000000000'},
+  {walletAddress:WALLET_B,masterAddress:MASTER,balanceRaw:'90000000000000'}
  ]})),/cannot exceed master total supply/);
  const minted=snapshotGameAccounts({pools:[{name:'MINING',gm:'15000000001',cr:'100000000000'}]});
  assert.throws(()=>gmBackingReadiness(minted),/game supply mismatch/);
