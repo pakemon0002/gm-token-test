@@ -9,7 +9,7 @@ export const TON_JETTON_PROPOSAL=Object.freeze({
   metadata_standard:'TEP-64',
   network:'TON',
   supply_gm:150_000_000,
-  decimals_candidate:9, // Proposed, NOT separately approved
+  decimals_candidate:6, // User-stated token precision; chain state not independently verified
   stage:'preliminary_proposal',
   approved_for_issuance:false,
   conversion_ratio_approved:false,

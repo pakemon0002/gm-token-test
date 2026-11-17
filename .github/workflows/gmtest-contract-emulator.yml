@@ -1,0 +1,99 @@
+name: GMTEST Acton contract emulator (no wallets, no chain)
+on:
+  push:
+    branches: [feature/ton-ledger-audit-20261115]
+    paths:
+      - '.github/workflows/gmtest-contract-emulator.yml'
+      - 'scripts/verify-gmtest-acton-emulator.mjs'
+      - 'scripts/apply-gmtest-emulator-cap.mjs'
+      - 'server/gm-testnet-release.mjs'
+      - 'docs/ton-v4/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/gmtest-contract-emulator.yml'
+      - 'scripts/verify-gmtest-acton-emulator.mjs'
+      - 'server/gm-testnet-release.mjs'
+      - 'docs/ton-v4/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  jetton-emulator:
+    name: Compile + TON TVM emulator tests (offline chain)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      JETTON_NAME: GM TOKEN TESTNET
+      JETTON_SYMBOL: GMTEST
+      JETTON_DECIMALS: '6'
+      JETTON_DESCRIPTION: GM TOKEN development Jetton for TON Testnet ONLY. No monetary value, no connection to a live token, no deposits, redemptions or exchanges. In-game GM and virtual CR/POINTS remain separate.
+      JETTON_IMAGE: https://gm-token-test-iprj.onrender.com/assets/brand-original-reference/gm-lettermark-metallic-transparent.png
+    steps:
+      - name: Checkout GM TOKEN staging branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node for strict metadata and fixture checks
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: Install official pinned Acton toolchain
+        uses: ton-blockchain/setup-acton@0f9f436843d740466cae2d7411ff59072dde942e # setup-acton 1.2.0
+        with:
+          version: '1.2.1'
+      - name: Generate official Jetton Master and Wallet template (NO deploy)
+        run: |
+          acton --version
+          acton new gmtest-acton --template jetton
+          test -f gmtest-acton/contracts/JettonMinter.tolk
+          test -f gmtest-acton/contracts/JettonWallet.tolk
+          test -f gmtest-acton/Acton.toml
+      - name: Harden disposable GMTEST master with 150m outstanding cap and disabled upgrades
+        run: node scripts/apply-gmtest-emulator-cap.mjs gmtest-acton
+      - name: Check GMTEST metadata and required emulator scenarios
+        run: node scripts/verify-gmtest-acton-emulator.mjs gmtest-acton
+      - name: Compile official master and jetton wallet
+        working-directory: gmtest-acton
+        run: acton build
+      - name: Execute official Jetton test suite in local TON TVM emulator
+        working-directory: gmtest-acton
+        run: acton test
+      - name: Lint contracts
+        working-directory: gmtest-acton
+        run: acton check
+      - name: Deploy GMTEST only in disposable virtual TON emulator (NO Testnet broadcast)
+        working-directory: gmtest-acton
+        env:
+          JETTON_DEPLOYER: ci-gmtest-virtual-wallet
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 75s acton run deploy-emulation 2>&1 | tee ../gmtest-deploy-emulation.log
+          grep -F 'JETTON TOTAL_SUPPLY=0' ../gmtest-deploy-emulation.log
+          grep -F 'JETTON METADATA_symbol=GMTEST' ../gmtest-deploy-emulation.log
+          grep -F 'JETTON METADATA_decimals=6' ../gmtest-deploy-emulation.log
+          echo 'GMTEST deployment verified in isolated Acton emulator, NOT public TON Testnet.'
+      - name: Produce SHA256 manifest of compiled emulated contract artifacts
+        shell: bash
+        run: |
+          find gmtest-acton/build -type f -print0 | sort -z | xargs -0 sha256sum > gmtest-emulator-artifact-hashes.txt
+          test -s gmtest-emulator-artifact-hashes.txt
+          echo 'Compiled artifact hashes recorded; no on-chain address or key recorded.'
+      - name: Confirm no TON wallets or addresses were deployed
+        run: |
+          [[ -z "$TON_PRIVATE_KEY" ]]
+          [[ -z "$TON_MNEMONIC" ]]
+          [[ -z "$JETTON_ADMIN_ADDRESS" ]]
+          echo "Local TVM emulation only; no wallet credentials, no on-chain transaction."
+      - name: Save compiled contract evidence (no secrets)
+        uses: actions/upload-artifact@v4
+        with:
+          name: gmtest-acton-1.2.1-emulator
+          path: |
+            gmtest-acton/build/
+            gmtest-acton/Acton.toml
+            gmtest-deploy-emulation.log
+            gmtest-emulator-artifact-hashes.txt
+          if-no-files-found: error
+          retention-days: 7
