@@ -5,7 +5,7 @@
 import {createHash} from 'node:crypto';
 import {snapshotGameAccounts,projectGameTransition,requireGameSupply} from './ton-shadow-projection.mjs';
 
-const CENT_TO_RAW=10000000n; // proposed decimals=9; not approved on-chain
+const CENT_TO_RAW=10000n; // six token decimals / two game decimals; no on-chain approval
 const STAGE_DB='gm_shadow_ci';
 const operationId=(s)=>{
   if(typeof s!=='string'||!/^[A-Za-z0-9_.:-]{8,100}$/.test(s))throw new Error('Staging operation ID required');
@@ -137,7 +137,7 @@ export async function runLocalMirroredGameTransaction(pool,{databaseUrl,id,mutat
     const result=await mutate(client);
     const after=await readStagingGameSnapshot(client);
     requireGameSupply(after);
-    const projected=projectGameTransition(before,after,id,{jettonDecimals:9});
+    const projected=projectGameTransition(before,after,id,{jettonDecimals:6});
     if(projected.changed) {
       await ensureShadowAccounts(client,after.accounts);
       const changes=projected.entries.map(e=>({accountCode:e.accountCode,currency:e.currency,amountUnits:e.amountUnits}));
