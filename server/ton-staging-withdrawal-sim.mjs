@@ -6,7 +6,7 @@ import {TON_GAME_ALLOCATION} from './ton-prelaunch.mjs';
 
 const TESTNET_CHAIN='-3';
 const MAX_GM=150000000n;
-const GM_CENT_TO_JETTON_RAW=10000000n;
+const GM_CENT_TO_JETTON_RAW=10000n; // 6 decimals / 2 in-game decimals
 const INT=/^(0|[1-9][0-9]*)$/;
 const ID=/^[a-zA-Z0-9_.:-]{1,100}$/;
 
