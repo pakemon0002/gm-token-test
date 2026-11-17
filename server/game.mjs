@@ -7,9 +7,12 @@ import {MAX_MINING_UPGRADE_LEVEL,miningUpgradeCost,miningUpgradeBonusPct,miningU
 import {makeCandles,tradingSnapshot,indicativeAuction,INTERVALS} from './market-data.mjs';
 const DAY=86400, HOUR=3600, MICRO=1000000;
 export const xpLevels=Object.freeze([0,100,250,450,750,1150,1700,2400,3300,4400]);
-const bases=process.env.GM_MINING_FAST_TRACK==='1'?[500,575,665,770,890,1025,1180,1350,1540,1750]:[10,14,19,25,32,40,50,62,75,90];
+// Base rates are in game GM/day; the built-in level-1 +5% bonus makes 64 => 67.20 GM/day.
+// With one 24h claim per UTC day and +20 XP/day, level 2 begins on day 6 and level 3 on day 14.
+const bases=process.env.GM_MINING_FAST_TRACK==='1'?[500,575,665,770,890,1025,1180,1350,1540,1750]:[64,66,69,72,76,81,85,91,98,106];
 const power=(l)=>l>=10?25:l>=8?20:l>=6?15:l>=4?10:l>=2?5:0;
-const capacity=(l)=>process.env.GM_MINING_FAST_TRACK==='1'?(l>=9?36:l>=5?30:24):(l>=9?24:l>=7?20:l>=5?16:l>=3?12:8);
+// Standard production Storage holds at least 24h for every XP level; fast-track remains test-only.
+const capacity=(l)=>process.env.GM_MINING_FAST_TRACK==='1'?(l>=9?36:l>=5?30:24):24;
 const eff=(l)=>l>=9?[50,4]:l>=7?[40,3]:l>=5?[30,2]:l>=3?[20,1]:[0,0];
 const boost=(c)=>{let x=0;for(const [gm,b] of [[50,5],[100,10],[250,15],[500,20],[1000,25],[2000,30],[5000,35],[10000,40],[25000,45],[50000,50]])if(c>=gm*100)x=b;return x};
 const day=(t)=>new Date(t*1000).toISOString().slice(0,10);
