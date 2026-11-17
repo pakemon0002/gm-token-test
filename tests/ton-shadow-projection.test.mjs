@@ -19,27 +19,27 @@ function check(before,after,id,expectedAccounts) {
 
 test('Mining settlement moves funded GM into pending, claim moves only that pending to wallet',()=>{
   check({}, {miningPool:38950,mp:1050}, 'mining:settle:1',[
-    ['fund:MINING:GM','-10500000000'],
-    ['pending:mining:101:GM','10500000000']
+    ['fund:MINING:GM','-10500000'],
+    ['pending:mining:101:GM','10500000']
   ]);
   check({miningPool:38950,mp:1050}, {miningPool:38950,gm:1050}, 'mining:claim:1',[
-    ['pending:mining:101:GM','-10500000000'],
-    ['wallet:101:GM','10500000000']
+    ['pending:mining:101:GM','-10500000'],
+    ['wallet:101:GM','10500000']
   ]);
 });
 
 test('Vault deposit and withdrawal with 5 percent fee stay zero-sum',()=>{
   check({miningPool:38950,gm:1050},{miningPool:38950,gm:550,vault:500},'vault:deposit:1',[
-    ['wallet:101:GM','-5000000000'],['vault:101:GM','5000000000']
+    ['wallet:101:GM','-5000000'],['vault:101:GM','5000000']
   ]);
   check({miningPool:38950,gm:550,vault:500},{miningPool:38950,gm:645,vault:400,fees:5},'vault:withdraw:1',[
-    ['wallet:101:GM','950000000'],['vault:101:GM','-1000000000'],['fund:HOLDING_FEES:GM','50000000']
+    ['wallet:101:GM','950000'],['vault:101:GM','-1000000'],['fund:HOLDING_FEES:GM','50000']
   ]);
 });
 
 test('Daily reward and one-time welcome CR are backed transfers',()=>{
   check({miningPool:38950,gm:1050},{miningPool:38950,dailyPool:9800,gm:1250},'daily:claim:1',[
-    ['fund:DAILY:GM','-2000000000'],['wallet:101:GM','2000000000']
+    ['fund:DAILY:GM','-2000000'],['wallet:101:GM','2000000']
   ]);
   check({},{welcome:95000,cr:5000},'welcome:credit:1',[
     ['fund:WELCOME:CR','-5000'],['wallet:101:CR','5000']
@@ -49,7 +49,7 @@ test('Daily reward and one-time welcome CR are backed transfers',()=>{
 test('Open sell orders are counted exactly once as reserved GM',()=>{
   const order=[{id:'ask1',side:'sell',status:'open',locked_cents:100}];
   check({miningPool:38950,gm:1050},{miningPool:38950,gm:950,order},'order:open:1',[
-    ['wallet:101:GM','-1000000000'],['order:ask1:GM','1000000000']
+    ['wallet:101:GM','-1000000'],['order:ask1:GM','1000000']
   ]);
   const before=state({miningPool:38950,gm:950,order});
   const unchanged=projectGameTransition(before,before,'order:replay:1');
@@ -66,7 +66,7 @@ test('Synthetic mint, duplicate account, fraction and negative values are reject
 });
 
 test('Supply check never mistakes accounting equality for real TON backing',()=>{
-  const game=snapshotGameAccounts({pools:[{name:'MINING',gm:'15000000000',cr:'100000000000'}]});
+  const game=snapshotGameAccounts({pools:[{name:'MINING',gm:'15000000',cr:'100000000'}]});
   assert.equal(requireGameSupply(game),true);
   assert.throws(()=>requireGameSupply(state()),/supply mismatch/);
   assert.equal(Object.hasOwn(game,'onchainSupply'),false);
