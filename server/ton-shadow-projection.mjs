@@ -65,7 +65,7 @@ export function requireGameSupply(snapshot,{expectedGM=MAX_GM_CENTS,expectedCR=M
     throw new Error('GM/CR game supply mismatch: ' + snapshot.gmCents + '/' + snapshot.crCents);
   return true;
 }
-export function projectGameTransition(before,after,operationId,{jettonDecimals=9}={}) {
+export function projectGameTransition(before,after,operationId,{jettonDecimals=6}={}) {
   if (!/^[A-Za-z0-9_.:-]{8,100}$/.test(String(operationId||''))) throw new TypeError('Invalid operationId');
   if (!Number.isSafeInteger(jettonDecimals)||jettonDecimals<2||jettonDecimals>18)
     throw new TypeError('Jetton decimals must be an integer >=2 and <=18');
