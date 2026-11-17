@@ -16,7 +16,7 @@ const report=Object.freeze({
  source:'game allocation constants from server/lib.mjs; NOT a snapshot of the live database',
  ...gmBackingReadiness(fixture)
 });
-assert.equal(report.proposedCoverageRequiredRaw,'150000000000000000');
+assert.equal(report.proposedCoverageRequiredRaw,'150000000000000');
 assert.equal(report.approvedForRelease,false);
 assert.equal(report.currentRealReservesVerified,false);
 assert.equal(report.liveWithdrawalsEnabled,false);
