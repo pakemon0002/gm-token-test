@@ -794,23 +794,11 @@ function App(){
   try{
    const instance=new sdk.TonConnectUI({manifestUrl:window.location.origin+'/tonconnect-manifest.json'});
    tonUi.current=instance;
-   const prepareProof=async()=>{
-    if(disposed)return;
-    instance.setConnectRequestParameters({state:'loading'});
-    try{
-     const response=await fetch('/api/holders/challenge',{method:'POST',headers:holderAuthHeaders(),body:'{}'});
-     const challenge=await response.json();
-     if(!response.ok||!challenge.payload)throw Error(challenge.error||'Could not prepare wallet proof');
-     if(!disposed)instance.setConnectRequestParameters({state:'ready',value:{tonProof:challenge.payload}});
-    }catch(error:any){
-     if(!disposed){instance.setConnectRequestParameters(null);setTonError(String(error?.message||error))}
-    }
-   };
    const unsubscribe=instance.onStatusChange(async(connected:any)=>{
     if(disposed)return;
     const address=connected?.account?.address||'';
     setTonAccount(address);
-    if(!address){void getHolderStatus();void prepareProof();return}
+    if(!address){void getHolderStatus();return}
     const signed=connected?.connectItems?.tonProof;
     if(!signed||!('proof' in signed)){
      await getHolderStatus();return;
@@ -829,13 +817,18 @@ function App(){
      if(!disposed){setTonError('');await getHolderStatus();void fetchHolders()}
     }catch(error:any){if(!disposed)setTonError(String(error?.message||error))}
    },(error:any)=>{if(!disposed)setTonError(String(error?.message||error))});
-   void prepareProof();void getHolderStatus();
+   // A new proof challenge is created only for an explicit connect/reverify attempt.
+   // Restored SDK sessions cannot supply a fresh tonProof, so keep them unverified.
+   void getHolderStatus();
    return()=>{disposed=true;if(typeof unsubscribe==='function')unsubscribe();tonUi.current=null};
   }catch(error:any){setTonError(String(error?.message||error))}
  },[demo]);
  const connectTonWallet=async()=>{
   try{
+   setTonError('');
    if(!tonUi.current)throw Error('TON Connect is not ready');
+   // Reconnecting a restored session must request a fresh proof.
+   // Never create challenges from disconnect callbacks: each new challenge revokes the previous nonce.
    if(tonUi.current.connected){await tonUi.current.disconnect();setTonAccount('')}
    const response=await fetch('/api/holders/challenge',{method:'POST',headers:holderAuthHeaders(),body:'{}'});
    const data=await response.json();
@@ -1679,10 +1672,12 @@ function Reward() {
      verified?loc('Propriedade verificada','Власність підтверджено','Wallet ownership verified','Владение кошельком подтверждено'):
       loc('Assinatura ainda não verificada','Підпис ще не перевірено','Wallet signature not verified','Подпись кошелька не проверена')),
     e('div',{className:'gm-wallet-address'},e('small',null,loc('Endereço da carteira','Адреса гаманця','Wallet address','Адрес кошелька')),e('strong',null,display)),
-    e('button',{type:'button',className:'gm-wallet-connect',onClick:tonAccount||verified?disconnectTonWallet:connectTonWallet},
-     icon(tonAccount||verified?'close':'link',22),
-     tonAccount||verified?loc('Desconectar carteira','Від’єднати гаманець','Disconnect wallet','Отключить кошелёк'):
+    e('button',{type:'button',className:'gm-wallet-connect',onClick:verified?disconnectTonWallet:connectTonWallet},
+     icon(verified?'close':'link',22),
+     verified?loc('Desconectar carteira','Від’єднати гаманець','Disconnect wallet','Отключить кошелёк'):
+     tonAccount?loc('Verificar novamente TON','Повторити перевірку TON','Retry TON verification','Повторить проверку TON'):
      loc('Conectar e verificar TON','Підключити й перевірити TON','Connect & verify TON','Подключить и проверить TON'))),
+   tonAccount&&!verified?e('p',{className:'gm-wallet-error',role:'status'},loc('Carteira conectada, mas assinatura não confirmada. Repita a verificação.','Гаманець підключено, але підпис не підтверджено. Повтори перевірку.','Wallet connected, but its signature is not verified. Retry verification.','Кошелёк подключён, но подпись не подтверждена. Повтори проверку.')):null,
    tonError?e('div',{className:'gm-wallet-error',role:'status'},tonError):null,
    e('section',{className:'gm-wallet-holders gm-premium-card'},
     e('div',{className:'gm-wallet-holders-title'},icon('trophy',27,true),e('span',null,e('b',null,L('holdings')),e('small',null,'TON MAINNET · GM JETTON'))),
