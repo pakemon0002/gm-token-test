@@ -365,6 +365,29 @@ const routes=async(req,res)=>{
   if(p==='/api/admin/stats'&&verb==='GET'){
    roleCheck({id},['owner','coowner']);return send(res,200,{users:stmt('SELECT COUNT(*) n FROM users').get().n,orders:stmt('SELECT COUNT(*) n FROM orders').get().n,trades_24h:stmt('SELECT COUNT(*) n FROM trades WHERE at>=?').get(now()-86400).n,open_tickets:stmt("SELECT COUNT(*) n FROM tickets WHERE status IN ('open','in_review','auto_support')").get().n});
   }
+  // Complete player directory, owner/coowner only. Read-only; no wallet credentials or secrets.
+  // Bounded pages keep this safe for thousands of players. All values remain SQL-bound.
+  if(p==='/api/admin/players'&&verb==='GET'){
+   roleCheck({id},['owner','coowner']);
+   const offset=Number(url.searchParams.get('offset')||0);
+   const limit=Number(url.searchParams.get('limit')||25);
+   const search=String(url.searchParams.get('q')||'').trim();
+   if(!Number.isSafeInteger(offset)||offset<0||offset>1000000||
+      !Number.isSafeInteger(limit)||limit<1||limit>50)throw Error('invalid player directory pagination');
+   if(search.length>48||!(/^[\\p{L}\\p{N} .@_-]*$/u.test(search)))throw Error('invalid player search');
+   const where=search?" WHERE (LOWER(u.username) LIKE ? ESCAPE '!' OR u.id LIKE ? ESCAPE '!')":'';
+   // '_' is a SQL LIKE wildcard, not a literal username character, unless escaped.
+   const params=search?['%'+search.toLowerCase().replaceAll('_','!_')+'%','%'+search.replaceAll('_','!_')+'%']:[];
+   const total=stmt('SELECT COUNT(*) n FROM users u'+where).get(...params).n;
+   const rows=stmt(
+    'SELECT u.id,u.username,u.role,u.created_at,u.last_seen,u.level,u.xp,'+
+    'COALESCE(w.gm,0) gm_cents,COALESCE(w.cr,0) cr_cents,COALESCE(w.vault,0) vault_cents '+
+    'FROM users u LEFT JOIN wallets w ON w.user_id=u.id'+where+
+    ' ORDER BY u.created_at DESC,u.id ASC LIMIT ? OFFSET ?'
+   ).all(...params,limit,offset);
+   return send(res,200,{users:rows,total,offset,limit,search,
+    has_more:offset+rows.length<total,next_offset:offset+rows.length<total?offset+rows.length:null});
+  }
   if(p==='/api/admin/team'&&verb==='GET'){
    roleCheck({id},['owner','coowner']);return send(res,200,{team:stmt('SELECT id,username,role,created_at FROM users WHERE role!=\'player\'').all()});
   }
