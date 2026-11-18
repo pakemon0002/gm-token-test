@@ -648,6 +648,12 @@ function App() {
     const [recentTrades, setRecentTrades] = React.useState([]);
     const [clock, setClock] = React.useState(Math.floor(Date.now() / 1000));
     const [adminStats, setAdminStats] = React.useState(null);
+    const [adminPlayers, setAdminPlayers] = React.useState(null);
+    const [adminPlayerSearch, setAdminPlayerSearch] = React.useState('');
+    const [adminPlayerActiveSearch, setAdminPlayerActiveSearch] = React.useState('');
+    const [adminPlayersBusy, setAdminPlayersBusy] = React.useState(false);
+    const [adminPlayersError, setAdminPlayersError] = React.useState('');
+    const adminPlayersRequestSeq = React.useRef(0);
     const [liveTasks, setLiveTasks] = React.useState([]);
     const [liveAchievements, setLiveAchievements] = React.useState([]);
     const [liveReferrals, setLiveReferrals] = React.useState(null);
@@ -1191,8 +1197,42 @@ function App() {
     };
     const loadAdminTasks = async () => { const data = await adminRequest('/api/admin/task-catalog'); if (data?.tasks)
         setAdminTasks(data.tasks); };
-    React.useEffect(() => { if (!demo && screen === 'admin' && ['owner', 'coowner'].includes(liveRole))
-        void loadAdminTasks(); }, [demo, screen, liveRole]);
+    const loadAdminPlayers = async (offset = 0, q = adminPlayerActiveSearch) => {
+        if (demo || !webapp?.initData || !['owner', 'coowner'].includes(liveRole))
+            return;
+        const seq = ++adminPlayersRequestSeq.current;
+        setAdminPlayersBusy(true);
+        setAdminPlayersError('');
+        try {
+            const url = '/api/admin/players?limit=25&offset=' + offset + '&q=' + encodeURIComponent(q.trim());
+            const response = await fetch(url, { headers: { Authorization: 'tma ' + webapp.initData }, cache: 'no-store' });
+            const data = await response.json();
+            if (!response.ok)
+                throw Error(data.error || 'Не удалось загрузить игроков');
+            if (seq !== adminPlayersRequestSeq.current)
+                return;
+            if (!Array.isArray(data.users) || !Number.isFinite(data.total))
+                throw Error('Неверный ответ списка игроков');
+            setAdminPlayers(data);
+            setAdminPlayerActiveSearch(q.trim());
+        }
+        catch (error) {
+            if (seq === adminPlayersRequestSeq.current)
+                setAdminPlayersError(String(error?.message || error));
+        }
+        finally {
+            if (seq === adminPlayersRequestSeq.current)
+                setAdminPlayersBusy(false);
+        }
+    };
+    React.useEffect(() => {
+        if (demo || screen !== 'admin' || !['owner', 'coowner'].includes(liveRole))
+            return;
+        void loadAdminTasks();
+        void loadAdminPlayers(0, '');
+        void adminRequest('/api/admin/stats').then((stats) => { if (stats)
+            setAdminStats(stats); });
+    }, [demo, screen, liveRole]);
     const beginTaskEdit = (task) => {
         setTaskEditingId(task.id);
         setTaskDeleteArmed('');
@@ -2270,6 +2310,72 @@ function App() {
         const e = React.createElement;
         return e('section', { className: 'test-grants form-surface pearl-card', 'aria-label': 'Тестовые начисления GM и CR' }, e('div', { className: 'test-grants-heading' }, icon('coins', 40, true), e('div', null, e('strong', null, 'Тестовые начисления'), e('small', null, 'GM / CR / POINTS · только Owner / Co-Owner'))), e('p', { className: 'test-grants-note' }, testCurrency === 'POINTS' ? 'POINTS — игровые очки, не токен. Выдача ограничена, требует 2FA и фиксируется в журнале.' : 'GM/CR берутся из существующих резервов. Все начисления проходят 2FA и фиксируются в журнале.'), e('label', null, 'Кому начислить'), e('div', { className: 'test-grants-options', role: 'group', 'aria-label': 'Получатель' }, [['self', 'Себе'], ['other-owner', 'Совладельцу'], ['id', 'Игроку']].map(([id, title]) => e('button', { type: 'button', className: testRecipient === id ? 'selected' : '', key: id, onClick: () => setTestRecipient(id), 'aria-pressed': testRecipient === id }, title))), testRecipient === 'id' ? e('input', { value: testUserId, placeholder: 'Telegram ID зарегистрированного игрока', inputMode: 'numeric', onChange: event => setTestUserId(event.target.value), 'aria-label': 'Telegram ID игрока' }) : null, e('label', null, 'Игровая валюта'), e('div', { className: 'test-grants-options', role: 'group', 'aria-label': 'Валюта' }, ['GM', 'CR', 'POINTS'].map(currency => e('button', { key: currency, type: 'button', className: testCurrency === currency ? 'selected' : '', onClick: () => { setTestCurrency(currency); setTestAmount(currency === 'POINTS' ? '300' : currency === 'GM' ? '1000' : '10000'); }, 'aria-pressed': testCurrency === currency }, icon(currency === 'GM' ? 'gm-coin-orbit' : currency === 'POINTS' ? 'trophy' : 'coins', 23), currency))), e('label', null, 'Сумма ' + testCurrency), e('input', { value: testAmount, inputMode: 'decimal', placeholder: 'Например, 1000', onChange: event => setTestAmount(event.target.value), 'aria-label': 'Сумма тестового начисления' }), e('div', { className: 'test-grants-presets' }, (testCurrency === 'POINTS' ? ['100', '300', '1000'] : testCurrency === 'GM' ? ['1000', '5000', '10000'] : ['10000', '50000', '100000']).map(n => e('button', { key: n, type: 'button', onClick: () => setTestAmount(n) }, n))), e('small', { className: 'test-grants-limit' }, testCurrency === 'POINTS' ? 'До 1 000 POINTS за операцию и 5 000 POINTS в UTC-день на игрока.' : testCurrency === 'GM' ? 'До 10 000 GM за операцию и 50 000 GM в UTC-день на игрока.' : 'До 100 000 CR за операцию и 500 000 CR в UTC-день на игрока.'), e('label', null, 'Зачем выдаём'), e('textarea', { rows: 2, value: testReason, onChange: event => setTestReason(event.target.value), 'aria-label': 'Причина начисления' }), e('label', null, 'Код 2FA владельца'), e('input', { value: testCode, inputMode: 'numeric', type: 'text', autoComplete: 'one-time-code', maxLength: 6, placeholder: '6 цифр из приложения 2FA', onChange: event => setTestCode(event.target.value), 'aria-label': 'Код TOTP' }), e(GButton, { theme, disabled: demo || testBusy || !testAmount || testCode.length !== 6, onClick: testGrant, icon: 'shield-check' }, testBusy ? 'Проверяем начисление...' : 'Выдать тестовые ' + testCurrency), e('p', { className: 'test-grants-footer' }, 'Другой совладелец или игрок должен хотя бы один раз открыть GM TOKEN. При необходимости между начислениями дождись нового кода 2FA.'));
     }
+    function AdminPlayers() {
+        const records = adminPlayers?.users || [];
+        const total = Number(adminPlayers?.total || 0), offset = Number(adminPlayers?.offset || 0), limit = Number(adminPlayers?.limit || 25);
+        const formatDate = (seconds) => Number(seconds) > 0 ? new Date(Number(seconds) * 1000).toLocaleString('ru-RU') : '—';
+        const clickSearch = (event) => { event?.preventDefault?.(); void loadAdminPlayers(0, adminPlayerSearch); };
+        return React.createElement("section", { className: "gm-admin-players gm-premium-card", "aria-label": "\u0412\u0441\u0435 \u0438\u0433\u0440\u043E\u043A\u0438" },
+            React.createElement("div", { className: "gm-admin-players-heading" },
+                React.createElement("div", null,
+                    icon('friends', 27, true),
+                    React.createElement("div", null,
+                        React.createElement("small", null, "PLAYER DIRECTORY"),
+                        React.createElement("h3", null, "\u0412\u0441\u0435 \u0438\u0433\u0440\u043E\u043A\u0438"),
+                        React.createElement("p", null, "\u0422\u043E\u043B\u044C\u043A\u043E Owner \u0438 Co-Owner. \u0414\u0430\u043D\u043D\u044B\u0435 \u043F\u0440\u044F\u043C\u043E \u0438\u0437 \u0431\u0430\u0437\u044B GM TOKEN."))),
+                React.createElement("strong", null, adminPlayers ? nf(total, 0) : '—')),
+            React.createElement("form", { className: "gm-admin-players-search", onSubmit: clickSearch },
+                React.createElement("input", { type: "search", maxLength: 48, value: adminPlayerSearch, onChange: (event) => setAdminPlayerSearch(event.target.value), placeholder: "\u041F\u043E\u0438\u0441\u043A \u043F\u043E Telegram ID \u0438\u043B\u0438 @username", "aria-label": "\u041F\u043E\u0438\u0441\u043A \u0438\u0433\u0440\u043E\u043A\u043E\u0432" }),
+                React.createElement("button", { type: "submit", disabled: adminPlayersBusy, "aria-label": "\u041D\u0430\u0439\u0442\u0438 \u0438\u0433\u0440\u043E\u043A\u0430" }, icon('search', 19)),
+                React.createElement("button", { type: "button", disabled: adminPlayersBusy, onClick: () => { setAdminPlayerSearch(''); void loadAdminPlayers(0, ''); }, "aria-label": "\u0421\u0431\u0440\u043E\u0441\u0438\u0442\u044C \u043F\u043E\u0438\u0441\u043A" }, icon('refresh', 19))),
+            adminPlayersError ? React.createElement("p", { className: "gm-admin-players-error", role: "alert" },
+                adminPlayersError,
+                React.createElement("button", { type: "button", onClick: () => void loadAdminPlayers(offset, adminPlayerActiveSearch) }, "\u041F\u043E\u0432\u0442\u043E\u0440\u0438\u0442\u044C")) : null,
+            adminPlayersBusy && !adminPlayers ? React.createElement("p", { className: "gm-admin-players-empty", role: "status" }, "\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043C \u0441\u043F\u0438\u0441\u043E\u043A \u0438\u0433\u0440\u043E\u043A\u043E\u0432\u2026") : null,
+            !adminPlayersBusy && adminPlayers && records.length === 0 ? React.createElement("p", { className: "gm-admin-players-empty" }, "\u0418\u0433\u0440\u043E\u043A\u0438 \u043F\u043E \u044D\u0442\u043E\u043C\u0443 \u0437\u0430\u043F\u0440\u043E\u0441\u0443 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u044B.") : null,
+            React.createElement("div", { className: "gm-admin-players-list" }, records.map((player) => React.createElement("article", { className: "gm-admin-player", key: player.id },
+                React.createElement("div", { className: "gm-admin-player-top" },
+                    React.createElement("div", { className: "gm-admin-player-identity" },
+                        React.createElement("div", { className: "gm-admin-player-avatar" }, icon('user-round', 20)),
+                        React.createElement("div", null,
+                            React.createElement("b", null, player.username ? '@' + String(player.username).replace(/^@/, '') : 'Игрок ' + player.id),
+                            React.createElement("small", null,
+                                "ID: ",
+                                player.id))),
+                    React.createElement("span", { className: 'gm-admin-player-role ' + (player.role === 'owner' || player.role === 'coowner' ? 'staff' : '') }, player.role)),
+                React.createElement("div", { className: "gm-admin-player-metrics" },
+                    React.createElement("div", null,
+                        React.createElement("small", null, "\u0423\u0440\u043E\u0432\u0435\u043D\u044C"),
+                        React.createElement("b", null, player.level)),
+                    React.createElement("div", null,
+                        React.createElement("small", null, "XP"),
+                        React.createElement("b", null, nf(player.xp, 0))),
+                    React.createElement("div", null,
+                        React.createElement("small", null, "GM"),
+                        React.createElement("b", null, nf((player.gm_cents || 0) / 100, 2))),
+                    React.createElement("div", null,
+                        React.createElement("small", null, "CR"),
+                        React.createElement("b", null, nf((player.cr_cents || 0) / 100, 2))),
+                    React.createElement("div", null,
+                        React.createElement("small", null, "Vault GM"),
+                        React.createElement("b", null, nf((player.vault_cents || 0) / 100, 2)))),
+                React.createElement("div", { className: "gm-admin-player-foot" },
+                    React.createElement("div", null,
+                        React.createElement("small", null,
+                            "\u0420\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044F: ",
+                            formatDate(player.created_at)),
+                        React.createElement("small", null,
+                            "\u0411\u044B\u043B \u0432 \u0441\u0435\u0442\u0438: ",
+                            formatDate(player.last_seen))),
+                    React.createElement("button", { type: "button", onClick: () => { setAdminId(player.id); setTestUserId(player.id); flash('ID игрока выбран для административных форм.'); } }, "\u0412\u044B\u0431\u0440\u0430\u0442\u044C ID"))))),
+            React.createElement("div", { className: "gm-admin-players-pagination" },
+                React.createElement("span", null,
+                    adminPlayers ? total === 0 ? '0 игроков' : (offset + 1) + '–' + (offset + records.length) + ' из ' + total : 'Список не загружен',
+                    adminPlayerActiveSearch ? ' · поиск: ' + adminPlayerActiveSearch : ''),
+                React.createElement("div", null,
+                    React.createElement("button", { type: "button", disabled: adminPlayersBusy || offset === 0, onClick: () => void loadAdminPlayers(Math.max(0, offset - limit), adminPlayerActiveSearch) }, "\u041D\u0430\u0437\u0430\u0434"),
+                    React.createElement("button", { type: "button", disabled: adminPlayersBusy || !adminPlayers?.has_more, onClick: () => void loadAdminPlayers(adminPlayers.next_offset, adminPlayerActiveSearch) }, "\u0414\u0430\u043B\u044C\u0448\u0435"))));
+    }
     function Admin() {
         const isOwner = ['owner', 'coowner'].includes(liveRole);
         if (!demo && !isOwner)
@@ -2290,6 +2396,7 @@ function App() {
                 React.createElement("small", null, a),
                 React.createElement("b", null, b),
                 React.createElement("small", null, "\u0421\u0435\u0440\u0432\u0435\u0440\u043D\u044B\u0435 \u0434\u0430\u043D\u043D\u044B\u0435")))),
+            AdminPlayers(),
             liveState?.config?.test_economy ? AdminTestGrants() : null,
             AdminTaskCatalog(),
             React.createElement("h3", { className: "section-title" }, "\u0423\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0438\u0435"),
