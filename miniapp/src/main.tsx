@@ -705,6 +705,9 @@ function App(){
  const [liveRanks,setLiveRanks]=React.useState(null as any);
  const [holderRanks,setHolderRanks]=React.useState(null as any);
  const [holderStatus,setHolderStatus]=React.useState(null as any);
+ const [gramVerify,setGramVerify]=React.useState(null as any);
+ const [gramBusy,setGramBusy]=React.useState(false);
+ const [gramNotice,setGramNotice]=React.useState('');
  const [holderLoading,setHolderLoading]=React.useState(false);
  const [holderMoreBusy,setHolderMoreBusy]=React.useState(false);
  const [holderShowPosition,setHolderShowPosition]=React.useState(false);
@@ -785,7 +788,15 @@ function App(){
   return null;
  };
  React.useEffect(()=>{if(demo||screen!=='leaderboard')return;void fetchHolders();void getHolderStatus()},[screen,demo]);
- React.useEffect(()=>{if(demo||screen!=='wallet')return;void getHolderStatus()},[screen,demo]);
+ const loadGramStatus=async()=>{
+  if(demo||!webapp?.initData)return;
+  try{
+   const response=await fetch('/api/gram-verification/status',{headers:holderAuthHeaders(),cache:'no-store'});
+   const data=await response.json();if(!response.ok)throw Error(data.error||'Verification status unavailable');
+   setGramVerify(data);return data;
+  }catch(error:any){setGramNotice(String(error?.message||error))}
+ };
+ React.useEffect(()=>{if(demo||screen!=='wallet')return;void getHolderStatus();void loadGramStatus()},[screen,demo,holderStatus?.wallet_verified]);
  React.useEffect(()=>{
   if(demo||!webapp?.initData)return;
   const sdk=(window as any).TON_CONNECT_UI;
@@ -836,6 +847,38 @@ function App(){
    tonUi.current.setConnectRequestParameters({state:'ready',value:{tonProof:data.payload}});
    await tonUi.current.openModal();
   }catch(error:any){setTonError(String(error?.message||error))}
+ };
+ const payGramVerification=async()=>{
+  if(gramBusy)return;
+  setGramBusy(true);setGramNotice('');
+  try{
+   if(!tonUi.current?.connected||!holderStatus?.wallet_verified)throw Error('Сначала подтверди TON-кошелёк');
+   if(tonUi.current.wallet?.account?.address!==holderStatus?.wallet_address)throw Error('Подключён другой кошелёк: переподключи и подтверди его');
+   const response=await fetch('/api/gram-verification/invoice',{method:'POST',headers:holderAuthHeaders(),body:'{}'});
+   const invoice=await response.json();if(!response.ok)throw Error(invoice.error||'Payment invoice unavailable');
+   if(invoice.already_paid){await loadGramStatus();return}
+   if(invoice.amount_nanogram!=='50000000'||!invoice.payload||!invoice.receiver)throw Error('Неверные параметры платежа');
+   if(invoice.expires_at<=Math.floor(Date.now()/1000)+30)throw Error('Время заявки истекло. Создай новую заявку');
+   await tonUi.current.sendTransaction({
+    validUntil:Math.min(invoice.expires_at,Math.floor(Date.now()/1000)+300),
+    network:'-239',
+    messages:[{address:invoice.receiver,amount:invoice.amount_nanogram,payload:invoice.payload}]
+   });
+   setGramNotice('Транзакция отправлена. Проверь подтверждение в сети; повторно платить не нужно.');
+   await loadGramStatus();
+  }catch(error:any){setGramNotice(String(error?.message||error))}
+  finally{setGramBusy(false)}
+ };
+ const checkGramVerification=async()=>{
+  if(gramBusy)return;
+  setGramBusy(true);setGramNotice('');
+  try{
+   const response=await fetch('/api/gram-verification/check',{method:'POST',headers:holderAuthHeaders(),body:'{}'});
+   const data=await response.json();if(!response.ok)throw Error(data.error||'Payment check unavailable');
+   setGramVerify(data);
+   setGramNotice(data.verified?'Платёж подтверждён! Статус Verified активирован.':'Подтверждения платежа пока нет. Повторная оплата не требуется.');
+  }catch(error:any){setGramNotice(String(error?.message||error))}
+  finally{setGramBusy(false)}
  };
  const disconnectTonWallet=async()=>{
   try{
