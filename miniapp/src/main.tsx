@@ -1723,6 +1723,18 @@ function Reward() {
    tonAccount&&!verified?e('p',{className:'gm-wallet-error',role:'status'},loc('Carteira conectada, mas assinatura não confirmada. Repita a verificação.','Гаманець підключено, але підпис не підтверджено. Повтори перевірку.','Wallet connected, but its signature is not verified. Retry verification.','Кошелёк подключён, но подпись не подтверждена. Повтори проверку.')):null,
    tonError?e('div',{className:'gm-wallet-error',role:'status'},tonError):null,
    e('section',{className:'gm-wallet-holders gm-premium-card'},
+    e('div',{className:'gm-wallet-holders-title'},icon('shield-check',24,true),e('b',null,'GM TOKEN VERIFIED')),
+    e('p',null,'Проверка на ботов: 0,05 GRAM. Подключение TON-кошелька бесплатно. Комиссия сети отдельно.'),
+    gramVerify?.verified?e('div',{className:'gm-wallet-proof-status verified'},icon('shield-check',18),'Verified · оплата подтверждена'):
+    !verified?e('p',null,'Сначала подключи и подтверди Tonkeeper бесплатной подписью.'):
+    !gramVerify?.enabled?e('p',null,'Платная проверка ещё не активирована. Получающий кошелёк должен подтвердить владелец проекта.'):
+    e('div',null,
+     e('button',{type:'button',className:'gm-wallet-connect',disabled:gramBusy,onClick:()=>void payGramVerification()},
+      icon('wallet',20),gramBusy?'Обработка…':'Оплатить 0,05 GRAM'),
+     e('button',{type:'button',className:'gm-wallet-verify-balance',disabled:gramBusy,onClick:()=>void checkGramVerification()},
+      icon('refresh',17),'Проверить оплату')),
+    gramNotice?e('p',{className:'gm-wallet-error',role:'status'},gramNotice):null),
+   e('section',{className:'gm-wallet-holders gm-premium-card'},
     e('div',{className:'gm-wallet-holders-title'},icon('trophy',27,true),e('span',null,e('b',null,L('holdings')),e('small',null,'TON MAINNET · GM JETTON'))),
     e('p',null,holderStatus?.configured?
      loc('Somente GM verificados na blockchain contam para o ranking.','Рейтинг враховує лише перевірені GM у блокчейні.','Only independently verified on-chain GM counts in the holders ranking.','В рейтинге учитываются только подтверждённые сервером GM в блокчейне.'):
