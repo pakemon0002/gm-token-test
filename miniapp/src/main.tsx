@@ -705,6 +705,9 @@ function App(){
  const [liveRanks,setLiveRanks]=React.useState(null as any);
  const [holderRanks,setHolderRanks]=React.useState(null as any);
  const [holderStatus,setHolderStatus]=React.useState(null as any);
+ const [gramVerify,setGramVerify]=React.useState(null as any);
+ const [gramBusy,setGramBusy]=React.useState(false);
+ const [gramNotice,setGramNotice]=React.useState('');
  const [holderLoading,setHolderLoading]=React.useState(false);
  const [holderMoreBusy,setHolderMoreBusy]=React.useState(false);
  const [holderShowPosition,setHolderShowPosition]=React.useState(false);
@@ -785,7 +788,15 @@ function App(){
   return null;
  };
  React.useEffect(()=>{if(demo||screen!=='leaderboard')return;void fetchHolders();void getHolderStatus()},[screen,demo]);
- React.useEffect(()=>{if(demo||screen!=='wallet')return;void getHolderStatus()},[screen,demo]);
+ const loadGramStatus=async()=>{
+  if(demo||!webapp?.initData)return;
+  try{
+   const response=await fetch('/api/gram-verification/status',{headers:holderAuthHeaders(),cache:'no-store'});
+   const data=await response.json();if(!response.ok)throw Error(data.error||'Verification status unavailable');
+   setGramVerify(data);return data;
+  }catch(error:any){setGramNotice(String(error?.message||error))}
+ };
+ React.useEffect(()=>{if(demo||screen!=='wallet')return;void getHolderStatus();void loadGramStatus()},[screen,demo,holderStatus?.wallet_verified]);
  React.useEffect(()=>{
   if(demo||!webapp?.initData)return;
   const sdk=(window as any).TON_CONNECT_UI;
@@ -836,6 +847,38 @@ function App(){
    tonUi.current.setConnectRequestParameters({state:'ready',value:{tonProof:data.payload}});
    await tonUi.current.openModal();
   }catch(error:any){setTonError(String(error?.message||error))}
+ };
+ const payGramVerification=async()=>{
+  if(gramBusy)return;
+  setGramBusy(true);setGramNotice('');
+  try{
+   if(!tonUi.current?.connected||!holderStatus?.wallet_verified)throw Error('Сначала подтверди TON-кошелёк');
+   if(tonUi.current.wallet?.account?.address!==holderStatus?.wallet_address)throw Error('Подключён другой кошелёк: переподключи и подтверди его');
+   const response=await fetch('/api/gram-verification/invoice',{method:'POST',headers:holderAuthHeaders(),body:'{}'});
+   const invoice=await response.json();if(!response.ok)throw Error(invoice.error||'Payment invoice unavailable');
+   if(invoice.already_paid){await loadGramStatus();return}
+   if(invoice.amount_nanogram!=='50000000'||!invoice.payload||!invoice.receiver)throw Error('Неверные параметры платежа');
+   if(invoice.expires_at<=Math.floor(Date.now()/1000)+30)throw Error('Время заявки истекло. Создай новую заявку');
+   await tonUi.current.sendTransaction({
+    validUntil:Math.min(invoice.expires_at,Math.floor(Date.now()/1000)+300),
+    network:'-239',
+    messages:[{address:invoice.receiver,amount:invoice.amount_nanogram,payload:invoice.payload}]
+   });
+   setGramNotice('Транзакция отправлена. Проверь подтверждение в сети; повторно платить не нужно.');
+   await loadGramStatus();
+  }catch(error:any){setGramNotice(String(error?.message||error))}
+  finally{setGramBusy(false)}
+ };
+ const checkGramVerification=async()=>{
+  if(gramBusy)return;
+  setGramBusy(true);setGramNotice('');
+  try{
+   const response=await fetch('/api/gram-verification/check',{method:'POST',headers:holderAuthHeaders(),body:'{}'});
+   const data=await response.json();if(!response.ok)throw Error(data.error||'Payment check unavailable');
+   setGramVerify(data);
+   setGramNotice(data.verified?'Платёж подтверждён! Статус Verified активирован.':'Подтверждения платежа пока нет. Повторная оплата не требуется.');
+  }catch(error:any){setGramNotice(String(error?.message||error))}
+  finally{setGramBusy(false)}
  };
  const disconnectTonWallet=async()=>{
   try{
@@ -1664,9 +1707,9 @@ function Reward() {
    top(L('wallet'),true,'shield-check'),
    e('div',{className:'gm-wallet-hero gm-premium-card'},
     e('div',{className:'gm-wallet-hero-icon'},icon('wallet',72,true)),
-    e('small',null,'TON CONNECT · READ ONLY'),
+    e('small',null,'TON CONNECT · SECURE'),
     e('h2',null,L('wallet')),
-    e('p',null,loc('Prove que você controla sua carteira TON. O app nunca pede transferências ou frases-semente.','Підтвердь право на TON-гаманець. Застосунок не просить переказів або seed-фраз.','Prove that you control your TON wallet. No funds, transfers or recovery phrases are requested.','Подтверди, что TON-кошелёк принадлежит тебе. Переводы монет и сид-фразы не запрашиваются.')),
+    e('p',null,loc('Conectar uma carteira é gratuito. Uma verificação paga opcional é confirmada separadamente. Nunca compartilhe a frase de recuperação.','Підключення гаманця безкоштовне. Окрема платна перевірка потребує вашого підтвердження. Не повідомляйте seed-фразу.','Connecting a wallet is free. Optional paid verification requires separate confirmation. Never share your recovery phrase.','Подключение кошелька бесплатно. Дополнительная платная проверка требует отдельного подтверждения. Никогда не сообщай сид-фразу.')),
     e('div',{className:'gm-wallet-proof-status '+(verified?'verified':'unverified')},
      icon(verified?'shield-check':'clock',18),
      verified?loc('Propriedade verificada','Власність підтверджено','Wallet ownership verified','Владение кошельком подтверждено'):
@@ -1679,6 +1722,18 @@ function Reward() {
      loc('Conectar e verificar TON','Підключити й перевірити TON','Connect & verify TON','Подключить и проверить TON'))),
    tonAccount&&!verified?e('p',{className:'gm-wallet-error',role:'status'},loc('Carteira conectada, mas assinatura não confirmada. Repita a verificação.','Гаманець підключено, але підпис не підтверджено. Повтори перевірку.','Wallet connected, but its signature is not verified. Retry verification.','Кошелёк подключён, но подпись не подтверждена. Повтори проверку.')):null,
    tonError?e('div',{className:'gm-wallet-error',role:'status'},tonError):null,
+   e('section',{className:'gm-wallet-holders gm-premium-card'},
+    e('div',{className:'gm-wallet-holders-title'},icon('shield-check',24,true),e('b',null,'GM TOKEN VERIFIED')),
+    e('p',null,'Проверка на ботов: 0,05 GRAM. Подключение TON-кошелька бесплатно. Комиссия сети отдельно.'),
+    gramVerify?.verified?e('div',{className:'gm-wallet-proof-status verified'},icon('shield-check',18),'Verified · оплата подтверждена'):
+    !verified?e('p',null,'Сначала подключи и подтверди Tonkeeper бесплатной подписью.'):
+    !gramVerify?.enabled?e('p',null,'Платная проверка ещё не активирована. Получающий кошелёк должен подтвердить владелец проекта.'):
+    e('div',null,
+     e('button',{type:'button',className:'gm-wallet-connect',disabled:gramBusy,onClick:()=>void payGramVerification()},
+      icon('wallet',20),gramBusy?'Обработка…':'Оплатить 0,05 GRAM'),
+     e('button',{type:'button',className:'gm-wallet-verify-balance',disabled:gramBusy,onClick:()=>void checkGramVerification()},
+      icon('refresh',17),'Проверить оплату')),
+    gramNotice?e('p',{className:'gm-wallet-error',role:'status'},gramNotice):null),
    e('section',{className:'gm-wallet-holders gm-premium-card'},
     e('div',{className:'gm-wallet-holders-title'},icon('trophy',27,true),e('span',null,e('b',null,L('holdings')),e('small',null,'TON MAINNET · GM JETTON'))),
     e('p',null,holderStatus?.configured?

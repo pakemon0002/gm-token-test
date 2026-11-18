@@ -12,6 +12,7 @@ import {makeTelegramWebhook} from './webhook.mjs';
 import {makeSupportNotifier,deliverSupportTelegram} from './support-notify.mjs';
 import {publicTonLaunchStatus,denyTonTokenOperation} from './ton-prelaunch.mjs';
 import {makeHolders,HOLDINGS_REFRESH_SECONDS} from './holders.mjs';
+import {makeGramVerification} from './gram-verification.mjs';
 const here=dirname(fileURLToPath(import.meta.url));
 const staticRoot=resolve(here,'../miniapp/public');
 const dbPath=resolve(process.env.DB_PATH||resolve(here,'../data/gm-token.sqlite'));
@@ -43,6 +44,18 @@ CREATE TABLE IF NOT EXISTS support_notifications(
  status TEXT NOT NULL DEFAULT 'pending',last_error TEXT,
  UNIQUE(ticket_id,recipient_id,event));
 CREATE INDEX IF NOT EXISTS idx_support_notifications_due ON support_notifications(status,next_attempt_at);`);
+// SQLite test/preview fixture. Production PostgreSQL uses the reviewed private SQL migration.
+database.exec(`CREATE TABLE IF NOT EXISTS gram_verification_payments (
+ id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id),
+ wallet_address TEXT NOT NULL,receiver_address TEXT NOT NULL,
+ amount_nanogram TEXT NOT NULL CHECK(amount_nanogram='50000000'),
+ memo TEXT NOT NULL UNIQUE,status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','paid')),
+ tx_hash TEXT UNIQUE,created_at INTEGER NOT NULL,expires_at INTEGER NOT NULL,
+ checked_at INTEGER NOT NULL DEFAULT 0,verified_at INTEGER,
+ CHECK((status='pending' AND tx_hash IS NULL AND verified_at IS NULL) OR
+       (status='paid' AND tx_hash IS NOT NULL AND verified_at IS NOT NULL))
+);
+CREATE INDEX IF NOT EXISTS idx_gram_verify_user_created ON gram_verification_payments(user_id,created_at DESC);`);
 const now=()=>Math.floor(Date.now()/1000);
 const stmt=(sql)=>database.prepare(sql);
 if(process.env.GM_DATABASE_DRIVER==='postgres')database.exec('BEGIN IMMEDIATE');
@@ -125,6 +138,7 @@ function publicPools(){return stmt('SELECT name,gm,cr FROM pools ORDER BY name')
 function sendTelegram(id,message){if(!secret)return;fetch(`https://api.telegram.org/bot${secret}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:id,text:message.slice(0,1000)})}).catch(()=>{})}
 const game=makeGame({db:database,stmt,tx,log,now,send,readBody,sendTelegram});
 const holders=makeHolders({stmt,tx,now});
+const gramVerification=makeGramVerification({stmt,tx,log,now});
 supportNotifier=makeSupportNotifier({
  stmt,tx,now,ownerIds,
  send:(recipient,text)=>deliverSupportTelegram({token:secret,chatId:recipient,text})
@@ -213,6 +227,13 @@ const routes=async(req,res)=>{
   // All holder actions are bound to verified Telegram initData above.
   // No client endpoint accepts a balance, rank, wallet public key or trusted-score flag.
   if(p==='/api/holders/status'&&verb==='GET')return send(res,200,holders.status(id));
+  // Optional paid anti-bot badge. Wallet ownership proof itself remains free.
+  // Payment never auto-sends; only an explicit user action in their TON wallet can initiate it.
+  if(p==='/api/gram-verification/status'&&verb==='GET')return send(res,200,gramVerification.status(id));
+  if(p==='/api/gram-verification/invoice'&&verb==='POST')
+   return send(res,200,gramVerification.begin(id));
+  if(p==='/api/gram-verification/check'&&verb==='POST')
+   return send(res,200,await gramVerification.check(id));
   if(p==='/api/holders'&&verb==='GET'){
    const off=Number(url.searchParams.get('offset')||0),lim=Number(url.searchParams.get('limit')||30);
    if(!Number.isSafeInteger(off)||off<0||!Number.isSafeInteger(lim)||lim<1||lim>100)throw Error('invalid ranking pagination');
