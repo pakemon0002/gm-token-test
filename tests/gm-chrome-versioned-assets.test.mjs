@@ -13,7 +13,7 @@ test('Metallic icons and cache-fresh premium panels are deployed for both themes
   assert.ok(existsSync(new URL('../miniapp/public/assets/premium/chrome-'+name+'.svg',import.meta.url)),name);
  }
  assert.ok(html.includes('styles.css?v=gm-chrome-20261115-v5'));
- assert.ok(html.includes('main.js?v=gm-chrome-20261115-v5'));
+ assert.match(html,/main\.js\?v=[A-Za-z0-9_-]+/,'Mini App entry must remain versioned for Telegram cache busting');
  assert.ok(css.includes('.application.theme-dark .gm-calendar .gm-premium-bonus-panel'));
  assert.ok(css.includes('.application.theme-light .gm-calendar .gm-premium-bonus-panel'));
 });
