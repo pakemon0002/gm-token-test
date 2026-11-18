@@ -1670,6 +1670,12 @@ function Reward() {
   const cap=Math.max(1,rate*hours/24);
   const pct=Math.max(0,Math.min(100,stored/cap*100));
   const mineClick=()=>{void miningClaim()};
+  // Wallet entry from Mining must open the existing verified TON Connect flow, not just a notification.
+  const miningWalletLinked=holderStatus?.wallet_verified===true&&Boolean(tonAccount)&&tonUi.current?.connected===true&&tonAccount===holderStatus?.wallet_address;
+  const openWalletFromMining=()=>{
+   goto('wallet');
+   if(!miningWalletLinked)void connectTonWallet();
+  };
   return e('div',{className:'gm-mining-v8'},
    top(L('mining'),true,'info'),
    e('div',{className:'gm-mining-title'},e('span',null,'Добывай GM'),e('small',null,'Майнинг '+upgrade.level+'/200 · '+nf(rate,0)+' GM / сутки')),
@@ -1709,8 +1715,8 @@ function Reward() {
       e('div',{className:'gm-upgrade-rate-preview'},e('small',null,'При новом уровне (расчётно):'),
        e('b',null,nf(projectedRate(Number(upgrade.next_bonus_pct))/24,3)+' GM/ч'),
        e('b',null,nf(projectedRate(Number(upgrade.next_bonus_pct)),2)+' GM/сутки')),
-      e('button',{type:'button',className:'gm-upgrades-purchase',disabled:upgradeBusy,onClick:buyMiningUpgrade},
-       upgradeBusy?'Проверяем покупку…':!upgrade.purchasable?'Привязка GM к кошельку ещё не настроена':wallet.gm<upgrade.next_cost_gm?L('insufficient'):L('upgrade'),icon('chevron-right',17)))
+      e('button',{type:'button',className:'gm-upgrades-purchase',disabled:upgradeBusy||tonBusy,onClick:upgrade.purchasable?buyMiningUpgrade:openWalletFromMining},
+       upgradeBusy?'Проверяем покупку…':tonBusy?'Подключаем Tonkeeper…':!upgrade.purchasable?(miningWalletLinked?'Открыть кошелёк':'Подключить кошелёк'):wallet.gm<upgrade.next_cost_gm?L('insufficient'):L('upgrade'),icon('chevron-right',17)))
      :e('div',{className:'gm-upgrades-max'},icon('crown',21),'Максимальный уровень открыт'),
     e('div',{className:'gm-upgrade-preview'},
      ...visibleUpgrades.map((row:any)=>
@@ -1725,7 +1731,7 @@ function Reward() {
        row.level<=upgrade.level?icon('check',17):icon('minus',17)))),
     e('button',{type:'button',className:'gm-upgrades-toggle',onClick:()=>setShowAllUpgrades(!showAllUpgrades)},
      showAllUpgrades?L('collapse'):L('allLevels'),icon(showAllUpgrades?'chevron-up':'chevron-down',16))),
-   e('p',{className:'gm-mining-footnote'},'Скорости в списке расчётные, без учёта ограничений Mining Pool. Улучшения за реальные GM на внешнем кошельке пока отключены до проверки официального контракта. Игровые GM не списываются.'));
+   e('p',{className:'gm-mining-footnote'},'Скорости в списке расчётные, без учёта ограничений Mining Pool. Покупка улучшений пока отключена до проверки официального контракта. Кнопка подключения открывает Tonkeeper бесплатно; игровые GM не списываются.'));
  }
 
  function WalletConnection(){
