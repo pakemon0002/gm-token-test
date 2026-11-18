@@ -1707,9 +1707,9 @@ function Reward() {
    top(L('wallet'),true,'shield-check'),
    e('div',{className:'gm-wallet-hero gm-premium-card'},
     e('div',{className:'gm-wallet-hero-icon'},icon('wallet',72,true)),
-    e('small',null,'TON CONNECT · READ ONLY'),
+    e('small',null,'TON CONNECT · SECURE'),
     e('h2',null,L('wallet')),
-    e('p',null,loc('Prove que você controla sua carteira TON. O app nunca pede transferências ou frases-semente.','Підтвердь право на TON-гаманець. Застосунок не просить переказів або seed-фраз.','Prove that you control your TON wallet. No funds, transfers or recovery phrases are requested.','Подтверди, что TON-кошелёк принадлежит тебе. Переводы монет и сид-фразы не запрашиваются.')),
+    e('p',null,loc('Conectar uma carteira é gratuito. Uma verificação paga opcional é confirmada separadamente. Nunca compartilhe a frase de recuperação.','Підключення гаманця безкоштовне. Окрема платна перевірка потребує вашого підтвердження. Не повідомляйте seed-фразу.','Connecting a wallet is free. Optional paid verification requires separate confirmation. Never share your recovery phrase.','Подключение кошелька бесплатно. Дополнительная платная проверка требует отдельного подтверждения. Никогда не сообщай сид-фразу.')),
     e('div',{className:'gm-wallet-proof-status '+(verified?'verified':'unverified')},
      icon(verified?'shield-check':'clock',18),
      verified?loc('Propriedade verificada','Власність підтверджено','Wallet ownership verified','Владение кошельком подтверждено'):
