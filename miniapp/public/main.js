@@ -653,6 +653,8 @@ function App() {
     const [liveReferrals, setLiveReferrals] = React.useState(null);
     const [liveRanks, setLiveRanks] = React.useState(null);
     const [holderRanks, setHolderRanks] = React.useState(null);
+    const [rankingError, setRankingError] = React.useState('');
+    const [gameRankBusy, setGameRankBusy] = React.useState(false);
     const [holderStatus, setHolderStatus] = React.useState(null);
     const [gramVerify, setGramVerify] = React.useState(null);
     const [gramBusy, setGramBusy] = React.useState(false);
@@ -733,10 +735,11 @@ function App() {
             if (!response.ok)
                 throw Error(data.error || 'Holders unavailable');
             setHolderRanks((old) => append && old ? { ...data, users: [...(old.users || []), ...(data.users || [])] } : data);
+            setRankingError('');
             return data;
         }
         catch (error) {
-            setTonError(String(error.message || error));
+            setRankingError('Не удалось загрузить рейтинг держателей: ' + String(error.message || error));
             return null;
         }
         finally {
@@ -758,8 +761,38 @@ function App() {
         catch { }
         return null;
     };
-    React.useEffect(() => { if (demo || screen !== 'leaderboard')
-        return; void fetchHolders(); void getHolderStatus(); }, [screen, demo]);
+    const fetchGameRanks = async (offset = 0, append = false) => {
+        if (demo || !webapp?.initData) {
+            setRankingError('Открой GM TOKEN из Telegram для просмотра рейтинга');
+            return null;
+        }
+        setGameRankBusy(true);
+        try {
+            const data = await api('/api/leaderboard?limit=30&offset=' + offset, undefined, true);
+            if (!data || data.score_source !== 'server_game_xp')
+                throw Error('Рейтинг игроков временно недоступен');
+            setLiveRanks((old) => append && old ? { ...data, users: [...(old.users || []), ...(data.users || [])] } : data);
+            setRankingError('');
+            return data;
+        }
+        catch (error) {
+            setRankingError(String(error.message || error));
+            return null;
+        }
+        finally {
+            setGameRankBusy(false);
+        }
+    };
+    React.useEffect(() => {
+        if (demo || screen !== 'leaderboard')
+            return;
+        if (rankFilter === 'Holders') {
+            void fetchHolders();
+            void getHolderStatus();
+        }
+        else
+            void fetchGameRanks();
+    }, [screen, demo, rankFilter]);
     const loadGramStatus = async () => {
         if (demo || !webapp?.initData)
             return;
@@ -1120,13 +1153,12 @@ function App() {
     };
     const refreshLive = async () => { if (!webapp?.initData)
         return; const d = await api('/api/game/status', undefined, true); if (!d)
-        return; setLiveState(d); setW((w) => ({ ...w, gm: d.wallet.gm / 100, cr: d.wallet.cr / 100, vault: d.wallet.vault / 100, storage: d.mining.pending_cents / 100, level: d.user?.level || w.level, xp: d.user?.xp ?? w.xp })); const [orders, book, tasks, achievements, refs, ranks, ticker, chart, trades] = await Promise.all([api('/api/exchange/orders', undefined, true), api('/api/exchange/book', undefined, true), api('/api/tasks', undefined, true), api('/api/achievements', undefined, true), api('/api/referrals/me', undefined, true), api('/api/leaderboard', undefined, true), api('/api/market/ticker', undefined, true), api('/api/market/ohlcv?interval=' + period, undefined, true), api('/api/exchange/trades', undefined, true)]); if (orders)
+        return; setLiveState(d); setW((w) => ({ ...w, gm: d.wallet.gm / 100, cr: d.wallet.cr / 100, vault: d.wallet.vault / 100, storage: d.mining.pending_cents / 100, level: d.user?.level || w.level, xp: d.user?.xp ?? w.xp })); const [orders, book, tasks, achievements, refs, ticker, chart, trades] = await Promise.all([api('/api/exchange/orders', undefined, true), api('/api/exchange/book', undefined, true), api('/api/tasks', undefined, true), api('/api/achievements', undefined, true), api('/api/referrals/me', undefined, true), api('/api/market/ticker', undefined, true), api('/api/market/ohlcv?interval=' + period, undefined, true), api('/api/exchange/trades', undefined, true)]); if (orders)
         setLiveOrders(orders.orders || []); if (book)
         setLiveBook(book); if (tasks)
         setLiveTasks(tasks.tasks || []); if (achievements)
         setLiveAchievements(achievements.achievements || []); if (refs)
-        setLiveReferrals(refs); if (ranks)
-        setLiveRanks(ranks); if (ticker)
+        setLiveReferrals(refs); if (ticker)
         setLiveTicker(ticker); if (chart)
         setLiveCandles(chart.candles || []); if (trades)
         setRecentTrades((trades.trades || []).filter((t) => !t.suspect).slice(0, 10)); setW((w) => ({ ...w, streak: d.daily?.streak || 0, lastClaim: d.daily?.last_claim_day || '' })); };
@@ -1575,8 +1607,91 @@ function App() {
             !verified ? walletLanguage('Aguardando contrato oficial do GM Jetton. Nenhum saldo fictício é exibido.', 'Очікуємо офіційний контракт GM Jetton. Вигадані баланси не показуються.', 'Waiting for the official GM Jetton contract. No fictional balances are displayed.', 'Ожидаем официальный контракт GM Jetton. Вымышленные балансы и участники не отображаются.') :
                 !data.participants ? walletLanguage('Ainda não há detentores com saldo e carteira verificados.', 'Наразі немає власників із перевіреними гаманцями та балансами.', 'No opted-in players have a fresh verified wallet balance yet.', 'Пока нет игроков с подтверждёнными кошельками и свежим проверенным балансом.') : null;
         const slots = [3, 1, 2];
+        const rankingTabs = React.createElement("div", { className: "gm-ranking-tabs", role: "tablist", "aria-label": "\u0412\u0438\u0434 \u0440\u0435\u0439\u0442\u0438\u043D\u0433\u0430" },
+            React.createElement("button", { type: "button", role: "tab", "aria-selected": rankFilter !== 'Holders', className: rankFilter !== 'Holders' ? 'active' : '', onClick: () => { setRankFilter('Global'); setRankingError(''); } }, "\u0418\u0433\u0440\u043E\u043A\u0438 \u00B7 XP"),
+            React.createElement("button", { type: "button", role: "tab", "aria-selected": rankFilter === 'Holders', className: rankFilter === 'Holders' ? 'active' : '', onClick: () => { setRankFilter('Holders'); setRankingError(''); } }, "\u0414\u0435\u0440\u0436\u0430\u0442\u0435\u043B\u0438 \u00B7 TON"));
+        if (rankFilter !== 'Holders') {
+            const game = liveRanks?.score_source === 'server_game_xp' ? liveRanks : null;
+            const gamePodium = game?.podium || [], gameUsers = game?.users || [];
+            return React.createElement(React.Fragment, null,
+                top(L('leaderboard'), true, 'trophy'),
+                rankingTabs,
+                React.createElement("section", { className: "gm-holders-header gm-premium-card" },
+                    React.createElement("div", { className: "gm-holders-header-label" },
+                        icon('trophy', 20, true),
+                        " ",
+                        React.createElement("span", null, "GM TOKEN \u00B7 GAME XP")),
+                    React.createElement("h2", null, "\u0420\u0435\u0439\u0442\u0438\u043D\u0433 \u0438\u0433\u0440\u043E\u043A\u043E\u0432"),
+                    React.createElement("p", null, "\u041C\u0435\u0441\u0442\u0430 \u043E\u043F\u0440\u0435\u0434\u0435\u043B\u044F\u044E\u0442\u0441\u044F \u0441\u0435\u0440\u0432\u0435\u0440\u043E\u043C \u043F\u043E \u0437\u0430\u0440\u0430\u0431\u043E\u0442\u0430\u043D\u043D\u044B\u043C XP. \u0418\u0433\u0440\u043E\u0432\u044B\u0435 GM \u0438 \u0440\u0435\u0430\u043B\u044C\u043D\u044B\u0435 \u0442\u043E\u043A\u0435\u043D\u044B \u0437\u0434\u0435\u0441\u044C \u043D\u0435 \u0443\u0447\u0438\u0442\u044B\u0432\u0430\u044E\u0442\u0441\u044F. \u041D\u0438\u043A\u0438 \u0434\u0440\u0443\u0433\u0438\u0445 \u0438\u0433\u0440\u043E\u043A\u043E\u0432 \u0441\u043A\u0440\u044B\u0442\u044B."),
+                    React.createElement("div", { className: "gm-holders-stats" },
+                        React.createElement("div", null,
+                            React.createElement("small", null, "\u0418\u0433\u0440\u043E\u043A\u043E\u0432"),
+                            React.createElement("strong", null, game?.participants ?? '—')),
+                        React.createElement("div", null,
+                            React.createElement("small", null, "\u041C\u043E\u0451 \u043C\u0435\u0441\u0442\u043E"),
+                            React.createElement("strong", null, game?.my_rank ? '#' + game.my_rank : '—')),
+                        React.createElement("div", null,
+                            React.createElement("small", null, "\u041C\u043E\u0438 XP"),
+                            React.createElement("strong", null, game ? game.my_xp : '—')))),
+                React.createElement("section", { className: "gm-holder-podium-wrap gm-premium-card" },
+                    React.createElement("div", { className: "gm-holder-section-title" },
+                        icon('crown', 21),
+                        " ",
+                        React.createElement("b", null, "TOP 3 \u00B7 XP")),
+                    React.createElement("div", { className: "gm-holder-podium", "aria-label": "\u0422\u0440\u0438 \u043B\u0438\u0434\u0435\u0440\u0430 \u043F\u043E \u0438\u0433\u0440\u043E\u0432\u044B\u043C XP" }, slots.map(place => {
+                        const player = gamePodium.find((p) => p.rank === place);
+                        return React.createElement("div", { className: 'gm-holder-podium-slot gm-holder-place-' + place + (player ? ' is-filled' : ' is-empty'), key: place },
+                            React.createElement("div", { className: "gm-holder-podium-crown" }, icon(place === 1 ? 'crown' : 'shield-check', place === 1 ? 32 : 25, true)),
+                            React.createElement("div", { className: "gm-holder-podium-avatar" },
+                                React.createElement(PlayerAvatar, { name: player?.username || 'GM', size: place === 1 ? 'large' : 'medium', rank: place })),
+                            React.createElement("div", { className: "gm-holder-podium-alias" }, player?.username || '—'),
+                            React.createElement("div", { className: "gm-holder-podium-amount" }, player ? player.xp + ' XP' : '—'),
+                            React.createElement("div", { className: "gm-holder-podium-pillar" },
+                                React.createElement("b", null, place),
+                                React.createElement("span", null, place === 1 ? 'CHAMPION' : place === 2 ? 'SILVER' : 'BRONZE')));
+                    })),
+                    !game ? React.createElement("p", { className: "gm-holder-pending", role: "status" },
+                        icon('info', 18),
+                        " ",
+                        rankingError || 'Получаем рейтинг игроков с сервера…') : null),
+                React.createElement("section", { className: "gm-holders-list gm-premium-card" },
+                    React.createElement("div", { className: "gm-holder-list-head" },
+                        React.createElement("div", null,
+                            React.createElement("small", null, "GAME XP \u00B7 VERIFIED BY SERVER"),
+                            React.createElement("h3", null, "\u0423\u0447\u0430\u0441\u0442\u043D\u0438\u043A\u0438")),
+                        React.createElement("button", { type: "button", className: "gm-holder-refresh", disabled: gameRankBusy, onClick: () => void fetchGameRanks(), "aria-label": "\u041E\u0431\u043D\u043E\u0432\u0438\u0442\u044C \u0440\u0435\u0439\u0442\u0438\u043D\u0433 \u0438\u0433\u0440\u043E\u043A\u043E\u0432" }, icon('refresh', 19))),
+                    game ? React.createElement("div", { className: "gm-holder-my-position" },
+                        icon('search', 18),
+                        " ",
+                        React.createElement("span", null, "\u0422\u0432\u043E\u0451 \u043C\u0435\u0441\u0442\u043E"),
+                        React.createElement("strong", null,
+                            "#",
+                            game.my_rank,
+                            " \u00B7 ",
+                            game.my_xp,
+                            " XP")) : null,
+                    React.createElement("div", { className: "gm-holder-rows" }, gameUsers.filter((u) => u.rank >= 4).map((u) => React.createElement("div", { className: "gm-holder-row", key: u.rank },
+                        React.createElement("div", { className: "gm-holder-row-rank" }, u.rank),
+                        React.createElement("div", { className: "gm-holder-row-avatar" },
+                            React.createElement(PlayerAvatar, { name: u.username, size: "small" })),
+                        React.createElement("div", { className: "gm-holder-row-user" },
+                            React.createElement("b", null, u.username),
+                            React.createElement("small", null,
+                                "\u0423\u0440\u043E\u0432\u0435\u043D\u044C ",
+                                u.level)),
+                        React.createElement("strong", null,
+                            u.xp,
+                            " ",
+                            React.createElement("small", null, "XP"))))),
+                    game && game.participants <= 3 ? React.createElement("p", { className: "gm-holder-list-note" }, "\u0412\u0441\u0435 \u0437\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0435 \u0443\u0447\u0430\u0441\u0442\u043D\u0438\u043A\u0438 \u043F\u043E\u043A\u0430\u0437\u0430\u043D\u044B \u043D\u0430 \u043F\u044C\u0435\u0434\u0435\u0441\u0442\u0430\u043B\u0435.") : null,
+                    game?.has_more ? React.createElement("button", { type: "button", className: "gm-holders-load-more", disabled: gameRankBusy, onClick: () => void fetchGameRanks(game.next_offset || 30, true) },
+                        "\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u044C \u0435\u0449\u0451 ",
+                        icon('chevron-down', 18)) : null,
+                    rankingError && game ? React.createElement("p", { className: "gm-holder-pending", role: "status" }, rankingError) : null));
+        }
         return React.createElement(React.Fragment, null,
             top(L('holdings'), true, 'trophy'),
+            rankingTabs,
             React.createElement("section", { className: "gm-holders-header gm-premium-card" },
                 React.createElement("div", { className: "gm-holders-header-label" },
                     icon('shield-check', 20, true),
@@ -1610,10 +1725,10 @@ function App() {
                             React.createElement("b", null, place),
                             React.createElement("span", null, place === 1 ? 'CHAMPION' : place === 2 ? 'SILVER' : 'BRONZE')));
                 })),
-                statusMessage ? React.createElement("p", { className: "gm-holder-pending" },
+                (rankingError || statusMessage) ? React.createElement("p", { className: "gm-holder-pending", role: "status" },
                     icon('info', 18),
                     " ",
-                    statusMessage) : null),
+                    rankingError || statusMessage) : null),
             React.createElement("section", { className: "gm-holders-list gm-premium-card" },
                 React.createElement("div", { className: "gm-holder-list-head" },
                     React.createElement("div", null,

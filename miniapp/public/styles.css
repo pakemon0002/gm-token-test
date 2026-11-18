@@ -3135,3 +3135,12 @@ html,body,.application,.application button,.application input,.application texta
 .gm-economy-note-trade{margin:10px 0 14px}
 .gm-economy-note-boxes{margin:8px 0 12px}
 @media(max-width:370px){.gm-economy-note{gap:8px;padding:10px;border-radius:13px}.gm-economy-note-icon{width:30px;height:30px}.gm-economy-note-copy>small{font-size:10.5px}}
+
+/* XP ranking and verified on-chain holders are explicitly separate surfaces. */
+.gm-ranking-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:7px;border:1px solid var(--gm-v2-rail);border-radius:17px;background:#8d9eb41c;margin:9px 1px 4px}
+.gm-ranking-tabs button{border:1px solid transparent;background:transparent;color:var(--gm-v2-ink);border-radius:12px;font-size:11px;font-weight:850;min-height:42px;padding:9px 7px;cursor:pointer;transition:background .18s,border-color .18s,transform .18s}
+.gm-ranking-tabs button.active{background:linear-gradient(135deg,#fcfdff,#d7e3f3);border-color:#b3c2d5;box-shadow:0 3px 12px #47658d22;color:#253147}
+.theme-dark .gm-ranking-tabs{background:#101824a6}
+.theme-dark .gm-ranking-tabs button.active{background:linear-gradient(135deg,#617086,#29384b);border-color:#8b9db5;color:#f3f7ff}
+.gm-ranking-tabs button:focus-visible{outline:2px solid #668cce;outline-offset:1px}
+.gm-ranking-tabs button:active{transform:scale(.98)}
