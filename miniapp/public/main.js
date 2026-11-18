@@ -711,6 +711,8 @@ function App() {
     const [selectedFrame, setSelectedFrame] = React.useState(store.getItem('gm_profile_frame') || 'standard');
     const [tonAccount, setTonAccount] = React.useState('');
     const [tonError, setTonError] = React.useState('');
+    const [tonReady, setTonReady] = React.useState(false);
+    const [tonBusy, setTonBusy] = React.useState(false);
     const tonUi = React.useRef(null);
     const [testAmount, setTestAmount] = React.useState('1000');
     const [testReason, setTestReason] = React.useState('Начисление виртуальных GM/CR для проверки торговой системы');
@@ -780,13 +782,15 @@ function App() {
             return;
         const sdk = window.TON_CONNECT_UI;
         if (!sdk?.TonConnectUI) {
-            setTonError('TON Connect SDK unavailable');
+            setTonReady(false);
+            setTonError('Модуль TON Connect не загрузился. Закрой Mini App и открой снова через Telegram.');
             return;
         }
         let disposed = false;
         try {
             const instance = new sdk.TonConnectUI({ manifestUrl: window.location.origin + '/tonconnect-manifest.json' });
             tonUi.current = instance;
+            setTonReady(true);
             const unsubscribe = instance.onStatusChange(async (connected) => {
                 if (disposed)
                     return;
@@ -832,16 +836,26 @@ function App() {
                 unsubscribe(); tonUi.current = null; };
         }
         catch (error) {
-            setTonError(String(error?.message || error));
+            setTonReady(false);
+            setTonError('Не удалось запустить TON Connect: ' + String(error?.message || error));
         }
     }, [demo]);
     const connectTonWallet = async () => {
+        if (tonBusy)
+            return;
+        setTonBusy(true);
         try {
             setTonError('');
-            if (!tonUi.current)
-                throw Error('TON Connect is not ready');
-            // Reconnecting a restored session must request a fresh proof.
-            // Never create challenges from disconnect callbacks: each new challenge revokes the previous nonce.
+            if (!webapp?.initData)
+                throw Error('Открой приложение через кнопку в Telegram-боте, а не в обычном браузере.');
+            if (!tonUi.current || !tonReady)
+                throw Error('TON Connect не готов. Закрой Mini App и открой снова.');
+            // Wait for session restoration before deciding whether a fresh signature is necessary.
+            try {
+                await tonUi.current.connectionRestored;
+            }
+            catch { }
+            // Request a new nonce only after disconnect, preventing a stale signature.
             if (tonUi.current.connected) {
                 await tonUi.current.disconnect();
                 setTonAccount('');
@@ -849,12 +863,15 @@ function App() {
             const response = await fetch('/api/holders/challenge', { method: 'POST', headers: holderAuthHeaders(), body: '{}' });
             const data = await response.json();
             if (!response.ok || !data.payload)
-                throw Error(data.error || 'TON proof challenge unavailable');
+                throw Error(data.error || 'Сервер не выдал запрос на проверку кошелька.');
             tonUi.current.setConnectRequestParameters({ state: 'ready', value: { tonProof: data.payload } });
             await tonUi.current.openModal();
         }
         catch (error) {
             setTonError(String(error?.message || error));
+        }
+        finally {
+            setTonBusy(false);
         }
     };
     const payGramVerification = async () => {
@@ -1679,13 +1696,17 @@ function App() {
     function WalletConnection() {
         const e = React.createElement;
         const verified = holderStatus?.wallet_verified === true;
+        // Server-verified is not the same as having an active Tonkeeper session on this device.
+        const connectedVerified = verified && Boolean(tonAccount) && tonAccount === holderStatus?.wallet_address;
         const walletAddress = holderStatus?.wallet_address || tonAccount;
         const display = walletAddress ? (walletAddress.length > 26 ? walletAddress.slice(0, 13) + '…' + walletAddress.slice(-8) : walletAddress) : '—';
         const loc = walletLanguage;
         return e('div', { className: 'gm-wallet-screen' }, top(L('wallet'), true, 'shield-check'), e('div', { className: 'gm-wallet-hero gm-premium-card' }, e('div', { className: 'gm-wallet-hero-icon' }, icon('wallet', 72, true)), e('small', null, 'TON CONNECT · SECURE'), e('h2', null, L('wallet')), e('p', null, loc('Conectar uma carteira é gratuito. Uma verificação paga opcional é confirmada separadamente. Nunca compartilhe a frase de recuperação.', 'Підключення гаманця безкоштовне. Окрема платна перевірка потребує вашого підтвердження. Не повідомляйте seed-фразу.', 'Connecting a wallet is free. Optional paid verification requires separate confirmation. Never share your recovery phrase.', 'Подключение кошелька бесплатно. Дополнительная платная проверка требует отдельного подтверждения. Никогда не сообщай сид-фразу.')), e('div', { className: 'gm-wallet-proof-status ' + (verified ? 'verified' : 'unverified') }, icon(verified ? 'shield-check' : 'clock', 18), verified ? loc('Propriedade verificada', 'Власність підтверджено', 'Wallet ownership verified', 'Владение кошельком подтверждено') :
-            loc('Assinatura ainda não verificada', 'Підпис ще не перевірено', 'Wallet signature not verified', 'Подпись кошелька не проверена')), e('div', { className: 'gm-wallet-address' }, e('small', null, loc('Endereço da carteira', 'Адреса гаманця', 'Wallet address', 'Адрес кошелька')), e('strong', null, display)), e('button', { type: 'button', className: 'gm-wallet-connect', onClick: verified ? disconnectTonWallet : connectTonWallet }, icon(verified ? 'close' : 'link', 22), verified ? loc('Desconectar carteira', 'Від’єднати гаманець', 'Disconnect wallet', 'Отключить кошелёк') :
-            tonAccount ? loc('Verificar novamente TON', 'Повторити перевірку TON', 'Retry TON verification', 'Повторить проверку TON') :
-                loc('Conectar e verificar TON', 'Підключити й перевірити TON', 'Connect & verify TON', 'Подключить и проверить TON'))), tonAccount && !verified ? e('p', { className: 'gm-wallet-error', role: 'status' }, loc('Carteira conectada, mas assinatura não confirmada. Repita a verificação.', 'Гаманець підключено, але підпис не підтверджено. Повтори перевірку.', 'Wallet connected, but its signature is not verified. Retry verification.', 'Кошелёк подключён, но подпись не подтверждена. Повтори проверку.')) : null, tonError ? e('div', { className: 'gm-wallet-error', role: 'status' }, tonError) : null, e('section', { className: 'gm-wallet-holders gm-premium-card' }, e('div', { className: 'gm-wallet-holders-title' }, icon('shield-check', 24, true), e('b', null, 'GM TOKEN VERIFIED')), e('p', null, 'Проверка на ботов: 0,05 GRAM. Подключение TON-кошелька бесплатно. Комиссия сети отдельно.'), gramVerify?.verified ? e('div', { className: 'gm-wallet-proof-status verified' }, icon('shield-check', 18), 'Verified · оплата подтверждена') :
+            loc('Assinatura ainda não verificada', 'Підпис ще не перевірено', 'Wallet signature not verified', 'Подпись кошелька не проверена')), e('div', { className: 'gm-wallet-address' }, e('small', null, loc('Endereço da carteira', 'Адреса гаманця', 'Wallet address', 'Адрес кошелька')), e('strong', null, display)), e('button', { type: 'button', className: 'gm-wallet-connect', disabled: tonBusy, onClick: connectedVerified ? disconnectTonWallet : connectTonWallet }, icon(connectedVerified ? 'close' : 'link', 22), connectedVerified ? loc('Desconectar carteira', 'Від’єднати гаманець', 'Disconnect wallet', 'Отключить кошелёк') :
+            tonBusy ? loc('A ligar…', 'Підключення…', 'Connecting…', 'Подключение…') :
+                tonAccount ? loc('Verificar novamente TON', 'Повторити перевірку TON', 'Retry TON verification', 'Повторить проверку TON') :
+                    verified ? loc('Ligar carteira verificada', 'Підключити перевірений гаманець', 'Connect verified wallet', 'Подключить проверенный кошелёк') :
+                        loc('Conectar e verificar TON', 'Підключити й перевірити TON', 'Connect & verify TON', 'Подключить и проверить TON'))), tonAccount && !verified ? e('p', { className: 'gm-wallet-error', role: 'status' }, loc('Carteira conectada, mas assinatura não confirmada. Repita a verificação.', 'Гаманець підключено, але підпис не підтверджено. Повтори перевірку.', 'Wallet connected, but its signature is not verified. Retry verification.', 'Кошелёк подключён, но подпись не подтверждена. Повтори проверку.')) : null, tonError ? e('div', { className: 'gm-wallet-error', role: 'status' }, tonError) : null, e('section', { className: 'gm-wallet-holders gm-premium-card' }, e('div', { className: 'gm-wallet-holders-title' }, icon('shield-check', 24, true), e('b', null, 'GM TOKEN VERIFIED')), e('p', null, 'Проверка на ботов: 0,05 GRAM. Подключение TON-кошелька бесплатно. Комиссия сети отдельно.'), gramVerify?.verified ? e('div', { className: 'gm-wallet-proof-status verified' }, icon('shield-check', 18), 'Verified · оплата подтверждена') :
             !verified ? e('p', null, 'Сначала подключи и подтверди Tonkeeper бесплатной подписью.') :
                 !gramVerify?.enabled ? e('p', null, 'Платная проверка ещё не активирована. Получающий кошелёк должен подтвердить владелец проекта.') :
                     e('div', null, e('button', { type: 'button', className: 'gm-wallet-connect', disabled: gramBusy, onClick: () => void payGramVerification() }, icon('wallet', 20), gramBusy ? 'Обработка…' : 'Оплатить 0,05 GRAM'), e('button', { type: 'button', className: 'gm-wallet-verify-balance', disabled: gramBusy, onClick: () => void checkGramVerification() }, icon('refresh', 17), 'Проверить оплату')), gramNotice ? e('p', { className: 'gm-wallet-error', role: 'status' }, gramNotice) : null), e('section', { className: 'gm-wallet-holders gm-premium-card' }, e('div', { className: 'gm-wallet-holders-title' }, icon('trophy', 27, true), e('span', null, e('b', null, L('holdings')), e('small', null, 'TON MAINNET · GM JETTON'))), e('p', null, holderStatus?.configured ?
