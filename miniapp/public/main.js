@@ -35,15 +35,14 @@ function streakDayWord(days) {
     return n % 10 === 1 && n % 100 !== 11 ? 'день' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'дня' : 'дней';
 }
 function ChromeAsset({ name, className = '' }) {
-    return React.createElement("img", { className: 'gm-chrome-asset ' + className,
-        src: './assets/premium/chrome-' + name + '.svg', alt: '', 'aria-hidden': true, draggable: false });
+    return React.createElement("img", { className: 'gm-chrome-asset ' + className, src: './assets/premium/chrome-' + name + '.svg', alt: "", "aria-hidden": "true", draggable: false });
 }
 function StreakDaysBadge({ days = 0 }) {
     const n = Math.max(0, Math.floor(Number(days) || 0));
     return React.createElement("span", { className: "gm-streak-day-mark", "aria-hidden": "true" },
-        React.createElement("b", null, n), React.createElement("small", null, "ДНЕЙ"));
+        React.createElement("b", null, n),
+        React.createElement("small", null, "\u0414\u041D\u0415\u0419"));
 }
-
 function PlayerAvatar({ name = '', photoUrl = '', size = 'medium', rank = 0 }) {
     const label = String(name || 'GM').trim();
     const initials = label.replace(/^@/, '').split(/[ _-]+/).filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('') || 'GM';
@@ -162,11 +161,11 @@ const gmWords = {
 };
 const gmKeys = ['home', 'market', 'mining', 'boxes', 'more', 'language', 'settings', 'next', 'start', 'skip'];
 const UI_TRANSLATIONS = {
-     "economy.crVirtual":{"ru":"CR — виртуальная валюта","uk":"CR — віртуальна валюта","en":"CR is virtual currency","es":"CR es una moneda virtual","de":"CR ist eine virtuelle Währung","fr":"CR est une monnaie virtuelle","tr":"CR sanal oyun para birimidir","pt":"CR é uma moeda virtual","pl":"CR to waluta wirtualna","it":"CR è una valuta virtuale"},
- "economy.tradePoints":{"ru":"POINTS начисляются за подтверждённые сделки и расходуются на боксы.","uk":"POINTS нараховуються за підтверджені угоди й витрачаються на бокси.","en":"POINTS come from eligible completed trades and pay for boxes.","es":"Los POINTS se obtienen por operaciones válidas y se usan para cajas.","de":"POINTS gibt es für gültige abgeschlossene Trades und Boxen.","fr":"Les POINTS récompensent les échanges valides et ouvrent des coffres.","tr":"POINTS geçerli tamamlanan işlemlerden kazanılır ve kutular için kullanılır.","pt":"POINTS vêm de negociações válidas e servem para abrir caixas.","pl":"POINTS zdobywasz za prawidłowe transakcje i wydajesz na skrzynki.","it":"I POINTS si ottengono dagli scambi validi e si usano per i box."},
- "economy.boxesPoints":{"ru":"Боксы за POINTS","uk":"Бокси за POINTS","en":"Boxes cost POINTS","es":"Cajas por POINTS","de":"Boxen für POINTS","fr":"Coffres contre POINTS","tr":"POINTS ile kutular","pt":"Caixas por POINTS","pl":"Skrzynki za POINTS","it":"Box con POINTS"},
- "economy.boxesCr":{"ru":"CR используется на внутреннем рынке GM/CR. POINTS нельзя переводить или выводить.","uk":"CR використовується на внутрішньому ринку GM/CR. POINTS не можна переказувати чи виводити.","en":"CR is for the in-game GM/CR market. POINTS cannot be transferred or withdrawn.","es":"CR se usa en el mercado GM/CR del juego. Los POINTS no se transfieren ni retiran.","de":"CR gilt nur im internen GM/CR-Markt. POINTS sind nicht übertragbar.","fr":"CR sert au marché GM/CR du jeu. Les POINTS ne sont ni transférables ni retirables.","tr":"CR oyun içi GM/CR pazarı içindir. POINTS aktarılamaz veya çekilemez.","pt":"CR é para o mercado GM/CR do jogo. POINTS não podem ser transferidos ou sacados.","pl":"CR służy do rynku GM/CR w grze. POINTS nie można przesyłać ani wypłacać.","it":"CR serve al mercato GM/CR nel gioco. I POINTS non si trasferiscono né prelevano."},
- "profile": { ru: "Профиль", uk: "Профіль", en: "Profile", es: "Perfil", de: "Profil", fr: "Profil", tr: "Profil", pt: "Perfil", pl: "Profil", it: "Profilo" },
+    "economy.crVirtual": { "ru": "CR — виртуальная валюта", "uk": "CR — віртуальна валюта", "en": "CR is virtual currency", "es": "CR es una moneda virtual", "de": "CR ist eine virtuelle Währung", "fr": "CR est une monnaie virtuelle", "tr": "CR sanal oyun para birimidir", "pt": "CR é uma moeda virtual", "pl": "CR to waluta wirtualna", "it": "CR è una valuta virtuale" },
+    "economy.tradePoints": { "ru": "POINTS начисляются за подтверждённые сделки и расходуются на боксы.", "uk": "POINTS нараховуються за підтверджені угоди й витрачаються на бокси.", "en": "POINTS come from eligible completed trades and pay for boxes.", "es": "Los POINTS se obtienen por operaciones válidas y se usan para cajas.", "de": "POINTS gibt es für gültige abgeschlossene Trades und Boxen.", "fr": "Les POINTS récompensent les échanges valides et ouvrent des coffres.", "tr": "POINTS geçerli tamamlanan işlemlerden kazanılır ve kutular için kullanılır.", "pt": "POINTS vêm de negociações válidas e servem para abrir caixas.", "pl": "POINTS zdobywasz za prawidłowe transakcje i wydajesz na skrzynki.", "it": "I POINTS si ottengono dagli scambi validi e si usano per i box." },
+    "economy.boxesPoints": { "ru": "Боксы за POINTS", "uk": "Бокси за POINTS", "en": "Boxes cost POINTS", "es": "Cajas por POINTS", "de": "Boxen für POINTS", "fr": "Coffres contre POINTS", "tr": "POINTS ile kutular", "pt": "Caixas por POINTS", "pl": "Skrzynki za POINTS", "it": "Box con POINTS" },
+    "economy.boxesCr": { "ru": "CR используется на внутреннем рынке GM/CR. POINTS нельзя переводить или выводить.", "uk": "CR використовується на внутрішньому ринку GM/CR. POINTS не можна переказувати чи виводити.", "en": "CR is for the in-game GM/CR market. POINTS cannot be transferred or withdrawn.", "es": "CR se usa en el mercado GM/CR del juego. Los POINTS no se transfieren ni retiran.", "de": "CR gilt nur im internen GM/CR-Markt. POINTS sind nicht übertragbar.", "fr": "CR sert au marché GM/CR du jeu. Les POINTS ne sont ni transférables ni retirables.", "tr": "CR oyun içi GM/CR pazarı içindir. POINTS aktarılamaz veya çekilemez.", "pt": "CR é para o mercado GM/CR do jogo. POINTS não podem ser transferidos ou sacados.", "pl": "CR służy do rynku GM/CR w grze. POINTS nie można przesyłać ani wypłacać.", "it": "CR serve al mercato GM/CR nel gioco. I POINTS non si trasferiscono né prelevano." },
+    "profile": { ru: "Профиль", uk: "Профіль", en: "Profile", es: "Perfil", de: "Profil", fr: "Profil", tr: "Profil", pt: "Perfil", pl: "Profil", it: "Profilo" },
     "achievements": { ru: "Достижения", uk: "Досягнення", en: "Achievements", es: "Logros", de: "Erfolge", fr: "Succès", tr: "Başarılar", pt: "Conquistas", pl: "Osiągnięcia", it: "Obiettivi" },
     "history": { ru: "История операций", uk: "Історія операцій", en: "Transaction history", es: "Historial", de: "Verlauf", fr: "Historique", tr: "İşlem geçmişi", pt: "Histórico de transações", pl: "Historia", it: "Cronologia" },
     "friends": { ru: "Друзья", uk: "Друзі", en: "Friends", es: "Amigos", de: "Freunde", fr: "Amis", tr: "Arkadaşlar", pt: "Amigos", pl: "Znajomi", it: "Amici" },
@@ -452,46 +451,17 @@ class AutumnCalendar extends React.Component {
         const preview = data && focusDay !== today;
         const action = error ? 'Повторить загрузку' : !data ? 'Загрузка календаря…' : busy ? 'Получаем…' :
             preview ? 'Вернуться к сегодняшней награде' : received ? 'Сегодня награда получена' : claimedViaDaily ? 'Ежедневная награда уже получена' : 'Забрать награду';
-        return e('div', { className: 'gm-calendar' }, this.props.header, e('section', { className: 'gm-streak-calendar gm-premium-card', 'aria-label': 'Серия ежедневных наград: ' + String(this.props.streak || 0) + ' дней' }, e(StreakDaysBadge, { days: Number(this.props.streak || 0) }), e('span', { className: 'gm-streak-calendar-copy' }, e('small', null, 'DAILY STREAK'), e('b', null, String(this.props.streak || 0) + ' ' + streakDayWord(Number(this.props.streak || 0)) + ' подряд'), e('span', null, 'Заходи ежедневно и сохраняй серию')), e('span', { className: 'gm-streak-calendar-badge' }, '✦')), e('section', { className: 'gm-premium-card gm-mining-energy' }, e('div', { className: 'gm-mining-energy-head' }, e('b', null, 'Прогресс календаря'), e('span', null, data ? completed + ' / 30' : '…')), e('div', { className: 'gm-mining-energy-track', role: 'progressbar', 'aria-label': 'Получено дней', 'aria-valuenow': completed, 'aria-valuemin': 0, 'aria-valuemax': 30 }, e('span', { style: { width: (completed / 30 * 100) + '%' } }))), data && e('section', { className: 'gm-premium-card gm-calendar-assets gm-premium-bonus-panel' },
-            e('div', { className: 'gm-bonus-heading' },
-                e('div', null, e('strong', null, 'Полученные бонусы'), e('small', null, 'Твой прогресс и награды')),
-                e('span', { className: 'gm-bonus-heading-art', 'aria-hidden': true }, e(ChromeAsset, { name: 'gift' }))),
-            e('div', { className: 'gm-calendar-assets-row' },
-                e('div', { className: 'gm-bonus-stat gm-bonus-stat-hp' },
-                    e('span', { className: 'gm-bonus-stat-icon gm-bonus-hp-emblem', 'aria-hidden': true }, e(ChromeAsset, { name: 'hp' })),
-                    e('span', null, 'HP'), e('strong', null, String(data.hp || 0))),
-                e('div', { className: 'gm-bonus-stat gm-bonus-stat-box' },
-                    e('span', { className: 'gm-bonus-stat-icon', 'aria-hidden': true }, e(ChromeAsset, { name: 'chest' })),
-                    e('span', null, 'Боксы'),
-                    e('strong', null, String(Object.values(data.inventory || {}).reduce((n, value) => n + Number(value || 0), 0))))),
-            e('div', { className: 'gm-calendar-xp-summary' },
-                e('span', { className: 'gm-xp-emblem', 'aria-hidden': true }, e(ChromeAsset, { name: 'xp' })),
-                e('span', null, 'Опыт профиля: ' + String(data.xp ?? 0) + ' XP · Уровень ' + String(data.level ?? 1))),
-            e('div', { className: 'gm-hp-collection' },
-                e('div', { className: 'gm-hp-collection-heading' },
-                    e('b', null, 'Коллекция HP'),
-                    e('small', null, 'Постоянные значки профиля · без влияния на добычу GM')),
-                e('div', { className: 'gm-hp-collection-grid' },
-                    (data.hp_cosmetics || []).map(item => {
-                        const unlocked = Boolean(item.unlocked);
-                        const canUnlock = !unlocked && Number(data.hp || 0) >= Number(item.cost);
-                        const cosmeticIcon = item.id === 'autumn_spark' ? 'diamond' : item.id === 'autumn_star' ? 'star' : 'crown';
-                        return e('button', { key: item.id, type: 'button',
-                            className: 'gm-hp-collectible' + (unlocked ? ' unlocked' : canUnlock ? ' available' : ' locked'),
-                            disabled: busy || !canUnlock,
-                            'aria-label': String(item.title) + '. ' + (unlocked ? 'Открыто' : canUnlock ? 'Открыть за ' + item.cost + ' HP' : 'Нужно ' + item.cost + ' HP'),
-                            onClick: () => this.unlockCosmetic(item.id) },
-                            e('span', { className: 'gm-hp-collectible-art', 'aria-hidden': true }, e(ChromeAsset, { name: cosmeticIcon === 'diamond' ? 'frame' : cosmeticIcon === 'star' ? 'starframe' : 'crownframe' })),
-                            e('span', { className: 'gm-hp-collectible-copy' },
-                                e('b', null, item.title),
-                                e('small', null, unlocked ? 'Открыто' : canUnlock ? 'Открыть за ' + item.cost + ' HP' : 'Нужно ' + item.cost + ' HP')),
-                            e('span', { className: 'gm-hp-collectible-state', 'aria-hidden': true },
-                                unlocked ? icon('check', 17) : canUnlock ? icon('chevron-right', 17) : e('span', { className: 'gm-hp-lock' })));
-                    }))),
-            Object.values(data.inventory || {}).some(n => Number(n) > 0) &&
-                e('button', { type: 'button', className: 'gm-calendar-to-boxes', onClick: this.props.onOpenBoxes },
-                    icon('gift', 18), 'Открыть подаренные боксы', icon('chevron-right', 18))),
-        data && e('section', { className: 'gm-premium-card gm-calendar-panel' }, e('h3', null, 'Награды за 30 дней'), e('div', { className: 'gm-calendar-grid' }, rows.map(row => {
+        return e('div', { className: 'gm-calendar' }, this.props.header, e('section', { className: 'gm-streak-calendar gm-premium-card', 'aria-label': 'Серия ежедневных наград: ' + String(this.props.streak || 0) + ' дней' }, e(StreakDaysBadge, { days: Number(this.props.streak || 0) }), e('span', { className: 'gm-streak-calendar-copy' }, e('small', null, 'DAILY STREAK'), e('b', null, String(this.props.streak || 0) + ' ' + streakDayWord(Number(this.props.streak || 0)) + ' подряд'), e('span', null, 'Заходи ежедневно и сохраняй серию')), e('span', { className: 'gm-streak-calendar-badge' }, '✦')), e('section', { className: 'gm-premium-card gm-mining-energy' }, e('div', { className: 'gm-mining-energy-head' }, e('b', null, 'Прогресс календаря'), e('span', null, data ? completed + ' / 30' : '…')), e('div', { className: 'gm-mining-energy-track', role: 'progressbar', 'aria-label': 'Получено дней', 'aria-valuenow': completed, 'aria-valuemin': 0, 'aria-valuemax': 30 }, e('span', { style: { width: (completed / 30 * 100) + '%' } }))), data && e('section', { className: 'gm-premium-card gm-calendar-assets gm-premium-bonus-panel' }, e('div', { className: 'gm-bonus-heading' }, e('div', null, e('strong', null, 'Полученные бонусы'), e('small', null, 'Твой прогресс и награды')), e('span', { className: 'gm-bonus-heading-art', 'aria-hidden': true }, e(ChromeAsset, { name: 'gift' }))), e('div', { className: 'gm-calendar-assets-row' }, e('div', { className: 'gm-bonus-stat gm-bonus-stat-hp' }, e('span', { className: 'gm-bonus-stat-icon gm-bonus-hp-emblem', 'aria-hidden': true }, e(ChromeAsset, { name: 'hp' })), e('span', null, 'HP'), e('strong', null, String(data.hp || 0))), e('div', { className: 'gm-bonus-stat gm-bonus-stat-box' }, e('span', { className: 'gm-bonus-stat-icon', 'aria-hidden': true }, e(ChromeAsset, { name: 'chest' })), e('span', null, 'Боксы'), e('strong', null, String(Object.values(data.inventory || {}).reduce((n, value) => n + Number(value || 0), 0))))), e('div', { className: 'gm-calendar-xp-summary' }, e('span', { className: 'gm-xp-emblem', 'aria-hidden': true }, e(ChromeAsset, { name: 'xp' })), e('span', null, 'Опыт профиля: ' + String(data.xp ?? 0) + ' XP · Уровень ' + String(data.level ?? 1))), e('div', { className: 'gm-hp-collection' }, e('div', { className: 'gm-hp-collection-heading' }, e('b', null, 'Коллекция HP'), e('small', null, 'Постоянные значки профиля · без влияния на добычу GM')), e('div', { className: 'gm-hp-collection-grid' }, (data.hp_cosmetics || []).map(item => {
+            const unlocked = Boolean(item.unlocked);
+            const canUnlock = !unlocked && Number(data.hp || 0) >= Number(item.cost);
+            const cosmeticIcon = item.id === 'autumn_spark' ? 'diamond' : item.id === 'autumn_star' ? 'star' : 'crown';
+            return e('button', { key: item.id, type: 'button',
+                className: 'gm-hp-collectible' + (unlocked ? ' unlocked' : canUnlock ? ' available' : ' locked'),
+                disabled: busy || !canUnlock,
+                'aria-label': String(item.title) + '. ' + (unlocked ? 'Открыто' : canUnlock ? 'Открыть за ' + item.cost + ' HP' : 'Нужно ' + item.cost + ' HP'),
+                onClick: () => this.unlockCosmetic(item.id) }, e('span', { className: 'gm-hp-collectible-art', 'aria-hidden': true }, e(ChromeAsset, { name: cosmeticIcon === 'diamond' ? 'frame' : cosmeticIcon === 'star' ? 'starframe' : 'crownframe' })), e('span', { className: 'gm-hp-collectible-copy' }, e('b', null, item.title), e('small', null, unlocked ? 'Открыто' : canUnlock ? 'Открыть за ' + item.cost + ' HP' : 'Нужно ' + item.cost + ' HP')), e('span', { className: 'gm-hp-collectible-state', 'aria-hidden': true }, unlocked ? icon('check', 17) : canUnlock ? icon('chevron-right', 17) : e('span', { className: 'gm-hp-lock' })));
+        }))), Object.values(data.inventory || {}).some((n) => Number(n) > 0) &&
+            e('button', { type: 'button', className: 'gm-calendar-to-boxes', onClick: this.props.onOpenBoxes }, icon('gift', 18), 'Открыть подаренные боксы', icon('chevron-right', 18))), data && e('section', { className: 'gm-premium-card gm-calendar-panel' }, e('h3', null, 'Награды за 30 дней'), e('div', { className: 'gm-calendar-grid' }, rows.map(row => {
             const n = Number(row.calendar_day);
             return e('button', { key: n, type: 'button', 'aria-pressed': focusDay === n,
                 'aria-label': 'День ' + n + ', ' + quantity(row) + (n <= completed ? ', получено' : ''),
@@ -684,6 +654,9 @@ function App() {
     const [liveRanks, setLiveRanks] = React.useState(null);
     const [holderRanks, setHolderRanks] = React.useState(null);
     const [holderStatus, setHolderStatus] = React.useState(null);
+    const [gramVerify, setGramVerify] = React.useState(null);
+    const [gramBusy, setGramBusy] = React.useState(false);
+    const [gramNotice, setGramNotice] = React.useState('');
     const [holderLoading, setHolderLoading] = React.useState(false);
     const [holderMoreBusy, setHolderMoreBusy] = React.useState(false);
     const [holderShowPosition, setHolderShowPosition] = React.useState(false);
@@ -785,8 +758,23 @@ function App() {
     };
     React.useEffect(() => { if (demo || screen !== 'leaderboard')
         return; void fetchHolders(); void getHolderStatus(); }, [screen, demo]);
+    const loadGramStatus = async () => {
+        if (demo || !webapp?.initData)
+            return;
+        try {
+            const response = await fetch('/api/gram-verification/status', { headers: holderAuthHeaders(), cache: 'no-store' });
+            const data = await response.json();
+            if (!response.ok)
+                throw Error(data.error || 'Verification status unavailable');
+            setGramVerify(data);
+            return data;
+        }
+        catch (error) {
+            setGramNotice(String(error?.message || error));
+        }
+    };
     React.useEffect(() => { if (demo || screen !== 'wallet')
-        return; void getHolderStatus(); }, [screen, demo]);
+        return; void getHolderStatus(); void loadGramStatus(); }, [screen, demo, holderStatus?.wallet_verified]);
     React.useEffect(() => {
         if (demo || !webapp?.initData)
             return;
@@ -837,7 +825,8 @@ function App() {
                 }
             }, (error) => { if (!disposed)
                 setTonError(String(error?.message || error)); });
-            // Create a fresh TON proof challenge only on an explicit connect/reverify attempt.
+            // A new proof challenge is created only for an explicit connect/reverify attempt.
+            // Restored SDK sessions cannot supply a fresh tonProof, so keep them unverified.
             void getHolderStatus();
             return () => { disposed = true; if (typeof unsubscribe === 'function')
                 unsubscribe(); tonUi.current = null; };
@@ -851,6 +840,8 @@ function App() {
             setTonError('');
             if (!tonUi.current)
                 throw Error('TON Connect is not ready');
+            // Reconnecting a restored session must request a fresh proof.
+            // Never create challenges from disconnect callbacks: each new challenge revokes the previous nonce.
             if (tonUi.current.connected) {
                 await tonUi.current.disconnect();
                 setTonAccount('');
@@ -864,6 +855,63 @@ function App() {
         }
         catch (error) {
             setTonError(String(error?.message || error));
+        }
+    };
+    const payGramVerification = async () => {
+        if (gramBusy)
+            return;
+        setGramBusy(true);
+        setGramNotice('');
+        try {
+            if (!tonUi.current?.connected || !holderStatus?.wallet_verified)
+                throw Error('Сначала подтверди TON-кошелёк');
+            if (tonUi.current.wallet?.account?.address !== holderStatus?.wallet_address)
+                throw Error('Подключён другой кошелёк: переподключи и подтверди его');
+            const response = await fetch('/api/gram-verification/invoice', { method: 'POST', headers: holderAuthHeaders(), body: '{}' });
+            const invoice = await response.json();
+            if (!response.ok)
+                throw Error(invoice.error || 'Payment invoice unavailable');
+            if (invoice.already_paid) {
+                await loadGramStatus();
+                return;
+            }
+            if (invoice.amount_nanogram !== '50000000' || !invoice.payload || !invoice.receiver)
+                throw Error('Неверные параметры платежа');
+            if (invoice.expires_at <= Math.floor(Date.now() / 1000) + 30)
+                throw Error('Время заявки истекло. Создай новую заявку');
+            await tonUi.current.sendTransaction({
+                validUntil: Math.min(invoice.expires_at, Math.floor(Date.now() / 1000) + 300),
+                network: '-239',
+                messages: [{ address: invoice.receiver, amount: invoice.amount_nanogram, payload: invoice.payload }]
+            });
+            setGramNotice('Транзакция отправлена. Проверь подтверждение в сети; повторно платить не нужно.');
+            await loadGramStatus();
+        }
+        catch (error) {
+            setGramNotice(String(error?.message || error));
+        }
+        finally {
+            setGramBusy(false);
+        }
+    };
+    const checkGramVerification = async () => {
+        if (gramBusy)
+            return;
+        setGramBusy(true);
+        setGramNotice('');
+        try {
+            const response = await fetch('/api/gram-verification/check', { method: 'POST', headers: holderAuthHeaders(), body: '{}' });
+            const data = await response.json();
+            if (!response.ok)
+                throw Error(data.error || 'Payment check unavailable');
+            setGramVerify(data);
+            setGramNotice(data.verified ? 'Платёж подтверждён! Статус Verified активирован.' : 'Подтверждения платежа пока нет. Повторная оплата не требуется.');
+        }
+        catch (error) {
+            setGramNotice(String(error?.message || error));
+        }
+        finally {
+            setGramBusy(false);
         }
     };
     const disconnectTonWallet = async () => {
@@ -1034,7 +1082,7 @@ function App() {
             return null;
         }
     };
-        // Read-only server rules; legacy servers keep their existing fixed box prices.
+    // The read-only currency policy is loaded when the related screens are opened.
     React.useEffect(() => {
         if (demo || !['trade', 'boxes'].includes(screen))
             return;
@@ -1635,8 +1683,12 @@ function App() {
         const display = walletAddress ? (walletAddress.length > 26 ? walletAddress.slice(0, 13) + '…' + walletAddress.slice(-8) : walletAddress) : '—';
         const loc = walletLanguage;
         return e('div', { className: 'gm-wallet-screen' }, top(L('wallet'), true, 'shield-check'), e('div', { className: 'gm-wallet-hero gm-premium-card' }, e('div', { className: 'gm-wallet-hero-icon' }, icon('wallet', 72, true)), e('small', null, 'TON CONNECT · READ ONLY'), e('h2', null, L('wallet')), e('p', null, loc('Prove que você controla sua carteira TON. O app nunca pede transferências ou frases-semente.', 'Підтвердь право на TON-гаманець. Застосунок не просить переказів або seed-фраз.', 'Prove that you control your TON wallet. No funds, transfers or recovery phrases are requested.', 'Подтверди, что TON-кошелёк принадлежит тебе. Переводы монет и сид-фразы не запрашиваются.')), e('div', { className: 'gm-wallet-proof-status ' + (verified ? 'verified' : 'unverified') }, icon(verified ? 'shield-check' : 'clock', 18), verified ? loc('Propriedade verificada', 'Власність підтверджено', 'Wallet ownership verified', 'Владение кошельком подтверждено') :
-            loc('Assinatura ainda não verificada', 'Підпис ще не перевірено', 'Wallet signature not verified', 'Подпись кошелька не проверена')), e('div', { className: 'gm-wallet-address' }, e('small', null, loc('Endereço da carteira', 'Адреса гаманця', 'Wallet address', 'Адрес кошелька')), e('strong', null, display)), e('button', { type: 'button', className: 'gm-wallet-connect', onClick: verified ? disconnectTonWallet : connectTonWallet }, icon(verified ? 'close' : 'link', 22), verified ? loc('Desconectar carteira', 'Від’єднати гаманець', 'Disconnect wallet', 'Отключить кошелёк') : tonAccount ? loc('Verificar novamente TON', 'Повторити перевірку TON', 'Retry TON verification', 'Повторить проверку TON') :
-            loc('Conectar e verificar TON', 'Підключити й перевірити TON', 'Connect & verify TON', 'Подключить и проверить TON'))), tonAccount && !verified ? e('p', { className: 'gm-wallet-error', role: 'status' }, loc('Carteira conectada, mas assinatura não confirmada. Repita a verificação.', 'Гаманець підключено, але підпис не підтверджено. Повтори перевірку.', 'Wallet connected, but its signature is not verified. Retry verification.', 'Кошелёк подключён, но подпись не подтверждена. Повтори проверку.')) : null, tonError ? e('div', { className: 'gm-wallet-error', role: 'status' }, tonError) : null, e('section', { className: 'gm-wallet-holders gm-premium-card' }, e('div', { className: 'gm-wallet-holders-title' }, icon('trophy', 27, true), e('span', null, e('b', null, L('holdings')), e('small', null, 'TON MAINNET · GM JETTON'))), e('p', null, holderStatus?.configured ?
+            loc('Assinatura ainda não verificada', 'Підпис ще не перевірено', 'Wallet signature not verified', 'Подпись кошелька не проверена')), e('div', { className: 'gm-wallet-address' }, e('small', null, loc('Endereço da carteira', 'Адреса гаманця', 'Wallet address', 'Адрес кошелька')), e('strong', null, display)), e('button', { type: 'button', className: 'gm-wallet-connect', onClick: verified ? disconnectTonWallet : connectTonWallet }, icon(verified ? 'close' : 'link', 22), verified ? loc('Desconectar carteira', 'Від’єднати гаманець', 'Disconnect wallet', 'Отключить кошелёк') :
+            tonAccount ? loc('Verificar novamente TON', 'Повторити перевірку TON', 'Retry TON verification', 'Повторить проверку TON') :
+                loc('Conectar e verificar TON', 'Підключити й перевірити TON', 'Connect & verify TON', 'Подключить и проверить TON'))), tonAccount && !verified ? e('p', { className: 'gm-wallet-error', role: 'status' }, loc('Carteira conectada, mas assinatura não confirmada. Repita a verificação.', 'Гаманець підключено, але підпис не підтверджено. Повтори перевірку.', 'Wallet connected, but its signature is not verified. Retry verification.', 'Кошелёк подключён, но подпись не подтверждена. Повтори проверку.')) : null, tonError ? e('div', { className: 'gm-wallet-error', role: 'status' }, tonError) : null, e('section', { className: 'gm-wallet-holders gm-premium-card' }, e('div', { className: 'gm-wallet-holders-title' }, icon('shield-check', 24, true), e('b', null, 'GM TOKEN VERIFIED')), e('p', null, 'Проверка на ботов: 0,05 GRAM. Подключение TON-кошелька бесплатно. Комиссия сети отдельно.'), gramVerify?.verified ? e('div', { className: 'gm-wallet-proof-status verified' }, icon('shield-check', 18), 'Verified · оплата подтверждена') :
+            !verified ? e('p', null, 'Сначала подключи и подтверди Tonkeeper бесплатной подписью.') :
+                !gramVerify?.enabled ? e('p', null, 'Платная проверка ещё не активирована. Получающий кошелёк должен подтвердить владелец проекта.') :
+                    e('div', null, e('button', { type: 'button', className: 'gm-wallet-connect', disabled: gramBusy, onClick: () => void payGramVerification() }, icon('wallet', 20), gramBusy ? 'Обработка…' : 'Оплатить 0,05 GRAM'), e('button', { type: 'button', className: 'gm-wallet-verify-balance', disabled: gramBusy, onClick: () => void checkGramVerification() }, icon('refresh', 17), 'Проверить оплату')), gramNotice ? e('p', { className: 'gm-wallet-error', role: 'status' }, gramNotice) : null), e('section', { className: 'gm-wallet-holders gm-premium-card' }, e('div', { className: 'gm-wallet-holders-title' }, icon('trophy', 27, true), e('span', null, e('b', null, L('holdings')), e('small', null, 'TON MAINNET · GM JETTON'))), e('p', null, holderStatus?.configured ?
             loc('Somente GM verificados na blockchain contam para o ranking.', 'Рейтинг враховує лише перевірені GM у блокчейні.', 'Only independently verified on-chain GM counts in the holders ranking.', 'В рейтинге учитываются только подтверждённые сервером GM в блокчейне.') :
             loc('Aguardando o endereço oficial do contrato GM Jetton. Nenhum saldo será inventado.', 'Очікуємо офіційну адресу контракту GM Jetton. Баланси не вигадуємо.', 'Official GM Jetton contract is pending. No balances are fabricated.', 'Ожидаем официальный контракт GM Jetton. Балансы не будут выдуманы.')), e('button', { type: 'button', className: 'gm-wallet-consent ' + (holderStatus?.opt_in ? 'opted-in' : ''),
             disabled: !verified || holderConsentBusy, onClick: () => void setHolderOptIn(!holderStatus?.opt_in) }, icon(holderStatus?.opt_in ? 'check' : 'shield-check', 21), loc(holderStatus?.opt_in ? 'Estou no ranking' : 'Participar do ranking', holderStatus?.opt_in ? 'Беру участь у рейтингу' : 'Участь у рейтингу', holderStatus?.opt_in ? 'Visible in leaderboard' : 'Join leaderboard', holderStatus?.opt_in ? 'Показываюсь в рейтинге' : 'Участвовать в рейтинге'), e('span', { className: 'gm-wallet-consent-state' }, holderStatus?.opt_in ? 'ON' : 'OFF')), e('p', { className: 'gm-wallet-consent-note' }, loc('Seu endereço permanece privado no ranking. Você pode sair a qualquer momento.', 'Твоя адреса у рейтингу прихована. Можна вийти будь-коли.', 'Your wallet address remains private. You can leave the public ranking at any time.', 'Адрес кошелька публично не показывается. Из рейтинга можно выйти в любой момент.')), e('button', { type: 'button', className: 'gm-wallet-verify-balance', disabled: !verified || !holderStatus?.configured || holderLoading,
@@ -1682,6 +1734,7 @@ function App() {
         const frameRewards = liveState?.config?.box_frame_rewards || [];
         const earnedBoxes = calendarAssets?.inventory || { bronze: 0, silver: 0, gold: 0 };
         const giftCount = Number(earnedBoxes[boxKind] || 0);
+        // Read-only game policy, with the unchanged fixed costs on older servers.
         const pointPrice = (kind, fallback) => {
             const policyPrice = Number(economyPolicy?.boxes?.point_costs?.[kind]);
             return Number.isSafeInteger(policyPrice) && policyPrice > 0 && policyPrice <= 100000 ? policyPrice : fallback;
@@ -1695,12 +1748,12 @@ function App() {
         const reward = Number(payouts[selected.kind] || 0), totalCost = selected.cost * boxCount, totalReward = reward * boxCount;
         const totalXp = bonusEnabled ? Number(xpRewards[selected.kind] || 0) * boxCount : 0;
         const picture = (kind) => './assets/chests/gm-chest-badge-' + kind + '.svg';
-    const prizeFrameIcon = (title) => {
-        const t = title.toLocaleLowerCase('ru-RU');
-        return t.includes('искател') ? 'chest' : t.includes('нович') ? 'chevrons' :
-            t.includes('шахт') ? 'bars' : t.includes('бронз') ? 'diamond' :
-            t.includes('коллекцион') ? 'cube' : t.includes('медал') ? 'star' : 'star';
-    };
+        const prizeFrameIcon = (title) => {
+            const t = title.toLocaleLowerCase('ru-RU');
+            return t.includes('искател') ? 'chest' : t.includes('нович') ? 'chevrons' :
+                t.includes('шахт') ? 'bars' : t.includes('бронз') ? 'diamond' :
+                    t.includes('коллекцион') ? 'cube' : t.includes('медал') ? 'star' : 'star';
+        };
         return e('div', { className: 'gm-boxes-v9 gm-flat-boxes' }, top('Боксы', true, 'info'), e('header', { className: 'gm-flat-heading' }, e('h2', null, 'Сундуки GM'), e('p', null, bonusEnabled ? 'Открывай сундуки и получай GM, XP и коллекционные рамки. Все призы гарантированы.' : 'Открывай сундуки и получай виртуальные GM. Награды фиксированные.')), e('div', { className: 'gm-boxes-points gm-flat-wallet' }, e('span', { className: 'gm-flat-point-icon' }, icon('diamond', 26, true)), e('div', { className: 'gm-flat-wallet-balance' }, e('small', null, 'Ваши POINTS'), e('strong', null, nf(points, 0) + ' POINTS')), e('button', { type: 'button', className: 'gm-flat-points-help',
             onClick: () => { setPointsGuideOpen(true); openGuide('points'); } }, icon('book-open', 18), 'Как получить POINTS?', icon('chevron-right', 16))), e('aside', { className: 'gm-economy-note gm-economy-note-boxes', role: 'note', 'aria-label': 'Валюты и стоимость боксов' }, e('span', { className: 'gm-economy-note-icon' }, icon('shield-check', 19)), e('span', { className: 'gm-economy-note-copy' }, e('b', null, L('economy.boxesPoints')), e('small', null, L('economy.boxesCr')))), e('div', { className: 'gm-flat-tour-buttons' }, e('button', { type: 'button', className: 'gm-chests-tutorial', onClick: () => openGuide('boxes') }, icon('info', 15), 'Инструкция по сундукам'), e('button', { type: 'button', className: 'gm-chests-points-tour', onClick: () => {
                 setPointsGuideOpen(true);
@@ -1715,32 +1768,10 @@ function App() {
                 const value = Number(collection[x.kind] || 0);
                 return milestone ? value >= milestone.required ? 'Рамка открыта' : 'Рамка: ' + value + '/' + milestone.required : 'Бонус опыта';
             })())) : null), active ? e('span', { className: 'gm-flat-card-check', 'aria-label': 'Выбран' }, icon('check', 17)) : null);
-        })), e('section', { className: 'gm-chest-prize-preview gm-premium-prize-preview', 'aria-label': 'Предпросмотр наград выбранного сундука' },
-        e('div', { className: 'gm-chest-prize-head' },
-            e('div', null, e('small', null, 'СОДЕРЖИМОЕ СУНДУКА'), e('h3', null, 'Что внутри?')),
-            e('span', { className: 'gm-chest-prize-kind' },
-                e(ChromeAsset, { name: 'chest' }),
-                e('span', null, selected.name))),
-        e('div', { className: 'gm-chest-prize-grid' },
-            e('div', { className: 'gm-chest-prize-item gm-chest-prize-guaranteed' },
-                e('span', { className: 'gm-chest-prize-icon' }, e(ChromeAsset, { name: 'coins' })),
-                e('span', { className: 'gm-chest-prize-copy' }, e('b', null, 'GM TOKEN'), e('small', null, 'Гарантированная награда')),
-                e('strong', { className: 'gm-chest-prize-value gm-prize-value-gm' }, reward > 0 ? '+' + nf(reward, 0) + ' GM' : '—')),
-            bonusEnabled ? e('div', { className: 'gm-chest-prize-item gm-chest-prize-xp' },
-                e('span', { className: 'gm-chest-prize-icon' }, e(ChromeAsset, { name: 'xp' })),
-                e('span', { className: 'gm-chest-prize-copy' }, e('b', null, 'Опыт XP'), e('small', null, 'За каждое открытие')),
-                e('strong', { className: 'gm-chest-prize-value gm-prize-value-xp' }, '+' + nf(Number(xpRewards[selected.kind] || 0), 0) + ' XP')) : null,
-            ...frameRewards.filter(f => f.kind === selected.kind).map(f => {
-                const progress = Number(collection[selected.kind] || 0), required = Number(f.required || 0);
-                return e('div', { className: 'gm-chest-prize-item gm-chest-prize-frame', key: String(f.id || f.title) },
-                    e('span', { className: 'gm-chest-prize-icon' }, e(ChromeAsset, { name: prizeFrameIcon(String(f.title || '')) })),
-                    e('span', { className: 'gm-chest-prize-copy' }, e('b', null, String(f.title || 'Коллекционная награда')),
-                        e('small', null, required > 0 ? 'За ' + required + ' открытий этого сундука' : 'Коллекционная награда')),
-                    e('strong', { className: 'gm-chest-prize-progress' }, required > 0 ? (progress >= required ? 'Получена' : progress + ' / ' + required) : 'Бонус'));
-            })),
-        e('p', { className: 'gm-chest-prize-note' }, icon('info', 17),
-            e('span', null, 'Награды и прогресс берутся из настроек игры. Рамки выдаются за достижения, а не случайным образом.'))),
-  e('section', { className: 'gm-flat-opening' }, e('h3', null, 'Сколько открыть?'), e('div', { className: 'gm-chests-qty', role: 'group', 'aria-label': 'Количество открытий' }, [1, 3, 5, 10].map(count => e('button', { type: 'button', key: count,
+        })), e('section', { className: 'gm-chest-prize-preview gm-premium-prize-preview', 'aria-label': 'Предпросмотр наград выбранного сундука' }, e('div', { className: 'gm-chest-prize-head' }, e('div', null, e('small', null, 'СОДЕРЖИМОЕ СУНДУКА'), e('h3', null, 'Что внутри?')), e('span', { className: 'gm-chest-prize-kind' }, e(ChromeAsset, { name: 'chest' }), e('span', null, selected.name))), e('div', { className: 'gm-chest-prize-grid' }, e('div', { className: 'gm-chest-prize-item gm-chest-prize-guaranteed' }, e('span', { className: 'gm-chest-prize-icon' }, e(ChromeAsset, { name: 'coins' })), e('span', { className: 'gm-chest-prize-copy' }, e('b', null, 'GM TOKEN'), e('small', null, 'Гарантированная награда')), e('strong', { className: 'gm-chest-prize-value gm-prize-value-gm' }, reward > 0 ? '+' + nf(reward, 0) + ' GM' : '—')), bonusEnabled ? e('div', { className: 'gm-chest-prize-item gm-chest-prize-xp' }, e('span', { className: 'gm-chest-prize-icon' }, e(ChromeAsset, { name: 'xp' })), e('span', { className: 'gm-chest-prize-copy' }, e('b', null, 'Опыт XP'), e('small', null, 'За каждое открытие')), e('strong', { className: 'gm-chest-prize-value gm-prize-value-xp' }, '+' + nf(Number(xpRewards[selected.kind] || 0), 0) + ' XP')) : null, ...frameRewards.filter((f) => f.kind === selected.kind).map((f) => {
+            const progress = Number(collection[selected.kind] || 0), required = Number(f.required || 0);
+            return e('div', { className: 'gm-chest-prize-item gm-chest-prize-frame', key: String(f.id || f.title) }, e('span', { className: 'gm-chest-prize-icon' }, e(ChromeAsset, { name: prizeFrameIcon(String(f.title || '')) })), e('span', { className: 'gm-chest-prize-copy' }, e('b', null, String(f.title || 'Коллекционная награда')), e('small', null, required > 0 ? 'За ' + required + ' открытий этого сундука' : 'Коллекционная награда')), e('strong', { className: 'gm-chest-prize-progress' }, required > 0 ? (progress >= required ? 'Получена' : progress + ' / ' + required) : 'Бонус'));
+        })), e('p', { className: 'gm-chest-prize-note' }, icon('info', 17), e('span', null, 'Награды и прогресс берутся из настроек игры. Рамки выдаются за достижения, а не случайным образом.'))), e('section', { className: 'gm-flat-opening' }, e('h3', null, 'Сколько открыть?'), e('div', { className: 'gm-chests-qty', role: 'group', 'aria-label': 'Количество открытий' }, [1, 3, 5, 10].map(count => e('button', { type: 'button', key: count,
             'aria-pressed': boxCount === count, className: boxCount === count ? 'active' : '',
             onClick: () => setBoxCount(count) }, '×' + count))), e('div', { className: 'gm-chests-subtotal' }, e('span', null, 'Итого: ', e('b', null, '+' + nf(totalReward, 0) + ' GM')), e('span', null, nf(totalCost, 0) + ' POINTS')), bonusEnabled ? e('div', { className: 'gm-box-total-bonuses' }, icon('sparkles', 17), 'Дополнительно: +' + nf(totalXp, 0) + ' XP', e('span', null, 'Рамки за открытия 5/5/5 и 30 всего')) : null, e('div', { className: 'gm-chests-actions' }, e('button', { type: 'button', className: 'gm-chests-open',
             disabled: demo || !enabled || !reward || boxBusy || points < totalCost,
@@ -2233,18 +2264,19 @@ function App() {
                             guideStep + 1 >= steps.length ? L('finish') : L('next'),
                             icon('chevron-right', 18))))));
     }
-    function Streak() {
-        const n = Math.max(0, Math.floor(Number(liveState?.daily?.streak ?? wallet.streak ?? 0) || 0));
-        return React.createElement(React.Fragment, null,
-            top('Серия дней', true, 'clock'),
-            React.createElement("section", { className: "gm-streak-overview gm-premium-card" },
-                React.createElement(StreakDaysBadge, { days: n }),
-                React.createElement("div", null,
-                    React.createElement("small", null, "DAILY STREAK"),
-                    React.createElement("h1", null, n + ' ' + streakDayWord(n) + ' подряд'),
-                    React.createElement("p", null, "Получай ежедневную награду и сохраняй серию. Повторное начисление за один день недоступно."))),
-            React.createElement(GButton, { theme: theme, onClick: () => goto('reward') }, "Открыть календарь наград"));
-    }
+    function Streak() { const n = Math.max(0, Math.floor(Number(liveState?.daily?.streak ?? wallet.streak ?? 0) || 0)); return React.createElement(React.Fragment, null,
+        top('Серия дней', true, 'clock'),
+        React.createElement("section", { className: "gm-streak-overview gm-premium-card" },
+            React.createElement(StreakDaysBadge, { days: n }),
+            React.createElement("div", null,
+                React.createElement("small", null, "DAILY STREAK"),
+                React.createElement("h1", null,
+                    n,
+                    " ",
+                    streakDayWord(n),
+                    " \u043F\u043E\u0434\u0440\u044F\u0434"),
+                React.createElement("p", null, "\u041F\u043E\u043B\u0443\u0447\u0430\u0439 \u0435\u0436\u0435\u0434\u043D\u0435\u0432\u043D\u0443\u044E \u043D\u0430\u0433\u0440\u0430\u0434\u0443 \u0438 \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u0439 \u0441\u0435\u0440\u0438\u044E. \u041F\u043E\u0432\u0442\u043E\u0440\u043D\u043E\u0435 \u043D\u0430\u0447\u0438\u0441\u043B\u0435\u043D\u0438\u0435 \u0437\u0430 \u043E\u0434\u0438\u043D \u0434\u0435\u043D\u044C \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E."))),
+        React.createElement(GButton, { theme: theme, onClick: () => goto('reward') }, "\u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043A\u0430\u043B\u0435\u043D\u0434\u0430\u0440\u044C \u043D\u0430\u0433\u0440\u0430\u0434")); }
     if (demo) {
         return React.createElement("main", { className: 'application auth-page theme-' + theme },
             React.createElement("div", { className: "auth-ambient", "aria-hidden": "true" }),
