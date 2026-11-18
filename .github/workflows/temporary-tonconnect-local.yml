@@ -1,0 +1,36 @@
+name: Temporary TON Connect self-hosted asset sync
+on:
+  push:
+    branches:
+      - fix/tonkeeper-reliable-connection-20261118
+permissions:
+  contents: write
+jobs:
+  bundle:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: Fetch pinned SDK and build standalone frontend
+        run: |
+          npm install --prefix miniapp --no-save --no-package-lock --no-audit --no-fund --ignore-scripts @tonconnect/ui@3.0.2
+          mkdir -p miniapp/public/vendor
+          cp miniapp/node_modules/@tonconnect/ui/dist/tonconnect-ui.min.js miniapp/public/vendor/tonconnect-ui.min.js
+          test -s miniapp/public/vendor/tonconnect-ui.min.js
+          npm run --prefix miniapp build:standalone
+          node --check miniapp/public/main.js
+      - name: Commit self-hosted SDK and compiled JS
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f miniapp/public/vendor/tonconnect-ui.min.js miniapp/public/main.js miniapp/public/styles.css
+          if ! git diff --cached --quiet; then
+            git commit -m "build: vendor pinned TON Connect 3.0.2 [skip ci]"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
