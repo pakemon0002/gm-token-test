@@ -799,25 +799,6 @@ function App() {
         try {
             const instance = new sdk.TonConnectUI({ manifestUrl: window.location.origin + '/tonconnect-manifest.json' });
             tonUi.current = instance;
-            const prepareProof = async () => {
-                if (disposed)
-                    return;
-                instance.setConnectRequestParameters({ state: 'loading' });
-                try {
-                    const response = await fetch('/api/holders/challenge', { method: 'POST', headers: holderAuthHeaders(), body: '{}' });
-                    const challenge = await response.json();
-                    if (!response.ok || !challenge.payload)
-                        throw Error(challenge.error || 'Could not prepare wallet proof');
-                    if (!disposed)
-                        instance.setConnectRequestParameters({ state: 'ready', value: { tonProof: challenge.payload } });
-                }
-                catch (error) {
-                    if (!disposed) {
-                        instance.setConnectRequestParameters(null);
-                        setTonError(String(error?.message || error));
-                    }
-                }
-            };
             const unsubscribe = instance.onStatusChange(async (connected) => {
                 if (disposed)
                     return;
@@ -825,7 +806,6 @@ function App() {
                 setTonAccount(address);
                 if (!address) {
                     void getHolderStatus();
-                    void prepareProof();
                     return;
                 }
                 const signed = connected?.connectItems?.tonProof;
@@ -857,7 +837,7 @@ function App() {
                 }
             }, (error) => { if (!disposed)
                 setTonError(String(error?.message || error)); });
-            void prepareProof();
+            // Create a fresh TON proof challenge only on an explicit connect/reverify attempt.
             void getHolderStatus();
             return () => { disposed = true; if (typeof unsubscribe === 'function')
                 unsubscribe(); tonUi.current = null; };
@@ -868,6 +848,7 @@ function App() {
     }, [demo]);
     const connectTonWallet = async () => {
         try {
+            setTonError('');
             if (!tonUi.current)
                 throw Error('TON Connect is not ready');
             if (tonUi.current.connected) {
@@ -1654,8 +1635,8 @@ function App() {
         const display = walletAddress ? (walletAddress.length > 26 ? walletAddress.slice(0, 13) + '…' + walletAddress.slice(-8) : walletAddress) : '—';
         const loc = walletLanguage;
         return e('div', { className: 'gm-wallet-screen' }, top(L('wallet'), true, 'shield-check'), e('div', { className: 'gm-wallet-hero gm-premium-card' }, e('div', { className: 'gm-wallet-hero-icon' }, icon('wallet', 72, true)), e('small', null, 'TON CONNECT · READ ONLY'), e('h2', null, L('wallet')), e('p', null, loc('Prove que você controla sua carteira TON. O app nunca pede transferências ou frases-semente.', 'Підтвердь право на TON-гаманець. Застосунок не просить переказів або seed-фраз.', 'Prove that you control your TON wallet. No funds, transfers or recovery phrases are requested.', 'Подтверди, что TON-кошелёк принадлежит тебе. Переводы монет и сид-фразы не запрашиваются.')), e('div', { className: 'gm-wallet-proof-status ' + (verified ? 'verified' : 'unverified') }, icon(verified ? 'shield-check' : 'clock', 18), verified ? loc('Propriedade verificada', 'Власність підтверджено', 'Wallet ownership verified', 'Владение кошельком подтверждено') :
-            loc('Assinatura ainda não verificada', 'Підпис ще не перевірено', 'Wallet signature not verified', 'Подпись кошелька не проверена')), e('div', { className: 'gm-wallet-address' }, e('small', null, loc('Endereço da carteira', 'Адреса гаманця', 'Wallet address', 'Адрес кошелька')), e('strong', null, display)), e('button', { type: 'button', className: 'gm-wallet-connect', onClick: tonAccount || verified ? disconnectTonWallet : connectTonWallet }, icon(tonAccount || verified ? 'close' : 'link', 22), tonAccount || verified ? loc('Desconectar carteira', 'Від’єднати гаманець', 'Disconnect wallet', 'Отключить кошелёк') :
-            loc('Conectar e verificar TON', 'Підключити й перевірити TON', 'Connect & verify TON', 'Подключить и проверить TON'))), tonError ? e('div', { className: 'gm-wallet-error', role: 'status' }, tonError) : null, e('section', { className: 'gm-wallet-holders gm-premium-card' }, e('div', { className: 'gm-wallet-holders-title' }, icon('trophy', 27, true), e('span', null, e('b', null, L('holdings')), e('small', null, 'TON MAINNET · GM JETTON'))), e('p', null, holderStatus?.configured ?
+            loc('Assinatura ainda não verificada', 'Підпис ще не перевірено', 'Wallet signature not verified', 'Подпись кошелька не проверена')), e('div', { className: 'gm-wallet-address' }, e('small', null, loc('Endereço da carteira', 'Адреса гаманця', 'Wallet address', 'Адрес кошелька')), e('strong', null, display)), e('button', { type: 'button', className: 'gm-wallet-connect', onClick: verified ? disconnectTonWallet : connectTonWallet }, icon(verified ? 'close' : 'link', 22), verified ? loc('Desconectar carteira', 'Від’єднати гаманець', 'Disconnect wallet', 'Отключить кошелёк') : tonAccount ? loc('Verificar novamente TON', 'Повторити перевірку TON', 'Retry TON verification', 'Повторить проверку TON') :
+            loc('Conectar e verificar TON', 'Підключити й перевірити TON', 'Connect & verify TON', 'Подключить и проверить TON'))), tonAccount && !verified ? e('p', { className: 'gm-wallet-error', role: 'status' }, loc('Carteira conectada, mas assinatura não confirmada. Repita a verificação.', 'Гаманець підключено, але підпис не підтверджено. Повтори перевірку.', 'Wallet connected, but its signature is not verified. Retry verification.', 'Кошелёк подключён, но подпись не подтверждена. Повтори проверку.')) : null, tonError ? e('div', { className: 'gm-wallet-error', role: 'status' }, tonError) : null, e('section', { className: 'gm-wallet-holders gm-premium-card' }, e('div', { className: 'gm-wallet-holders-title' }, icon('trophy', 27, true), e('span', null, e('b', null, L('holdings')), e('small', null, 'TON MAINNET · GM JETTON'))), e('p', null, holderStatus?.configured ?
             loc('Somente GM verificados na blockchain contam para o ranking.', 'Рейтинг враховує лише перевірені GM у блокчейні.', 'Only independently verified on-chain GM counts in the holders ranking.', 'В рейтинге учитываются только подтверждённые сервером GM в блокчейне.') :
             loc('Aguardando o endereço oficial do contrato GM Jetton. Nenhum saldo será inventado.', 'Очікуємо офіційну адресу контракту GM Jetton. Баланси не вигадуємо.', 'Official GM Jetton contract is pending. No balances are fabricated.', 'Ожидаем официальный контракт GM Jetton. Балансы не будут выдуманы.')), e('button', { type: 'button', className: 'gm-wallet-consent ' + (holderStatus?.opt_in ? 'opted-in' : ''),
             disabled: !verified || holderConsentBusy, onClick: () => void setHolderOptIn(!holderStatus?.opt_in) }, icon(holderStatus?.opt_in ? 'check' : 'shield-check', 21), loc(holderStatus?.opt_in ? 'Estou no ranking' : 'Participar do ranking', holderStatus?.opt_in ? 'Беру участь у рейтингу' : 'Участь у рейтингу', holderStatus?.opt_in ? 'Visible in leaderboard' : 'Join leaderboard', holderStatus?.opt_in ? 'Показываюсь в рейтинге' : 'Участвовать в рейтинге'), e('span', { className: 'gm-wallet-consent-state' }, holderStatus?.opt_in ? 'ON' : 'OFF')), e('p', { className: 'gm-wallet-consent-note' }, loc('Seu endereço permanece privado no ranking. Você pode sair a qualquer momento.', 'Твоя адреса у рейтингу прихована. Можна вийти будь-коли.', 'Your wallet address remains private. You can leave the public ranking at any time.', 'Адрес кошелька публично не показывается. Из рейтинга можно выйти в любой момент.')), e('button', { type: 'button', className: 'gm-wallet-verify-balance', disabled: !verified || !holderStatus?.configured || holderLoading,
