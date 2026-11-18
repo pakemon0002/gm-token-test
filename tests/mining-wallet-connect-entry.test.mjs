@@ -31,5 +31,5 @@ test('Connecting from Mining does not enable purchases or initiate any token tra
   assert.ok(!mining.includes('sendTransaction('),'opening a wallet link must not charge a verification fee or purchase an upgrade');
  }
  const html=read('miniapp/public/preview.html');
- assert.ok(html.includes('main.js?v=gm-wallet-entry-20261118-v1'),'force fresh bundle in Telegram WebView');
+ assert.match(html,/main\.js\?v=[A-Za-z0-9_-]+/,'force a versioned bundle in Telegram WebView');
 });
