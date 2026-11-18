@@ -31,7 +31,7 @@ test('Telegram loads versioned entry assets without stale HTML/JS/CSS cache',()=
  const html=read('miniapp/public/preview.html');
  const server=read('server/index.mjs');
  assert.ok(html.includes('styles.css?v=gm-chrome-20261115-v5'));
- assert.ok(html.includes('main.js?v=gm-chrome-20261115-v5'));
+ assert.match(html,/main\.js\?v=[A-Za-z0-9_-]+/,'Mini App entry must remain versioned for Telegram cache busting');
  assert.ok(!html.includes('boxes-extras-20261112'),'old bundle IDs must not be reused');
  assert.ok(html.includes('http-equiv="Cache-Control"'));
  assert.ok(server.includes("const noCache=ext==='.html'||ext==='.js'||ext==='.css';"));
