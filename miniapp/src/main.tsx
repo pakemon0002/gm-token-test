@@ -922,6 +922,8 @@ function App(){
  const [boxBusy,setBoxBusy]=React.useState(false);
  const [upgradeData,setUpgradeData]=React.useState(null as any);
  const [upgradeBusy,setUpgradeBusy]=React.useState(false);
+ const [miningBusy,setMiningBusy]=React.useState(false);
+ const miningClaimLock=React.useRef(false);
  const [showAllUpgrades,setShowAllUpgrades]=React.useState(false);
  const [modalText,setModalText]=React.useState('');
  const toastRef=React.useRef(0);
@@ -1046,14 +1048,36 @@ function App(){
  };
  function cryptoId(){return (window.crypto&&window.crypto.randomUUID)?window.crypto.randomUUID():'manual-'+Date.now()+'-'+Math.floor(Math.random()*999999)}
  const todayClaim=async()=>{const x=await gameAction('/api/daily/claim');if(x)goto('reward')};
- const miningClaim=async()=>{const result=await gameAction('/api/mining/claim');if(result?.gm_cents)flash('Собрано '+nf(result.gm_cents/100)+' GM')};
+ const miningClaim=async()=>{
+  if(miningClaimLock.current)return;
+  miningClaimLock.current=true;setMiningBusy(true);
+  try{
+   if(demo||!webapp?.initData){flash('Открой GM TOKEN через Telegram-бота для получения GM.');return}
+   // Do not trust the potentially stale on-screen storage value: refresh before deciding.
+   const current=await api('/api/game/status',undefined,true);
+   if(!current?.mining){flash('Не удалось проверить хранилище. Проверь соединение и повтори.');return}
+   const pending=Math.max(0,Number(current.mining.pending_cents||0));
+   const available=pending/100;
+   setLiveState(current);
+   setW((w:Wallet)=>({...w,storage:available,gm:current.wallet?.gm!=null?current.wallet.gm/100:w.gm}));
+   if(pending<100){
+    const daily=Math.max(0,Number(current.mining.rate_cents_day||0)/100);
+    const minutes=daily>0?Math.ceil((1-available)*1440/daily):null;
+    flash('Накоплено '+nf(available)+' GM. Сбор доступен от 1 GM.'+
+      (minutes!=null?' Примерно через '+minutes+' мин.':'')+' Добыча идёт автоматически.');
+    return;
+   }
+   const result=await gameAction('/api/mining/claim');
+   if(result?.gm_cents)flash('Собрано '+nf(result.gm_cents/100)+' GM');
+  }finally{miningClaimLock.current=false;setMiningBusy(false)}
+ };
  React.useEffect(()=>{if(screen!=='mining'||demo)return;let valid=true;
   api('/api/mining/upgrades',undefined,true).then(data=>{if(valid&&data?.levels)setUpgradeData(data)});
   return()=>{valid=false};
  },[screen,demo]);
  const buyMiningUpgrade=async()=>{
   if(upgradeBusy||demo)return;
-  if(!upgradeData?.upgrade?.purchasable){goto('wallet');return;}
+  if(!upgradeData?.upgrade?.purchasable){flash('Покупка улучшений пока отключена: оплата реальными GMG ещё не настроена. Игровые GM не списываются.');return;}
   const next=upgradeData?.upgrade?.next_level ?? liveState?.mining?.upgrade?.next_level;
   if(!next)return;
   setUpgradeBusy(true);
@@ -1645,14 +1669,11 @@ function Reward() {
   const hours=storageHours(wallet.level);
   const cap=Math.max(1,rate*hours/24);
   const pct=Math.max(0,Math.min(100,stored/cap*100));
-  const mineClick=()=>{if(demo)return flash('Войди через Telegram для добычи GM');
-   if(stored<1)return flash('Монета активна: GM добываются автоматически. Сбор доступен от 1 GM.');
-   miningClaim();
-  };
+  const mineClick=()=>{void miningClaim()};
   return e('div',{className:'gm-mining-v8'},
    top(L('mining'),true,'info'),
    e('div',{className:'gm-mining-title'},e('span',null,'Добывай GM'),e('small',null,'Майнинг '+upgrade.level+'/200 · '+nf(rate,0)+' GM / сутки')),
-   e('button',{type:'button',className:'gm-mining-coin-wrap',onClick:mineClick,'aria-label':'Собрать накопленные GM'},
+   e('button',{type:'button',className:'gm-mining-coin-wrap',disabled:miningBusy,onClick:mineClick,'aria-label':'Проверить и собрать накопленные GM'},
     e('span',{className:'gm-mining-coin-rim'},e('span',{className:'gm-mining-coin-face'},e(Brand,{theme,size:198})),e('span',{className:'gm-mining-metal-inscription'},'GM')),
     e('span',{className:'gm-mining-coin-outer-ring'}),
     e('span',{className:'gm-mining-coin-glint'})),
@@ -1666,8 +1687,10 @@ function Reward() {
     e('div',{className:'gm-mining-energy-track'},e('span',{style:{width:pct+'%'}})),
     e('div',{className:'gm-mining-energy-foot'},e('small',null,'Вместимость: '+hours+' ч'),
      e('small',null,nf(rate/24,2)+' GM/час'))),
-   e('button',{type:'button',className:'gm-mining-claim',disabled:demo||stored<1,onClick:miningClaim},
-    icon('diamond',23),e('span',null,'Забрать GM'),icon('chevron-right',19)),
+   e('button',{type:'button',className:'gm-mining-claim',disabled:miningBusy,onClick:mineClick},
+    icon('diamond',23),e('span',null,miningBusy?'Проверяем…':stored>=1?'Забрать GM':'Проверить накопление'),icon('chevron-right',19)),
+   stored<1?e('p',{className:'gm-mining-footnote',role:'status'},
+    'Сбор доступен от 1 GM. Сейчас '+nf(stored)+' GM — нажми кнопку, чтобы проверить точный баланс и узнать время до сбора.'):null,
    e('section',{className:'gm-mining-benefits gm-premium-card'},
     e('b',null,'Уровень и ускорения'),
     e('div',null,e('span',null,icon('lightning',21),' Мощность'),e('strong',null,'+'+powerBonus(wallet.level)+'%')),
@@ -1686,7 +1709,7 @@ function Reward() {
       e('div',{className:'gm-upgrade-rate-preview'},e('small',null,'При новом уровне (расчётно):'),
        e('b',null,nf(projectedRate(Number(upgrade.next_bonus_pct))/24,3)+' GM/ч'),
        e('b',null,nf(projectedRate(Number(upgrade.next_bonus_pct)),2)+' GM/сутки')),
-      e('button',{type:'button',className:'gm-upgrades-purchase',disabled:demo||upgradeBusy||(!upgrade.purchasable&&upgrade.purchasable!==undefined)||(upgrade.purchasable&&wallet.gm<upgrade.next_cost_gm)||!upgradeData?.upgrade,onClick:buyMiningUpgrade},
+      e('button',{type:'button',className:'gm-upgrades-purchase',disabled:upgradeBusy,onClick:buyMiningUpgrade},
        upgradeBusy?'Проверяем покупку…':!upgrade.purchasable?'Привязка GM к кошельку ещё не настроена':wallet.gm<upgrade.next_cost_gm?L('insufficient'):L('upgrade'),icon('chevron-right',17)))
      :e('div',{className:'gm-upgrades-max'},icon('crown',21),'Максимальный уровень открыт'),
     e('div',{className:'gm-upgrade-preview'},
