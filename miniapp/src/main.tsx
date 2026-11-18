@@ -699,6 +699,12 @@ function App(){
  const [recentTrades,setRecentTrades]=React.useState([] as any[]);
  const [clock,setClock]=React.useState(Math.floor(Date.now()/1000));
  const [adminStats,setAdminStats]=React.useState(null as any);
+ const [adminPlayers,setAdminPlayers]=React.useState(null as any);
+ const [adminPlayerSearch,setAdminPlayerSearch]=React.useState('');
+ const [adminPlayerActiveSearch,setAdminPlayerActiveSearch]=React.useState('');
+ const [adminPlayersBusy,setAdminPlayersBusy]=React.useState(false);
+ const [adminPlayersError,setAdminPlayersError]=React.useState('');
+ const adminPlayersRequestSeq=React.useRef(0);
  const [liveTasks,setLiveTasks]=React.useState([] as any[]);
  const [liveAchievements,setLiveAchievements]=React.useState([] as any[]);
  const [liveReferrals,setLiveReferrals]=React.useState(null as any);
@@ -1032,7 +1038,27 @@ function App(){
    try{const response=await fetch(path,{method:payload?'POST':'GET',headers:{Authorization:'tma '+webapp.initData,'Content-Type':'application/json'},body:payload?JSON.stringify(payload):undefined});const x=await response.json();if(!response.ok)throw Error(x.error||'Сервер отказал');return x}catch(e:any){flash('Ошибка: '+String(e.message||e));return null}
  };
  const loadAdminTasks=async()=>{const data=await adminRequest('/api/admin/task-catalog');if(data?.tasks)setAdminTasks(data.tasks)};
- React.useEffect(()=>{if(!demo&&screen==='admin'&&['owner','coowner'].includes(liveRole))void loadAdminTasks()},[demo,screen,liveRole]);
+ const loadAdminPlayers=async(offset=0,q=adminPlayerActiveSearch)=>{
+  if(demo||!webapp?.initData||!['owner','coowner'].includes(liveRole))return;
+  const seq=++adminPlayersRequestSeq.current;
+  setAdminPlayersBusy(true);setAdminPlayersError('');
+  try{
+   const url='/api/admin/players?limit=25&offset='+offset+'&q='+encodeURIComponent(q.trim());
+   const response=await fetch(url,{headers:{Authorization:'tma '+webapp.initData},cache:'no-store'});
+   const data=await response.json();
+   if(!response.ok)throw Error(data.error||'Не удалось загрузить игроков');
+   if(seq!==adminPlayersRequestSeq.current)return;
+   if(!Array.isArray(data.users)||!Number.isFinite(data.total))throw Error('Неверный ответ списка игроков');
+   setAdminPlayers(data);setAdminPlayerActiveSearch(q.trim());
+  }catch(error:any){if(seq===adminPlayersRequestSeq.current)setAdminPlayersError(String(error?.message||error))}
+  finally{if(seq===adminPlayersRequestSeq.current)setAdminPlayersBusy(false)}
+ };
+ React.useEffect(()=>{
+  if(demo||screen!=='admin'||!['owner','coowner'].includes(liveRole))return;
+  void loadAdminTasks();
+  void loadAdminPlayers(0,'');
+  void adminRequest('/api/admin/stats').then((stats:any)=>{if(stats)setAdminStats(stats)});
+ },[demo,screen,liveRole]);
  const beginTaskEdit=(task:any)=>{
   setTaskEditingId(task.id);setTaskDeleteArmed('');
   setTaskForm({id:task.id,title:task.title,description:task.description,category:task.category||'Other',icon:task.icon||'tasks',
@@ -2400,11 +2426,63 @@ function AdminTestGrants(){
    e('p',{className:'test-grants-footer'},'Другой совладелец или игрок должен хотя бы один раз открыть GM TOKEN. При необходимости между начислениями дождись нового кода 2FA.')
   );
  }
+ function AdminPlayers(){
+  const records=adminPlayers?.users||[];
+  const total=Number(adminPlayers?.total||0),offset=Number(adminPlayers?.offset||0),limit=Number(adminPlayers?.limit||25);
+  const formatDate=(seconds:number)=>Number(seconds)>0?new Date(Number(seconds)*1000).toLocaleString('ru-RU'):'—';
+  const clickSearch=(event:any)=>{event?.preventDefault?.();void loadAdminPlayers(0,adminPlayerSearch)};
+  return <section className="gm-admin-players gm-premium-card" aria-label="Все игроки">
+   <div className="gm-admin-players-heading">
+    <div>{icon('friends',27,true)}<div><small>PLAYER DIRECTORY</small><h3>Все игроки</h3><p>Только Owner и Co-Owner. Данные прямо из базы GM TOKEN.</p></div></div>
+    <strong>{adminPlayers?nf(total,0):'—'}</strong>
+   </div>
+   <form className="gm-admin-players-search" onSubmit={clickSearch}>
+    <input type="search" maxLength={48} value={adminPlayerSearch}
+     onChange={(event:any)=>setAdminPlayerSearch(event.target.value)}
+     placeholder="Поиск по Telegram ID или @username" aria-label="Поиск игроков"/>
+    <button type="submit" disabled={adminPlayersBusy} aria-label="Найти игрока">{icon('search',19)}</button>
+    <button type="button" disabled={adminPlayersBusy} onClick={()=>{setAdminPlayerSearch('');void loadAdminPlayers(0,'')}} aria-label="Сбросить поиск">{icon('refresh',19)}</button>
+   </form>
+   {adminPlayersError?<p className="gm-admin-players-error" role="alert">{adminPlayersError}
+    <button type="button" onClick={()=>void loadAdminPlayers(offset,adminPlayerActiveSearch)}>Повторить</button></p>:null}
+   {adminPlayersBusy&&!adminPlayers?<p className="gm-admin-players-empty" role="status">Загружаем список игроков…</p>:null}
+   {!adminPlayersBusy&&adminPlayers&&records.length===0?<p className="gm-admin-players-empty">Игроки по этому запросу не найдены.</p>:null}
+   <div className="gm-admin-players-list">
+    {records.map((player:any)=><article className="gm-admin-player" key={player.id}>
+     <div className="gm-admin-player-top">
+      <div className="gm-admin-player-identity"><div className="gm-admin-player-avatar">{icon('user-round',20)}</div>
+       <div><b>{player.username?'@'+String(player.username).replace(/^@/,''):'Игрок '+player.id}</b>
+        <small>ID: {player.id}</small></div></div>
+      <span className={'gm-admin-player-role '+(player.role==='owner'||player.role==='coowner'?'staff':'')}>{player.role}</span>
+     </div>
+     <div className="gm-admin-player-metrics">
+      <div><small>Уровень</small><b>{player.level}</b></div>
+      <div><small>XP</small><b>{nf(player.xp,0)}</b></div>
+      <div><small>GM</small><b>{nf((player.gm_cents||0)/100,2)}</b></div>
+      <div><small>CR</small><b>{nf((player.cr_cents||0)/100,2)}</b></div>
+      <div><small>Vault GM</small><b>{nf((player.vault_cents||0)/100,2)}</b></div>
+     </div>
+     <div className="gm-admin-player-foot">
+      <div><small>Регистрация: {formatDate(player.created_at)}</small><small>Был в сети: {formatDate(player.last_seen)}</small></div>
+      <button type="button" onClick={()=>{setAdminId(player.id);setTestUserId(player.id);flash('ID игрока выбран для административных форм.')}}>Выбрать ID</button>
+     </div>
+    </article>)}
+   </div>
+   <div className="gm-admin-players-pagination">
+    <span>{adminPlayers?total===0?'0 игроков':(offset+1)+'–'+(offset+records.length)+' из '+total:'Список не загружен'}{adminPlayerActiveSearch?' · поиск: '+adminPlayerActiveSearch:''}</span>
+    <div><button type="button" disabled={adminPlayersBusy||offset===0}
+      onClick={()=>void loadAdminPlayers(Math.max(0,offset-limit),adminPlayerActiveSearch)}>Назад</button>
+     <button type="button" disabled={adminPlayersBusy||!adminPlayers?.has_more}
+      onClick={()=>void loadAdminPlayers(adminPlayers.next_offset,adminPlayerActiveSearch)}>Дальше</button></div>
+   </div>
+  </section>;
+ }
  function Admin(){
  const isOwner=['owner','coowner'].includes(liveRole);
  if(!demo&&!isOwner) return <>{top('Admin Panel',true,'shield-check')}<div className="empty-state">{icon('shield-check',70,true)}<h2>Доступ ограничен</h2><p>Только Owner и Co-Owner могут использовать административную панель. Роли проверяются сервером.</p></div></>;
  return <>{top('Admin Panel',true,'settings')}<div className="admin-banner pearl-card">{icon('crown',49,true)}<div><b>{liveRole.toUpperCase()}</b><small>Вход подтверждён Telegram; критические операции требуют TOTP</small></div></div>
  <div className="admin-numbers">{[['Users',adminStats?.users??'—'],['Orders',adminStats?.orders??'—'],['Trades (24h)',adminStats?.trades_24h??'—'],['Open tickets',adminStats?.open_tickets??'—']].map(([a,b])=><div className="pearl-card" key={a}><small>{a}</small><b>{b}</b><small>Серверные данные</small></div>)}</div>
+ {AdminPlayers()}
  {liveState?.config?.test_economy?AdminTestGrants():null}
  {AdminTaskCatalog()}
  <h3 className="section-title">Управление</h3>
