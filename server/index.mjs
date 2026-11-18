@@ -374,7 +374,7 @@ const routes=async(req,res)=>{
    const search=String(url.searchParams.get('q')||'').trim();
    if(!Number.isSafeInteger(offset)||offset<0||offset>1000000||
       !Number.isSafeInteger(limit)||limit<1||limit>50)throw Error('invalid player directory pagination');
-   if(search.length>48||!(/^[\\p{L}\\p{N} .@_-]*$/u.test(search)))throw Error('invalid player search');
+   if(search.length>48||!(/^[\p{L}\p{N} .@_-]*$/u.test(search)))throw Error('invalid player search');
    const where=search?" WHERE (LOWER(u.username) LIKE ? ESCAPE '!' OR u.id LIKE ? ESCAPE '!')":'';
    // '_' is a SQL LIKE wildcard, not a literal username character, unless escaped.
    const params=search?['%'+search.toLowerCase().replaceAll('_','!_')+'%','%'+search.replaceAll('_','!_')+'%']:[];
