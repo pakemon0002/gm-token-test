@@ -704,6 +704,8 @@ function App(){
  const [liveReferrals,setLiveReferrals]=React.useState(null as any);
  const [liveRanks,setLiveRanks]=React.useState(null as any);
  const [holderRanks,setHolderRanks]=React.useState(null as any);
+ const [rankingError,setRankingError]=React.useState('');
+ const [gameRankBusy,setGameRankBusy]=React.useState(false);
  const [holderStatus,setHolderStatus]=React.useState(null as any);
  const [gramVerify,setGramVerify]=React.useState(null as any);
  const [gramBusy,setGramBusy]=React.useState(false);
@@ -777,8 +779,9 @@ function App(){
    const response=await fetch('/api/holders?limit=30&offset='+offset,{headers:holderAuthHeaders(),cache:'no-store'});
    const data=await response.json();if(!response.ok)throw Error(data.error||'Holders unavailable');
    setHolderRanks((old:any)=>append&&old?{...data,users:[...(old.users||[]),...(data.users||[])]}:data);
+   setRankingError('');
    return data;
-  }catch(error:any){setTonError(String(error.message||error));return null}
+  }catch(error:any){setRankingError('Не удалось загрузить рейтинг держателей: '+String(error.message||error));return null}
   finally{setHolderLoading(false);setHolderMoreBusy(false)}
  };
  const getHolderStatus=async()=>{
@@ -789,7 +792,22 @@ function App(){
   }catch{}
   return null;
  };
- React.useEffect(()=>{if(demo||screen!=='leaderboard')return;void fetchHolders();void getHolderStatus()},[screen,demo]);
+ const fetchGameRanks=async(offset=0,append=false)=>{
+  if(demo||!webapp?.initData){setRankingError('Открой GM TOKEN из Telegram для просмотра рейтинга');return null}
+  setGameRankBusy(true);
+  try{
+   const data=await api('/api/leaderboard?limit=30&offset='+offset,undefined,true);
+   if(!data||data.score_source!=='server_game_xp')throw Error('Рейтинг игроков временно недоступен');
+   setLiveRanks((old:any)=>append&&old?{...data,users:[...(old.users||[]),...(data.users||[])]}:data);
+   setRankingError('');return data;
+  }catch(error:any){setRankingError(String(error.message||error));return null}
+  finally{setGameRankBusy(false)}
+ };
+ React.useEffect(()=>{
+  if(demo||screen!=='leaderboard')return;
+  if(rankFilter==='Holders'){void fetchHolders();void getHolderStatus()}
+  else void fetchGameRanks();
+ },[screen,demo,rankFilter]);
  const loadGramStatus=async()=>{
   if(demo||!webapp?.initData)return;
   try{
@@ -1004,7 +1022,7 @@ function App(){
   if(d)setCalendarAssets({hp:Number(d.hp||0),hp_cosmetics:d.hp_cosmetics||[],inventory:d.inventory||{bronze:0,silver:0,gold:0}});
   return d;
  };
- const refreshLive=async()=>{if(!webapp?.initData)return;const d=await api('/api/game/status',undefined,true);if(!d)return;setLiveState(d);setW((w:Wallet)=>({...w,gm:d.wallet.gm/100,cr:d.wallet.cr/100,vault:d.wallet.vault/100,storage:d.mining.pending_cents/100,level:d.user?.level||w.level,xp:d.user?.xp??w.xp}));const [orders,book,tasks,achievements,refs,ranks,ticker,chart,trades]=await Promise.all([api('/api/exchange/orders',undefined,true),api('/api/exchange/book',undefined,true),api('/api/tasks',undefined,true),api('/api/achievements',undefined,true),api('/api/referrals/me',undefined,true),api('/api/leaderboard',undefined,true),api('/api/market/ticker',undefined,true),api('/api/market/ohlcv?interval='+period,undefined,true),api('/api/exchange/trades',undefined,true)]);if(orders)setLiveOrders(orders.orders||[]);if(book)setLiveBook(book);if(tasks)setLiveTasks(tasks.tasks||[]);if(achievements)setLiveAchievements(achievements.achievements||[]);if(refs)setLiveReferrals(refs);if(ranks)setLiveRanks(ranks);if(ticker)setLiveTicker(ticker);if(chart)setLiveCandles(chart.candles||[]);if(trades)setRecentTrades((trades.trades||[]).filter((t:any)=>!t.suspect).slice(0,10));setW((w:Wallet)=>({...w,streak:d.daily?.streak||0,lastClaim:d.daily?.last_claim_day||''}))};
+ const refreshLive=async()=>{if(!webapp?.initData)return;const d=await api('/api/game/status',undefined,true);if(!d)return;setLiveState(d);setW((w:Wallet)=>({...w,gm:d.wallet.gm/100,cr:d.wallet.cr/100,vault:d.wallet.vault/100,storage:d.mining.pending_cents/100,level:d.user?.level||w.level,xp:d.user?.xp??w.xp}));const [orders,book,tasks,achievements,refs,ticker,chart,trades]=await Promise.all([api('/api/exchange/orders',undefined,true),api('/api/exchange/book',undefined,true),api('/api/tasks',undefined,true),api('/api/achievements',undefined,true),api('/api/referrals/me',undefined,true),api('/api/market/ticker',undefined,true),api('/api/market/ohlcv?interval='+period,undefined,true),api('/api/exchange/trades',undefined,true)]);if(orders)setLiveOrders(orders.orders||[]);if(book)setLiveBook(book);if(tasks)setLiveTasks(tasks.tasks||[]);if(achievements)setLiveAchievements(achievements.achievements||[]);if(refs)setLiveReferrals(refs);if(ticker)setLiveTicker(ticker);if(chart)setLiveCandles(chart.candles||[]);if(trades)setRecentTrades((trades.trades||[]).filter((t:any)=>!t.suspect).slice(0,10));setW((w:Wallet)=>({...w,streak:d.daily?.streak||0,lastClaim:d.daily?.last_claim_day||''}))};
  const gameAction=async(path:string,payload:any={})=>{const result=await api(path,{operationId:cryptoId(),...payload});if(result){if(result.wallet)setW((w:Wallet)=>({...w,gm:result.wallet.gm/100,cr:result.wallet.cr/100,vault:result.wallet.vault/100}));await refreshLive()}return result};
  React.useEffect(()=>{if(demo)return;refreshLive();const timer=setInterval(()=>{refreshLive()},12000);return()=>clearInterval(timer)},[demo,period]);
  React.useEffect(()=>{if(demo||!['reward','boxes','profile'].includes(screen))return;void refreshCalendarAssets()},[demo,screen]);
@@ -1493,8 +1511,65 @@ function Tasks(){
    !verified?walletLanguage('Aguardando contrato oficial do GM Jetton. Nenhum saldo fictício é exibido.','Очікуємо офіційний контракт GM Jetton. Вигадані баланси не показуються.','Waiting for the official GM Jetton contract. No fictional balances are displayed.','Ожидаем официальный контракт GM Jetton. Вымышленные балансы и участники не отображаются.'):
    !data.participants?walletLanguage('Ainda não há detentores com saldo e carteira verificados.','Наразі немає власників із перевіреними гаманцями та балансами.','No opted-in players have a fresh verified wallet balance yet.','Пока нет игроков с подтверждёнными кошельками и свежим проверенным балансом.'):null;
   const slots=[3,1,2];
+  const rankingTabs=<div className="gm-ranking-tabs" role="tablist" aria-label="Вид рейтинга">
+   <button type="button" role="tab" aria-selected={rankFilter!=='Holders'} className={rankFilter!=='Holders'?'active':''} onClick={()=>{setRankFilter('Global');setRankingError('')}}>Игроки · XP</button>
+   <button type="button" role="tab" aria-selected={rankFilter==='Holders'} className={rankFilter==='Holders'?'active':''} onClick={()=>{setRankFilter('Holders');setRankingError('')}}>Держатели · TON</button>
+  </div>;
+  if(rankFilter!=='Holders'){
+   const game=liveRanks?.score_source==='server_game_xp'?liveRanks:null;
+   const gamePodium=game?.podium||[],gameUsers=game?.users||[];
+   return <>
+    {top(L('leaderboard'),true,'trophy')}
+    {rankingTabs}
+    <section className="gm-holders-header gm-premium-card">
+     <div className="gm-holders-header-label">{icon('trophy',20,true)} <span>GM TOKEN · GAME XP</span></div>
+     <h2>Рейтинг игроков</h2>
+     <p>Места определяются сервером по заработанным XP. Игровые GM и реальные токены здесь не учитываются. Ники других игроков скрыты.</p>
+     <div className="gm-holders-stats">
+      <div><small>Игроков</small><strong>{game?.participants??'—'}</strong></div>
+      <div><small>Моё место</small><strong>{game?.my_rank?'#'+game.my_rank:'—'}</strong></div>
+      <div><small>Мои XP</small><strong>{game?game.my_xp:'—'}</strong></div>
+     </div>
+    </section>
+    <section className="gm-holder-podium-wrap gm-premium-card">
+     <div className="gm-holder-section-title">{icon('crown',21)} <b>TOP 3 · XP</b></div>
+     <div className="gm-holder-podium" aria-label="Три лидера по игровым XP">
+      {slots.map(place=>{
+       const player=gamePodium.find((p:any)=>p.rank===place);
+       return <div className={'gm-holder-podium-slot gm-holder-place-'+place+(player?' is-filled':' is-empty')} key={place}>
+        <div className="gm-holder-podium-crown">{icon(place===1?'crown':'shield-check',place===1?32:25,true)}</div>
+        <div className="gm-holder-podium-avatar"><PlayerAvatar name={player?.username||'GM'} size={place===1?'large':'medium'} rank={place}/></div>
+        <div className="gm-holder-podium-alias">{player?.username||'—'}</div>
+        <div className="gm-holder-podium-amount">{player?player.xp+' XP':'—'}</div>
+        <div className="gm-holder-podium-pillar"><b>{place}</b><span>{place===1?'CHAMPION':place===2?'SILVER':'BRONZE'}</span></div>
+       </div>;
+      })}
+     </div>
+     {!game?<p className="gm-holder-pending" role="status">{icon('info',18)} {rankingError||'Получаем рейтинг игроков с сервера…'}</p>:null}
+    </section>
+    <section className="gm-holders-list gm-premium-card">
+     <div className="gm-holder-list-head">
+      <div><small>GAME XP · VERIFIED BY SERVER</small><h3>Участники</h3></div>
+      <button type="button" className="gm-holder-refresh" disabled={gameRankBusy} onClick={()=>void fetchGameRanks()} aria-label="Обновить рейтинг игроков">{icon('refresh',19)}</button>
+     </div>
+     {game?<div className="gm-holder-my-position">{icon('search',18)} <span>Твоё место</span><strong>#{game.my_rank} · {game.my_xp} XP</strong></div>:null}
+     <div className="gm-holder-rows">
+      {gameUsers.filter((u:any)=>u.rank>=4).map((u:any)=><div className="gm-holder-row" key={u.rank}>
+       <div className="gm-holder-row-rank">{u.rank}</div>
+       <div className="gm-holder-row-avatar"><PlayerAvatar name={u.username} size="small"/></div>
+       <div className="gm-holder-row-user"><b>{u.username}</b><small>Уровень {u.level}</small></div>
+       <strong>{u.xp} <small>XP</small></strong>
+      </div>)}
+     </div>
+     {game&&game.participants<=3?<p className="gm-holder-list-note">Все зарегистрированные участники показаны на пьедестале.</p>:null}
+     {game?.has_more?<button type="button" className="gm-holders-load-more" disabled={gameRankBusy} onClick={()=>void fetchGameRanks(game.next_offset||30,true)}>Показать ещё {icon('chevron-down',18)}</button>:null}
+     {rankingError&&game?<p className="gm-holder-pending" role="status">{rankingError}</p>:null}
+    </section>
+   </>;
+  }
   return <>
    {top(L('holdings'),true,'trophy')}
+   {rankingTabs}
    <section className="gm-holders-header gm-premium-card">
     <div className="gm-holders-header-label">{icon('shield-check',20,true)} <span>TON MAINNET · VERIFIED HOLDERS</span></div>
     <h2>{walletLanguage('Ranking de detentores GM','Рейтинг власників GM','GM holders ranking','Рейтинг держателей GM')}</h2>
@@ -1519,7 +1594,7 @@ function Tasks(){
       </div>
      })}
     </div>
-    {statusMessage?<p className="gm-holder-pending">{icon('info',18)} {statusMessage}</p>:null}
+    {(rankingError||statusMessage)?<p className="gm-holder-pending" role="status">{icon('info',18)} {rankingError||statusMessage}</p>:null}
    </section>
    <section className="gm-holders-list gm-premium-card">
     <div className="gm-holder-list-head"><div><small>GM TOKEN</small><h3>{walletLanguage('Todos os participantes','Усі учасники','All participants','Все участники')}</h3></div>
