@@ -395,7 +395,29 @@ export function makeGame({db,stmt,tx,log,now,send,readBody,sendTelegram}){
    return response(200,tx(()=>{doAuction();expireOrders();const since=now()-Math.min(365*DAY,Math.max(180*INTERVALS[interval],DAY));const trades=stmt('SELECT rowid AS seq,id,at,price,amount_cents,quote_cents,suspect FROM trades WHERE at>=? ORDER BY at ASC,rowid ASC LIMIT 100000').all(since);return {interval,price_unit:'CR cents/GM',candles:makeCandles(trades,interval,180),synthetic:false}}));
   }
   if(p==='/api/market/ticker'&&verb==='GET')return response(200,tx(()=>{doAuction();expireOrders();const latest=stmt('SELECT rowid AS seq,price,amount_cents,quote_cents,at,suspect FROM trades ORDER BY at DESC,rowid DESC LIMIT 10000').all();const bids=stmt("SELECT limit_price FROM orders WHERE side='buy' AND status='open' ORDER BY limit_price DESC LIMIT 1").all();const asks=stmt("SELECT limit_price FROM orders WHERE side='sell' AND status='open' ORDER BY limit_price ASC LIMIT 1").all();return {...tradingSnapshot(latest,now(),bids,asks),auction_end_at:Number(v('auction_end')),auction_done:v('auction_done')==='1',premarket:v('auction_done')!=='1',trade_test_mode:v('trade_test_mode')==='1',indicative:v('auction_done')==='1'?null:indicativeAuction(stmt("SELECT user_id,side,limit_price,remaining_cents,auction,status FROM orders WHERE status='open' AND auction=1").all())}}));
-    if(p==='/api/leaderboard'&&verb==='GET')return response(200,{users:[],pending_rule:true,score_source:'verified_onchain_gm_only',use_endpoint:'/api/holders'});
+    // The in-game XP leaderboard is separate from the on-chain GM holders leaderboard.
+    // Do not expose players' Telegram handles without a distinct game-ranking consent.
+    // No virtual GM or CR wallet balances are included in this response.
+    if(p==='/api/leaderboard'&&verb==='GET')return response(200,tx(()=>{
+     ensure(id);
+     const search=new URL(req.url,'http://localhost').searchParams;
+     const offset=Number(search.get('offset')||0),limit=Number(search.get('limit')||30);
+     if(!Number.isSafeInteger(offset)||offset<0||!Number.isSafeInteger(limit)||limit<1||limit>100)throw Error('invalid ranking pagination');
+     const self=stmt('SELECT xp,level,username FROM users WHERE id=?').get(id);
+     const participants=stmt('SELECT COUNT(*) AS n FROM users').get().n;
+     const order='ORDER BY xp DESC,id ASC';
+     const rows=stmt('SELECT id,xp,level FROM users '+order+' LIMIT ? OFFSET ?').all(limit,offset);
+     const podium=stmt('SELECT id,xp,level FROM users '+order+' LIMIT 3').all();
+     const ahead=stmt('SELECT COUNT(*) AS n FROM users WHERE xp>? OR (xp=? AND id<?)').get(self.xp,self.xp,id).n;
+     const myRank=ahead+1;
+     const entry=(p,rank)=>({rank,username:p.id===id?String(self.username||'Вы').slice(0,30):'Игрок #'+rank,
+      xp:Number(p.xp)||0,level:Number(p.level)||1,is_me:p.id===id});
+     return {enabled:true,score_source:'server_game_xp',public_usernames:false,participants,
+      podium:podium.map((p,i)=>entry(p,i+1)),
+      users:rows.map((p,i)=>entry(p,offset+i+1)),
+      my_rank:myRank,my_xp:Number(self.xp)||0,
+      has_more:offset+rows.length<participants,next_offset:offset+rows.length<participants?offset+rows.length:null};
+    }));
   if(p==='/api/mining/upgrades'&&verb==='GET')return response(200,tx(()=>{ensure(id);return {upgrade:upgradeState(id),levels:miningUpgradeTable()}}));
   if(p==='/api/tasks'&&verb==='GET')return response(200,{tasks:catalogStatus(id,'tasks')});
   if(p==='/api/achievements'&&verb==='GET')return response(200,{achievements:catalogStatus(id,'achievements')});
