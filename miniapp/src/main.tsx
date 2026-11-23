@@ -1799,11 +1799,6 @@ function Reward() {
   };
   // Safe first phase: existing GM mining remains fully functional. The TON upgrade
   // experience below is a clearly labelled preview, not a payment or payout feature.
-  const modules=[
-   {id:'starter',name:'STARTER',description:'Первый модуль станции',effect:'Серебряное свечение'},
-   {id:'core',name:'CORE',description:'Усиленное ядро',effect:'Дополнительная орбита'},
-   {id:'ultra',name:'ULTRA',description:'Полный энергетический контур',effect:'Максимум визуальных эффектов'}
-  ];
   return e('div',{className:'gm-mining-v8 gm-pulse-experience'},
    top(L('mining'),true,'info'),
    e('header',{className:'gm-pulse-header'},
@@ -1833,30 +1828,22 @@ function Reward() {
     icon('diamond',22),e('span',null,miningBusy?'Проверяем…':stored>=1?'Собрать GM':'Проверить накопление'),icon('chevron-right',20)),
    stored<1?e('p',{className:'gm-pulse-claim-hint',role:'status'},
     'Сбор доступен от 1 GM. Сейчас '+nf(stored)+' GM. Накопление идёт автоматически.'):null,
+   e('div',{className:'gm-pulse-shortcuts','aria-label':'Быстрые действия фарма'},
+    e('button',{type:'button',className:'gm-pulse-shortcut gm-pulse-shortcut-boosts',onClick:()=>goto('boosts')},
+     e('span',null,icon('coins',25)),e('span',null,e('b',null,'Улучшения'),e('small',null,'Модули фарма')),icon('chevron-right',18)),
+    e('button',{type:'button',className:'gm-pulse-shortcut',onClick:()=>goto('tasks')},
+     e('span',null,icon('tasks',25)),e('span',null,e('b',null,'Задания'),e('small',null,'Активность и XP')),icon('chevron-right',18))),
    e('section',{className:'gm-pulse-ton-panel gm-premium-card'},
     e('div',{className:'gm-pulse-ton-top'},
      e('span',{className:'gm-pulse-ton-icon'},icon('diamond',25)),
-     e('div',null,e('b',null,'TON FARM'),e('small',null,'Планируемые награды в TON')),
+     e('div',null,e('b',null,'TON FARM'),e('small',null,'Отдельная концепция настоящих наград')),
      e('span',{className:'gm-pulse-soon'},'СКОРО')),
-    e('p',null,'Настоящие TON-награды ещё не запущены. Пока работает только игровой фарм GM — никаких TON не начисляется.'),
+    e('p',null,'Сейчас начисляются только игровые GM. Выплаты TON и покупки улучшений не включены.'),
     e('div',{className:'gm-pulse-ton-controls'},
-     e('button',{type:'button',onClick:()=>setPulseBoostsOpen(!pulseBoostsOpen),'aria-expanded':pulseBoostsOpen},
-      icon('lightning',19),pulseBoostsOpen?'Скрыть модули':'Посмотреть улучшения',icon(pulseBoostsOpen?'chevron-up':'chevron-right',17)),
+     e('button',{type:'button',onClick:()=>goto('boosts')},
+      icon('lightning',19),'Открыть улучшения',icon('chevron-right',17)),
      e('button',{type:'button',className:'gm-pulse-ton-wallet',onClick:openWalletFromMining},
       icon('wallet',18),'Кошелёк'))),
-   pulseBoostsOpen?e('section',{className:'gm-pulse-boosts gm-premium-card','aria-label':'Предпросмотр будущих улучшений TON'},
-    e('div',{className:'gm-pulse-boosts-title'},
-     e('div',null,e('small',null,'UPGRADE MODULES · PREVIEW'),e('h3',null,'Улучшения фарма')),
-     icon('lightning',25)),
-    ...modules.map((mod:any)=>e('div',{className:'gm-pulse-boost gm-pulse-boost-'+mod.id,key:mod.id},
-     e('span',{className:'gm-pulse-boost-emblem'},e('span',null,'GM'),e('i',{className:'gm-pulse-boost-shine'})),
-     e('span',{className:'gm-pulse-boost-description'},
-      e('b',null,mod.name),
-      e('small',null,mod.description),
-      e('small',{className:'gm-pulse-boost-effect'},mod.effect)),
-     e('span',{className:'gm-pulse-boost-locked'},'ПРОЕКТ'))),
-    e('p',{className:'gm-pulse-boost-disclaimer'},'Это эскиз. TON-цены, повышенные выплаты и покупки не работают и не предлагаются до подтверждения фонда и условий.'))
-   :null,
    e('details',{className:'gm-pulse-details gm-premium-card'},
     e('summary',null,icon('settings',19),'Игровой майнинг GM: уровни и подробности',icon('chevron-down',18)),
     e('div',{className:'gm-pulse-details-content'},
@@ -1914,6 +1901,49 @@ function Reward() {
     e('button',{type:'button',className:'gm-upgrades-toggle',onClick:()=>setShowAllUpgrades(!showAllUpgrades)},
      showAllUpgrades?L('collapse'):L('allLevels'),icon(showAllUpgrades?'chevron-up':'chevron-down',16))),
    e('p',{className:'gm-mining-footnote'},'Скорости в списке расчётные, без учёта ограничений Mining Pool. Покупка улучшений пока отключена до проверки официального контракта. Кнопка подключения открывает Tonkeeper бесплатно; игровые GM не списываются.'))));
+ }
+
+ function Boosts(){
+  const e=React.createElement;
+  const rate=liveState?.mining?.rate_cents_day!=null?liveState.mining.rate_cents_day/100:gmRate(wallet);
+  const level=Number(upgradeData?.upgrade?.level||liveState?.mining?.upgrade?.level||1);
+  const modules=[
+   {id:'starter',name:'STARTER',caption:'Стартовый модуль',effect:'Серебряное свечение',description:'Первый вариант оформления энергетического ядра.'},
+   {id:'core',name:'CORE',caption:'Энергетическое ядро',effect:'Дополнительная орбита',description:'Усиленная анимация реактора и плавное вращение световых колец.'},
+   {id:'ultra',name:'ULTRA',caption:'Полный контур',effect:'Максимум световых эффектов',description:'Больше деталей, подсветка платформы и сложный орбитальный эффект.'}
+  ];
+  return e('div',{className:'gm-boosts-page'},
+   top('Улучшения',true,'more'),
+   e('header',{className:'gm-boosts-heading'},
+    e('span',null,'GM PULSE · UPGRADE MODULES'),
+    e('h1',null,'Прокачка фарма'),
+    e('p',null,'Модули будущего TON FARM. Сейчас это интерактивный просмотр оформления, без оплаты.')),
+   e('section',{className:'gm-boosts-hero gm-premium-card'},
+    e('div',{className:'gm-boosts-hero-art'},e(PulseReactor,{running:true})),
+    e('div',{className:'gm-boosts-hero-info'},
+     e('div',null,e('small',null,'ТВОЯ СТАНЦИЯ'),e('strong',null,'Уровень '+level)),
+     e('div',null,e('small',null,'ИГРОВАЯ ДОБЫЧА'),e('strong',null,nf(rate,2)+' GM/сутки')))),
+   e('section',{className:'gm-boosts-list','aria-label':'Модули улучшений'},
+    e('div',{className:'gm-boosts-section-heading'},e('strong',null,'Выбери модуль'),e('small',null,'3 варианта · просмотр')),
+    ...modules.map((mod:any)=>e('details',{key:mod.id,className:'gm-pulse-boost gm-boosts-card gm-pulse-boost-'+mod.id},
+     e('summary',null,
+      e('span',{className:'gm-pulse-boost-emblem'},e('span',null,'GM'),e('i',{className:'gm-pulse-boost-shine'})),
+      e('span',{className:'gm-pulse-boost-description'},
+       e('b',null,mod.name),
+       e('small',null,mod.caption),
+       e('small',{className:'gm-pulse-boost-effect'},mod.effect)),
+      e('span',{className:'gm-boosts-chevron'},icon('chevron-down',18))),
+     e('div',{className:'gm-boosts-card-expanded'},
+      e('p',null,mod.description),
+      e('span',null,'Визуальный концепт · покупка недоступна'))))),
+   e('div',{className:'gm-boosts-status gm-premium-card'},
+    icon('shield-check',22),
+    e('div',null,e('b',null,'TON-награды ещё не активированы'),
+     e('p',null,'Повышенные выплаты, цены в TON и покупка модулей не включены. Пока работает только существующий игровой майнинг GM.'))),
+   e('div',{className:'gm-boosts-actions'},
+    e('button',{type:'button',className:'gm-boosts-primary',onClick:()=>goto('mining')},icon('lightning',21),'Вернуться к фарму'),
+    e('button',{type:'button',className:'gm-boosts-secondary',onClick:()=>goto('wallet')},icon('wallet',21),'Кошелёк'))
+  );
  }
 
  function WalletConnection(){
