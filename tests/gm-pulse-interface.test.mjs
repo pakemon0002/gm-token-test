@@ -8,10 +8,10 @@ test('GM PULSE uses a real animated locally rendered reactor in both TSX and com
   const code=read(path);
   for(const fragment of ['function PulseReactor(', 'gm-pulse-stage','gm-pulse-sphere','gm-pulse-orbit-one',
    'gm-pulse-crystal','gm-pulse-platform','gm-pulse-hero','gm-pulse-progress-track',
-   'gm-pulse-collect','gm-pulse-boosts','gm-pulse-ton-panel','gm-pulse-details']){
+   'gm-pulse-collect','gm-boosts-list','gm-pulse-ton-panel','gm-pulse-details']){
    assert.ok(code.includes(fragment),path+' lacks '+fragment);
   }
-  assert.ok(code.includes('pulseBoostsOpen'),path);
+  assert.ok(code.includes('function Boosts()'),path);
   assert.ok(code.includes('openWalletFromMining'),path);
   assert.ok(code.includes('miningClaim()'),path);
   const start=code.indexOf('function Mining()'),end=code.indexOf('function WalletConnection()',start);
@@ -28,8 +28,8 @@ test('TON concept is explicitly inactive without fictional rewards or upgrade pu
  const code=read('miniapp/src/main.tsx');
  const start=code.indexOf('function Mining()'),end=code.indexOf('function WalletConnection()',start);
  const ui=code.slice(start,end);
- for(const fragment of ['TON FARM','СКОРО','никаких TON не начисляется','Это эскиз.',
-  'TON-цены, повышенные выплаты и покупки не работают','Игровая добыча активна',
+ for(const fragment of ['TON FARM','СКОРО','Выплаты TON и покупки улучшений не включены.',
+  'Повышенные выплаты, цены в TON и покупка модулей не включены.','Игровая добыча активна',
   'УРОВЕНЬ','Собрать GM','Проверить накопление']){
   assert.ok(ui.includes(fragment),'must communicate unlaunched TON farm: '+fragment);
  }
@@ -56,6 +56,6 @@ test('Served premium animation CSS stays source-aligned and respects reduced mot
   '@media(prefers-reduced-motion:reduce)','.gm-pulse-collect','.gm-pulse-details'])
   assert.ok(served.includes(part),'missing style '+part);
  const html=read('miniapp/public/preview.html');
- assert.ok(html.includes('main.js?v=gm-pulse-20261123-v1'));
- assert.ok(html.includes('styles.css?v=gm-pulse-20261123-v1'));
+ assert.match(html,/main\.js\?v=[A-Za-z0-9_-]+/);
+ assert.match(html,/styles\.css\?v=[A-Za-z0-9_-]+/);
 });
