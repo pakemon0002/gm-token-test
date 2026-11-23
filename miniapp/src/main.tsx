@@ -7,7 +7,7 @@ const store = {getItem:(key:string)=>{try{return window.localStorage.getItem(key
 const A = './assets/icons/';
 const BRAND = './assets/brand-original-reference/';
 type Theme = 'light' | 'dark';
-type Route = 'home'|'trade'|'earn'|'tasks'|'leaderboard'|'profile'|'reward'|'splash'|'intro'|'mining'|'vault'|'wallet'|'shop'|'referrals'|'history'|'settings'|'support'|'admin'|'achievements'|'more'|'streak'|'boxes';
+type Route = 'home'|'trade'|'earn'|'boosts'|'tasks'|'leaderboard'|'profile'|'reward'|'splash'|'intro'|'mining'|'vault'|'wallet'|'shop'|'referrals'|'history'|'settings'|'support'|'admin'|'achievements'|'more'|'streak'|'boxes';
 type Wallet = { gm:number; cr:number; vault:number; xp:number; level:number; claims:number; lastClaim:string; lastMiningXpDay:string; lastVaultWithdrawDay:string; streak:number; storage:number; storageUpdated:number; tickets:any[]; orders:any[]; traded:number; rewardClaimed:boolean; };
 const firstWallet:Wallet = {gm:0,cr:0,vault:0,xp:0,level:1,claims:0,lastClaim:'',lastMiningXpDay:'',lastVaultWithdrawDay:'',streak:0,storage:0,storageUpdated:0,tickets:[],orders:[],traded:0,rewardClaimed:false};
 const xpThreshold=[0,100,250,450,750,1150,1700,2400,3300,4400];
@@ -593,6 +593,7 @@ function App(){
  const guideCatalog:any={
   home:[['wallet','balance','.gm-home-wallet','home.balance'],['lightning','mining','.gm-home-shortcuts button','home.shortcuts'],['gift','boxes','.gm-home-offer[data-guide="boxes"]','home.reward']],
   mining:[['gm-coin-orbit','mining','.gm-pulse-stage','mining.coin'],['diamond','claim','.gm-pulse-collect','mining.claim'],['lightning','miningUpgrades','.gm-pulse-ton-panel','mining.upgrades'],['wallet','wallet','.gm-pulse-wallet','mining.purchase'],['clock','speed','.gm-pulse-progress','mining.storage']],
+  boosts:[['lightning','miningUpgrades','.gm-boosts-list','boosts.modules'],['shield-check','info','.gm-boosts-status','boosts.safety'],['wallet','wallet','.gm-boosts-actions','boosts.actions']],
   trade:[['candlesticks','market','.terminal-quote','trade.price'],['candlesticks','market','.terminal-periods','trade.chart'],['wallet','balance','.terminal-wallet-line','trade.balance'],['coins','market','.terminal-buy-sell','trade.actions'],['shield-check','next','.gm-trade-quick-card','trade.quantity'],['coins','next','.gm-trade-quick-continue','trade.review']],
   boxes:[
    ['wallet','balance','.gm-boxes-points','boxes.points'],
@@ -624,6 +625,10 @@ function App(){
   'mining.upgrades':{"ru":"TON FARM пока только концепция. Здесь можно посмотреть оформление будущих модулей. Настоящие TON-покупки и выплаты не включены.","uk":"TON FARM поки лише концепція. Можна подивитися макети модулів; справжні платежі не працюють.","pt":"TON FARM ainda é um conceito. As compras e recompensas reais TON estão desativadas.","en":"TON FARM is a concept preview. Real TON purchases and rewards are not active."},
   'mining.purchase':{"ru":"Отсюда открывается существующий кошелёк TON Connect. Подключение бесплатно и не запускает покупки или переводы.","uk":"Ця кнопка відкриває TON Connect. Підключення безкоштовне, без платежів.","pt":"Esta opção abre o TON Connect gratuitamente, sem pagamentos.","en":"This opens the existing TON Connect wallet flow for free; no purchases or transfers are initiated."},
   'mining.storage':{"ru":"Полоса хранилища показывает реальный прогресс накопления игровых GM. При заполнении собери накопленное, чтобы освободить место.","uk":"Смуга показує накопичення ігрових GM. Збери їх, коли сховище заповниться.","pt":"A barra mostra o progresso de GM no jogo. Colete quando o armazenamento estiver cheio.","en":"This bar shows actual in-game GM storage. Claim when full to free storage capacity."},
+  'boosts.modules':{ru:'Это визуальные варианты будущих модулей. Нажми на карточку, чтобы прочитать описание. Сейчас они не продаются и не повышают начисления.',uk:'Це лише попередній перегляд модулів. Купівля й підвищені виплати недоступні.',pt:'Esses módulos são apenas uma prévia visual. Não estão à venda.',en:'These modules are visual previews only. They are not for sale and do not increase rewards.'},
+  'boosts.safety':{ru:'Здесь отображаются условия текущего этапа: работает игровой GM-майнинг, а реальные TON-платежи и выплаты не запущены.',uk:'Поки працює лише ігровий GM-майнінг, без реальних TON-платежів.',pt:'A mineração virtual GM funciona, mas pagamentos e recompensas reais TON não estão ativos.',en:'Only in-game GM mining is active. Real TON payments and rewards are not enabled.'},
+  'boosts.actions':{ru:'Вернись к фарму или открой раздел кошелька. Открытие кошелька само по себе ничего не оплачивает.',uk:'Можна повернутися до фарму чи відкрити гаманець. Оплата не здійснюється.',pt:'Volte à mineração ou abra a carteira. Nenhum pagamento é iniciado.',en:'Return to the farm or open your wallet. No payments are initiated.'},
+
   'trade.price':{ru:'Здесь указана рыночная цена GM/CR. Она берётся из исполненных игровых заявок; график не содержит вымышленных сделок.',uk:'Тут ціна GM/CR за виконаними ігровими угодами, без штучних свічок.',pt:'O preço GM/CR vem de negociações reais dentro do jogo, sem dados inventados.',en:'The GM/CR price reflects executed in-game trades; no synthetic market data.'},
   'trade.chart':{ru:'Выбирай интервал свечей — от минуты до дня. График показывает историю исполненных игровых сделок, а пустые интервалы остаются пустыми.',uk:'Обери інтервал від хвилини до дня. Порожні періоди не домальовуються.',pt:'Escolha o intervalo do gráfico. Períodos sem negociações permanecem vazios.',en:'Choose a candle interval. Periods without executed in-game trades stay empty.'},
   'trade.balance':{ru:'Тут доступны твои игровые GM и CR. Открытые заявки могут резервировать часть средств; перед отправкой заявки проверь остаток.',uk:'Тут доступні ігрові GM і CR. Відкриті ордери можуть резервувати кошти.',pt:'Aqui estão seus GM e CR do jogo. Ordens abertas podem reservar saldo.',en:'Your in-game GM and CR balances are shown here. Open orders reserve funds.'},
@@ -750,7 +755,7 @@ function App(){
  const [demo,setDemo]=React.useState(true);
  React.useEffect(()=>{
   if(screen!=='splash'||demo||!authenticatedUserId)return;
-  const timeout=setTimeout(()=>setScreen(store.getItem(onboardingKey())?'home':'intro'),1350);
+  const timeout=setTimeout(()=>setScreen(store.getItem(onboardingKey())?'mining':'intro'),1350);
   return()=>clearTimeout(timeout);
  },[screen,demo,authenticatedUserId]);
  React.useEffect(()=>{
@@ -969,7 +974,6 @@ function App(){
  const [miningBusy,setMiningBusy]=React.useState(false);
  const miningClaimLock=React.useRef(false);
  const [showAllUpgrades,setShowAllUpgrades]=React.useState(false);
- const [pulseBoostsOpen,setPulseBoostsOpen]=React.useState(false);
  const [modalText,setModalText]=React.useState('');
  const toastRef=React.useRef(0);
  const flash=(msg:string)=>{setToast(msg);toastRef.current++;};
@@ -981,21 +985,21 @@ function App(){
  const setW=(patch:any)=>setWallet((w:Wallet)=>({...w,...(typeof patch==='function'?patch(w):patch)}));
  const navStack=React.useRef([]);
  const goBack=()=>{
-  const prev=navStack.current.pop()||'home';setScreen(prev);setModal('');
+  const prev=navStack.current.pop()||'mining';setScreen(prev);setModal('');
   try{history.replaceState({gmScreen:prev},'','#'+prev)}catch{}
   document.querySelector('.phone-scroll')?.scrollTo(0,0);
  };
  const goto=s=>{
   setGmBalanceMenu(false);
-  const route=String(s||'home');
+  const route=String(s||'mining');
   if(route!==screen){navStack.current.push(screen);if(navStack.current.length>30)navStack.current.shift();}
   resetGuide();if(route==='intro')setIntroStep(0);setScreen(route);setModal('');
   try{history.pushState({gmScreen:route},'','#'+route)}catch{}
   document.querySelector('.phone-scroll')?.scrollTo(0,0);
  };
  React.useEffect(()=>{
-  const onPop=()=>{const prev=navStack.current.pop()||'home',route=location.hash.slice(1);
-   const allowed=['home','trade','earn','tasks','leaderboard','profile','reward','splash','intro','mining','vault','wallet','shop','referrals','history','settings','support','admin','achievements','more','streak','boxes'];
+  const onPop=()=>{const prev=navStack.current.pop()||'mining',route=location.hash.slice(1);
+   const allowed=['home','trade','earn','boosts','tasks','leaderboard','profile','reward','splash','intro','mining','vault','wallet','shop','referrals','history','settings','support','admin','achievements','more','streak','boxes'];
    setScreen(allowed.includes(route)?route:prev);setModal('');
    document.querySelector('.phone-scroll')?.scrollTo(0,0);
   };
@@ -1261,8 +1265,8 @@ function App(){
  const icon=(n:string,size=23,tile=false)=> <Icon name={n} theme={theme} size={size} tile={tile}/>;
  const isLight=theme==='light';
  const top=(title:string,back=true,right='more')=><header className={'screen-header '+(!isLight?'dark-head':'')}><button className="header-icon" aria-label="Назад" onClick={()=>back?goBack():goto('more')} >{back?icon('chevron-left',24):<Brand theme={theme} size={35}/>}</button><strong>{title}</strong><button className="header-icon" onClick={()=>right==='settings'?goto('settings'):right==='info'?openGuide(screen):goto('more')} aria-label={right==='info'?L('instruction'):"Дополнительные действия"}>{icon(right,23)}</button></header>;
- const menuItems=[['home','home',lang('home')],['trade','candlesticks',lang('market')],['mining','lightning',lang('mining')],['boxes','gift',lang('boxes')],['more','more',lang('more')]];
- const bottom=()=> <nav className="bottom-nav" aria-label="Основные разделы">{menuItems.map(([s,i,t]:any)=><BarButton key={s} name={i} theme={theme} title={t} selected={screen===s|| (s==='more' && ['reward','streak'].includes(screen)) ||(isLight&&s==='earn'&&screen==='tasks')||(!isLight&&s==='earn'&&screen==='tasks')} onClick={()=>goto(s==='earn'&&isLight?'tasks':s)}/>)}</nav>;
+ const menuItems=[['tasks','tasks','Задания'],['boosts','coins','Улучшения'],['mining','lightning','Фарм'],['wallet','wallet','Кошелёк'],['more','more','Ещё']];
+ const bottom=()=> <nav className="bottom-nav gm-pulse-bottom" aria-label="Навигация GM PULSE">{menuItems.map(([s,i,t]:any)=><BarButton key={s} name={i} theme={theme} title={t} selected={screen===s||(s==='more'&&!['mining','boosts','tasks','wallet'].includes(screen))} onClick={()=>goto(s)}/>)}</nav>;
  
  
  function Home(){
@@ -1800,11 +1804,6 @@ function Reward() {
   };
   // Safe first phase: existing GM mining remains fully functional. The TON upgrade
   // experience below is a clearly labelled preview, not a payment or payout feature.
-  const modules=[
-   {id:'starter',name:'STARTER',description:'Первый модуль станции',effect:'Серебряное свечение'},
-   {id:'core',name:'CORE',description:'Усиленное ядро',effect:'Дополнительная орбита'},
-   {id:'ultra',name:'ULTRA',description:'Полный энергетический контур',effect:'Максимум визуальных эффектов'}
-  ];
   return e('div',{className:'gm-mining-v8 gm-pulse-experience'},
    top(L('mining'),true,'info'),
    e('header',{className:'gm-pulse-header'},
@@ -1834,30 +1833,22 @@ function Reward() {
     icon('diamond',22),e('span',null,miningBusy?'Проверяем…':stored>=1?'Собрать GM':'Проверить накопление'),icon('chevron-right',20)),
    stored<1?e('p',{className:'gm-pulse-claim-hint',role:'status'},
     'Сбор доступен от 1 GM. Сейчас '+nf(stored)+' GM. Накопление идёт автоматически.'):null,
+   e('div',{className:'gm-pulse-shortcuts','aria-label':'Быстрые действия фарма'},
+    e('button',{type:'button',className:'gm-pulse-shortcut gm-pulse-shortcut-boosts',onClick:()=>goto('boosts')},
+     e('span',null,icon('coins',25)),e('span',null,e('b',null,'Улучшения'),e('small',null,'Модули фарма')),icon('chevron-right',18)),
+    e('button',{type:'button',className:'gm-pulse-shortcut',onClick:()=>goto('tasks')},
+     e('span',null,icon('tasks',25)),e('span',null,e('b',null,'Задания'),e('small',null,'Активность и XP')),icon('chevron-right',18))),
    e('section',{className:'gm-pulse-ton-panel gm-premium-card'},
     e('div',{className:'gm-pulse-ton-top'},
      e('span',{className:'gm-pulse-ton-icon'},icon('diamond',25)),
-     e('div',null,e('b',null,'TON FARM'),e('small',null,'Планируемые награды в TON')),
+     e('div',null,e('b',null,'TON FARM'),e('small',null,'Отдельная концепция настоящих наград')),
      e('span',{className:'gm-pulse-soon'},'СКОРО')),
-    e('p',null,'Настоящие TON-награды ещё не запущены. Пока работает только игровой фарм GM — никаких TON не начисляется.'),
+    e('p',null,'Сейчас начисляются только игровые GM. Выплаты TON и покупки улучшений не включены.'),
     e('div',{className:'gm-pulse-ton-controls'},
-     e('button',{type:'button',onClick:()=>setPulseBoostsOpen(!pulseBoostsOpen),'aria-expanded':pulseBoostsOpen},
-      icon('lightning',19),pulseBoostsOpen?'Скрыть модули':'Посмотреть улучшения',icon(pulseBoostsOpen?'chevron-up':'chevron-right',17)),
+     e('button',{type:'button',onClick:()=>goto('boosts')},
+      icon('lightning',19),'Открыть улучшения',icon('chevron-right',17)),
      e('button',{type:'button',className:'gm-pulse-ton-wallet',onClick:openWalletFromMining},
       icon('wallet',18),'Кошелёк'))),
-   pulseBoostsOpen?e('section',{className:'gm-pulse-boosts gm-premium-card','aria-label':'Предпросмотр будущих улучшений TON'},
-    e('div',{className:'gm-pulse-boosts-title'},
-     e('div',null,e('small',null,'UPGRADE MODULES · PREVIEW'),e('h3',null,'Улучшения фарма')),
-     icon('lightning',25)),
-    ...modules.map((mod:any)=>e('div',{className:'gm-pulse-boost gm-pulse-boost-'+mod.id,key:mod.id},
-     e('span',{className:'gm-pulse-boost-emblem'},e('span',null,'GM'),e('i',{className:'gm-pulse-boost-shine'})),
-     e('span',{className:'gm-pulse-boost-description'},
-      e('b',null,mod.name),
-      e('small',null,mod.description),
-      e('small',{className:'gm-pulse-boost-effect'},mod.effect)),
-     e('span',{className:'gm-pulse-boost-locked'},'ПРОЕКТ'))),
-    e('p',{className:'gm-pulse-boost-disclaimer'},'Это эскиз. TON-цены, повышенные выплаты и покупки не работают и не предлагаются до подтверждения фонда и условий.'))
-   :null,
    e('details',{className:'gm-pulse-details gm-premium-card'},
     e('summary',null,icon('settings',19),'Игровой майнинг GM: уровни и подробности',icon('chevron-down',18)),
     e('div',{className:'gm-pulse-details-content'},
@@ -1915,6 +1906,49 @@ function Reward() {
     e('button',{type:'button',className:'gm-upgrades-toggle',onClick:()=>setShowAllUpgrades(!showAllUpgrades)},
      showAllUpgrades?L('collapse'):L('allLevels'),icon(showAllUpgrades?'chevron-up':'chevron-down',16))),
    e('p',{className:'gm-mining-footnote'},'Скорости в списке расчётные, без учёта ограничений Mining Pool. Покупка улучшений пока отключена до проверки официального контракта. Кнопка подключения открывает Tonkeeper бесплатно; игровые GM не списываются.'))));
+ }
+
+ function Boosts(){
+  const e=React.createElement;
+  const rate=liveState?.mining?.rate_cents_day!=null?liveState.mining.rate_cents_day/100:gmRate(wallet);
+  const level=Number(upgradeData?.upgrade?.level||liveState?.mining?.upgrade?.level||1);
+  const modules=[
+   {id:'starter',name:'STARTER',caption:'Стартовый модуль',effect:'Серебряное свечение',description:'Первый вариант оформления энергетического ядра.'},
+   {id:'core',name:'CORE',caption:'Энергетическое ядро',effect:'Дополнительная орбита',description:'Усиленная анимация реактора и плавное вращение световых колец.'},
+   {id:'ultra',name:'ULTRA',caption:'Полный контур',effect:'Максимум световых эффектов',description:'Больше деталей, подсветка платформы и сложный орбитальный эффект.'}
+  ];
+  return e('div',{className:'gm-boosts-page'},
+   top('Улучшения',true,'info'),
+   e('header',{className:'gm-boosts-heading'},
+    e('span',null,'GM PULSE · UPGRADE MODULES'),
+    e('h1',null,'Прокачка фарма'),
+    e('p',null,'Модули будущего TON FARM. Сейчас это интерактивный просмотр оформления, без оплаты.')),
+   e('section',{className:'gm-boosts-hero gm-premium-card'},
+    e('div',{className:'gm-boosts-hero-art'},e(PulseReactor,{running:true})),
+    e('div',{className:'gm-boosts-hero-info'},
+     e('div',null,e('small',null,'ТВОЯ СТАНЦИЯ'),e('strong',null,'Уровень '+level)),
+     e('div',null,e('small',null,'ИГРОВАЯ ДОБЫЧА'),e('strong',null,nf(rate,2)+' GM/сутки')))),
+   e('section',{className:'gm-boosts-list','aria-label':'Модули улучшений'},
+    e('div',{className:'gm-boosts-section-heading'},e('strong',null,'Выбери модуль'),e('small',null,'3 варианта · просмотр')),
+    ...modules.map((mod:any)=>e('details',{key:mod.id,className:'gm-pulse-boost gm-boosts-card gm-pulse-boost-'+mod.id},
+     e('summary',null,
+      e('span',{className:'gm-pulse-boost-emblem'},e('span',null,'GM'),e('i',{className:'gm-pulse-boost-shine'})),
+      e('span',{className:'gm-pulse-boost-description'},
+       e('b',null,mod.name),
+       e('small',null,mod.caption),
+       e('small',{className:'gm-pulse-boost-effect'},mod.effect)),
+      e('span',{className:'gm-boosts-chevron'},icon('chevron-down',18))),
+     e('div',{className:'gm-boosts-card-expanded'},
+      e('p',null,mod.description),
+      e('span',null,'Визуальный концепт · покупка недоступна'))))),
+   e('div',{className:'gm-boosts-status gm-premium-card'},
+    icon('shield-check',22),
+    e('div',null,e('b',null,'TON-награды ещё не активированы'),
+     e('p',null,'Повышенные выплаты, цены в TON и покупка модулей не включены. Пока работает только существующий игровой майнинг GM.'))),
+   e('div',{className:'gm-boosts-actions'},
+    e('button',{type:'button',className:'gm-boosts-primary',onClick:()=>goto('mining')},icon('lightning',21),'Вернуться к фарму'),
+    e('button',{type:'button',className:'gm-boosts-secondary',onClick:()=>goto('wallet')},icon('wallet',21),'Кошелёк'))
+  );
  }
 
  function WalletConnection(){
@@ -2580,8 +2614,9 @@ function AdminTestGrants(){
 function More(){
  const e=React.createElement;
  const groups:[string,string[][]][]=[
+  ['GM TOKEN', [['home','home','Главная','Обзор балансов GM и CR'],['trade','candlesticks','Игровой рынок','GM / CR'],['boxes','gift','Боксы','Награды за POINTS'],['leaderboard','trophy','Рейтинг','Таблица игроков'],['referrals','friends','Друзья','Приглашения']]],
   [L('account'),[['profile','profile',L('profile'),L('balance')],['achievements','trophy',L('achievements'),L('earned')],['history','clock',L('history'),L('history')]]],
-  [L('game'),[['reward','gift','Daily Reward',L('claim')],['tasks','tasks',L('tasks'),L('earned')],['referrals','friends',L('friends'),L('referrals')],['leaderboard','trophy',L('leaderboard'),L('holdings')],['wallet','wallet',L('wallet'),L('wallet')]]],
+  [L('game'),[['reward','gift','Daily Reward',L('claim')],['vault','wallet','Vault','Игровое хранилище'],['shop','coins','Магазин','Внутриигровые товары'],['earn','lightning','Награды','Дополнительные возможности']]],
   [L('help'),[['support','shield-check',L('support'),L('help')],['settings','settings',L('customize'),L('interfaceLanguage')],['intro','info',L('instruction'),L('replay')]]]
  ];
  if(['owner','coowner'].includes(liveRole))groups.push(['АДМИНИСТРИРОВАНИЕ',[['admin','crown','Admin Panel','Только Owner и Co-Owner']]]);
@@ -2605,13 +2640,13 @@ function More(){
 function Intro(){
  const e=React.createElement;
  const steps=[
-  ['gm-coin-orbit','Добывай GM','Зайди в Майнинг и нажми на большую GM-монету, чтобы забрать накопленные виртуальные монеты.'],
+  ['gm-coin-orbit','Фарм GM PULSE','На главном экране фарма ядро показывает автоматическое накопление игровых GM. Кнопка под ним проверяет и собирает GM.'],
   ['gift','Открывай боксы','Зарабатывай POINTS и обменивай их на боксы. Призы фиксированы и выдаются из игрового фонда.'],
   ['candlesticks','Знакомься с рынком','Следи за подтверждёнными игровыми сделками. POINTS зависят от исполненного объёма и антифрод-проверок.'],
   ['friends','Приглашай друзей','Поделись персональной ссылкой. Награды появляются только после подтверждённых действий друзей.']
  ];
  const step=steps[Math.max(0,Math.min(steps.length-1,introStep))];
- const complete=()=>{if(authenticatedUserId)store.setItem(onboardingKey(),'1');navStack.current=[];setScreen('home')};
+ const complete=()=>{if(authenticatedUserId)store.setItem(onboardingKey(),'1');navStack.current=[];setScreen('mining')};
  const ticks=steps.map((_,i)=>e('i',{key:i,className:i<=introStep?'current':''}));
  const displayedLanguages=gmLanguages.filter(([code,label])=>(label.toLowerCase().includes(languageSearch.toLowerCase())||code.includes(languageSearch.toLowerCase())));
  const chosenLanguage=gmLanguages.find(([code])=>code===locale)?.[1]||gmLanguages[0][1];
@@ -2701,9 +2736,9 @@ function Streak(){const n=Math.max(0,Math.floor(Number(liveState?.daily?.streak?
   </section>
  </main>}
  let view:any;
- switch(screen){case 'home':view=Home();break;case 'trade':view=Trading();break;case 'earn':view=Earn();break;case 'tasks':view=Tasks();break;case 'leaderboard':view=Leaderboard();break;case 'profile':view=Profile();break;case 'reward':view=Reward();break;case 'splash':view=Splash();break;case 'intro':view=Intro();break;case 'mining':view=Mining();break;case 'vault':view=Vault();break;case 'wallet':view=WalletConnection();break;case 'shop':view=Shop();break;case 'boxes':view=Boxes();break;case 'referrals':view=Referrals();break;case 'history':view=History();break;case 'settings':view=Settings();break;case 'support':view=Support();break;case 'admin':view=['owner','coowner'].includes(liveRole)?Admin():Home();break;case 'achievements':view=Achievements();break;case 'more':view=More();break;case 'streak':view = Reward();break;default:view=Home();}
+ switch(screen){case 'home':view=Home();break;case 'trade':view=Trading();break;case 'earn':view=Earn();break;case 'tasks':view=Tasks();break;case 'leaderboard':view=Leaderboard();break;case 'profile':view=Profile();break;case 'reward':view=Reward();break;case 'splash':view=Splash();break;case 'intro':view=Intro();break;case 'mining':view=Mining();break;case 'boosts':view=Boosts();break;case 'vault':view=Vault();break;case 'wallet':view=WalletConnection();break;case 'shop':view=Shop();break;case 'boxes':view=Boxes();break;case 'referrals':view=Referrals();break;case 'history':view=History();break;case 'settings':view=Settings();break;case 'support':view=Support();break;case 'admin':view=['owner','coowner'].includes(liveRole)?Admin():Home();break;case 'achievements':view=Achievements();break;case 'more':view=More();break;case 'streak':view = Reward();break;default:view=Home();}
  return <div className={'application theme-'+theme+(webapp?.initData?' is-telegram':'')+(screen==='splash'?' gm-splash-active':'')}>
- <aside className="desktop-toolbar"><div className="toolbar-logo"><Brand theme={theme} size={42}/><span><b>GM TOKEN</b><small>Оригинальные эскизы · интерактивная сборка</small></span></div><div className="toolbar-tabs"><button onClick={()=>setTheme('light')} className={isLight?'chosen':''}>Light</button><button onClick={()=>setTheme('dark')} className={!isLight?'chosen':''}>Dark</button></div><div className="toolbar-links">{(['home','trade','earn','tasks','leaderboard','profile','mining','wallet','vault','shop','support','admin'] as Route[]).map(s=><button key={s} className={screen===s?'chosen':''} onClick={()=>goto(s)}>{s}</button>)}</div><p>Оригинальные PNG · 54 иконки × 4 варианта · без подмены сторонними пиктограммами</p></aside>
+ <aside className="desktop-toolbar"><div className="toolbar-logo"><Brand theme={theme} size={42}/><span><b>GM TOKEN</b><small>Оригинальные эскизы · интерактивная сборка</small></span></div><div className="toolbar-tabs"><button onClick={()=>setTheme('light')} className={isLight?'chosen':''}>Light</button><button onClick={()=>setTheme('dark')} className={!isLight?'chosen':''}>Dark</button></div><div className="toolbar-links">{(['mining','boosts','tasks','wallet','more','home','trade','leaderboard','profile','vault','shop','support','admin'] as Route[]).map(s=><button key={s} className={screen===s?'chosen':''} onClick={()=>goto(s)}>{s}</button>)}</div><p>Оригинальные PNG · 54 иконки × 4 варианта · без подмены сторонними пиктограммами</p></aside>
  <div className="device-stage"><div className={'phone-frame'+(screen==='splash'?' gm-splash-frame':'')}><div className={'phone-scroll '+((screen==='splash')?'no-scroll gm-splash-host':'')}>{view}</div>{!['splash','intro'].includes(screen)&&bottom()}<div className="home-indicator"/></div><div className="underphone"><span className="demo-pill">{'Серверная авторизация · виртуальные GM/CR'}</span><button onClick={()=>goto('splash')}>Заставка</button><button onClick={()=>goto('home')}>Home</button><button onClick={()=>setTheme(isLight?'dark':'light')}>Сменить тему</button></div><small className="status-note">{backendStatus}</small></div>
  {toast&&<div className={'toast-message '+(/ошиб|недоступ|error|отмен/i.test(toast)?'toast-error':'toast-info')} role="status" aria-live="polite">
   <span className="gm-toast-icon">{icon(/ошиб|недоступ|error|отмен/i.test(toast)?'info':'check',21,true)}</span>
