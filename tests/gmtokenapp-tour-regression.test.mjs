@@ -11,7 +11,7 @@ test('new @GmTokenApp first-run experience does not reuse old bot localStorage f
  assert.match(app,/const tutorialKey=\(section:string\)=>'gm_tour_v25_gmtokenapp_'\+authenticatedUserId\+'_\'\+section;/);
  assert.ok(!app.includes("'gm_tour_v24_'+authenticatedUserId"));
  assert.ok(!app.includes("'gm_intro_v24_'+authenticatedUserId"));
- assert.match(app,/store\.getItem\(onboardingKey\(\)\)\?'home':'intro'/);
+ assert.match(app,/store\.getItem\(onboardingKey\(\)\)\?'mining':'intro'/,'completed onboarding should land on the GM PULSE Farm');
  assert.match(app,/store\.getItem\(tutorialKey\(screen\)\)/);
  assert.match(app,/store\.setItem\(onboardingKey\(\),'1'\)/);
  assert.match(app,/store\.setItem\(tutorialKey\(guideScreen\),'1'\)/);
