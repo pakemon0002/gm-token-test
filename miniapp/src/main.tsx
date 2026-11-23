@@ -57,6 +57,26 @@ function PlayerAvatar({name='',photoUrl='',size='medium',rank=0}:{name?:string,p
  </span>;
 }
 function Brand({theme,size=50}:{theme:Theme,size?:number}){return <img className="brand-coin" src={BRAND+(theme==='light'?'gm-coin-light-original.png':'gm-coin-dark-original.png')} width={size} height={size} alt="Логотип GM TOKEN" draggable="false"/>;}
+function PulseReactor({running=true}:{running?:boolean}){
+ return <div className={'gm-pulse-stage '+(running?'is-running':'is-idle')} role="img"
+  aria-label="Анимированное серебряное ядро GM с вращающимися орбитами — визуализация игрового фарма">
+  <span className="gm-pulse-nebula" aria-hidden="true"/>
+  <span className="gm-pulse-stars" aria-hidden="true"/>
+  <span className="gm-pulse-platform" aria-hidden="true"><i/><b/><i/></span>
+  <span className="gm-pulse-levitation" aria-hidden="true">
+   <span className="gm-pulse-orbit gm-pulse-orbit-one"/>
+   <span className="gm-pulse-orbit gm-pulse-orbit-two"/>
+   <span className="gm-pulse-orbit gm-pulse-orbit-three"/>
+   <span className="gm-pulse-sphere">
+    <span className="gm-pulse-chrome"/>
+    <span className="gm-pulse-crystal"><b>GM</b></span>
+    <span className="gm-pulse-sheen"/>
+   </span>
+  </span>
+  <span className="gm-pulse-floor-light" aria-hidden="true"/>
+ </div>;
+}
+
 function GButton({children,onClick,light=false,disabled=false,icon,theme}:{children?:any,onClick?:any,light?:boolean,disabled?:boolean,icon?:string,theme:Theme}){return <button type="button" className={'capsule '+(light?'pale':'dark-cap')} onClick={onClick} disabled={disabled}>{icon&&<Icon name={icon} theme={theme} size={22}/>}<span>{children}</span></button>;}
 function SparkLine({theme,compact=false}:{theme:Theme,compact?:boolean}){
  return <div className="real-data-empty" role="status">График баланса появится после накопления подтверждённой истории</div>;
@@ -572,7 +592,7 @@ function App(){
  // Each tutorial entry points at a real, visible control rather than a generic icon.
  const guideCatalog:any={
   home:[['wallet','balance','.gm-home-wallet','home.balance'],['lightning','mining','.gm-home-shortcuts button','home.shortcuts'],['gift','boxes','.gm-home-offer[data-guide="boxes"]','home.reward']],
-  mining:[['gm-coin-orbit','mining','.gm-mining-coin-wrap','mining.coin'],['diamond','claim','.gm-mining-claim','mining.claim'],['lightning','miningUpgrades','.gm-mining-upgrades','mining.upgrades'],['coins','upgrade','.gm-upgrades-purchase','mining.purchase'],['clock','speed','.gm-mining-energy','mining.storage']],
+  mining:[['gm-coin-orbit','mining','.gm-pulse-stage','mining.coin'],['diamond','claim','.gm-pulse-collect','mining.claim'],['lightning','miningUpgrades','.gm-pulse-ton-panel','mining.upgrades'],['wallet','wallet','.gm-pulse-wallet','mining.purchase'],['clock','speed','.gm-pulse-progress','mining.storage']],
   trade:[['candlesticks','market','.terminal-quote','trade.price'],['candlesticks','market','.terminal-periods','trade.chart'],['wallet','balance','.terminal-wallet-line','trade.balance'],['coins','market','.terminal-buy-sell','trade.actions'],['shield-check','next','.gm-trade-quick-card','trade.quantity'],['coins','next','.gm-trade-quick-continue','trade.review']],
   boxes:[
    ['wallet','balance','.gm-boxes-points','boxes.points'],
@@ -599,11 +619,11 @@ function App(){
   'home.balance':{ru:'Здесь отображаются твои игровые GM и CR. Нажми на соответствующую кнопку, чтобы перейти к основным возможностям; это не криптовалютный кошелёк.',uk:'Тут показано твої ігрові GM і CR. Натисни потрібну кнопку, щоб перейти до функцій — це не криптогаманець.',pt:'Veja seus GM e CR do jogo. Os saldos aqui não são uma carteira cripto.',en:'Your in-game GM and CR balances live here. These are not on-chain wallet balances.'},
   'home.shortcuts':{ru:'Эти кнопки ведут прямо в Майнинг, Боксы, Задания и Друзья. Начни с майнинга: монета показывает накопление, а собирать GM можно с установленного минимума.',uk:'Ці кнопки відкривають Майнінг, Бокси, Завдання та Друзів. Почни з майнінгу.',pt:'Estes atalhos abrem Mineração, Caixas, Tarefas e Amigos. Comece pela mineração.',en:'These shortcuts open Mining, Boxes, Tasks, and Friends. Start by exploring Mining.'},
   'home.reward':{ru:'В карточке наград находятся игровые задания и бонусы. Начисления всегда подтверждаются сервером; обещаний случайных призов здесь нет.',uk:'У картці нагород є завдання та бонуси. Нарахування перевіряє сервер.',pt:'Aqui ficam tarefas e recompensas. Os prêmios são verificados pelo servidor.',en:'Tasks and rewards are here. The server confirms any earned rewards.'},
-  'mining.coin':{ru:'Это главная GM-монета. Майнинг идёт автоматически по действующей скорости. Нажимая на монету, ты собираешь накопленные игровые GM — если накопилось не меньше 1 GM.',uk:'Це головна монета GM. Майнінг відбувається автоматично. Натисни монету, коли накопичиш щонайменше 1 GM.',pt:'Esta é a moeda GM. A mineração é automática. Toque na moeda para coletar após acumular pelo menos 1 GM.',en:'This is the main GM coin. Mining accrues automatically. Tap to claim after at least 1 GM is stored.'},
-  'mining.claim':{ru:'Эта отдельная кнопка выполняет тот же сбор. Пока на счёте меньше 1 GM, она неактивна. Сбор не требует оплаты или подключения кошелька.',uk:'Ця кнопка збирає накопичені GM. До 1 GM вона неактивна.',pt:'Este botão coleta os GM acumulados. Ele fica desativado até 1 GM.',en:'This button claims stored GM. It stays disabled below the 1 GM minimum.'},
-  'mining.upgrades':{ru:'Здесь показаны 200 уровней, цена каждого и бонус к скорости. По договорённости уровни будут связаны с подтверждённым внешним кошельком. Пока контракт GM не проверен, оплата и покупка отключены, игровые GM не списываются.',uk:'Тут 200 рівнів, ціни та бонуси. Оплата через зовнішній гаманець поки недоступна — контракт GM ще не підтверджений.',pt:'Aqui estão 200 níveis e seus bônus. Compras com carteira externa estão desativadas até verificar o contrato GM.',en:'Explore all 200 levels and bonuses. Wallet-based purchases remain disabled until the GM contract is verified.'},
-  'mining.purchase':{ru:'Это кнопка перехода к следующему уровню. Пока подтверждение внешних GM не настроено, она недоступна. Никаких игровых GM здесь списывать нельзя; после проверки контракта будет показан понятный способ получения улучшения.',uk:'Це кнопка наступного рівня. До перевірки контракту вона неактивна й не списує ігрові GM.',pt:'Este botão será usado para subir de nível. Fica desativado até a verificação do contrato GM; GM do jogo não serão gastos.',en:'This is the upgrade control. It remains disabled until external GM ownership can be verified; no in-game GM is charged.'},
-  'mining.storage':{ru:'Полоса показывает, сколько GM накоплено относительно вместимости. Когда хранилище заполнено, новые начисления останавливаются до сбора. Ниже указана текущая скорость за час.',uk:'Смуга показує наповнення сховища. Коли воно повне, зберіть GM, щоб звільнити місце.',pt:'A barra mostra o armazenamento atual. Colete GM para liberar espaço quando estiver cheio.',en:'The bar shows storage capacity. Claim stored GM when the container is full.'},
+  'mining.coin':{"ru":"В центре — анимированное ядро GM. Оно показывает работу игрового фарма. Добыча игровых GM продолжается автоматически; на ядро нажимать не нужно.","uk":"У центрі — анімоване ядро GM. Ігрові GM накопичуються автоматично, натискати на ядро не потрібно.","pt":"O núcleo animado GM mostra a mineração do jogo. Os GM acumulam automaticamente; não é preciso tocar no núcleo.","en":"The animated GM core visualizes in-game mining. GM accrues automatically; the core is not a button."},
+  'mining.claim':{"ru":"Эта кнопка проверяет свежий баланс на сервере и собирает GM от 1 GM. Если накоплено меньше, она объяснит, когда можно собрать. Это игровые, не реальные TON.","uk":"Кнопка перевіряє баланс на сервері й збирає ігрові GM від 1 GM. Якщо менше — покаже пояснення.","pt":"O botão verifica o saldo no servidor e coleta os GM virtuais a partir de 1 GM. Sem pagamento.","en":"This button verifies server state and claims virtual GM once at least 1 GM has accrued. It remains clickable below the threshold to explain."},
+  'mining.upgrades':{"ru":"TON FARM пока только концепция. Здесь можно посмотреть оформление будущих модулей. Настоящие TON-покупки и выплаты не включены.","uk":"TON FARM поки лише концепція. Можна подивитися макети модулів; справжні платежі не працюють.","pt":"TON FARM ainda é um conceito. As compras e recompensas reais TON estão desativadas.","en":"TON FARM is a concept preview. Real TON purchases and rewards are not active."},
+  'mining.purchase':{"ru":"Отсюда открывается существующий кошелёк TON Connect. Подключение бесплатно и не запускает покупки или переводы.","uk":"Ця кнопка відкриває TON Connect. Підключення безкоштовне, без платежів.","pt":"Esta opção abre o TON Connect gratuitamente, sem pagamentos.","en":"This opens the existing TON Connect wallet flow for free; no purchases or transfers are initiated."},
+  'mining.storage':{"ru":"Полоса хранилища показывает реальный прогресс накопления игровых GM. При заполнении собери накопленное, чтобы освободить место.","uk":"Смуга показує накопичення ігрових GM. Збери їх, коли сховище заповниться.","pt":"A barra mostra o progresso de GM no jogo. Colete quando o armazenamento estiver cheio.","en":"This bar shows actual in-game GM storage. Claim when full to free storage capacity."},
   'trade.price':{ru:'Здесь указана рыночная цена GM/CR. Она берётся из исполненных игровых заявок; график не содержит вымышленных сделок.',uk:'Тут ціна GM/CR за виконаними ігровими угодами, без штучних свічок.',pt:'O preço GM/CR vem de negociações reais dentro do jogo, sem dados inventados.',en:'The GM/CR price reflects executed in-game trades; no synthetic market data.'},
   'trade.chart':{ru:'Выбирай интервал свечей — от минуты до дня. График показывает историю исполненных игровых сделок, а пустые интервалы остаются пустыми.',uk:'Обери інтервал від хвилини до дня. Порожні періоди не домальовуються.',pt:'Escolha o intervalo do gráfico. Períodos sem negociações permanecem vazios.',en:'Choose a candle interval. Periods without executed in-game trades stay empty.'},
   'trade.balance':{ru:'Тут доступны твои игровые GM и CR. Открытые заявки могут резервировать часть средств; перед отправкой заявки проверь остаток.',uk:'Тут доступні ігрові GM і CR. Відкриті ордери можуть резервувати кошти.',pt:'Aqui estão seus GM e CR do jogo. Ordens abertas podem reservar saldo.',en:'Your in-game GM and CR balances are shown here. Open orders reserve funds.'},
@@ -949,6 +969,7 @@ function App(){
  const [miningBusy,setMiningBusy]=React.useState(false);
  const miningClaimLock=React.useRef(false);
  const [showAllUpgrades,setShowAllUpgrades]=React.useState(false);
+ const [pulseBoostsOpen,setPulseBoostsOpen]=React.useState(false);
  const [modalText,setModalText]=React.useState('');
  const toastRef=React.useRef(0);
  const flash=(msg:string)=>{setToast(msg);toastRef.current++;};
@@ -1777,8 +1798,69 @@ function Reward() {
    goto('wallet');
    if(!miningWalletLinked)void connectTonWallet();
   };
-  return e('div',{className:'gm-mining-v8'},
+  // Safe first phase: existing GM mining remains fully functional. The TON upgrade
+  // experience below is a clearly labelled preview, not a payment or payout feature.
+  const modules=[
+   {id:'starter',name:'STARTER',description:'Первый модуль станции',effect:'Серебряное свечение'},
+   {id:'core',name:'CORE',description:'Усиленное ядро',effect:'Дополнительная орбита'},
+   {id:'ultra',name:'ULTRA',description:'Полный энергетический контур',effect:'Максимум визуальных эффектов'}
+  ];
+  return e('div',{className:'gm-mining-v8 gm-pulse-experience'},
    top(L('mining'),true,'info'),
+   e('header',{className:'gm-pulse-header'},
+    e('div',{className:'gm-pulse-header-mark'},e(Brand,{theme,size:37}),
+     e('div',null,e('b',null,'GM PULSE'),e('small',null,'GM TOKEN · FARM STATION'))),
+    e('button',{type:'button',className:'gm-pulse-wallet',onClick:openWalletFromMining,'aria-label':'Подключить или открыть TON-кошелёк'},icon('wallet',21))),
+   e('section',{className:'gm-pulse-hero'},
+    e('div',{className:'gm-pulse-kicker'},e('span',{className:'gm-pulse-kicker-dot'}),'PULSE ENGINE · GAME MODE'),
+    e('div',{className:'gm-pulse-hero-title'},e('strong',null,'Твоя энергия GM'),e('small',null,'Серебряное ядро. Один фарм. Всё просто.')),
+    e(PulseReactor,{running:true}),
+    e('div',{className:'gm-pulse-runtime'},
+     e('span',{className:'gm-pulse-status-dot'}),
+     e('b',null,'Игровая добыча активна'),
+     e('span',null,'УРОВЕНЬ '+upgrade.level)),
+    e('div',{className:'gm-pulse-hero-metrics'},
+     e('div',null,e('small',null,'Накоплено'),e('strong',null,nf(stored)+' GM')),
+     e('div',null,e('small',null,'Скорость'),e('strong',null,nf(rate/24,2)+' GM/ч')))),
+   e('section',{className:'gm-pulse-progress gm-premium-card'},
+    e('div',{className:'gm-pulse-progress-line'},
+     e('div',null,e('small',null,'Хранилище'),e('b',null,nf(stored)+' / '+nf(cap)+' GM')),
+     e('strong',null,nf(pct,0)+'%')),
+    e('div',{className:'gm-pulse-progress-track'},e('span',{style:{width:pct+'%'}})),
+    e('div',{className:'gm-pulse-progress-footer'},
+     e('span',null,'Вместимость '+hours+' ч'),
+     e('span',null,nf(rate,2)+' GM/сутки'))),
+   e('button',{type:'button',className:'gm-pulse-collect',disabled:miningBusy,onClick:mineClick,'data-guide':'mining'},
+    icon('diamond',22),e('span',null,miningBusy?'Проверяем…':stored>=1?'Собрать GM':'Проверить накопление'),icon('chevron-right',20)),
+   stored<1?e('p',{className:'gm-pulse-claim-hint',role:'status'},
+    'Сбор доступен от 1 GM. Сейчас '+nf(stored)+' GM. Накопление идёт автоматически.'):null,
+   e('section',{className:'gm-pulse-ton-panel gm-premium-card'},
+    e('div',{className:'gm-pulse-ton-top'},
+     e('span',{className:'gm-pulse-ton-icon'},icon('diamond',25)),
+     e('div',null,e('b',null,'TON FARM'),e('small',null,'Планируемые награды в TON')),
+     e('span',{className:'gm-pulse-soon'},'СКОРО')),
+    e('p',null,'Настоящие TON-награды ещё не запущены. Пока работает только игровой фарм GM — никаких TON не начисляется.'),
+    e('div',{className:'gm-pulse-ton-controls'},
+     e('button',{type:'button',onClick:()=>setPulseBoostsOpen(!pulseBoostsOpen),'aria-expanded':pulseBoostsOpen},
+      icon('lightning',19),pulseBoostsOpen?'Скрыть модули':'Посмотреть улучшения',icon(pulseBoostsOpen?'chevron-up':'chevron-right',17)),
+     e('button',{type:'button',className:'gm-pulse-ton-wallet',onClick:openWalletFromMining},
+      icon('wallet',18),'Кошелёк'))),
+   pulseBoostsOpen?e('section',{className:'gm-pulse-boosts gm-premium-card','aria-label':'Предпросмотр будущих улучшений TON'},
+    e('div',{className:'gm-pulse-boosts-title'},
+     e('div',null,e('small',null,'UPGRADE MODULES · PREVIEW'),e('h3',null,'Улучшения фарма')),
+     icon('lightning',25)),
+    ...modules.map((mod:any)=>e('div',{className:'gm-pulse-boost gm-pulse-boost-'+mod.id,key:mod.id},
+     e('span',{className:'gm-pulse-boost-emblem'},e('span',null,'GM'),e('i',{className:'gm-pulse-boost-shine'})),
+     e('span',{className:'gm-pulse-boost-description'},
+      e('b',null,mod.name),
+      e('small',null,mod.description),
+      e('small',{className:'gm-pulse-boost-effect'},mod.effect)),
+     e('span',{className:'gm-pulse-boost-locked'},'ПРОЕКТ'))),
+    e('p',{className:'gm-pulse-boost-disclaimer'},'Это эскиз. TON-цены, повышенные выплаты и покупки не работают и не предлагаются до подтверждения фонда и условий.'))
+   :null,
+   e('details',{className:'gm-pulse-details gm-premium-card'},
+    e('summary',null,icon('settings',19),'Игровой майнинг GM: уровни и подробности',icon('chevron-down',18)),
+    e('div',{className:'gm-pulse-details-content'},
    e('div',{className:'gm-mining-title'},e('span',null,'Добывай GM'),e('small',null,'Майнинг '+upgrade.level+'/200 · '+nf(rate,0)+' GM / сутки')),
    e('button',{type:'button',className:'gm-mining-coin-wrap',disabled:miningBusy,onClick:mineClick,'aria-label':'Проверить и собрать накопленные GM'},
     e('span',{className:'gm-mining-coin-rim'},e('span',{className:'gm-mining-coin-face'},e(Brand,{theme,size:198})),e('span',{className:'gm-mining-metal-inscription'},'GM')),
@@ -1832,7 +1914,7 @@ function Reward() {
        row.level<=upgrade.level?icon('check',17):icon('minus',17)))),
     e('button',{type:'button',className:'gm-upgrades-toggle',onClick:()=>setShowAllUpgrades(!showAllUpgrades)},
      showAllUpgrades?L('collapse'):L('allLevels'),icon(showAllUpgrades?'chevron-up':'chevron-down',16))),
-   e('p',{className:'gm-mining-footnote'},'Скорости в списке расчётные, без учёта ограничений Mining Pool. Покупка улучшений пока отключена до проверки официального контракта. Кнопка подключения открывает Tonkeeper бесплатно; игровые GM не списываются.'));
+   e('p',{className:'gm-mining-footnote'},'Скорости в списке расчётные, без учёта ограничений Mining Pool. Покупка улучшений пока отключена до проверки официального контракта. Кнопка подключения открывает Tonkeeper бесплатно; игровые GM не списываются.'))));
  }
 
  function WalletConnection(){
