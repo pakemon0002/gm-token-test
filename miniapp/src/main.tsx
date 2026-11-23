@@ -593,6 +593,7 @@ function App(){
  const guideCatalog:any={
   home:[['wallet','balance','.gm-home-wallet','home.balance'],['lightning','mining','.gm-home-shortcuts button','home.shortcuts'],['gift','boxes','.gm-home-offer[data-guide="boxes"]','home.reward']],
   mining:[['gm-coin-orbit','mining','.gm-pulse-stage','mining.coin'],['diamond','claim','.gm-pulse-collect','mining.claim'],['lightning','miningUpgrades','.gm-pulse-ton-panel','mining.upgrades'],['wallet','wallet','.gm-pulse-wallet','mining.purchase'],['clock','speed','.gm-pulse-progress','mining.storage']],
+  boosts:[['lightning','miningUpgrades','.gm-boosts-list','boosts.modules'],['shield-check','info','.gm-boosts-status','boosts.safety'],['wallet','wallet','.gm-boosts-actions','boosts.actions']],
   trade:[['candlesticks','market','.terminal-quote','trade.price'],['candlesticks','market','.terminal-periods','trade.chart'],['wallet','balance','.terminal-wallet-line','trade.balance'],['coins','market','.terminal-buy-sell','trade.actions'],['shield-check','next','.gm-trade-quick-card','trade.quantity'],['coins','next','.gm-trade-quick-continue','trade.review']],
   boxes:[
    ['wallet','balance','.gm-boxes-points','boxes.points'],
@@ -624,6 +625,10 @@ function App(){
   'mining.upgrades':{"ru":"TON FARM пока только концепция. Здесь можно посмотреть оформление будущих модулей. Настоящие TON-покупки и выплаты не включены.","uk":"TON FARM поки лише концепція. Можна подивитися макети модулів; справжні платежі не працюють.","pt":"TON FARM ainda é um conceito. As compras e recompensas reais TON estão desativadas.","en":"TON FARM is a concept preview. Real TON purchases and rewards are not active."},
   'mining.purchase':{"ru":"Отсюда открывается существующий кошелёк TON Connect. Подключение бесплатно и не запускает покупки или переводы.","uk":"Ця кнопка відкриває TON Connect. Підключення безкоштовне, без платежів.","pt":"Esta opção abre o TON Connect gratuitamente, sem pagamentos.","en":"This opens the existing TON Connect wallet flow for free; no purchases or transfers are initiated."},
   'mining.storage':{"ru":"Полоса хранилища показывает реальный прогресс накопления игровых GM. При заполнении собери накопленное, чтобы освободить место.","uk":"Смуга показує накопичення ігрових GM. Збери їх, коли сховище заповниться.","pt":"A barra mostra o progresso de GM no jogo. Colete quando o armazenamento estiver cheio.","en":"This bar shows actual in-game GM storage. Claim when full to free storage capacity."},
+  'boosts.modules':{ru:'Это визуальные варианты будущих модулей. Нажми на карточку, чтобы прочитать описание. Сейчас они не продаются и не повышают начисления.',uk:'Це лише попередній перегляд модулів. Купівля й підвищені виплати недоступні.',pt:'Esses módulos são apenas uma prévia visual. Não estão à venda.',en:'These modules are visual previews only. They are not for sale and do not increase rewards.'},
+  'boosts.safety':{ru:'Здесь отображаются условия текущего этапа: работает игровой GM-майнинг, а реальные TON-платежи и выплаты не запущены.',uk:'Поки працює лише ігровий GM-майнінг, без реальних TON-платежів.',pt:'A mineração virtual GM funciona, mas pagamentos e recompensas reais TON não estão ativos.',en:'Only in-game GM mining is active. Real TON payments and rewards are not enabled.'},
+  'boosts.actions':{ru:'Вернись к фарму или открой раздел кошелька. Открытие кошелька само по себе ничего не оплачивает.',uk:'Можна повернутися до фарму чи відкрити гаманець. Оплата не здійснюється.',pt:'Volte à mineração ou abra a carteira. Nenhum pagamento é iniciado.',en:'Return to the farm or open your wallet. No payments are initiated.'},
+
   'trade.price':{ru:'Здесь указана рыночная цена GM/CR. Она берётся из исполненных игровых заявок; график не содержит вымышленных сделок.',uk:'Тут ціна GM/CR за виконаними ігровими угодами, без штучних свічок.',pt:'O preço GM/CR vem de negociações reais dentro do jogo, sem dados inventados.',en:'The GM/CR price reflects executed in-game trades; no synthetic market data.'},
   'trade.chart':{ru:'Выбирай интервал свечей — от минуты до дня. График показывает историю исполненных игровых сделок, а пустые интервалы остаются пустыми.',uk:'Обери інтервал від хвилини до дня. Порожні періоди не домальовуються.',pt:'Escolha o intervalo do gráfico. Períodos sem negociações permanecem vazios.',en:'Choose a candle interval. Periods without executed in-game trades stay empty.'},
   'trade.balance':{ru:'Тут доступны твои игровые GM и CR. Открытые заявки могут резервировать часть средств; перед отправкой заявки проверь остаток.',uk:'Тут доступні ігрові GM і CR. Відкриті ордери можуть резервувати кошти.',pt:'Aqui estão seus GM e CR do jogo. Ordens abertas podem reservar saldo.',en:'Your in-game GM and CR balances are shown here. Open orders reserve funds.'},
@@ -1913,7 +1918,7 @@ function Reward() {
    {id:'ultra',name:'ULTRA',caption:'Полный контур',effect:'Максимум световых эффектов',description:'Больше деталей, подсветка платформы и сложный орбитальный эффект.'}
   ];
   return e('div',{className:'gm-boosts-page'},
-   top('Улучшения',true,'more'),
+   top('Улучшения',true,'info'),
    e('header',{className:'gm-boosts-heading'},
     e('span',null,'GM PULSE · UPGRADE MODULES'),
     e('h1',null,'Прокачка фарма'),
