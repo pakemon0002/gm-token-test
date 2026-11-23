@@ -16,7 +16,8 @@ test('The centered Farm dock replaces old market/chests navigation and routes al
  assert.ok(menu.includes("['more','more','Ещё']"));
  assert.ok(menu.includes("onClick={()=>goto(s)}"));
  const expected=['tasks','boosts','mining','wallet','more'];
- assert.deepEqual([...menu.matchAll(/\['(tasks|boosts|mining|wallet|more)','/g)].map(m=>m[1]),expected);
+ const menuLine=menu.split('\n').find(line=>line.includes('const menuItems='))||'';
+ assert.deepEqual([...menuLine.matchAll(/\['(tasks|boosts|mining|wallet|more)','/g)].map(m=>m[1]),expected);
  assert.ok(src.includes("case 'boosts':view=Boosts();break;"));
  assert.ok(src.includes("case 'mining':view=Mining();break;"));
  assert.ok(src.includes("case 'wallet':view=WalletConnection();break;"));
