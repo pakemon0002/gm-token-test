@@ -14,7 +14,7 @@ test('onboarding uses a compact custom language picker with flags, not OS select
 test('per-section guide anchors real UI elements and gives helpful contextual copy',()=>{
  const source=read('miniapp/src/main.tsx'),styles=read('miniapp/src/styles.css');
  const guide=source.slice(source.indexOf('const guideCatalog:any='),source.indexOf('const closeGuide='));
- for(const selector of ['.gm-mining-coin-wrap','.gm-mining-claim','.gm-mining-upgrades',
+ for(const selector of ['.gm-pulse-stage','.gm-pulse-collect','.gm-pulse-ton-panel',
   '.terminal-periods','.terminal-buy-sell','.gm-trade-quick-card','.gm-support-form']){
   assert.ok(guide.includes(selector),'guide missing target '+selector);
   assert.ok(source.split(selector.slice(1)).length>2,'target is only named in guide, not implemented: '+selector);
