@@ -19,8 +19,8 @@ test('All V3 artwork and models match SHA-256 manifest',()=>{
 test('V3 renders are wired to both source and compiled WebView bundle',()=>{
  for(const path of ['miniapp/src/main.tsx','miniapp/public/main.js']){
   const s=read(path).toString();
-  for(const term of ['function V3Scene','function V3Catalog','function V3ProfileArt','/assets/gpu-v3/','GMViewer','rig-live','v3-nav-icon','v3-rank-art'])assert.ok(s.includes(term),path+' '+term);
-  const component=s.slice(s.indexOf('function V3Scene'),s.indexOf('function GButton'));
+  for(const term of ['class V3Scene','class V3Catalog','class V3ProfileArt','/assets/gpu-v3/','GMViewer','rig-live','v3-nav-icon','v3-rank-art'])assert.ok(s.includes(term),path+' '+term);
+  const component=s.slice(s.indexOf('class V3Scene'),s.indexOf('function GButton'));
   assert.ok(!component.includes('sendTransaction('));
   assert.ok(!component.includes('/api/'));
  }
