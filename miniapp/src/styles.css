@@ -3378,3 +3378,53 @@ html,body,.application,.application button,.application input,.application texta
 .application .gm-boosts-secondary{background:var(--gm-v2-surface);color:var(--gm-v2-ink);border:1px solid var(--gm-v2-rail)}
 @media(max-width:360px){.application .gm-pulse-bottom .nav-entry>span{font-size:8px}.application .gm-pulse-bottom{padding-inline:2px}.gm-pulse-shortcut small{font-size:8px}.gm-pulse-shortcut{gap:5px!important}.gm-boosts-actions{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.application .gm-pulse-bottom .nav-entry{transition:none}.gm-boosts-card[open] .gm-boosts-chevron{transform:none}}
+
+/* GM TOKEN V3 — original GPU asset pack */
+.application.gm-v3.theme-dark{--ink:#f6f0ff;--muted:#b4a7ca;--bg:#0a0713;--surface:#171125;--border:#48305f;background:#0a0713}
+.gm-v3.theme-dark .phone-frame{background:radial-gradient(ellipse at 50% 12%,#291440,transparent 48%),#0b0814}
+.gm-v3.theme-dark .gm-premium-card,.gm-v3.theme-dark .pearl-card,.gm-v3.theme-dark .metallic-card,.gm-v3.theme-dark .stat-card{background:linear-gradient(145deg,#20152f,#130e1e);border-color:#4c3466;color:#f5eeff;box-shadow:inset 0 1px 0 #b97cff22,0 6px 18px #0005}
+.gm-v3 .gm-pulse-hero{background:linear-gradient(180deg,#10091dbb,#120b1f40 50%,#10091de8),url('/assets/gpu-v3/09-backgrounds/farm-lab.webp') center/cover no-repeat,#160e25;border-color:#7a4db2;color:#f5ecff;overflow:hidden;box-shadow:0 8px 25px #1c0b3255,inset 0 1px 0 #d9afff40}
+.gm-v3 .gm-pulse-hero-title strong,.gm-v3 .gm-pulse-hero-metrics strong,.gm-v3 .gm-pulse-runtime b{color:#fff}
+.gm-v3 .gm-pulse-hero-title small,.gm-v3 .gm-pulse-hero-metrics small,.gm-v3 .gm-pulse-kicker,.gm-v3 .gm-pulse-runtime{color:#d5bcee}
+.gm-v3 .gm-pulse-collect,.gm-v3 .gm-boosts-primary{background:linear-gradient(180deg,#b96aff,#8a36df 52%,#551ca1);border:1px solid #d29aff;color:#fff;box-shadow:inset 0 1px 2px #ffffff70,0 6px 20px #852bed44}
+.gm-v3 .gm-pulse-progress-track>span,.gm-v3 .gm-upgrades-progress>span{background:linear-gradient(90deg,#7837d9,#d68aff);box-shadow:0 0 10px #ac58f775}
+.gm-v3.theme-dark .bottom-nav.gm-pulse-bottom{background:linear-gradient(160deg,#20172e,#100b1a);border-color:#55376c;box-shadow:0 5px 20px #0008}
+.gm-v3.theme-dark .bottom-nav .nav-entry.active{background:linear-gradient(160deg,#6c35a6,#291640);color:#fff}
+.gm-v3 .bottom-nav .nav-entry:nth-child(3){background:linear-gradient(145deg,#c27cff,#6822c2);border-color:#e2baff;color:white}
+.gm-v3 .v3-nav-icon{display:block;object-fit:contain;flex:none}
+.gm-v3 .v3-stage{position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:218px;height:218px;overflow:hidden;border-radius:18px;background:radial-gradient(ellipse at 50% 65%,#8b38db42,transparent 68%);color:#eee2ff}
+.gm-v3 .v3-mode{position:absolute;z-index:3;top:7px;right:8px;display:flex;gap:3px}
+.gm-v3 .v3-mode button{border:1px solid #8059a5;background:#170d27df;color:#d3bce8;border-radius:8px;min-height:30px;padding:4px 10px;font:700 11px inherit}
+.gm-v3 .v3-mode button[aria-pressed=true]{background:#8a3ed9;border-color:#d9a7ff;color:white}
+.gm-v3 .v3-gpu-render{width:92%;height:80%;object-fit:contain;filter:drop-shadow(0 12px 16px #0009) drop-shadow(0 0 10px #aa52f350);animation:v3-float 4s ease-in-out infinite}
+.gm-v3 .v3-canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+.gm-v3 .v3-canvas:active{cursor:grabbing}
+.gm-v3 .v3-scene-caption{position:absolute;bottom:6px;left:8px;right:8px;text-align:center;font-size:10px;pointer-events:none;color:#d6c0f1}
+.gm-v3 .v3-loading{position:absolute;color:#f0dfff;pointer-events:none}
+.gm-v3 .gm-boosts-hero-art{height:auto;min-height:0;overflow:visible;padding:0;width:100%}
+.gm-v3 .v3-catalog{width:100%;min-width:0;display:flex;flex-direction:column;gap:10px}
+.gm-v3 .v3-catalog .v3-stage{background:radial-gradient(ellipse at 50% 70%,#6e35a6,transparent 70%),#130d20}
+.gm-v3 .v3-catalog-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.gm-v3 .v3-catalog-grid button{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;border:1px solid #8f64b977;border-radius:13px;padding:8px;background:linear-gradient(145deg,#35234c,#1c132a);color:#f6efff}
+.gm-v3 .v3-catalog-grid button[aria-pressed=true]{border-color:#c589ff;box-shadow:inset 0 0 12px #b65dff40}
+.gm-v3 .v3-catalog-grid img{height:65px;width:100%;object-fit:contain}
+.gm-v3 .v3-catalog-grid strong{font-size:12px}
+.gm-v3 .v3-catalog-grid small{font-size:10px;color:#d4bce9}
+.gm-v3 .v3-note{font-size:11px;line-height:1.5;margin:0;color:inherit;opacity:.8}
+.gm-v3 .v3-hardware{background:none!important;box-shadow:none!important;border:0!important}
+.gm-v3 .v3-hardware img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 5px #b95cfd40)}
+.gm-v3 .v3-profile-art{display:flex;flex-direction:column;align-items:center;gap:8px;margin:0 auto 8px}
+.gm-v3 .v3-avatar{position:relative;width:116px;height:116px;display:grid;place-items:center}
+.gm-v3 .v3-avatar img{position:absolute;width:86%;height:86%;object-fit:contain;border-radius:50%}
+.gm-v3 .v3-avatar img.v3-avatar-frame{width:100%;height:100%;border-radius:0;pointer-events:none}
+.gm-v3 .v3-original-avatar{display:none}
+.gm-v3 .v3-avatar-edit{border:1px solid #a573d1;border-radius:10px;background:#452763;color:white;padding:7px 12px;font-size:11px}
+.gm-v3 .v3-avatar-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;width:min(100%,290px)}
+.gm-v3 .v3-avatar-picker button{border:1px solid #9b79bd;border-radius:10px;background:#281839;padding:3px;aspect-ratio:1}
+.gm-v3 .v3-avatar-picker button[aria-pressed=true]{outline:2px solid #d1a0ff;outline-offset:1px}
+.gm-v3 .v3-avatar-picker img{width:100%;height:100%;object-fit:contain}
+.gm-v3 .v3-rank-art{width:52px;height:52px;object-fit:contain;flex:none}
+.gm-v3 .gm-league-head{gap:8px}
+@keyframes v3-float{0%,100%{transform:translateY(2px)}50%{transform:translateY(-5px)}}
+@media(prefers-reduced-motion:reduce){.gm-v3 .v3-gpu-render{animation:none!important}}
+@media(max-width:360px){.gm-v3 .v3-stage{height:185px;min-height:185px}.gm-v3 .v3-catalog-grid img{height:54px}.gm-v3 .v3-nav-icon{width:21px;height:21px}}
