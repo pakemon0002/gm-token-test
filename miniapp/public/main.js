@@ -84,51 +84,79 @@ function v3Load() { const w = window; if (w.GM_MODELS && w.GMViewer)
         await v3Script('model-data.js'); if (!w.GMViewer)
         await v3Script('viewer.js'); if (!w.GMViewer || !w.GM_MODELS)
         throw Error('3D недоступно'); })().catch(err => { v3ViewerLoad = null; throw err; }); return v3ViewerLoad; }
-function V3Scene({ gpu = '4060', running = true, rig = true }) {
-    const [mode, setMode] = React.useState('2d');
-    const [failed, setFailed] = React.useState(false);
-    const [ready, setReady] = React.useState(false);
-    const canvas = React.useRef(null);
-    const controller = React.useRef(null);
-    const latest = React.useRef({ gpu, running, rig });
-    React.useEffect(() => { latest.current = { gpu, running, rig }; const c = controller.current; if (c && canvas.current) {
-        canvas.current.dataset.cards = gpu;
-        c.setModel(rig ? 'rig-live' : 'gpu-' + gpu);
-        c.setActive(running);
-    } }, [gpu, running, rig]);
-    React.useEffect(() => { if (mode !== '3d')
-        return; let dead = false; setReady(false); void v3Load().then(() => { if (dead || !canvas.current)
-        return; const v = latest.current; canvas.current.dataset.cards = v.gpu; const c = window.GMViewer.mount(canvas.current, v.rig ? 'rig-live' : 'gpu-' + v.gpu); if (!c)
-        throw Error('3D недоступно'); controller.current = c; c.setActive(v.running && !window.matchMedia('(prefers-reduced-motion: reduce)').matches); setReady(true); }).catch(() => { if (!dead) {
-        setFailed(true);
-        setMode('2d');
-    } }); return () => { dead = true; controller.current?.dispose(); controller.current = null; }; }, [mode]);
-    return React.createElement("div", { className: "gm-pulse-stage v3-stage" },
-        React.createElement("div", { className: "v3-mode" },
-            React.createElement("button", { type: "button", "aria-pressed": mode === '2d', onClick: () => setMode('2d') }, "2D"),
-            React.createElement("button", { type: "button", "aria-pressed": mode === '3d', onClick: () => { setFailed(false); setMode('3d'); } }, "3D")),
-        mode === '3d' ? React.createElement(React.Fragment, null,
-            React.createElement("canvas", { ref: canvas, className: "v3-canvas", "aria-label": "3D-\u043C\u043E\u0434\u0435\u043B\u044C: \u043F\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0434\u043B\u044F \u0432\u0440\u0430\u0449\u0435\u043D\u0438\u044F" }),
-            !ready && React.createElement("small", { className: "v3-loading" }, "\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430 3D\u2026")) : React.createElement("img", { className: "v3-gpu-render", src: V3 + '01-gpu/gpu-' + gpu + '.png', alt: 'RTX ' + gpu, draggable: "false" }),
-        React.createElement("div", { className: "v3-scene-caption" }, failed ? '3D недоступно · показан рендер' : mode === '3d' ? 'Проведи пальцем для вращения' : 'RTX ' + gpu + ' · визуализация'));
+// V3 components use class lifecycle methods: production ships React 16.0,
+// whose offline hook adapter belongs exclusively to the root App.
+class V3Scene extends React.Component {
+    state = { mode: '2d', failed: false, ready: false };
+    canvas = null;
+    controller = null;
+    generation = 0;
+    mounted = false;
+    componentDidMount() { this.mounted = true; }
+    componentDidUpdate(prevProps, prevState) {
+        if (prevState.mode !== this.state.mode) {
+            this.stopViewer();
+            if (this.state.mode === '3d')
+                this.startViewer();
+            return;
+        }
+        if (this.controller && this.canvas) {
+            const gpu = this.props.gpu || '4060';
+            if (prevProps.gpu !== this.props.gpu || prevProps.rig !== this.props.rig) {
+                this.canvas.dataset.cards = gpu;
+                this.controller.setModel(this.props.rig === false ? 'gpu-' + gpu : 'rig-live');
+            }
+            if (prevProps.running !== this.props.running)
+                this.controller.setActive(this.isRunning());
+        }
+    }
+    componentWillUnmount() { this.mounted = false; this.stopViewer(); }
+    isRunning() { return this.props.running !== false && !(typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+    stopViewer() { this.generation++; if (this.controller) {
+        this.controller.dispose();
+        this.controller = null;
+    } }
+    startViewer() { const token = ++this.generation; this.setState({ ready: false }); void v3Load().then(() => { if (!this.mounted || token !== this.generation || !this.canvas)
+        return; const gpu = this.props.gpu || '4060'; this.canvas.dataset.cards = gpu; const c = window.GMViewer.mount(this.canvas, this.props.rig === false ? 'gpu-' + gpu : 'rig-live'); if (!c)
+        throw Error('3D недоступно'); this.controller = c; c.setActive(this.isRunning()); this.setState({ ready: true }); }).catch(() => { if (this.mounted && token === this.generation) {
+        this.stopViewer();
+        this.setState({ failed: true, mode: '2d', ready: false });
+    } }); }
+    render() {
+        const gpu = this.props.gpu || '4060', { mode, failed, ready } = this.state;
+        return React.createElement("div", { className: "gm-pulse-stage v3-stage" },
+            React.createElement("div", { className: "v3-mode" },
+                React.createElement("button", { type: "button", "aria-pressed": mode === '2d', onClick: () => this.setState({ mode: '2d' }) }, "2D"),
+                React.createElement("button", { type: "button", "aria-pressed": mode === '3d', onClick: () => this.setState({ failed: false, mode: '3d' }) }, "3D")),
+            mode === '3d' ? React.createElement(React.Fragment, null,
+                React.createElement("canvas", { ref: (node) => { this.canvas = node; }, className: "v3-canvas", "aria-label": "3D-\u043C\u043E\u0434\u0435\u043B\u044C: \u043F\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0434\u043B\u044F \u0432\u0440\u0430\u0449\u0435\u043D\u0438\u044F" }),
+                !ready && React.createElement("small", { className: "v3-loading" }, "\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430 3D\u2026")) : React.createElement("img", { className: "v3-gpu-render", src: V3 + '01-gpu/gpu-' + gpu + '.png', alt: 'RTX ' + gpu, draggable: "false" }),
+            React.createElement("div", { className: "v3-scene-caption" }, failed ? '3D недоступно · показан рендер' : mode === '3d' ? 'Проведи пальцем для вращения' : 'RTX ' + gpu + ' · визуализация'));
+    }
 }
-function V3Catalog() { const [selected, setSelected] = React.useState('4060'); return React.createElement("section", { className: "v3-catalog" },
-    React.createElement(V3Scene, { gpu: selected, running: true, rig: false }),
-    React.createElement("div", { className: "v3-catalog-grid" }, V3_GPU.map(gpu => React.createElement("button", { type: "button", key: gpu, "aria-pressed": selected === gpu, onClick: () => setSelected(gpu) },
-        React.createElement("img", { src: V3 + '01-gpu/gpu-' + gpu + '.png', alt: "" }),
-        React.createElement("strong", null,
-            "RTX ",
-            gpu),
-        React.createElement("small", null, selected === gpu ? 'Выбрано' : 'Посмотреть')))),
-    React.createElement("p", { className: "v3-note" }, "\u041F\u0440\u043E\u0441\u043C\u043E\u0442\u0440 \u043E\u0431\u043E\u0440\u0443\u0434\u043E\u0432\u0430\u043D\u0438\u044F. \u0412\u044B\u0431\u043E\u0440 \u043C\u043E\u0434\u0435\u043B\u0438 \u043D\u0435 \u043C\u0435\u043D\u044F\u0435\u0442 \u0438\u0433\u0440\u043E\u0432\u043E\u0439 \u0431\u0430\u043B\u0430\u043D\u0441 \u0438\u043B\u0438 \u0441\u043A\u043E\u0440\u043E\u0441\u0442\u044C \u043D\u0430\u0447\u0438\u0441\u043B\u0435\u043D\u0438\u0439.")); }
-function V3ProfileArt({ userId }) { const key = 'gm_v3_avatar_' + userId; const [choice, setChoice] = React.useState(V3_AVATARS.includes(store.getItem(key) || '') ? store.getItem(key) : 'hood'); const [open, setOpen] = React.useState(false); return React.createElement("div", { className: "v3-profile-art" },
-    React.createElement("div", { className: "v3-avatar" },
-        React.createElement("img", { src: V3 + '03-avatars/avatar-' + choice + '.png', alt: "\u0418\u0433\u0440\u043E\u0432\u043E\u0439 \u0430\u0432\u0430\u0442\u0430\u0440" }),
-        React.createElement("img", { className: "v3-avatar-frame", src: V3 + '05-frames/frame-purple.png', alt: "" })),
-    React.createElement("button", { type: "button", className: "v3-avatar-edit", onClick: () => setOpen(!open), "aria-expanded": open }, "\u0421\u043C\u0435\u043D\u0438\u0442\u044C \u0430\u0432\u0430\u0442\u0430\u0440"),
-    open && React.createElement("div", { className: "v3-avatar-picker" }, V3_AVATARS.map((name, i) => React.createElement("button", { type: "button", key: name, "aria-label": 'Аватар ' + (i + 1), "aria-pressed": choice === name, onClick: () => { setChoice(name); if (userId)
-            store.setItem(key, name); setOpen(false); } },
-        React.createElement("img", { src: V3 + '03-avatars/avatar-' + name + '.png', alt: "" }))))); }
+class V3Catalog extends React.Component {
+    state = { selected: '4060' };
+    render() { const selected = this.state.selected; return React.createElement("section", { className: "v3-catalog" },
+        React.createElement(V3Scene, { gpu: selected, running: true, rig: false }),
+        React.createElement("div", { className: "v3-catalog-grid" }, V3_GPU.map(gpu => React.createElement("button", { type: "button", key: gpu, "aria-pressed": selected === gpu, onClick: () => this.setState({ selected: gpu }) },
+            React.createElement("img", { src: V3 + '01-gpu/gpu-' + gpu + '.png', alt: "" }),
+            React.createElement("strong", null,
+                "RTX ",
+                gpu),
+            React.createElement("small", null, selected === gpu ? 'Выбрано' : 'Посмотреть')))),
+        React.createElement("p", { className: "v3-note" }, "\u041F\u0440\u043E\u0441\u043C\u043E\u0442\u0440 \u043E\u0431\u043E\u0440\u0443\u0434\u043E\u0432\u0430\u043D\u0438\u044F. \u0412\u044B\u0431\u043E\u0440 \u043C\u043E\u0434\u0435\u043B\u0438 \u043D\u0435 \u043C\u0435\u043D\u044F\u0435\u0442 \u0438\u0433\u0440\u043E\u0432\u043E\u0439 \u0431\u0430\u043B\u0430\u043D\u0441 \u0438\u043B\u0438 \u0441\u043A\u043E\u0440\u043E\u0441\u0442\u044C \u043D\u0430\u0447\u0438\u0441\u043B\u0435\u043D\u0438\u0439.")); }
+}
+class V3ProfileArt extends React.Component {
+    constructor(props) { super(props); const stored = store.getItem('gm_v3_avatar_' + props.userId) || ''; this.state = { choice: V3_AVATARS.includes(stored) ? stored : 'hood', open: false }; }
+    render() { const { choice, open } = this.state; const userId = this.props.userId; return React.createElement("div", { className: "v3-profile-art" },
+        React.createElement("div", { className: "v3-avatar" },
+            React.createElement("img", { src: V3 + '03-avatars/avatar-' + choice + '.png', alt: "\u0418\u0433\u0440\u043E\u0432\u043E\u0439 \u0430\u0432\u0430\u0442\u0430\u0440" }),
+            React.createElement("img", { className: "v3-avatar-frame", src: V3 + '05-frames/frame-purple.png', alt: "" })),
+        React.createElement("button", { type: "button", className: "v3-avatar-edit", onClick: () => this.setState({ open: !open }), "aria-expanded": open }, "\u0421\u043C\u0435\u043D\u0438\u0442\u044C \u0430\u0432\u0430\u0442\u0430\u0440"),
+        open && React.createElement("div", { className: "v3-avatar-picker" }, V3_AVATARS.map((name, i) => React.createElement("button", { type: "button", key: name, "aria-label": 'Аватар ' + (i + 1), "aria-pressed": choice === name, onClick: () => { if (userId)
+                store.setItem('gm_v3_avatar_' + userId, name); this.setState({ choice: name, open: false }); } },
+            React.createElement("img", { src: V3 + '03-avatars/avatar-' + name + '.png', alt: "" }))))); }
+}
 function GButton({ children, onClick, light = false, disabled = false, icon, theme }) { return React.createElement("button", { type: "button", className: 'capsule ' + (light ? 'pale' : 'dark-cap'), onClick: onClick, disabled: disabled },
     icon && React.createElement(Icon, { name: icon, theme: theme, size: 22 }),
     React.createElement("span", null, children)); }
