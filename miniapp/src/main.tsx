@@ -77,6 +77,21 @@ function PulseReactor({running=true}:{running?:boolean}){
  </div>;
 }
 
+const V3='/assets/gpu-v3/';
+const V3_GPU=['4060','4070','4080','4090'];
+const V3_AVATARS=['hood','cyborg','robot','pilot'];
+const V3_RANKS=['bronze','silver','gold','platinum','amethyst','diamond','master','legend'];
+let v3ViewerLoad:Promise<void>|null=null;
+function v3Script(file:string):Promise<void>{return new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=V3+'3d/'+file;script.async=true;script.onload=()=>resolve();script.onerror=()=>{script.remove();reject(Error('3D недоступно'))};document.head.appendChild(script)})}
+function v3Load(){const w=window as any;if(w.GM_MODELS&&w.GMViewer)return Promise.resolve();if(!v3ViewerLoad)v3ViewerLoad=(async()=>{if(!w.GM_MODELS)await v3Script('model-data.js');if(!w.GMViewer)await v3Script('viewer.js');if(!w.GMViewer||!w.GM_MODELS)throw Error('3D недоступно')})().catch(err=>{v3ViewerLoad=null;throw err});return v3ViewerLoad}
+function V3Scene({gpu='4060',running=true,rig=true}:{gpu?:string;running?:boolean;rig?:boolean}){
+ const [mode,setMode]=React.useState('2d');const [failed,setFailed]=React.useState(false);const [ready,setReady]=React.useState(false);const canvas=React.useRef(null);const controller=React.useRef(null);const latest=React.useRef({gpu,running,rig});
+ React.useEffect(()=>{latest.current={gpu,running,rig};const c=controller.current;if(c&&canvas.current){canvas.current.dataset.cards=gpu;c.setModel(rig?'rig-live':'gpu-'+gpu);c.setActive(running)}},[gpu,running,rig]);
+ React.useEffect(()=>{if(mode!=='3d')return;let dead=false;setReady(false);void v3Load().then(()=>{if(dead||!canvas.current)return;const v=latest.current;canvas.current.dataset.cards=v.gpu;const c=(window as any).GMViewer.mount(canvas.current,v.rig?'rig-live':'gpu-'+v.gpu);if(!c)throw Error('3D недоступно');controller.current=c;c.setActive(v.running&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches);setReady(true)}).catch(()=>{if(!dead){setFailed(true);setMode('2d')}});return()=>{dead=true;controller.current?.dispose();controller.current=null}},[mode]);
+ return <div className="gm-pulse-stage v3-stage"><div className="v3-mode"><button type="button" aria-pressed={mode==='2d'} onClick={()=>setMode('2d')}>2D</button><button type="button" aria-pressed={mode==='3d'} onClick={()=>{setFailed(false);setMode('3d')}}>3D</button></div>{mode==='3d'?<><canvas ref={canvas} className="v3-canvas" aria-label="3D-модель: перетащите для вращения"/>{!ready&&<small className="v3-loading">Загрузка 3D…</small>}</>:<img className="v3-gpu-render" src={V3+'01-gpu/gpu-'+gpu+'.png'} alt={'RTX '+gpu} draggable="false"/>}<div className="v3-scene-caption">{failed?'3D недоступно · показан рендер':mode==='3d'?'Проведи пальцем для вращения':'RTX '+gpu+' · визуализация'}</div></div>
+}
+function V3Catalog(){const [selected,setSelected]=React.useState('4060');return <section className="v3-catalog"><V3Scene gpu={selected} running={true} rig={false}/><div className="v3-catalog-grid">{V3_GPU.map(gpu=><button type="button" key={gpu} aria-pressed={selected===gpu} onClick={()=>setSelected(gpu)}><img src={V3+'01-gpu/gpu-'+gpu+'.png'} alt=""/><strong>RTX {gpu}</strong><small>{selected===gpu?'Выбрано':'Посмотреть'}</small></button>)}</div><p className="v3-note">Просмотр оборудования. Выбор модели не меняет игровой баланс или скорость начислений.</p></section>}
+function V3ProfileArt({userId}:{userId:string}){const key='gm_v3_avatar_'+userId;const [choice,setChoice]=React.useState(V3_AVATARS.includes(store.getItem(key)||'')?store.getItem(key):'hood');const [open,setOpen]=React.useState(false);return <div className="v3-profile-art"><div className="v3-avatar"><img src={V3+'03-avatars/avatar-'+choice+'.png'} alt="Игровой аватар"/><img className="v3-avatar-frame" src={V3+'05-frames/frame-purple.png'} alt=""/></div><button type="button" className="v3-avatar-edit" onClick={()=>setOpen(!open)} aria-expanded={open}>Сменить аватар</button>{open&&<div className="v3-avatar-picker">{V3_AVATARS.map((name,i)=><button type="button" key={name} aria-label={'Аватар '+(i+1)} aria-pressed={choice===name} onClick={()=>{setChoice(name);if(userId)store.setItem(key,name);setOpen(false)}}><img src={V3+'03-avatars/avatar-'+name+'.png'} alt=""/></button>)}</div>}</div>}
 function GButton({children,onClick,light=false,disabled=false,icon,theme}:{children?:any,onClick?:any,light?:boolean,disabled?:boolean,icon?:string,theme:Theme}){return <button type="button" className={'capsule '+(light?'pale':'dark-cap')} onClick={onClick} disabled={disabled}>{icon&&<Icon name={icon} theme={theme} size={22}/>}<span>{children}</span></button>;}
 function SparkLine({theme,compact=false}:{theme:Theme,compact?:boolean}){
  return <div className="real-data-empty" role="status">График баланса появится после накопления подтверждённой истории</div>;
@@ -170,7 +185,7 @@ function Candles({theme,candles=[],selected=null,onSelect=(_time:any)=>{},interv
  );
 }
 
-function BarButton({name,title,theme,selected=false,onClick}:{key?:string,name:string,title:string,theme:Theme,selected?:boolean,onClick:()=>void}){return <button className={'nav-entry '+(selected?'active':'')} onClick={onClick} aria-label={title} aria-current={selected?'page':undefined}><Icon theme={theme} name={name} size={23}/><span>{title}</span></button>}
+function BarButton({name,title,theme,selected=false,onClick}:{key?:string,name:string,title:string,theme:Theme,selected?:boolean,onClick:()=>void}){return <button className={'nav-entry '+(selected?'active':'')} onClick={onClick} aria-label={title} aria-current={selected?'page':undefined}><img className="v3-nav-icon" width="23" height="23" alt="" src={V3+'04-icons/'+({tasks:'checklist',coins:'upgrades',lightning:'farm',wallet:'wallet',more:'settings'}[name]||'home')+'-'+(selected?'active':'default')+'.svg'}/><span>{title}</span></button>}
 async function gmFetchJson(path,opts={},retries=0){
  let lastError;
  for(let i=0;i<=retries;i++){
@@ -1696,12 +1711,14 @@ function Tasks(){
   return e(React.Fragment,null,
    top(L('profile'),false,'settings'),
    e('div',{className:'profile-hero gm-profile-v2'},
-    e('div',{className:'gm-profile-avatar '+(chosen==='standard'?'': 'gm-profile-avatar-special')},
+    e(V3ProfileArt,{key:String(user?.id||''),userId:String(user?.id||'')}),
+    e('div',{className:'gm-profile-avatar v3-original-avatar '+(chosen==='standard'?'': 'gm-profile-avatar-special')},
      e(PlayerAvatar,{name:user?.username||user?.first_name||'GM PLAYER',photoUrl:user?.photo_url||'',size:'large'})),
     e('h2',null,user?.username||user?.first_name||'GM PLAYER'),
     e('p',null,'#'+String(user?.id||'')),
     cosmetics.founder_slot?e('span',{className:'gm-founders-medal'},icon('crown',18),' FOUNDERS #'+cosmetics.founder_slot):null),
    e('div',{className:'gm-league-card gm-premium-card'},e('div',{className:'gm-league-head'},
+    e('img',{className:'v3-rank-art',src:V3+'06-ranks/rank-'+(Math.max(0,Math.min(7,leagues.findIndex((x:any)=>x.name===league.name)))+1)+'-'+V3_RANKS[Math.max(0,Math.min(7,leagues.findIndex((x:any)=>x.name===league.name)))]+'.png',alt:''}),
     e('div',null,e('small',null,'GM LEAGUE'),e('h3',null,league.name)),
     e('b',null,nf(wallet.xp,0)+' XP')),
     e('div',{className:'gm-upgrades-progress'},e('span',{style:{width:progress+'%'}})),
@@ -1808,12 +1825,12 @@ function Reward() {
    top(L('mining'),true,'info'),
    e('header',{className:'gm-pulse-header'},
     e('div',{className:'gm-pulse-header-mark'},e(Brand,{theme,size:37}),
-     e('div',null,e('b',null,'GM PULSE'),e('small',null,'GM TOKEN · FARM STATION'))),
+     e('div',null,e('b',null,'GM TOKEN V3'),e('small',null,'GPU FARM STATION'))),
     e('button',{type:'button',className:'gm-pulse-wallet',onClick:openWalletFromMining,'aria-label':'Подключить или открыть TON-кошелёк'},icon('wallet',21))),
    e('section',{className:'gm-pulse-hero'},
     e('div',{className:'gm-pulse-kicker'},e('span',{className:'gm-pulse-kicker-dot'}),'PULSE ENGINE · GAME MODE'),
-    e('div',{className:'gm-pulse-hero-title'},e('strong',null,'Твоя энергия GM'),e('small',null,'Серебряное ядро. Один фарм. Всё просто.')),
-    e(PulseReactor,{running:true}),
+    e('div',{className:'gm-pulse-hero-title'},e('strong',null,'Твоя GPU-ферма'),e('small',null,'Игровой майнинг · 3D-визуализация')),
+    e(V3Scene,{gpu:'4060',running:true,rig:true}),
     e('div',{className:'gm-pulse-runtime'},
      e('span',{className:'gm-pulse-status-dot'}),
      e('b',null,'Игровая добыча активна'),
@@ -1920,11 +1937,11 @@ function Reward() {
   return e('div',{className:'gm-boosts-page'},
    top('Улучшения',true,'info'),
    e('header',{className:'gm-boosts-heading'},
-    e('span',null,'GM PULSE · UPGRADE MODULES'),
+    e('span',null,'GM TOKEN V3 · GPU EQUIPMENT'),
     e('h1',null,'Прокачка фарма'),
     e('p',null,'Модули будущего TON FARM. Сейчас это интерактивный просмотр оформления, без оплаты.')),
    e('section',{className:'gm-boosts-hero gm-premium-card'},
-    e('div',{className:'gm-boosts-hero-art'},e(PulseReactor,{running:true})),
+    e('div',{className:'gm-boosts-hero-art'},e(V3Catalog)),
     e('div',{className:'gm-boosts-hero-info'},
      e('div',null,e('small',null,'ТВОЯ СТАНЦИЯ'),e('strong',null,'Уровень '+level)),
      e('div',null,e('small',null,'ИГРОВАЯ ДОБЫЧА'),e('strong',null,nf(rate,2)+' GM/сутки')))),
@@ -1932,7 +1949,7 @@ function Reward() {
     e('div',{className:'gm-boosts-section-heading'},e('strong',null,'Выбери модуль'),e('small',null,'3 варианта · просмотр')),
     ...modules.map((mod:any)=>e('details',{key:mod.id,className:'gm-pulse-boost gm-boosts-card gm-pulse-boost-'+mod.id},
      e('summary',null,
-      e('span',{className:'gm-pulse-boost-emblem'},e('span',null,'GM'),e('i',{className:'gm-pulse-boost-shine'})),
+      e('span',{className:'gm-pulse-boost-emblem v3-hardware'},e('img',{src:V3+'02-hardware/'+({starter:'liquid-cooling',core:'power-supply',ultra:'processor'}[mod.id]||'processor')+'.png',alt:''})),
       e('span',{className:'gm-pulse-boost-description'},
        e('b',null,mod.name),
        e('small',null,mod.caption),
@@ -2737,7 +2754,7 @@ function Streak(){const n=Math.max(0,Math.floor(Number(liveState?.daily?.streak?
  </main>}
  let view:any;
  switch(screen){case 'home':view=Home();break;case 'trade':view=Trading();break;case 'earn':view=Earn();break;case 'tasks':view=Tasks();break;case 'leaderboard':view=Leaderboard();break;case 'profile':view=Profile();break;case 'reward':view=Reward();break;case 'splash':view=Splash();break;case 'intro':view=Intro();break;case 'mining':view=Mining();break;case 'boosts':view=Boosts();break;case 'vault':view=Vault();break;case 'wallet':view=WalletConnection();break;case 'shop':view=Shop();break;case 'boxes':view=Boxes();break;case 'referrals':view=Referrals();break;case 'history':view=History();break;case 'settings':view=Settings();break;case 'support':view=Support();break;case 'admin':view=['owner','coowner'].includes(liveRole)?Admin():Home();break;case 'achievements':view=Achievements();break;case 'more':view=More();break;case 'streak':view = Reward();break;default:view=Home();}
- return <div className={'application theme-'+theme+(webapp?.initData?' is-telegram':'')+(screen==='splash'?' gm-splash-active':'')}>
+ return <div className={'application theme-'+theme+(webapp?.initData?' is-telegram':'')+(screen==='splash'?' gm-splash-active':'')+' gm-v3'}>
  <aside className="desktop-toolbar"><div className="toolbar-logo"><Brand theme={theme} size={42}/><span><b>GM TOKEN</b><small>Оригинальные эскизы · интерактивная сборка</small></span></div><div className="toolbar-tabs"><button onClick={()=>setTheme('light')} className={isLight?'chosen':''}>Light</button><button onClick={()=>setTheme('dark')} className={!isLight?'chosen':''}>Dark</button></div><div className="toolbar-links">{(['mining','boosts','tasks','wallet','more','home','trade','leaderboard','profile','vault','shop','support','admin'] as Route[]).map(s=><button key={s} className={screen===s?'chosen':''} onClick={()=>goto(s)}>{s}</button>)}</div><p>Оригинальные PNG · 54 иконки × 4 варианта · без подмены сторонними пиктограммами</p></aside>
  <div className="device-stage"><div className={'phone-frame'+(screen==='splash'?' gm-splash-frame':'')}><div className={'phone-scroll '+((screen==='splash')?'no-scroll gm-splash-host':'')}>{view}</div>{!['splash','intro'].includes(screen)&&bottom()}<div className="home-indicator"/></div><div className="underphone"><span className="demo-pill">{'Серверная авторизация · виртуальные GM/CR'}</span><button onClick={()=>goto('splash')}>Заставка</button><button onClick={()=>goto('home')}>Home</button><button onClick={()=>setTheme(isLight?'dark':'light')}>Сменить тему</button></div><small className="status-note">{backendStatus}</small></div>
  {toast&&<div className={'toast-message '+(/ошиб|недоступ|error|отмен/i.test(toast)?'toast-error':'toast-info')} role="status" aria-live="polite">

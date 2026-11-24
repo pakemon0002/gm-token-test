@@ -58,6 +58,6 @@ test('Five-button dock and upgrade cards are responsive and cache-busted in Tele
   '@media(prefers-reduced-motion:reduce)'])
   assert.ok(css.includes(term),'styling missing '+term);
  const html=read('miniapp/public/preview.html');
- assert.ok(html.includes('main.js?v=gm-pulse-nav-20261123-v2'));
- assert.ok(html.includes('styles.css?v=gm-pulse-nav-20261123-v2'));
+ assert.ok(html.includes('main.js?v=gm-gpu-v3-20261124'));
+ assert.ok(html.includes('styles.css?v=gm-gpu-v3-20261124'));
 });

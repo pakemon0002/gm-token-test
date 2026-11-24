@@ -1,0 +1,31 @@
+name: GPU V3 compile and verify
+on:
+  push:
+    branches: [design/gpu-v3-live]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - run: npm install --prefix miniapp --no-fund --no-audit
+      - run: npm run --prefix miniapp build:standalone
+      - run: node --check miniapp/public/main.js
+      - run: node --test tests/gpu-v3-assets.test.mjs
+      - run: npm test
+      - name: Sync validated compiled WebView assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add miniapp/public/main.js miniapp/public/styles.css
+          if ! git diff --cached --quiet; then
+            git commit -m "build: sync V3 WebView assets [skip ci]"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
