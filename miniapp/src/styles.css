@@ -3394,7 +3394,7 @@ html,body,.application,.application button,.application input,.application texta
 .gm-v3 .v3-nav-icon{display:block;object-fit:contain;flex:none}
 .gm-v3 .v3-stage{position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:218px;height:218px;overflow:hidden;border-radius:18px;background:radial-gradient(ellipse at 50% 65%,#8b38db42,transparent 68%);color:#eee2ff}
 .gm-v3 .v3-mode{position:absolute;z-index:3;top:7px;right:8px;display:flex;gap:3px}
-.gm-v3 .v3-mode button{border:1px solid #8059a5;background:#170d27df;color:#d3bce8;border-radius:8px;min-height:30px;padding:4px 10px;font:700 11px inherit}
+.gm-v3 .v3-mode button{border:1px solid #8059a5;background:#170d27df;color:#d3bce8;border-radius:8px;min-height:30px;padding:4px 10px;font-size:11px;font-weight:700;font-family:inherit}
 .gm-v3 .v3-mode button[aria-pressed=true]{background:#8a3ed9;border-color:#d9a7ff;color:white}
 .gm-v3 .v3-gpu-render{width:92%;height:80%;object-fit:contain;filter:drop-shadow(0 12px 16px #0009) drop-shadow(0 0 10px #aa52f350);animation:v3-float 4s ease-in-out infinite}
 .gm-v3 .v3-canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
@@ -3417,7 +3417,7 @@ html,body,.application,.application button,.application input,.application texta
 .gm-v3 .v3-avatar{position:relative;width:116px;height:116px;display:grid;place-items:center}
 .gm-v3 .v3-avatar img{position:absolute;width:86%;height:86%;object-fit:contain;border-radius:50%}
 .gm-v3 .v3-avatar img.v3-avatar-frame{width:100%;height:100%;border-radius:0;pointer-events:none}
-.gm-v3 .v3-original-avatar{display:none}
+.gm-v3 .v3-original-avatar:not(.gm-profile-avatar-special){display:none}
 .gm-v3 .v3-avatar-edit{border:1px solid #a573d1;border-radius:10px;background:#452763;color:white;padding:7px 12px;font-size:11px}
 .gm-v3 .v3-avatar-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;width:min(100%,290px)}
 .gm-v3 .v3-avatar-picker button{border:1px solid #9b79bd;border-radius:10px;background:#281839;padding:3px;aspect-ratio:1}
@@ -3428,3 +3428,5 @@ html,body,.application,.application button,.application input,.application texta
 @keyframes v3-float{0%,100%{transform:translateY(2px)}50%{transform:translateY(-5px)}}
 @media(prefers-reduced-motion:reduce){.gm-v3 .v3-gpu-render{animation:none!important}}
 @media(max-width:360px){.gm-v3 .v3-stage{height:185px;min-height:185px}.gm-v3 .v3-catalog-grid img{height:54px}.gm-v3 .v3-nav-icon{width:21px;height:21px}}
+
+.gm-v3 .gm-boosts-hero{display:flex;flex-direction:column;align-items:stretch;gap:12px}.gm-v3 .gm-boosts-hero-info{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px}
