@@ -9,10 +9,24 @@ const fmt=G.fmt,price=G.priceText,card=id=>G.find(id);
 const icon=(n,active=true)=>'<img class="icon" alt="" src="'+base+'04-icons/'+n+'-'+(active?'active':'default')+'.svg">';
 const art=(folder,name,cls='',alt='')=>'<img class="'+cls+'" alt="'+alt+'" src="'+base+folder+'/'+name+'.png" draggable="false">';
 const gpuArt=(c,cls='')=>art('01-gpu','gpu-'+c.art,cls+' gpu-'+c.brand.toLowerCase(),c.name+' — условный рендер');
-function motionGpu(c){
- const count=['4080','4090'].includes(c.art)?3:2, radius=count===3?34:43, xs=count===3?[91,170,249]:[119,221];
- const fan=(x,i)=>'<g transform="translate('+x+' 77)"><circle r="'+(radius+5)+'" fill="#09131e" stroke="#547a96" stroke-width="2"/><g class="volt-rotor" style="--speed:'+(i%2?.68:.85)+'s">'+Array.from({length:9},(_,k)=>'<path transform="rotate('+k*40+') scale('+(radius/43)+')" d="M0 -8C5 -31 23 -42 32 -29C33 -18 21 -7 8 1Z" fill="#3b536a" stroke="#7496b4" stroke-width=".6"/>').join('')+'</g><circle r="10" fill="#172a3e" stroke="#59c9ff"/><path d="M-3 -5h6l-3 4h4l-7 7 2-5h-4z" fill="#b3eaff"/></g>';
- return '<svg class="motion-gpu" viewBox="0 0 340 160" role="img" aria-label="'+c.name+' — анимация вентиляторов"><defs><linearGradient id="metal" x2=".2" y2="1"><stop stop-color="#829caf"/><stop offset=".17" stop-color="#314b61"/><stop offset=".7" stop-color="#0e1b2a"/><stop offset="1" stop-color="#304d62"/></linearGradient></defs><path d="M20 26 38 10h272l20 19-14 17H20z" fill="#31495d" stroke="#7995a8"/><path d="M20 26h296v103l-13 10H20z" fill="url(#metal)" stroke="#7093ad" stroke-width="2"/><path d="M9 17h14v133H9z" fill="#8c9eac" stroke="#bdcbd8"/><path d="M30 34h28l13-10h195l13 10h27M30 122h28l13 10h195l13-10h27" fill="none" stroke="#4dc4ff" stroke-width="3" class="motion-led"/>'+xs.map(fan).join('')+'<path d="M110 139h103v8H110z" fill="#b49a57"/><text x="170" y="20" fill="#b9d2e8" font-size="9" font-weight="700" text-anchor="middle">VOLT • '+c.name+'</text></svg>';
+// Keep the same GPU scene for both stopped and running states.
+let gpuSlot=null,gpuController=null,gpuGeneration=0;
+function gpuVisual(c,running){
+ return '<div class="gpu-visual" data-model="'+c.art+'" data-running="'+running+'" data-card="'+c.id+'">'+gpuArt(c,'hero-gpu')+'<canvas class="gpu-live-canvas" aria-label="Объёмная игровая видеокарта"></canvas><div class="gpu-led"></div></div>';
+}
+function syncGpu(){
+ const next=screen.querySelector('.gpu-visual');
+ if(next&&gpuSlot&&next.dataset.model===gpuSlot.dataset.model){
+  gpuSlot.dataset.running=next.dataset.running;gpuSlot.dataset.card=next.dataset.card;next.replaceWith(gpuSlot);
+  gpuController?.setActive(gpuSlot.dataset.running==='true');return;
+ }
+ ++gpuGeneration;gpuController?.dispose();gpuController=null;gpuSlot=next;if(!next)return;
+ const generation=gpuGeneration,canvas=next.querySelector('canvas');
+ if(!window.VoltGpu3D)return;
+ Promise.resolve(window.VoltGpu3D.mount(canvas,next.dataset.model,{active:next.dataset.running==='true'})).then(controller=>{
+  if(generation!==gpuGeneration||gpuSlot!==next){controller.dispose();return}
+  gpuController=controller;controller.setActive(next.dataset.running==='true');next.dataset.ready='true';
+ }).catch(()=>{if(generation===gpuGeneration&&gpuSlot===next)next.dataset.ready='false'});
 }
 const btn=(action,label,i,cls='secondary',disabled=false)=>'<button class="'+cls+'" data-action="'+action+'" '+(disabled?'disabled':'')+'>'+ (i?icon(i):'')+'<span>'+label+'</span></button>';
 const stat=(i,t,v)=>'<div class="statline">'+icon(i)+'<span>'+t+'</span><b>'+v+'</b></div>';
@@ -32,7 +46,7 @@ function render(){
  const label='<div class="game-label"><i></i> ИГРОВЫЕ GRAM · СИМУЛЯЦИЯ</div>';
  if(route==='farm'){
  const c=card(selected)||card('rx570'),daily=G.rate(s);
- screen.innerHTML=label+'<div class="mode"><span>'+c.name+' · '+c.ram+'</span><span>'+ (s.active.includes(c.id)?'Установлена':'Не установлена')+'</span></div><div class="hero '+(s.running?'running':'')+'">'+art('02-hardware','pedestal','hero-platform')+(s.running&&s.active.includes(c.id)?motionGpu(c):gpuArt(c,'hero-gpu'))+'<div class="work-indicator '+(s.running&&s.active.includes(c.id)?'is-running':'')+'"><i></i>'+(s.running&&s.active.includes(c.id)?'Вентиляторы работают':'Ожидание')+'</div>'+'</div><div class="level"><strong>Моя ферма</strong><small>Уровень '+value('level',level())+'</small><div class="progress"><i data-value="progress" style="width:'+(s.total%G.UNIT)/G.UNIT*100+'%"></i></div></div><div class="metrics"><div class="metric-main"><b>Накоплено в ферме</b><strong>'+value('pending',fmt(s.pending))+'</strong><small>GRAM · игровые</small></div><div class="metric-side">'+stat('bolt','За сутки',fmt(daily))+stat('clock','За час',fmt(Math.floor(daily/24)))+stat('chip','Слоты',s.active.length+'/'+G.capacity(s))+'</div></div>'+btn('claim','Собрать GRAM','coins','primary',!s.pending)+'<div class="shortcuts">'+btn('toggle',s.running?'Остановить':'Запустить','power')+btn('go:upgrades','Улучшения','upgrades')+'</div><h2 class="section-title">Мои видеокарты <small>'+s.owned.length+' шт.</small></h2><div class="inventory">'+s.owned.map(id=>'<button data-action="select:'+id+'" aria-label="Выбрать '+card(id).name+'" class="'+(selected===id?'selected':'')+(s.running&&s.active.includes(id)?' card-working':'')+'">'+gpuArt(card(id),'gpu')+'<small>'+card(id).name+'</small></button>').join('')+'<button data-action="go:shop" aria-label="Каталог">'+icon('plus')+'</button></div><div class="panel equip-row">'+btn('equip:'+c.id,s.active.includes(c.id)?'Снять '+c.name:'Установить '+c.name,'gpu')+btn('go:shop','Магазин','shop')+'</div>'+caption;
+ screen.innerHTML=label+'<div class="mode"><span>'+c.name+' · '+c.ram+'</span><span>'+ (s.active.includes(c.id)?'Установлена':'Не установлена')+'</span></div><div class="hero '+(s.running?'running':'')+'">'+art('02-hardware','pedestal','hero-platform')+gpuVisual(c,s.running&&s.active.includes(c.id))+'<div class="work-indicator '+(s.running&&s.active.includes(c.id)?'is-running':'')+'"><i></i>'+(s.running&&s.active.includes(c.id)?'Ферма активна':'Ожидание')+'</div>'+'</div><div class="level"><strong>Моя ферма</strong><small>Уровень '+value('level',level())+'</small><div class="progress"><i data-value="progress" style="width:'+(s.total%G.UNIT)/G.UNIT*100+'%"></i></div></div><div class="metrics"><div class="metric-main"><b>Накоплено в ферме</b><strong>'+value('pending',fmt(s.pending))+'</strong><small>GRAM · игровые</small></div><div class="metric-side">'+stat('bolt','За сутки',fmt(daily))+stat('clock','За час',fmt(Math.floor(daily/24)))+stat('chip','Слоты',s.active.length+'/'+G.capacity(s))+'</div></div>'+btn('claim','Собрать GRAM','coins','primary',!s.pending)+'<div class="shortcuts">'+btn('toggle',s.running?'Остановить':'Запустить','power')+btn('go:upgrades','Улучшения','upgrades')+'</div><h2 class="section-title">Мои видеокарты <small>'+s.owned.length+' шт.</small></h2><div class="inventory">'+s.owned.map(id=>'<button data-action="select:'+id+'" aria-label="Выбрать '+card(id).name+'" class="'+(selected===id?'selected':'')+(s.running&&s.active.includes(id)?' card-working':'')+'">'+gpuArt(card(id),'gpu')+'<small>'+card(id).name+'</small></button>').join('')+'<button data-action="go:shop" aria-label="Каталог">'+icon('plus')+'</button></div><div class="panel equip-row">'+btn('equip:'+c.id,s.active.includes(c.id)?'Снять '+c.name:'Установить '+c.name,'gpu')+btn('go:shop','Магазин','shop')+'</div>'+caption;
  }else if(route==='shop'){
  const cards=G.catalog.filter(c=>tab==='all'||tab===c.brand.toLowerCase());
  screen.innerHTML=label+'<div class="tabs">'+[['all','Все'],['amd','AMD'],['nvidia','NVIDIA']].map(([v,n])=>'<button data-action="tab:'+v+'" aria-pressed="'+(v===tab)+'">'+n+'</button>').join('')+'</div>'+cards.map(c=>'<article class="product"><div class="product-art">'+gpuArt(c)+'</div><div class="product-info"><h2>'+c.name+'</h2><small>'+c.brand+' · '+c.ram+'</small><small class="rate">+'+fmt(c.rate)+' GRAM / сутки</small><b class="price">'+(c.price?price(c.price)+' GRAM':'Бесплатно')+'</b>'+btn('buy:'+c.id,s.owned.includes(c.id)?'В инвентаре':s.balance<c.price?'Недостаточно GRAM':'Получить','chevron','secondary',s.owned.includes(c.id)||s.balance<c.price)+'</div></article>').join('')+caption;
@@ -42,6 +56,7 @@ function render(){
  }else if(route==='ranking'){screen.innerHTML='<div class="panel empty"><h2>Рейтинг</h2>В локальной версии нет общего рейтинга игроков.</div>';
  }else if(route==='history'){screen.innerHTML=s.history.length?s.history.map(x=>'<div class="panel listrow">'+icon('history')+'<div>'+x+'</div></div>').join(''):'<div class="panel empty">Событий в этой сессии пока нет.</div>';
  }else screen.innerHTML='<div class="panel listrow">'+icon('trophy')+'<div><b>Первая видеокарта</b><small>RX 570 получена бесплатно</small></div><b>Открыто</b></div>';
+ syncGpu();
 }
 app.addEventListener('click',ev=>{const b=ev.target.closest('button[data-action]');if(!b||b.disabled)return;const [act,v]=b.dataset.action.split(':');const now=Date.now();G.settle(s,now);switch(act){
 case'go':go(v);return;case'back':go(['history','achievements'].includes(route)?'profile':'farm');return;
@@ -56,5 +71,5 @@ case'picker':picker=!picker;break;case'avatar':if(avatars.includes(v)){s.avatar=
 case'task':if(G.starterTask(s)){log('Задание выполнено');notice('Задание выполнено')}break;
 }save();render()});
 setInterval(()=>{G.settle(s,Date.now());const values={pending:fmt(s.pending),balance:fmt(s.balance),total:fmt(s.total),level:level()};for(const [k,v] of Object.entries(values))document.querySelectorAll('[data-value="'+k+'"]').forEach(e=>e.textContent=v);document.querySelectorAll('[data-value=progress]').forEach(e=>e.style.width=(s.total%G.UNIT)/G.UNIT*100+'%');const claim=document.querySelector('[data-action=claim]');if(claim)claim.disabled=!s.pending;save()},1000);
-window.addEventListener('pagehide',()=>{G.settle(s,Date.now());save()});render();save();
+window.addEventListener('pagehide',()=>{G.settle(s,Date.now());save();gpuController?.dispose();gpuController=null;gpuSlot=null;++gpuGeneration});window.addEventListener('pageshow',e=>{if(e.persisted)render()});render();save();
 })();
