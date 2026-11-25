@@ -5,19 +5,19 @@ import {readFileSync} from 'node:fs';
 const read=(p)=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const flat=(v)=>v.replace(/\s+/g,'');
 
-test('The centered Farm dock replaces old market/chests navigation and routes all five primary buttons',()=>{
+test('Reference dock routes farm, equipment, tasks, ranking and profile',()=>{
  const src=read('miniapp/src/main.tsx');
  const menu=src.slice(src.indexOf(' const menuItems='),src.indexOf(' function Home(){'));
  assert.ok(menu.includes('gm-pulse-bottom'));
  assert.ok(menu.includes("['tasks','tasks','Задания']"));
- assert.ok(menu.includes("['boosts','coins','Улучшения']"));
- assert.ok(menu.includes("['mining','lightning','Фарм']"));
- assert.ok(menu.includes("['wallet','wallet','Кошелёк']"));
- assert.ok(menu.includes("['more','more','Ещё']"));
+ assert.ok(menu.includes("['gpu-shop','shop','Магазин']"));
+ assert.ok(menu.includes("['mining','lightning','Ферма']"));
+ assert.ok(menu.includes("['leaderboard','leaderboard','Рейтинг']"));
+ assert.ok(menu.includes("['profile','profile','Профиль']"));
  assert.ok(menu.includes("onClick={()=>goto(s)}"));
- const expected=['tasks','boosts','mining','wallet','more'];
+ const expected=['mining','gpu-shop','tasks','leaderboard','profile'];
  const menuLine=menu.split('\n').find(line=>line.includes('const menuItems='))||'';
- assert.deepEqual([...menuLine.matchAll(/\['(tasks|boosts|mining|wallet|more)','/g)].map(m=>m[1]),expected);
+ assert.deepEqual([...menuLine.matchAll(/\['(mining|gpu-shop|tasks|leaderboard|profile)','/g)].map(m=>m[1]),expected);
  assert.ok(src.includes("case 'boosts':view=Boosts();break;"));
  assert.ok(src.includes("case 'mining':view=Mining();break;"));
  assert.ok(src.includes("case 'wallet':view=WalletConnection();break;"));
@@ -58,6 +58,6 @@ test('Five-button dock and upgrade cards are responsive and cache-busted in Tele
   '@media(prefers-reduced-motion:reduce)'])
   assert.ok(css.includes(term),'styling missing '+term);
  const html=read('miniapp/public/preview.html');
- assert.ok(html.includes('main.js?v=gm-gpu-v3-runtime-20261124'));
- assert.ok(html.includes('styles.css?v=gm-gpu-v3-runtime-20261124'));
+ assert.ok(html.includes('main.js?v=gm-gpu-v3-reference-20261125'));
+ assert.ok(html.includes('styles.css?v=gm-gpu-v3-reference-20261125'));
 });
