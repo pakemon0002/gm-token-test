@@ -29,8 +29,8 @@ try{
  await page.locator('.gpu-visual[data-ready=true]').waitFor({timeout:45000});
  await check('01-farm','.hero');
  const canvas=page.locator('.gpu-live-canvas');
- assert.equal(await canvas.getAttribute('data-renderer'),'webgl3d');
- assert.ok(Number(await canvas.getAttribute('data-fan-count'))>=2);
+ assert.equal(await canvas.getAttribute('data-renderer'),'image-fans');
+ assert.ok(Number(await canvas.getAttribute('data-fan-count'))===2);
  assert.equal(await page.locator('[data-value=balance]').first().innerText(),'0.00000000');
  assert.match(await page.locator('.mode').innerText(),/RX 570/);
  assert.ok(!(await page.locator('body').innerText()).includes('TON'));
@@ -38,7 +38,7 @@ try{
  await page.getByRole('button',{name:'Запустить',exact:true}).click();
  assert.ok(await page.evaluate(()=>window.__testGpu===document.querySelector('.gpu-live-canvas')),'same GPU canvas during start');
  await page.waitForFunction(()=>document.querySelector('.gpu-live-canvas').dataset.running==='true');
- const firstAngle=await canvas.getAttribute('data-angle');await page.waitForTimeout(350);assert.notEqual(await canvas.getAttribute('data-angle'),firstAngle,'fan angles advance while running');
+ const firstAngle=await canvas.getAttribute('data-angle');const firstPixels=await canvas.evaluate(c=>c.toDataURL());await page.waitForTimeout(350);assert.notEqual(await canvas.getAttribute('data-angle'),firstAngle,'fan angles advance while running');assert.notEqual(await canvas.evaluate(c=>c.toDataURL()),firstPixels,'fan pixels actually change');
  await page.screenshot({path:'volt-screenshots/05-running.png'});const heroShot=await page.locator('.hero').screenshot({type:'jpeg',quality:45});console.log('VOLT_HERO_JPEG='+heroShot.toString('base64'));
  await page.waitForTimeout(1300);assert.ok(Number(await page.locator('[data-value=pending]').innerText())>0);
  await page.getByRole('button',{name:'Остановить',exact:true}).click();
