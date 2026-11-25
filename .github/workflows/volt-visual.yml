@@ -1,0 +1,25 @@
+name: VOLT FARM visual prototype
+on:
+  push:
+    branches: [design/volt-farm-clean]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  visual:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - run: node --check miniapp/public/volt.js
+      - run: npm install --prefix /tmp/volt-browser --no-save --no-fund --no-audit playwright@1.51.1
+      - run: /tmp/volt-browser/node_modules/.bin/playwright install chromium
+      - run: GM_PLAYWRIGHT_MODULE=/tmp/volt-browser/node_modules/playwright node scripts/check-volt-visual.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: volt-mobile-screens
+          path: volt-screenshots/
