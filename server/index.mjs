@@ -596,7 +596,7 @@ function staticFile(path,res){
  const root=loc.startsWith('/assets/gpu-v3/')?resolve(here,'../public'):staticRoot;
  const full=resolve(root,'.'+loc);if(!full.startsWith(root+'/'))return res.writeHead(403).end('Forbidden');
  if(!existsSync(full))return res.writeHead(404).end('Not found');
- const ext=extname(full),mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.svg':'image/svg+xml','.json':'application/json','.jpg':'image/jpeg','.webp':'image/webp','.glb':'model/gltf-binary'}[ext]||'application/octet-stream';
+ const ext=extname(full),mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.svg':'image/svg+xml','.json':'application/json','.jpg':'image/jpeg','.webp':'image/webp','.glb':'model/gltf-binary','.woff2':'font/woff2'}[ext]||'application/octet-stream';
  const noCache=ext==='.html'||ext==='.js'||ext==='.css';
  res.writeHead(200,{'Content-Type':mime,'X-Content-Type-Options':'nosniff',
   ...(noCache?{'Cache-Control':'no-store, max-age=0, must-revalidate','Pragma':'no-cache','Expires':'0'}:{}),
