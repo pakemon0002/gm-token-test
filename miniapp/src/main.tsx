@@ -103,8 +103,16 @@ class V3Scene extends React.Component<any,any>{
  }
 }
 class V3Catalog extends React.Component<any,any>{
- state={selected:'4060'};
- render(){const selected=this.state.selected;return <section className="v3-catalog"><V3Scene gpu={selected} running={true} rig={false}/><div className="v3-catalog-grid">{V3_GPU.map(gpu=><button type="button" key={gpu} aria-pressed={selected===gpu} onClick={()=>this.setState({selected:gpu})}><img src={V3+'01-gpu/gpu-'+gpu+'.png'} alt=""/><strong>RTX {gpu}</strong><small>{selected===gpu?'Выбрано':'Посмотреть'}</small></button>)}</div><p className="v3-note">Просмотр оборудования. Выбор модели не меняет игровой баланс или скорость начислений.</p></section>}
+ state={tab:'gpu',selected:''};
+ render(){const {tab,selected}=this.state;const hardware=[['liquid-cooling','Охлаждение'],['power-supply','Блок питания'],['motherboard','Материнская плата'],['ssd','Накопитель'],['rig-empty','Каркас фермы'],['processor','Процессор']];const entries=tab==='gpu'?V3_GPU.map(gpu=>['gpu-'+gpu,'RTX '+gpu]):tab==='hardware'?hardware:[['pedestal','Платформа'],['rig-full','Ферма']];const folder=tab==='gpu'?'01-gpu/':'02-hardware/';
+ return <section className="v3-catalog v3-ref-catalog"><div className="v3-ref-tabs">{[['gpu','Видеокарты'],['hardware','Оборудование'],['other','Другое']].map(([id,label])=><button type="button" key={id} aria-pressed={tab===id} onClick={()=>this.setState({tab:id,selected:''})}>{label}</button>)}</div>
+ <div className="v3-catalog-grid">{entries.map(([id,name])=><article key={id} className="v3-ref-product"><img src={V3+folder+id+'.png'} alt="" draggable="false"/><div><strong>{name}</strong><small>Игровая модель</small><small>3D-визуализация</small><button type="button" aria-pressed={selected===id} onClick={()=>this.setState({selected:selected===id?'':id})}><span>Просмотр</span><img src={V3+'04-icons/chevron-active.svg'} alt=""/></button></div></article>)}</div>
+ {selected&&<div className="v3-ref-preview" role="dialog" aria-label="Просмотр оборудования"><div><button type="button" className="v3-ref-close" onClick={()=>this.setState({selected:''})}>Закрыть ×</button>{tab==='gpu'?<V3Scene gpu={selected.replace('gpu-','')} running={true} rig={false}/>:<img className="v3-ref-preview-art" src={V3+folder+selected+'.png'} alt=""/>}<p className="v3-note">Демонстрация оборудования. Не изменяет баланс и начисления.</p></div></div>}
+ </section>}
+}
+class V3ModuleArt extends React.Component<any,any>{
+ state={selected:0};
+ render(){const items=[['liquid-cooling','Система охлаждения','fan'],['power-supply','Блок питания','chip'],['rig-empty','Каркас фермы','box'],['processor','Процессор','plus']];const item=items[this.state.selected];return <div className="v3-ref-module"><div className="v3-ref-module-image"><img src={V3+'02-hardware/'+item[0]+'.png'} alt={item[1]}/></div><h2>{item[1]}</h2><small>Визуальный модуль</small><div className="v3-ref-module-spec">{[['chip','Тип','Оборудование'],['bolt','Эффект','Оформление'],['lock','Покупка','Недоступна']].map(([i,k,v])=><div key={k}><img src={V3+'04-icons/'+i+'-active.svg'} alt=""/><span>{k}</span><b>{v}</b></div>)}</div><div className="v3-ref-primary v3-ref-module-cta">Демонстрационный режим</div><div className="v3-ref-module-tabs">{items.map(([file,title,icon],index)=><button type="button" key={file} aria-pressed={index===this.state.selected} onClick={()=>this.setState({selected:index})}><img src={V3+'04-icons/'+icon+'-active.svg'} alt=""/><small>{['Охлаждение','Питание','Корпус','Модуль'][index]}</small></button>)}</div></div>}
 }
 class V3ProfileArt extends React.Component<any,any>{
  constructor(props:any){super(props);const stored=store.getItem('gm_v3_avatar_'+props.userId)||'';this.state={choice:V3_AVATARS.includes(stored)?stored:'hood',open:false}}
@@ -1938,23 +1946,20 @@ function Reward() {
   const rate=liveState?.mining?.rate_cents_day!=null?liveState.mining.rate_cents_day/100:gmRate(wallet);
   const level=Number(upgradeData?.upgrade?.level||liveState?.mining?.upgrade?.level||1);
   const modules=[
-   {id:'starter',name:'STARTER',caption:'Стартовый модуль',effect:'Серебряное свечение',description:'Первый вариант оформления энергетического ядра.'},
-   {id:'core',name:'CORE',caption:'Энергетическое ядро',effect:'Дополнительная орбита',description:'Усиленная анимация реактора и плавное вращение световых колец.'},
-   {id:'ultra',name:'ULTRA',caption:'Полный контур',effect:'Максимум световых эффектов',description:'Больше деталей, подсветка платформы и сложный орбитальный эффект.'}
+   {id:'starter',name:'STARTER',caption:'Система охлаждения',effect:'Фиолетовое свечение',description:'Визуальная модель охлаждения.'},
+   {id:'core',name:'CORE',caption:'Блок питания',effect:'Подсветка корпуса',description:'Визуальная модель блока питания.'},
+   {id:'ultra',name:'ULTRA',caption:'Процессор',effect:'Детализация',description:'Визуальная модель процессора.'}
   ];
   return e('div',{className:'gm-boosts-page'},
    top('Улучшения',true,'info'),
-   e('header',{className:'gm-boosts-heading'},
-    e('span',null,'GM TOKEN V3 · GPU EQUIPMENT'),
-    e('h1',null,'Прокачка фарма'),
-    e('p',null,'Модули будущего TON FARM. Сейчас это интерактивный просмотр оформления, без оплаты.')),
+   e('header',{className:'gm-boosts-heading v3-ref-upgrade-heading'},e('p',null,'Просмотр модулей · без оплаты')),
    e('section',{className:'gm-boosts-hero gm-premium-card'},
-    e('div',{className:'gm-boosts-hero-art'},e(V3Catalog)),
+    e('div',{className:'gm-boosts-hero-art'},e(V3ModuleArt)),
     e('div',{className:'gm-boosts-hero-info'},
      e('div',null,e('small',null,'ТВОЯ СТАНЦИЯ'),e('strong',null,'Уровень '+level)),
      e('div',null,e('small',null,'ИГРОВАЯ ДОБЫЧА'),e('strong',null,nf(rate,2)+' GM/сутки')))),
    e('section',{className:'gm-boosts-list','aria-label':'Модули улучшений'},
-    e('div',{className:'gm-boosts-section-heading'},e('strong',null,'Выбери модуль'),e('small',null,'3 варианта · просмотр')),
+    e('div',{className:'gm-boosts-section-heading'},e('strong',null,'Подробнее о модулях'),e('small',null,'3 варианта · просмотр')),
     ...modules.map((mod:any)=>e('details',{key:mod.id,className:'gm-pulse-boost gm-boosts-card gm-pulse-boost-'+mod.id},
      e('summary',null,
       e('span',{className:'gm-pulse-boost-emblem v3-hardware'},e('img',{src:V3+'02-hardware/'+({starter:'liquid-cooling',core:'power-supply',ultra:'processor'}[mod.id]||'processor')+'.png',alt:''})),
