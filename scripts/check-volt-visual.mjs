@@ -57,7 +57,7 @@ try{
  const fallback=await browser.newPage({viewport:{width:360,height:780},isMobile:true,hasTouch:true});
  await fallback.route('https://telegram.org/**',r=>r.abort());
  await fallback.route('**/volt-gpu-live.js*',r=>r.abort());
- await fallback.goto(origin,{waitUntil:'networkidle'});const imageBefore=await fallback.locator('.hero .hero-gpu').getAttribute('src');
+ await fallback.goto(origin,{waitUntil:'networkidle'});const imageBefore=await fallback.locator('.hero .hero-gpu').getAttribute('src');const fallbackShot=await fallback.locator('.hero').screenshot({type:'jpeg',quality:75});console.log('VOLT_ORIGINAL_JPEG='+fallbackShot.toString('base64'));
  await fallback.getByRole('button',{name:'Запустить',exact:true}).click();
  assert.equal(await fallback.locator('.hero .hero-gpu').getAttribute('src'),imageBefore);
  assert.equal(await fallback.locator('.hero .hero-gpu').evaluate(e=>getComputedStyle(e).opacity),'1');
