@@ -8,7 +8,7 @@ permissions:
 jobs:
   verify:
     if: github.actor != 'github-actions[bot]'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -20,7 +20,7 @@ jobs:
       - run: node --check miniapp/public/main.js
       - run: npm install --prefix /tmp/gm-reference --no-save --no-fund --no-audit jsdom@26.1.0 playwright@1.51.1
       - run: GM_DOM_MODULE=/tmp/gm-reference/node_modules/jsdom node scripts/check-v3-runtime.mjs
-      - run: /tmp/gm-reference/node_modules/.bin/playwright install chromium
+      - run: /tmp/gm-reference/node_modules/.bin/playwright install --with-deps chromium
       - run: GM_PLAYWRIGHT_MODULE=/tmp/gm-reference/node_modules/playwright node scripts/check-v3-visual.mjs
       - run: npm test
       - name: Sync verified source and compiled assets
