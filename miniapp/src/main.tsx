@@ -7,7 +7,7 @@ const store = {getItem:(key:string)=>{try{return window.localStorage.getItem(key
 const A = './assets/icons/';
 const BRAND = './assets/brand-original-reference/';
 type Theme = 'light' | 'dark';
-type Route = 'home'|'trade'|'earn'|'boosts'|'tasks'|'leaderboard'|'profile'|'reward'|'splash'|'intro'|'mining'|'vault'|'wallet'|'shop'|'referrals'|'history'|'settings'|'support'|'admin'|'achievements'|'more'|'streak'|'boxes';
+type Route = 'gpu-shop'|'home'|'trade'|'earn'|'boosts'|'tasks'|'leaderboard'|'profile'|'reward'|'splash'|'intro'|'mining'|'vault'|'wallet'|'shop'|'referrals'|'history'|'settings'|'support'|'admin'|'achievements'|'more'|'streak'|'boxes';
 type Wallet = { gm:number; cr:number; vault:number; xp:number; level:number; claims:number; lastClaim:string; lastMiningXpDay:string; lastVaultWithdrawDay:string; streak:number; storage:number; storageUpdated:number; tickets:any[]; orders:any[]; traded:number; rewardClaimed:boolean; };
 const firstWallet:Wallet = {gm:0,cr:0,vault:0,xp:0,level:1,claims:0,lastClaim:'',lastMiningXpDay:'',lastVaultWithdrawDay:'',streak:0,storage:0,storageUpdated:0,tickets:[],orders:[],traded:0,rewardClaimed:false};
 const xpThreshold=[0,100,250,450,750,1150,1700,2400,3300,4400];
@@ -99,7 +99,7 @@ class V3Scene extends React.Component<any,any>{
  stopViewer(){this.generation++;if(this.controller){this.controller.dispose();this.controller=null}}
  startViewer(){const token=++this.generation;this.setState({ready:false});void v3Load().then(()=>{if(!this.mounted||token!==this.generation||!this.canvas)return;const gpu=this.props.gpu||'4060';this.canvas.dataset.cards=gpu;const c=(window as any).GMViewer.mount(this.canvas,this.props.rig===false?'gpu-'+gpu:'rig-live');if(!c)throw Error('3D недоступно');this.controller=c;c.setActive(this.isRunning());this.setState({ready:true})}).catch(()=>{if(this.mounted&&token===this.generation){this.stopViewer();this.setState({failed:true,mode:'2d',ready:false})}})}
  render(){const gpu=this.props.gpu||'4060', {mode,failed,ready}=this.state;
-  return <div className="gm-pulse-stage v3-stage"><div className="v3-mode"><button type="button" aria-pressed={mode==='2d'} onClick={()=>this.setState({mode:'2d'})}>2D</button><button type="button" aria-pressed={mode==='3d'} onClick={()=>this.setState({failed:false,mode:'3d'})}>3D</button></div>{mode==='3d'?<><canvas ref={(node:any)=>{this.canvas=node}} className="v3-canvas" aria-label="3D-модель: перетащите для вращения"/>{!ready&&<small className="v3-loading">Загрузка 3D…</small>}</>:<img className="v3-gpu-render" src={V3+'01-gpu/gpu-'+gpu+'.png'} alt={'RTX '+gpu} draggable="false"/>}<div className="v3-scene-caption">{failed?'3D недоступно · показан рендер':mode==='3d'?'Проведи пальцем для вращения':'RTX '+gpu+' · визуализация'}</div></div>
+  return <div className={'gm-pulse-stage v3-stage '+(this.props.rig===false?'v3-detail-stage':'v3-farm-stage')}><div className="v3-mode"><button type="button" aria-pressed={mode==='2d'} onClick={()=>this.setState({mode:'2d'})}>2D</button><button type="button" aria-pressed={mode==='3d'} onClick={()=>this.setState({failed:false,mode:'3d'})}>3D</button></div>{mode==='3d'?<><canvas ref={(node:any)=>{this.canvas=node}} className="v3-canvas" aria-label="3D-модель: перетащите для вращения"/>{!ready&&<small className="v3-loading">Загрузка 3D…</small>}</>:<>{this.props.rig!==false&&<img className="v3-pedestal" src={V3+'02-hardware/pedestal.png'} alt=""/>}<img className="v3-gpu-render" src={V3+'01-gpu/gpu-'+gpu+'.png'} alt={'RTX '+gpu} draggable="false"/></>}<div className="v3-scene-caption">{failed?'3D недоступно · показан рендер':mode==='3d'?'Проведи пальцем для вращения':'RTX '+gpu+' · визуализация'}</div></div>
  }
 }
 class V3Catalog extends React.Component<any,any>{
@@ -203,7 +203,7 @@ function Candles({theme,candles=[],selected=null,onSelect=(_time:any)=>{},interv
  );
 }
 
-function BarButton({name,title,theme,selected=false,onClick}:{key?:string,name:string,title:string,theme:Theme,selected?:boolean,onClick:()=>void}){return <button className={'nav-entry '+(selected?'active':'')} onClick={onClick} aria-label={title} aria-current={selected?'page':undefined}><img className="v3-nav-icon" width="23" height="23" alt="" src={V3+'04-icons/'+({tasks:'checklist',coins:'upgrades',lightning:'farm',wallet:'wallet',more:'settings'}[name]||'home')+'-'+(selected?'active':'default')+'.svg'}/><span>{title}</span></button>}
+function BarButton({name,title,theme,selected=false,onClick}:{key?:string,name:string,title:string,theme:Theme,selected?:boolean,onClick:()=>void}){return <button className={'nav-entry '+(selected?'active':'')} onClick={onClick} aria-label={title} aria-current={selected?'page':undefined}><img className="v3-nav-icon" width="23" height="23" alt="" src={V3+'04-icons/'+({tasks:'checklist',coins:'upgrades',lightning:'home',wallet:'wallet',more:'settings',shop:'shop',leaderboard:'leaderboard',profile:'profile'}[name]||'home')+'-'+(selected?'active':'default')+'.svg'}/><span>{title}</span></button>}
 async function gmFetchJson(path,opts={},retries=0){
  let lastError;
  for(let i=0;i<=retries;i++){
@@ -600,7 +600,7 @@ function App(){
    }
    window.location.assign(url);
  };
- const [theme,setTheme]=React.useState((store.getItem('gm_theme')||webapp?.colorScheme||'light')==='dark'?'dark':'light');
+ const [theme,setTheme]=React.useState((store.getItem('gm_reference_theme')||'dark')==='dark'?'dark':'light');
  const [screen,setScreen]=React.useState('splash');
  const [locale,setLocale]=React.useState(store.getItem('gm_lang')||'auto');
  const [introStep,setIntroStep]=React.useState(0);
@@ -1032,7 +1032,7 @@ function App(){
  };
  React.useEffect(()=>{
   const onPop=()=>{const prev=navStack.current.pop()||'mining',route=location.hash.slice(1);
-   const allowed=['home','trade','earn','boosts','tasks','leaderboard','profile','reward','splash','intro','mining','vault','wallet','shop','referrals','history','settings','support','admin','achievements','more','streak','boxes'];
+   const allowed=['home','trade','earn','boosts','tasks','gpu-shop','leaderboard','profile','reward','splash','intro','mining','vault','wallet','shop','referrals','history','settings','support','admin','achievements','more','streak','boxes'];
    setScreen(allowed.includes(route)?route:prev);setModal('');
    document.querySelector('.phone-scroll')?.scrollTo(0,0);
   };
@@ -1040,7 +1040,7 @@ function App(){
   return()=>window.removeEventListener('popstate',onPop);
  },[]);
 
- React.useEffect(()=>{try{store.setItem('gm_theme',theme)}catch{};webapp?.setBackgroundColor?.(theme==='dark'?'#030406':'#E8EAF4')},[theme]);
+ React.useEffect(()=>{try{store.setItem('gm_reference_theme',theme)}catch{};webapp?.setBackgroundColor?.(theme==='dark'?'#0B0714':'#E8EAF4')},[theme]);
  React.useEffect(()=>{try{window.localStorage.removeItem('gm_demo_wallet')}catch{}},[]);
  React.useEffect(()=>{const timer=setInterval(()=>setClock(Math.floor(Date.now()/1000)),1000);return ()=>clearInterval(timer)},[]);
  React.useEffect(()=>{
@@ -1298,8 +1298,8 @@ function App(){
  const icon=(n:string,size=23,tile=false)=> <Icon name={n} theme={theme} size={size} tile={tile}/>;
  const isLight=theme==='light';
  const top=(title:string,back=true,right='more')=><header className={'screen-header '+(!isLight?'dark-head':'')}><button className="header-icon" aria-label="Назад" onClick={()=>back?goBack():goto('more')} >{back?icon('chevron-left',24):<Brand theme={theme} size={35}/>}</button><strong>{title}</strong><button className="header-icon" onClick={()=>right==='settings'?goto('settings'):right==='info'?openGuide(screen):goto('more')} aria-label={right==='info'?L('instruction'):"Дополнительные действия"}>{icon(right,23)}</button></header>;
- const menuItems=[['tasks','tasks','Задания'],['boosts','coins','Улучшения'],['mining','lightning','Фарм'],['wallet','wallet','Кошелёк'],['more','more','Ещё']];
- const bottom=()=> <nav className="bottom-nav gm-pulse-bottom" aria-label="Навигация GM PULSE">{menuItems.map(([s,i,t]:any)=><BarButton key={s} name={i} theme={theme} title={t} selected={screen===s||(s==='more'&&!['mining','boosts','tasks','wallet'].includes(screen))} onClick={()=>goto(s)}/>)}</nav>;
+ const menuItems=[['mining','lightning','Ферма'],['gpu-shop','shop','Магазин'],['tasks','tasks','Задания'],['leaderboard','leaderboard','Рейтинг'],['profile','profile','Профиль']];
+ const bottom=()=> <nav className="bottom-nav gm-pulse-bottom" aria-label="Навигация GM PULSE">{menuItems.map(([s,i,t]:any)=><BarButton key={s} name={i} theme={theme} title={t} selected={screen===s||(s==='mining'&&screen==='boosts')} onClick={()=>goto(s)}/>)}</nav>;
  
  
  function Home(){
@@ -1741,8 +1741,9 @@ function Tasks(){
     e('b',null,nf(wallet.xp,0)+' XP')),
     e('div',{className:'gm-upgrades-progress'},e('span',{style:{width:progress+'%'}})),
     e('small',null,nextLeague?'→ '+nextLeague.name+' · '+nf(Math.max(0,nextXp-wallet.xp),0)+' XP': 'GM IMMORTAL · MAX')),
-   e('div',{className:'stats-grid'},
-    [['friends',String(liveReferrals?.referred?.length||0),L('friends')],['wallet',nf(wallet.gm,0),L('balance')],['lightning',String(wallet.streak),L('streak')]].map(([i,n,label])=>e('div',{className:'stat-card',key:label},icon(i,23),e('b',null,n),e('small',null,label)))),
+   e('div',{className:'stats-grid v3-ref-profile-grid'},
+    [['trophy',league.name,'Твой ранг'],['friends',String(liveReferrals?.referred?.length||0),L('friends')],['lightning',String(wallet.streak),L('streak')],['wallet',nf(wallet.gm,0),L('balance')]].map(([i,n,label])=>e('div',{className:'stat-card',key:label},icon(i,23),e('b',null,n),e('small',null,label)))),
+   e('div',{className:'v3-ref-profile-actions'},e('button',{type:'button',onClick:()=>goto('achievements')},e('img',{src:V3+'04-icons/trophy-active.svg',alt:''}),'Достижения'),e('button',{type:'button',onClick:()=>goto('history')},e('img',{src:V3+'04-icons/history-active.svg',alt:''}),'История'),e('button',{type:'button',onClick:()=>goto('more')},'Все разделы')),
    e('section',{className:'gm-hp-profile gm-premium-card'},
      e('div',{className:'gm-hp-profile-heading'},
        e('strong',null,'Значки HP'),e('b',null,String(calendarAssets?.hp||0)+' HP')),
@@ -1840,39 +1841,27 @@ function Reward() {
   // Safe first phase: existing GM mining remains fully functional. The TON upgrade
   // experience below is a clearly labelled preview, not a payment or payout feature.
   return e('div',{className:'gm-mining-v8 gm-pulse-experience'},
-   top(L('mining'),true,'info'),
-   e('header',{className:'gm-pulse-header'},
-    e('div',{className:'gm-pulse-header-mark'},e(Brand,{theme,size:37}),
-     e('div',null,e('b',null,'GM TOKEN V3'),e('small',null,'GPU FARM STATION'))),
-    e('button',{type:'button',className:'gm-pulse-wallet',onClick:openWalletFromMining,'aria-label':'Подключить или открыть TON-кошелёк'},icon('wallet',21))),
-   e('section',{className:'gm-pulse-hero'},
-    e('div',{className:'gm-pulse-kicker'},e('span',{className:'gm-pulse-kicker-dot'}),'PULSE ENGINE · GAME MODE'),
-    e('div',{className:'gm-pulse-hero-title'},e('strong',null,'Твоя GPU-ферма'),e('small',null,'Игровой майнинг · 3D-визуализация')),
+   e('header',{className:'gm-pulse-header v3-ref-header'},
+    e('img',{className:'v3-ref-logo',src:V3+'07-brand/gm-wordmark.svg',alt:'GM TOKEN'}),
+    e('button',{type:'button',className:'gm-pulse-wallet v3-ref-balance',onClick:openWalletFromMining,'aria-label':'Подключить или открыть TON-кошелёк'},e('img',{src:V3+'07-brand/gm-mark.svg',alt:''}),e('b',null,nf(wallet.gm)+' GM')),
+    e('button',{type:'button',className:'v3-ref-more',onClick:()=>goto('more'),'aria-label':'Все разделы'},e('img',{src:V3+'04-icons/plus-active.svg',alt:''}))),
+   e('section',{className:'gm-pulse-hero v3-ref-farm-hero'},
     e(V3Scene,{gpu:'4060',running:true,rig:true}),
-    e('div',{className:'gm-pulse-runtime'},
-     e('span',{className:'gm-pulse-status-dot'}),
-     e('b',null,'Игровая добыча активна'),
-     e('span',null,'УРОВЕНЬ '+upgrade.level)),
-    e('div',{className:'gm-pulse-hero-metrics'},
-     e('div',null,e('small',null,'Накоплено'),e('strong',null,nf(stored)+' GM')),
-     e('div',null,e('small',null,'Скорость'),e('strong',null,nf(rate/24,2)+' GM/ч')))),
-   e('section',{className:'gm-pulse-progress gm-premium-card'},
-    e('div',{className:'gm-pulse-progress-line'},
-     e('div',null,e('small',null,'Хранилище'),e('b',null,nf(stored)+' / '+nf(cap)+' GM')),
-     e('strong',null,nf(pct,0)+'%')),
-    e('div',{className:'gm-pulse-progress-track'},e('span',{style:{width:pct+'%'}})),
-    e('div',{className:'gm-pulse-progress-footer'},
-     e('span',null,'Вместимость '+hours+' ч'),
-     e('span',null,nf(rate,2)+' GM/сутки'))),
-   e('button',{type:'button',className:'gm-pulse-collect',disabled:miningBusy,onClick:mineClick,'data-guide':'mining'},
-    icon('diamond',22),e('span',null,miningBusy?'Проверяем…':stored>=1?'Собрать GM':'Проверить накопление'),icon('chevron-right',20)),
-   stored<1?e('p',{className:'gm-pulse-claim-hint',role:'status'},
-    'Сбор доступен от 1 GM. Сейчас '+nf(stored)+' GM. Накопление идёт автоматически.'):null,
-   e('div',{className:'gm-pulse-shortcuts','aria-label':'Быстрые действия фарма'},
-    e('button',{type:'button',className:'gm-pulse-shortcut gm-pulse-shortcut-boosts',onClick:()=>goto('boosts')},
-     e('span',null,icon('coins',25)),e('span',null,e('b',null,'Улучшения'),e('small',null,'Модули фарма')),icon('chevron-right',18)),
-    e('button',{type:'button',className:'gm-pulse-shortcut',onClick:()=>goto('tasks')},
-     e('span',null,icon('tasks',25)),e('span',null,e('b',null,'Задания'),e('small',null,'Активность и XP')),icon('chevron-right',18))),
+    e('div',{className:'v3-ref-level gm-pulse-runtime'},
+     e('b',null,'Моя ферма'),e('small',null,'УРОВЕНЬ '+upgrade.level),
+     e('div',{className:'gm-pulse-progress-track'},e('span',{style:{width:Math.min(100,Math.max(0,upgrade.level/200*100))+'%'}})))),
+   e('section',{className:'gm-pulse-progress v3-ref-metrics'},
+    e('div',{className:'v3-ref-stat-main'},e('b',null,'Добыча GM'),e('strong',null,e('img',{src:V3+'07-brand/gm-mark.svg',alt:''}),nf(stored)+' GM'),e('small',null,'+'+nf(rate/24,2)+' GM / час')),
+    e('div',{className:'v3-ref-stat-side'},
+     ...[['bolt','Скорость',nf(rate/24,2)+' GM/ч'],['clock','Хранилище',hours+' ч'],['chip','Заполнено',nf(pct,0)+'%']].map(([i,t,v])=>e('div',{key:i},e('img',{src:V3+'04-icons/'+i+'-active.svg',alt:''}),e('span',null,t),e('b',null,v))))),
+   e('button',{type:'button',className:'gm-pulse-collect v3-ref-primary',disabled:miningBusy,onClick:mineClick,'data-guide':'mining'},
+    e('img',{src:V3+'04-icons/bolt-active.svg',alt:''}),e('span',null,miningBusy?'Проверяем…':stored>=1?'Собрать GM':'Проверить накопление'),e('img',{src:V3+'04-icons/play-active.svg',alt:''})),
+   e('div',{className:'gm-pulse-shortcuts v3-ref-shortcuts','aria-label':'Быстрые действия фарма'},
+    e('button',{type:'button',className:'gm-pulse-shortcut gm-pulse-shortcut-boosts',onClick:()=>goto('boosts')},e('img',{src:V3+'04-icons/upgrades-active.svg',alt:''}),e('b',null,'Улучшения')),
+    e('button',{type:'button',className:'gm-pulse-shortcut',onClick:()=>goto('gpu-shop')},e('img',{src:V3+'04-icons/shop-active.svg',alt:''}),e('b',null,'Магазин'))),
+   e('div',{className:'v3-ref-inventory'},e('b',null,'Видеокарты · каталог'),e('div',null,...V3_GPU.map(gpu=>e('button',{key:gpu,type:'button',onClick:()=>goto('gpu-shop'),'aria-label':'Посмотреть RTX '+gpu},e('img',{src:V3+'01-gpu/gpu-'+gpu+'.png',alt:'RTX '+gpu}))))),
+   e('p',{className:'v3-ref-note'},'Игровая добыча активна. GM — игровые очки. Реальные выплаты TON недоступны.'),
+   e('button',{type:'button',className:'v3-ref-help',onClick:()=>goto('tasks')},'Задания и XP'),
    e('section',{className:'gm-pulse-ton-panel gm-premium-card'},
     e('div',{className:'gm-pulse-ton-top'},
      e('span',{className:'gm-pulse-ton-icon'},icon('diamond',25)),
@@ -1943,6 +1932,7 @@ function Reward() {
    e('p',{className:'gm-mining-footnote'},'Скорости в списке расчётные, без учёта ограничений Mining Pool. Покупка улучшений пока отключена до проверки официального контракта. Кнопка подключения открывает Tonkeeper бесплатно; игровые GM не списываются.'))));
  }
 
+ function GpuShop(){return <div className="v3-ref-shop"><header className="v3-ref-title"><button type="button" onClick={()=>goto('mining')} aria-label="Назад">‹</button><h1>Магазин</h1><button type="button" onClick={()=>goto('more')} aria-label="Все разделы">⋯</button></header><V3Catalog/></div>}
  function Boosts(){
   const e=React.createElement;
   const rate=liveState?.mining?.rate_cents_day!=null?liveState.mining.rate_cents_day/100:gmRate(wallet);
@@ -2361,7 +2351,7 @@ function Reward() {
 
 function Settings(){
  const e=React.createElement;
- const themes=[['light','Premium Silver'],['dark','Premium Graphite']];
+ const themes=[['light','Premium Silver'],['dark','Neon Purple']];
  const themeButtons=themes.map(([value,label])=>e('button',{type:'button',key:value,
   className:theme===value?'active':'',onClick:()=>setTheme(value)},
   e('i',{className:'gm-theme-swatch '+value}),e('b',null,label),theme===value?icon('check',18):null));
@@ -2371,7 +2361,7 @@ function Settings(){
    e('span',null,e('b',null,L('personalization')),e('small',null,'GM TOKEN · PREMIUM UI'))),
   e('section',{className:'gm-settings-block gm-premium-card'},
    e('h3',null,L('theme')),
-   e('p',null,'Платиновый светлый вариант и графитовый тёмный вариант с тем же логотипом GM.'),
+   e('p',null,'Светлый вариант и фиолетовая тема по референсу GM TOKEN V3.'),
    e('div',{className:'gm-theme-list'},themeButtons)),
   e('section',{className:'gm-settings-block gm-premium-card'},
    e('label',{htmlFor:'gm-lang-select'},L('interfaceLanguage')),
@@ -2649,7 +2639,7 @@ function AdminTestGrants(){
 function More(){
  const e=React.createElement;
  const groups:[string,string[][]][]=[
-  ['GM TOKEN', [['home','home','Главная','Обзор балансов GM и CR'],['trade','candlesticks','Игровой рынок','GM / CR'],['boxes','gift','Боксы','Награды за POINTS'],['leaderboard','trophy','Рейтинг','Таблица игроков'],['referrals','friends','Друзья','Приглашения']]],
+  ['GM TOKEN', [['gpu-shop','shop','Оборудование','Каталог видеокарт'],['boosts','coins','Улучшения','Просмотр модулей'],['wallet','wallet','Кошелёк','Подключение'],['home','home','Главная','Обзор балансов GM и CR'],['trade','candlesticks','Игровой рынок','GM / CR'],['boxes','gift','Боксы','Награды за POINTS'],['leaderboard','trophy','Рейтинг','Таблица игроков'],['referrals','friends','Друзья','Приглашения']]],
   [L('account'),[['profile','profile',L('profile'),L('balance')],['achievements','trophy',L('achievements'),L('earned')],['history','clock',L('history'),L('history')]]],
   [L('game'),[['reward','gift','Daily Reward',L('claim')],['vault','wallet','Vault','Игровое хранилище'],['shop','coins','Магазин','Внутриигровые товары'],['earn','lightning','Награды','Дополнительные возможности']]],
   [L('help'),[['support','shield-check',L('support'),L('help')],['settings','settings',L('customize'),L('interfaceLanguage')],['intro','info',L('instruction'),L('replay')]]]
@@ -2771,8 +2761,8 @@ function Streak(){const n=Math.max(0,Math.floor(Number(liveState?.daily?.streak?
   </section>
  </main>}
  let view:any;
- switch(screen){case 'home':view=Home();break;case 'trade':view=Trading();break;case 'earn':view=Earn();break;case 'tasks':view=Tasks();break;case 'leaderboard':view=Leaderboard();break;case 'profile':view=Profile();break;case 'reward':view=Reward();break;case 'splash':view=Splash();break;case 'intro':view=Intro();break;case 'mining':view=Mining();break;case 'boosts':view=Boosts();break;case 'vault':view=Vault();break;case 'wallet':view=WalletConnection();break;case 'shop':view=Shop();break;case 'boxes':view=Boxes();break;case 'referrals':view=Referrals();break;case 'history':view=History();break;case 'settings':view=Settings();break;case 'support':view=Support();break;case 'admin':view=['owner','coowner'].includes(liveRole)?Admin():Home();break;case 'achievements':view=Achievements();break;case 'more':view=More();break;case 'streak':view = Reward();break;default:view=Home();}
- return <div className={'application theme-'+theme+(webapp?.initData?' is-telegram':'')+(screen==='splash'?' gm-splash-active':'')+' gm-v3'}>
+ switch(screen){case 'home':view=Home();break;case 'trade':view=Trading();break;case 'earn':view=Earn();break;case 'tasks':view=Tasks();break;case 'leaderboard':view=Leaderboard();break;case 'profile':view=Profile();break;case 'reward':view=Reward();break;case 'splash':view=Splash();break;case 'intro':view=Intro();break;case 'mining':view=Mining();break;case 'boosts':view=Boosts();break;case 'gpu-shop':view=GpuShop();break;case 'vault':view=Vault();break;case 'wallet':view=WalletConnection();break;case 'shop':view=Shop();break;case 'boxes':view=Boxes();break;case 'referrals':view=Referrals();break;case 'history':view=History();break;case 'settings':view=Settings();break;case 'support':view=Support();break;case 'admin':view=['owner','coowner'].includes(liveRole)?Admin():Home();break;case 'achievements':view=Achievements();break;case 'more':view=More();break;case 'streak':view = Reward();break;default:view=Home();}
+ return <div className={'application theme-'+theme+(webapp?.initData?' is-telegram':'')+(screen==='splash'?' gm-splash-active':'')+' gm-v3 gm-reference-v3'}>
  <aside className="desktop-toolbar"><div className="toolbar-logo"><Brand theme={theme} size={42}/><span><b>GM TOKEN</b><small>Оригинальные эскизы · интерактивная сборка</small></span></div><div className="toolbar-tabs"><button onClick={()=>setTheme('light')} className={isLight?'chosen':''}>Light</button><button onClick={()=>setTheme('dark')} className={!isLight?'chosen':''}>Dark</button></div><div className="toolbar-links">{(['mining','boosts','tasks','wallet','more','home','trade','leaderboard','profile','vault','shop','support','admin'] as Route[]).map(s=><button key={s} className={screen===s?'chosen':''} onClick={()=>goto(s)}>{s}</button>)}</div><p>Оригинальные PNG · 54 иконки × 4 варианта · без подмены сторонними пиктограммами</p></aside>
  <div className="device-stage"><div className={'phone-frame'+(screen==='splash'?' gm-splash-frame':'')}><div className={'phone-scroll '+((screen==='splash')?'no-scroll gm-splash-host':'')}>{view}</div>{!['splash','intro'].includes(screen)&&bottom()}<div className="home-indicator"/></div><div className="underphone"><span className="demo-pill">{'Серверная авторизация · виртуальные GM/CR'}</span><button onClick={()=>goto('splash')}>Заставка</button><button onClick={()=>goto('home')}>Home</button><button onClick={()=>setTheme(isLight?'dark':'light')}>Сменить тему</button></div><small className="status-note">{backendStatus}</small></div>
  {toast&&<div className={'toast-message '+(/ошиб|недоступ|error|отмен/i.test(toast)?'toast-error':'toast-info')} role="status" aria-live="polite">
