@@ -1,5 +1,6 @@
 'use strict';
 (()=>{
+try{const webApp=window.Telegram?.WebApp;webApp?.ready?.();webApp?.expand?.();webApp?.setHeaderColor?.('#0b0814');webApp?.setBackgroundColor?.('#0b0814')}catch{}
 const base='/assets/gpu-v3/', app=document.getElementById('volt'), top=document.getElementById('top'), screen=document.getElementById('screen'), dock=document.getElementById('dock');
 const gpu=['4060','4070','4080','4090'], avatars=['cyborg','hood','robot','pilot'], mods=[['liquid-cooling','Система охлаждения','fan'],['power-supply','Блок питания','power'],['rig-empty','Каркас фермы','box'],['processor','Процессор','plus']];
 let state={route:'farm',mode:'GRAM',running:false,xp:0,level:1,avatar:'cyborg',tab:'gpu',module:0,selected:'4060',picker:false,done:false,history:[]};
