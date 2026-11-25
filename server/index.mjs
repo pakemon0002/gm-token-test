@@ -591,7 +591,7 @@ const routes=async(req,res)=>{
  }catch(e){const message=e instanceof Error?e.message:String(e);return fail(res,message.match(/permission|role|TOTP|2FA|protected|assigned/i)?403:400,message)}
 };
 function staticFile(path,res){
- let loc=decodeURIComponent(path==='/'?'/preview.html':path);
+ let loc=decodeURIComponent(path==='/'?'/volt-preview.html':path);
  if(loc.includes('..')||loc.includes('\\')||loc.includes('\0'))return res.writeHead(403).end('Forbidden');
  const root=loc.startsWith('/assets/gpu-v3/')?resolve(here,'../public'):staticRoot;
  const full=resolve(root,'.'+loc);if(!full.startsWith(root+'/'))return res.writeHead(403).end('Forbidden');
