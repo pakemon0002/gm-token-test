@@ -20,7 +20,7 @@ try{
  const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto(origin,{waitUntil:'networkidle'});
- const check=async(name,selector)=>{await page.locator(selector).waitFor();await page.waitForTimeout(250);
+ const check=async(name,selector)=>{await page.locator(selector).first().waitFor();await page.waitForTimeout(250);
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),name+' horizontal overflow');
  const bad=await page.locator('img').evaluateAll(imgs=>imgs.filter(i=>!i.complete||!i.naturalWidth).map(i=>i.src));assert.deepEqual(bad,[],name+' broken artwork');
  assert.ok(!(await page.locator('body').innerText()).includes('GM TOKEN'),name+' old name');
