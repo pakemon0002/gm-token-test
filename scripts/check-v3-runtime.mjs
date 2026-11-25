@@ -33,7 +33,7 @@ try{
  click(host.querySelector('.v3-mode button:nth-child(1)'));
  assert.equal(disposed,1,'switching to 2D releases renderer');
  w.ReactDOM.render(el(w.__v3Test.V3Catalog,{}),host);
- click(host.querySelector('.v3-catalog-grid button:last-child'));
+ click(host.querySelector('.v3-catalog-grid article:last-child button'));
  assert.match(host.querySelector('.v3-gpu-render').src,/gpu-4090\.png$/);
  w.ReactDOM.render(el(w.__v3Test.V3ProfileArt,{userId:'runtime-test'}),host);
  click(host.querySelector('.v3-avatar-edit'));click(host.querySelector('.v3-avatar-picker button:nth-child(2)'));
