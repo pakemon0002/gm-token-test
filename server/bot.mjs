@@ -6,15 +6,18 @@ const endpoint=`https://api.telegram.org/bot${token}/`;
 const pause=(ms)=>new Promise(r=>setTimeout(r,ms));
 async function api(method,body){const r=await fetch(endpoint+method,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const x=await r.json();if(!x.ok)throw Error(method+': '+(x.description||r.status));return x.result}
 async function startBot(){
- await api('setChatMenuButton',{menu_button:{type:'web_app',text:'Открыть GM TOKEN',web_app:{url}}});
- await api('setMyCommands',{commands:[{command:'start',description:'Открыть GM TOKEN'},{command:'help',description:'Помощь и правила'}]});
- console.log('GM TOKEN @'+user+' is accepting Telegram updates');let offset=0;
+ await api('setChatMenuButton',{menu_button:{type:'web_app',text:'Открыть VOLT FARM',web_app:{url}}});
+ await api('setMyCommands',{commands:[{command:'start',description:'Открыть VOLT FARM'},{command:'help',description:'Помощь и правила'}]});
+ await api('setMyName',{name:'VOLT FARM'});
+ await api('setMyDescription',{description:'VOLT FARM — виртуальная GPU-ферма. Демонстрационные XP, без реальных платежей и выплат.'});
+ await api('setMyShortDescription',{short_description:'VOLT FARM · виртуальная GPU-ферма'});
+ console.log('VOLT FARM @'+user+' is accepting Telegram updates');let offset=0;
  while(true){try{const updates=await api('getUpdates',{offset,timeout:25,allowed_updates:['message']});
   for(const update of updates){offset=Math.max(offset,update.update_id+1);const m=update.message;if(!m?.chat?.id||typeof m.text!=='string')continue;
    const start=m.text.match(/^\/start(?:\s+ref_(\d{5,20}))?/);
    if(start){const ref=start[1],link=ref?`https://t.me/${user}?startapp=ref_${ref}`:null;
-    await api('sendMessage',{chat_id:m.chat.id,text:'GM TOKEN — майнинг, задания, календарь наград и сундуки в одном приложении. GM и CR пока являются игровыми единицами, а не TON-токенами.',reply_markup:{inline_keyboard:[[{text:'🚀 Открыть Mini App',web_app:{url}}],...(link?[[{text:'Открыть по приглашению',url:link}]]:[])]}});
-   }else if(/^\/help/.test(m.text)){await api('sendMessage',{chat_id:m.chat.id,text:'Открой Mini App, чтобы посмотреть награды, баланс и задания. Вопросы: Профиль → Поддержка. Никому не передавай пароли, seed-фразы и коды 2FA.'});}
+    await api('sendMessage',{chat_id:m.chat.id,text:'VOLT FARM — виртуальная GPU-ферма. Выбирай оформление GRAM или TON, оборудование и аватар. В игре начисляются только демонстрационные XP без денежной стоимости. Реальных выплат и покупок нет.',reply_markup:{inline_keyboard:[[{text:'Открыть VOLT FARM',web_app:{url}}],...(link?[[{text:'Открыть по приглашению',url:link}]]:[])]}});
+   }else if(/^\/help/.test(m.text)){await api('sendMessage',{chat_id:m.chat.id,text:'Открой VOLT FARM для просмотра виртуальной фермы и игровых заданий. XP не имеют денежной стоимости. Никому не передавай пароли, seed-фразы и коды 2FA.'});}
   }
  }catch(e){console.error('Telegram polling:',e.message);await pause(3500)}}
 }
