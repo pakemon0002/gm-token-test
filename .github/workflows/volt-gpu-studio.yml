@@ -1,0 +1,42 @@
+name: VOLT studio GPU release
+on:
+  push:
+    branches: [fix/volt-gpu-live-3d]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - run: npm install --prefix /tmp/volt-renderer --no-save --no-fund --no-audit three@0.179.1 esbuild@0.25.8
+      - name: Pack original 3D geometry and bundle GPU renderer
+        run: |
+          node scripts/build-volt-gpu.mjs
+          NODE_PATH=/tmp/volt-renderer/node_modules /tmp/volt-renderer/node_modules/.bin/esbuild miniapp/src/volt-gpu-live.mjs --bundle --minify --format=iife --target=es2020 --legal-comments=eof --outfile=miniapp/public/volt-gpu-live.js
+          cp /tmp/volt-renderer/node_modules/three/LICENSE miniapp/public/volt-gpu-LICENSE.txt
+      - run: node --check miniapp/public/volt.js && node --check miniapp/public/volt-gpu-live.js
+      - run: npm test
+      - run: npm install --prefix /tmp/volt-browser --no-save --no-fund --no-audit playwright@1.51.1
+      - run: /tmp/volt-browser/node_modules/.bin/playwright install chromium
+      - run: GM_PLAYWRIGHT_MODULE=/tmp/volt-browser/node_modules/playwright node scripts/check-volt-visual.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: volt-studio-gpu-screens
+          path: volt-screenshots/
+      - name: Save verified GPU renderer and model packs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add miniapp/public/volt-gpu-live.js miniapp/public/volt-gpu-LICENSE.txt miniapp/public/volt-gpu-models
+          if ! git diff --cached --quiet; then
+            git commit -m "build: sync verified studio GPU renderer [skip ci]"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
