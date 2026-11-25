@@ -2,9 +2,9 @@
 (function(root){
 const UNIT=100000000,DAY=86400000,MAX=1000000000000;
 const catalog=[
- ['rx570','RX 570',0,10000000,'4060','AMD','4 ГБ'],['rx580','RX 580',150,14000000,'4060','AMD','8 ГБ'],['gtx1050','GTX 1050 Ti',220,16500000,'4070','NVIDIA','4 ГБ'],['gtx1060','GTX 1060',300,19000000,'4070','NVIDIA','6 ГБ'],['gtx1660','GTX 1660 Super',450,25000000,'4060','NVIDIA','6 ГБ'],['rx6600','RX 6600',650,32000000,'4070','AMD','8 ГБ'],['rtx2060','RTX 2060',850,38000000,'4070','NVIDIA','6 ГБ'],['rtx3060','RTX 3060',1100,50000000,'4080','NVIDIA','12 ГБ'],['rtx4060','RTX 4060',1450,65000000,'4060','NVIDIA','8 ГБ'],['rx7800','RX 7800 XT',1900,85000000,'4080','AMD','16 ГБ'],['rtx4070','RTX 4070',2500,110000000,'4070','NVIDIA','12 ГБ'],['rtx4080','RTX 4080',3400,155000000,'4080','NVIDIA','16 ГБ'],['rtx4090','RTX 4090',4800,220000000,'4090','NVIDIA','24 ГБ']
-].map(([id,name,price,rate,art,brand,ram])=>({id,name,price:price*UNIT,rate,art,brand,ram}));
-const mods=[{id:'cool',name:'Охлаждение',art:'liquid-cooling',icon:'fan',price:120*UNIT},{id:'power',name:'Блок питания',art:'power-supply',icon:'power',price:180*UNIT},{id:'slots',name:'Расширение',art:'rig-empty',icon:'box',price:250*UNIT},{id:'chip',name:'Контроллер',art:'processor',icon:'chip',price:320*UNIT}];
+ ['rx570','RX 570',0,10000000,'4060','AMD','4 ГБ'],['rx580','RX 580',0.5,14000000,'4060','AMD','8 ГБ'],['gtx1050','GTX 1050 Ti',0.75,16500000,'4070','NVIDIA','4 ГБ'],['gtx1060','GTX 1060',1.2,19000000,'4070','NVIDIA','6 ГБ'],['gtx1660','GTX 1660 Super',1.8,25000000,'4060','NVIDIA','6 ГБ'],['rx6600','RX 6600',2.5,32000000,'4070','AMD','8 ГБ'],['rtx2060','RTX 2060',3.2,38000000,'4070','NVIDIA','6 ГБ'],['rtx3060','RTX 3060',4.5,50000000,'4080','NVIDIA','12 ГБ'],['rtx4060','RTX 4060',6,65000000,'4060','NVIDIA','8 ГБ'],['rx7800','RX 7800 XT',8.5,85000000,'4080','AMD','16 ГБ'],['rtx4070','RTX 4070',12,110000000,'4070','NVIDIA','12 ГБ'],['rtx4080','RTX 4080',18,155000000,'4080','NVIDIA','16 ГБ'],['rtx4090','RTX 4090',25,220000000,'4090','NVIDIA','24 ГБ']
+].map(([id,name,price,rate,art,brand,ram])=>({id,name,price:Math.round(price*UNIT),rate,art,brand,ram}));
+const mods=[{id:'cool',name:'Охлаждение',art:'liquid-cooling',icon:'fan',price:25000000},{id:'power',name:'Блок питания',art:'power-supply',icon:'power',price:40000000},{id:'slots',name:'Расширение',art:'rig-empty',icon:'box',price:60000000},{id:'chip',name:'Контроллер',art:'processor',icon:'chip',price:80000000}];
 const find=id=>catalog.find(c=>c.id===id), valid=n=>Number.isSafeInteger(n)&&n>=0&&n<=MAX, clamp=n=>Math.min(MAX,n);
 const fmt=n=>((BigInt(Math.max(0,Math.floor(n)))/100000000n).toString()+'.'+(BigInt(Math.max(0,Math.floor(n)))%100000000n).toString().padStart(8,'0'));
 const fresh=now=>({balance:0,pending:0,total:0,carry:0,last:now,running:false,owned:['rx570'],active:['rx570'],levels:[0,0,0,0],avatar:'cyborg',done:false,history:[]});
@@ -18,7 +18,7 @@ function equip(s,id,now){settle(s,now);if(!s.owned.includes(id))return false;if(
 const upgradePrice=(s,i)=>mods[i].price*(s.levels[i]+1);
 function upgrade(s,i,now){settle(s,now);if(!mods[i]||s.levels[i]>=3||s.balance<upgradePrice(s,i))return false;s.balance-=upgradePrice(s,i);s.levels[i]++;return true;}
 function starterTask(s){if(s.done)return false;s.done=true;return true;}
-const priceText=n=>(n/UNIT).toLocaleString('ru-RU',{maximumFractionDigits:0});
+const priceText=n=>(n/UNIT).toFixed(3);
 const api={priceText,starterTask,UNIT,DAY,catalog,mods,find,fmt,fresh,load,capacity,rate,settle,claim,buy,equip,upgradePrice,upgrade};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.VoltGame=api;
 })(globalThis);
