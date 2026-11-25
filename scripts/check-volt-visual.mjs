@@ -52,7 +52,7 @@ try{
  await page.getByRole('button',{name:'AMD',exact:true}).click();assert.equal(await page.locator('.product').count(),4);
  await page.locator('#dock button').nth(4).click();await check('04-profile','.avatar');
  await page.getByRole('button',{name:'Сменить аватар'}).click();await page.getByRole('button',{name:'Аватар robot'}).click();assert.match(await page.locator('.avatar .portrait').getAttribute('src'),/avatar-robot.png$/);
- await page.locator('#dock button').nth(2).click();await page.getByRole('button',{name:'Готово',exact:true}).click();assert.ok(await page.getByRole('button',{name:'Выполнено'}).isDisabled());
+ await page.getByRole('button',{name:'Задания',exact:true}).click();await page.getByRole('button',{name:'Готово',exact:true}).click();assert.ok(await page.getByRole('button',{name:'Выполнено'}).isDisabled());
  await page.locator('#dock button').nth(3).click();assert.match(await page.locator('#screen').innerText(),/нет общего рейтинга/);
  // Without the optional renderer, the exact same source art remains available.
  const fallback=await browser.newPage({viewport:{width:360,height:780},isMobile:true,hasTouch:true});
