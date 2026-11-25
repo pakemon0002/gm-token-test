@@ -1,0 +1,43 @@
+name: VOLT glass motion checks
+on:
+  push:
+    branches: [design/volt-glass-motion]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - run: npm install --prefix /tmp/volt-font --no-save --no-fund --no-audit @fontsource-variable/onest@5.3.1
+      - name: Install licensed local font
+        run: |
+          font=/tmp/volt-font/node_modules/@fontsource-variable/onest
+          cp "$font/files/onest-latin-wght-normal.woff2" miniapp/public/volt-onest-latin.woff2
+          cp "$font/files/onest-cyrillic-wght-normal.woff2" miniapp/public/volt-onest-cyrillic.woff2
+          cp "$font/LICENSE" miniapp/public/volt-onest-LICENSE.txt
+      - run: node --check miniapp/public/volt.js && node --check miniapp/public/volt-economy.js
+      - run: npm test
+      - run: npm install --prefix /tmp/volt-browser --no-save --no-fund --no-audit playwright@1.51.1
+      - run: /tmp/volt-browser/node_modules/.bin/playwright install chromium
+      - run: GM_PLAYWRIGHT_MODULE=/tmp/volt-browser/node_modules/playwright node scripts/check-volt-visual.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: volt-glass-mobile
+          path: volt-screenshots/
+      - name: Save verified local font files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add miniapp/public/volt-onest-*
+          if ! git diff --cached --quiet; then
+            git commit -m "build: include licensed local Onest fonts [skip ci]"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
