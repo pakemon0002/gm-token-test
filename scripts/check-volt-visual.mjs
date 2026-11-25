@@ -10,7 +10,7 @@ const requests=[];
 const server=createServer((req,res)=>{
  const p=new URL(req.url,'http://localhost').pathname;requests.push(p);
  const root=p.startsWith('/assets/gpu-v3/')?assets:pub;
- try{const file=resolve(root,'.'+(p==='/'?'/volt-preview.html':p));if(!file.startsWith(root+'/'))throw Error('invalid');res.writeHead(200,{'Content-Type':{'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.svg':'image/svg+xml'}[extname(file)]||'application/octet-stream'});res.end(readFileSync(file))}catch{res.writeHead(404);res.end()}
+ try{const file=resolve(root,'.'+(p==='/'?'/volt-preview.html':p));if(!file.startsWith(root+'/'))throw Error('invalid');res.writeHead(200,{'Content-Type':{'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.svg':'image/svg+xml','.woff2':'font/woff2'}[extname(file)]||'application/octet-stream'});res.end(readFileSync(file))}catch{res.writeHead(404);res.end()}
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const origin='http://127.0.0.1:'+server.address().port;
@@ -30,11 +30,11 @@ try{
  assert.equal(await page.locator('[data-value=balance]').first().innerText(),'0.00000000');
  assert.match(await page.locator('.mode').innerText(),/RX 570/);
  assert.ok(!(await page.locator('body').innerText()).includes('TON'));
- await page.getByRole('button',{name:'Запустить',exact:true}).click();await page.waitForTimeout(1300);assert.ok(Number(await page.locator('[data-value=pending]').innerText())>0);
- await page.getByRole('button',{name:'Остановить',exact:true}).click();await page.getByRole('button',{name:'Собрать GRAM'}).click();assert.ok(Number(await page.locator('[data-value=balance]').first().innerText())>0);
+ await page.getByRole('button',{name:'Запустить',exact:true}).click();await page.locator('.motion-gpu .volt-rotor').first().waitFor();assert.equal(await page.locator('.volt-rotor').count(),2);assert.equal(await page.locator('.volt-rotor').first().evaluate(e=>getComputedStyle(e).animationName),'volt-spin');await page.waitForTimeout(1300);assert.ok(Number(await page.locator('[data-value=pending]').innerText())>0);
+ await page.getByRole('button',{name:'Остановить',exact:true}).click();assert.equal(await page.locator('.volt-rotor').count(),0);await page.getByRole('button',{name:'Собрать GRAM'}).click();assert.ok(Number(await page.locator('[data-value=balance]').first().innerText())>0);
  await page.locator('.shortcuts button').nth(1).click();await check('03-upgrades','.module-art');
  await page.locator('.module-tabs button').nth(1).click();assert.equal(await page.locator('.module-name').innerText(),'Блок питания');
- await page.locator('#dock button').nth(1).click();await check('02-shop','.product');assert.equal(await page.locator('.product').count(),13);
+ await page.locator('#dock button').nth(1).click();await check('02-shop','.product');assert.equal(await page.locator('.product').count(),13);assert.equal(await page.locator('.product .price').nth(1).innerText(),'150 GRAM');assert.ok(await page.evaluate(async()=>{await document.fonts.ready;return document.fonts.check('700 18px "VOLT Onest"','Ферма')&&[...document.fonts].some(f=>f.status==='loaded'&&f.family.includes('VOLT Onest'))}));
  await page.getByRole('button',{name:'AMD',exact:true}).click();assert.equal(await page.locator('.product').count(),4);
  await page.locator('#dock button').nth(4).click();await check('04-profile','.avatar');
  await page.getByRole('button',{name:'Сменить аватар'}).click();await page.getByRole('button',{name:'Аватар robot'}).click();assert.match(await page.locator('.avatar .portrait').getAttribute('src'),/avatar-robot.png$/);
