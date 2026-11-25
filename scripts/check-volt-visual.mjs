@@ -14,7 +14,7 @@ const server=createServer((req,res)=>{
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const origin='http://127.0.0.1:'+server.address().port;
-const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 try{
  mkdirSync('volt-screenshots',{recursive:true});
  const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});
@@ -26,12 +26,25 @@ try{
  const bad=await page.locator('img').evaluateAll(imgs=>imgs.filter(i=>!i.complete||!i.naturalWidth).map(i=>i.src));assert.deepEqual(bad,[],name+' broken artwork');
  assert.ok(!(await page.locator('body').innerText()).includes('GM TOKEN'),name+' old name');
  await page.screenshot({path:'volt-screenshots/'+name+'.png',fullPage:true});};
+ await page.locator('.gpu-visual[data-ready=true]').waitFor({timeout:45000});
  await check('01-farm','.hero');
+ const canvas=page.locator('.gpu-live-canvas');
+ assert.equal(await canvas.getAttribute('data-renderer'),'webgl3d');
+ assert.ok(Number(await canvas.getAttribute('data-fan-count'))>=2);
  assert.equal(await page.locator('[data-value=balance]').first().innerText(),'0.00000000');
  assert.match(await page.locator('.mode').innerText(),/RX 570/);
  assert.ok(!(await page.locator('body').innerText()).includes('TON'));
- await page.getByRole('button',{name:'Запустить',exact:true}).click();await page.locator('.motion-gpu .volt-rotor').first().waitFor();assert.equal(await page.locator('.volt-rotor').count(),2);assert.equal(await page.locator('.volt-rotor').first().evaluate(e=>getComputedStyle(e).animationName),'volt-spin');await page.screenshot({path:'volt-screenshots/05-running.png'});await page.waitForTimeout(1300);assert.ok(Number(await page.locator('[data-value=pending]').innerText())>0);
- await page.getByRole('button',{name:'Остановить',exact:true}).click();assert.equal(await page.locator('.volt-rotor').count(),0);await page.getByRole('button',{name:'Собрать GRAM'}).click();assert.ok(Number(await page.locator('[data-value=balance]').first().innerText())>0);
+ await page.evaluate(()=>{window.__testGpu=document.querySelector('.gpu-live-canvas')});
+ await page.getByRole('button',{name:'Запустить',exact:true}).click();
+ assert.ok(await page.evaluate(()=>window.__testGpu===document.querySelector('.gpu-live-canvas')),'same GPU canvas during start');
+ await page.waitForFunction(()=>document.querySelector('.gpu-live-canvas').dataset.running==='true');
+ const firstAngle=await canvas.getAttribute('data-angle');await page.waitForTimeout(350);assert.notEqual(await canvas.getAttribute('data-angle'),firstAngle,'fan angles advance while running');
+ await page.screenshot({path:'volt-screenshots/05-running.png'});const heroShot=await page.locator('.hero').screenshot({type:'jpeg',quality:45});console.log('VOLT_HERO_JPEG='+heroShot.toString('base64'));
+ await page.waitForTimeout(1300);assert.ok(Number(await page.locator('[data-value=pending]').innerText())>0);
+ await page.getByRole('button',{name:'Остановить',exact:true}).click();
+ assert.ok(await page.evaluate(()=>window.__testGpu===document.querySelector('.gpu-live-canvas')),'same GPU canvas during stop');
+ await page.waitForTimeout(200);const stopAngle=await canvas.getAttribute('data-angle');await page.waitForTimeout(250);assert.equal(await canvas.getAttribute('data-angle'),stopAngle,'stopped fans remain stationary');
+ await page.getByRole('button',{name:'Собрать GRAM'}).click();assert.ok(Number(await page.locator('[data-value=balance]').first().innerText())>0);
  await page.locator('.shortcuts button').nth(1).click();await check('03-upgrades','.module-art');
  await page.locator('.module-tabs button').nth(1).click();assert.equal(await page.locator('.module-name').innerText(),'Блок питания');
  await page.locator('#dock button').nth(1).click();await check('02-shop','.product');assert.equal(await page.locator('.product').count(),13);assert.equal(await page.locator('.product .price').nth(1).innerText(),'0.500 GRAM');assert.ok(await page.evaluate(async()=>{await document.fonts.ready;return document.fonts.check('700 18px "VOLT Onest"','Ферма')&&[...document.fonts].some(f=>f.status==='loaded'&&f.family.includes('VOLT Onest'))}));
@@ -40,6 +53,15 @@ try{
  await page.getByRole('button',{name:'Сменить аватар'}).click();await page.getByRole('button',{name:'Аватар robot'}).click();assert.match(await page.locator('.avatar .portrait').getAttribute('src'),/avatar-robot.png$/);
  await page.locator('#dock button').nth(2).click();await page.getByRole('button',{name:'Готово',exact:true}).click();assert.ok(await page.getByRole('button',{name:'Выполнено'}).isDisabled());
  await page.locator('#dock button').nth(3).click();assert.match(await page.locator('#screen').innerText(),/нет общего рейтинга/);
+ // Without the optional renderer, the exact same source art remains available.
+ const fallback=await browser.newPage({viewport:{width:360,height:780},isMobile:true,hasTouch:true});
+ await fallback.route('https://telegram.org/**',r=>r.abort());
+ await fallback.route('**/volt-gpu-live.js*',r=>r.abort());
+ await fallback.goto(origin,{waitUntil:'networkidle'});const imageBefore=await fallback.locator('.hero .hero-gpu').getAttribute('src');
+ await fallback.getByRole('button',{name:'Запустить',exact:true}).click();
+ assert.equal(await fallback.locator('.hero .hero-gpu').getAttribute('src'),imageBefore);
+ assert.equal(await fallback.locator('.hero .hero-gpu').evaluate(e=>getComputedStyle(e).opacity),'1');
+ await fallback.close();
  assert.deepEqual(errors,[]);assert.ok(!requests.some(p=>p.startsWith('/api/')),'prototype must not call production economy');
  console.log('PASS: four reference screens, all artwork, five-tab navigation, GRAM game-point simulation, local avatar and task');
 }finally{await browser.close();server.close()}
