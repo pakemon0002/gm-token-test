@@ -19,5 +19,5 @@ test('Telegram webhook initialization retries temporary network failure',async()
   logger:{log:()=>{}}
  });
  await hook.configure();
- assert.deepEqual(invoked,['getMe','setWebhook','setWebhook','setChatMenuButton','setMyCommands']);
+ assert.deepEqual(invoked,['getMe','setWebhook','setWebhook','setChatMenuButton','setMyCommands','setMyName','setMyDescription','setMyShortDescription']);
 });

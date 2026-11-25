@@ -39,8 +39,12 @@ export function makeTelegramWebhook({token, publicUrl, webhookSecret, botUsernam
     }
     logger.log('Telegram bot identity verified: @'+actual);
     await api('setWebhook',{url:new URL('/api/telegram/webhook',baseUrl).toString(),secret_token:webhookSecret,allowed_updates:['message'],drop_pending_updates:false});
-    await api('setChatMenuButton',{menu_button:{type:'web_app',text:'Открыть GM TOKEN',web_app:{url:baseUrl}}});
-    await api('setMyCommands',{commands:[{command:'start',description:'Открыть GM TOKEN'},{command:'help',description:'Помощь и правила'}]});
+    await api('setChatMenuButton',{menu_button:{type:'web_app',text:'Открыть VOLT FARM',web_app:{url:baseUrl}}});
+    await api('setMyCommands',{commands:[{command:'start',description:'Открыть VOLT FARM'},{command:'help',description:'Помощь и правила'}]});
+    await api('setMyName',{name:'VOLT FARM'});
+    await api('setMyDescription',{description:'VOLT FARM — виртуальная GPU-ферма. Демонстрационные XP, оборудование и аватары. Без реальных платежей и выплат.'});
+    await api('setMyShortDescription',{short_description:'VOLT FARM · виртуальная GPU-ферма'});
+    logger.log('Telegram VOLT FARM branding configured.');
     logger.log('Telegram webhook configured.');
   };
   const validateSecret = received => typeof received === 'string' && received === webhookSecret;
@@ -50,12 +54,12 @@ export function makeTelegramWebhook({token, publicUrl, webhookSecret, botUsernam
     const chatId=message.chat.id;
     if (/^\/start(?:\s|$)/.test(message.text)) {
       const match=message.text.match(/^\/start\s+ref_(\d{5,20})(?:\s|$)/);
-      const buttons=[[{text:'Открыть GM TOKEN',web_app:{url:baseUrl}}]];
+      const buttons=[[{text:'Открыть VOLT FARM',web_app:{url:baseUrl}}]];
       if(match)buttons.push([{text:'Открыть по приглашению',url:`https://t.me/${botUsername}?startapp=ref_${match[1]}`}]);
-      await api('sendMessage',{chat_id:chatId,text:'GM TOKEN — майнинг, задания, календарь наград и сундуки в одном приложении. GM и CR пока являются игровыми единицами, а не TON-токенами.',reply_markup:{inline_keyboard:buttons}});
+      await api('sendMessage',{chat_id:chatId,text:'VOLT FARM — виртуальная GPU-ферма. Выбирай оформление GRAM или TON, оборудование и аватар. В игре начисляются только демонстрационные XP без денежной стоимости. Реальных выплат и покупок нет.',reply_markup:{inline_keyboard:buttons}});
       if(typeof onStart==='function')await onStart(chatId);
     } else if(/^\/help(?:\s|$)/.test(message.text)) {
-      await api('sendMessage',{chat_id:chatId,text:'Открой Mini App, чтобы посмотреть награды, баланс и задания. Вопросы: Профиль → Поддержка. Никому не передавай пароли, seed-фразы и коды 2FA.'});
+      await api('sendMessage',{chat_id:chatId,text:'Открой VOLT FARM для просмотра виртуальной фермы и игровых заданий. XP не имеют денежной стоимости. Никому не передавай пароли, seed-фразы и коды 2FA.'});
     }
   };
   return {configure,validateSecret,handleUpdate,baseUrl};
