@@ -47,8 +47,8 @@ body{background:#050b15}#volt{background:radial-gradient(ellipse at 50% 16%,#103
 /* Live studio GPU: the same 3D body in every operating state. */
 .hero{height:clamp(238px,68vw,286px);isolation:isolate;background:radial-gradient(ellipse at 50% 57%,#2e9de32b,transparent 66%)}
 .hero .gpu-visual{position:absolute;inset:0;z-index:2;pointer-events:none;isolation:isolate}
-.hero .gpu-live-canvas{position:absolute;left:2%;top:2%;width:96%;height:77%;opacity:0;pointer-events:none;touch-action:pan-y;transition:opacity .18s ease;filter:drop-shadow(0 11px 9px #02070eb0)}
-.hero .gpu-visual[data-ready=true] .gpu-live-canvas{opacity:1;pointer-events:auto;touch-action:none}
+.hero .gpu-live-canvas{position:absolute;width:154%;height:167%;max-width:none;top:-39%;left:-27%;object-fit:contain;z-index:2;opacity:0;pointer-events:none;transition:opacity .18s ease;filter:hue-rotate(-65deg) drop-shadow(0 9px 9px #020711) drop-shadow(0 0 12px #42b9ff77)}
+.hero .gpu-visual[data-ready=true] .gpu-live-canvas{opacity:1;pointer-events:none}
 .hero .gpu-visual[data-ready=true] .hero-gpu{opacity:0}
 .hero .gpu-visual .hero-gpu{transition:opacity .18s ease;animation:none!important}
 .hero .hero-platform{opacity:.8;top:7%;height:155%;width:145%;left:-22.5%;filter:hue-rotate(-65deg) drop-shadow(0 0 10px #2197ff55)}
