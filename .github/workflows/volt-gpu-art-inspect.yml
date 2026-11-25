@@ -1,0 +1,26 @@
+name: Inspect GPU source artwork
+on:
+  workflow_dispatch:
+  push:
+    branches: [fix/volt-gpu-live-3d]
+    paths: ['.github/workflows/volt-gpu-art-inspect.yml']
+jobs:
+  artwork:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m pip install Pillow --quiet
+      - run: |
+          python3 - <<'PY'
+          from PIL import Image, ImageDraw
+          from pathlib import Path
+          import base64, io
+          for path in sorted(Path('public/assets/gpu-v3/01-gpu').glob('gpu-*.png')):
+              im=Image.open(path).convert('RGBA')
+              print(path.name, im.size, im.getbbox())
+              im.thumbnail((420,420))
+              bg=Image.new('RGB',im.size,'#07111c')
+              bg.paste(im,mask=im.getchannel('A'))
+              buf=io.BytesIO();bg.save(buf,'JPEG',quality=65)
+              print('ART_'+path.stem+'='+base64.b64encode(buf.getvalue()).decode())
+          PY
