@@ -57,3 +57,21 @@ body{background:#050b15}#volt{background:radial-gradient(ellipse at 50% 16%,#103
 .work-indicator{z-index:5;background:#0c1b2b99;border-color:#a5dcff22}
 .work-indicator.is-running{color:#b8edff;border-color:#62caff55}
 @media(prefers-reduced-motion:reduce){.hero .gpu-live-canvas,.hero .hero-gpu,.gpu-led{transition:none}}
+
+/* Balance: quiet blue glass, restrained accents and generous number spacing. */
+.balance-link{display:flex;align-items:center;gap:5px;min-height:36px;cursor:pointer}.balance-link .icon{width:16px;height:16px}
+.balance-page{display:grid;gap:12px;padding:7px 0 12px}
+.balance-hero{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:216px;padding:22px 10px;text-align:center;border:1px solid #99ceff38;border-radius:30px;background:radial-gradient(ellipse at 50% 105%,#2566a957,transparent 75%),linear-gradient(145deg,#243b554f,#112032);box-shadow:inset 0 1px 0 #fff2,0 12px 35px #0003}
+.balance-hero:before{content:"";position:absolute;inset:0;background:repeating-radial-gradient(ellipse at 50% 135%,transparent 0 25px,#9bcfff0a 26px 27px);pointer-events:none}
+.balance-hero small{font-size:10px;letter-spacing:.14em;color:#b3c9dd;font-weight:600}
+.balance-hero strong{font-size:clamp(29px,9vw,40px);font-weight:650;line-height:1.2;letter-spacing:-.055em;font-variant-numeric:tabular-nums;margin-top:17px;max-width:100%;overflow-wrap:anywhere}
+.balance-hero>b{font-size:13px;letter-spacing:.15em;font-weight:650;color:#8cceff;margin:5px 0}
+.balance-hero p{font-size:10px;color:#aabfd1;margin:12px 0 0;max-width:230px}
+.balance-split{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.balance-split .panel{padding:15px 12px;display:flex;flex-direction:column;gap:7px;min-width:0;border-radius:20px}
+.balance-split small,.balance-row small{font-size:11px;color:var(--muted)}
+.balance-split b{font-size:clamp(12px,4.3vw,18px);letter-spacing:-.045em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.balance-info{padding:15px 13px;border-radius:22px}.balance-info h2{font-size:15px;letter-spacing:-.02em;margin:0 0 10px}
+.balance-row{display:flex;align-items:center;gap:10px;min-height:60px;padding:10px 0;border-bottom:1px solid #b6dbff16}
+.balance-row:last-child{border-bottom:0}.balance-row .icon{width:25px;height:25px}.balance-row>div{display:flex;flex-direction:column;gap:4px;min-width:0}.balance-row b{font-size:12px;font-weight:650}
+.balance-page>.secondary{border-radius:18px;min-height:50px}.balance-page>.primary{min-height:52px;border-radius:23px}
