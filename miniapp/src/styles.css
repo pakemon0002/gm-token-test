@@ -3498,3 +3498,19 @@ html,body,.application,.application button,.application input,.application texta
 .application.gm-reference-v3 button:focus-visible{outline:2px solid #e1a4ff;outline-offset:2px}
 @media(max-width:360px){.application.gm-reference-v3 .phone-scroll:not(.no-scroll){padding-inline:9px}.v3-ref-stat-side>div{font-size:8px}.v3-ref-stat-side b{font-size:8px}.application.gm-reference-v3 .v3-ref-product{min-height:112px}.application.gm-reference-v3 .v3-ref-product>img{height:92px}}
 @media(prefers-reduced-motion:reduce){.application.gm-reference-v3 .v3-gpu-render{animation:none!important}}
+
+/* The supplied transparent PNGs contain 25–50% empty canvas. Scale their
+   visible artwork rather than using the full source canvas as object size. */
+.application.gm-reference-v3 .v3-farm-stage{overflow:hidden}
+.application.gm-reference-v3 .v3-farm-stage .v3-gpu-render{width:150%;height:175%;max-width:none;max-height:none;left:-25%;top:-39%}
+.application.gm-reference-v3 .v3-farm-stage .v3-pedestal{width:150%;height:171%;max-width:none;max-height:none;left:-25%;top:-4%;bottom:auto}
+.application.gm-reference-v3 .v3-ref-product{overflow:hidden}
+.application.gm-reference-v3 .v3-ref-product>img{transform:scale(1.55)}
+.application.gm-reference-v3 .v3-ref-inventory img{transform:scale(1.45)}
+.application.gm-reference-v3 .v3-ref-inventory button{overflow:hidden}
+.application.gm-reference-v3 .v3-ref-module-image{overflow:hidden}
+.application.gm-reference-v3 .v3-ref-module-image img{transform:scale(1.50)}
+.application.gm-reference-v3 .v3-avatar img:not(.v3-avatar-frame){width:165%;height:165%;max-width:none;max-height:none;object-fit:contain}
+.application.gm-reference-v3 .v3-avatar img.v3-avatar-frame{z-index:1}
+.application.gm-reference-v3 .v3-avatar-picker button{overflow:hidden}
+.application.gm-reference-v3 .v3-avatar-picker img{transform:scale(1.6)}
